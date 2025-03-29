@@ -9,6 +9,9 @@
         <ProjectReference Include="..\CoreEssentials\CoreEssentials.csproj" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105">
+            <PrivateAssets>All</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
