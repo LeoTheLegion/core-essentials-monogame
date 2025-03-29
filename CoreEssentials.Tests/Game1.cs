@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using CoreEssentials.Assets;
 
 namespace CoreEssentials.Tests
 {
@@ -24,10 +23,7 @@ namespace CoreEssentials.Tests
         }
 
         protected override void Initialize()
-        {
-            // Initialize AssetManager with content
-            AssetManager.Init(Content);
-            
+        {            
             base.Initialize();
         }
 
