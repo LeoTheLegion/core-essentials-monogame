@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>CoreEssentials</RootNamespace>
+    <PackageId>CoreEssentials-MonoGame</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Michael Mena</Authors>
+    <Company>LeoTheLegion</Company>
+    <PackageDescription>A jump start for monogame dev</PackageDescription>
+    <RepositoryUrl>https://github.com/LeoTheLegion/core-essentials-monogame</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105">
