@@ -1,9 +1,10 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34202.233
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials", "CoreEssentials\CoreEssentials.csproj", "{6580612B-2A88-40A0-B51F-99BC2317AE18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Tests", "CoreEssentials.Tests\CoreEssentials.Tests.csproj", "{12341234-1234-1234-1234-123412341234}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
