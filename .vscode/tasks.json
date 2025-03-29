@@ -10,6 +10,16 @@
         ],
         "group": "build",
         "problemMatcher": []
+      },
+      {
+        "label": "Test Soluation",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+          "./scripts/test.sh"
+        ],
+        "group": "test",
+        "problemMatcher": []
       }
     ]
   }

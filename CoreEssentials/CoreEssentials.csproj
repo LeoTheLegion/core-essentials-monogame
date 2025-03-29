@@ -18,4 +18,10 @@
     <PackageReference Include="MonoGame.Extended" Version="4.0.2" />
     <PackageReference Include="Myra" Version="1.5.5" />
   </ItemGroup>
+  <Target Name="CoreEssentials_Tests" DependsOnTargets="Build">
+    <Exec Command="dotnet test ..\CoreEssentials.Tests\CoreEssentials.Tests.csproj" />
+  </Target>
+  <Target Name="CoreEssentials_Tests:rebuild" DependsOnTargets="Rebuild">
+    <Exec Command="dotnet test ..\CoreEssentials.Tests\CoreEssentials.Tests.csproj" />
+  </Target>
 </Project>
