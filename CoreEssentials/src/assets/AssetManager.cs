@@ -17,7 +17,7 @@ namespace CoreEssentials.Assets
         static Dictionary<string, int> countOfObjectsUsingAsset = new Dictionary<string, int>();
 
         static ContentManager Content;
-        internal static void Init(ContentManager content)
+        public static void Init(ContentManager content)
         {
             Content = content;
         }
