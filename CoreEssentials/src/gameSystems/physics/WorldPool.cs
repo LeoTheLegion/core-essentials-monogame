@@ -6,7 +6,7 @@ using CoreEssentials.Debugging;
 
 namespace CoreEssentials.GameSystems.Physics
 {
-    internal class WorldPool
+    public class WorldPool
     {
         private World _world;
 
