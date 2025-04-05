@@ -52,6 +52,12 @@ namespace CoreEssentials
             _drawSystems = _systems.OfType<IDrawGameSystem>().ToArray();
             _fixedUpdateSystems = _systems.OfType<IFixedUpdateGameSystem>().ToArray();
 
+            Debug.Console.WriteLine("Game Systems Loaded: " + _systems.Length.ToString());
+            Debug.Console.WriteLine("Load Asset Systems Loaded: " + _loadAssets.Length.ToString());
+            Debug.Console.WriteLine("Update Systems Loaded: " + _updateSystems.Length.ToString());
+            Debug.Console.WriteLine("Fixed Update Systems Loaded: " + _fixedUpdateSystems.Length.ToString());
+            Debug.Console.WriteLine("Draw Systems Loaded: " + _drawSystems.Length.ToString());
+
             base.Initialize();
         }
 

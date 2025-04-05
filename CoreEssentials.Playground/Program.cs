@@ -1,2 +1,2 @@
-﻿using var game = new CoreEssentials.Playground.Game1();
+﻿using var game = new CoreEssentials.Playground.PlaygroundGame();
 game.Run();
