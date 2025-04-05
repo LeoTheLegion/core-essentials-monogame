@@ -22,7 +22,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Test Soluation",
+            "label": "Test Solution",
             "type": "shell",
             "command": "bash",
             "args": [
