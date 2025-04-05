@@ -1,6 +1,7 @@
 ﻿using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.Physics;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using Microsoft.Xna.Framework;
 
 namespace CoreEssentials.Playground;
 
@@ -24,6 +25,8 @@ public class PlaygroundGame : MainGame
             physicsDebugRenderer,
             entitySystem,
         };
+
+        Ball ball = new Ball(new Vector2(100, 100));
 
         return systems;
     }
