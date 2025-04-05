@@ -106,7 +106,7 @@ namespace CoreEssentials
         protected override void Draw(GameTime gameTime)
         {
             Debug.baseGameDiagnostics.DrawBegin();
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
             for (int i = 0; i < _drawSystems.Length; i++)
                 _drawSystems[i].Draw(gameTime, _spriteBatch);
