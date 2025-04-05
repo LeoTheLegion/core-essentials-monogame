@@ -24,10 +24,13 @@ namespace CoreEssentials.Assets
 
         public static T LoadAsset<T>(string assetName)
         {
-            if (assetsLoaded.ContainsKey(assetName))
+            var AssetNameType = typeof(T).Name;
+            var AssetKey = assetName + "_" + AssetNameType;
+
+            if (assetsLoaded.ContainsKey(AssetKey))
             {
-                countOfObjectsUsingAsset[assetName]++;
-                return (T)assetsLoaded[assetName];
+                countOfObjectsUsingAsset[AssetKey]++;
+                return (T)assetsLoaded[AssetKey];
             }
 
             if (assetName == null || assetName == string.Empty)
@@ -37,8 +40,11 @@ namespace CoreEssentials.Assets
 
             T asset;
 
+            if (typeof(Asset).IsAssignableFrom(typeof(T))) {
+                asset = (T)Activator.CreateInstance(typeof(T), new object[] { assetName });
+            }
             // Check if the asset is a .xmmp file
-            if (assetName.EndsWith(".xmmp", StringComparison.OrdinalIgnoreCase))
+            else if (assetName.EndsWith(".xmmp", StringComparison.OrdinalIgnoreCase))
             {
                 string exePath = AppContext.BaseDirectory;
                 string filePath = Path.Combine(exePath, "Content", assetName);
@@ -54,10 +60,10 @@ namespace CoreEssentials.Assets
                 asset = Content.Load<T>(assetName);
             }
              
-            assetsLoaded.Add(assetName, asset);
-            countOfObjectsUsingAsset.Add(assetName, 1);
+            assetsLoaded.Add(AssetKey, asset);
+            countOfObjectsUsingAsset.Add(AssetKey, 1);
 
-            Debug.Console.WriteLine(String.Format("Loaded <{0}> {1}", typeof(T).Name, assetName));
+            Debug.Console.WriteLine(String.Format("Loaded <{0}> {1}", typeof(T).Name, AssetKey));
 
             return asset;
         }

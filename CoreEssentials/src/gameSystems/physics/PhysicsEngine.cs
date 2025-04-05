@@ -16,9 +16,16 @@ namespace CoreEssentials.GameSystems.Physics
         private WorldPool _worldPool;
         public int Scale => _scale;
 
+        public static PhysicsEngine Instance { get; private set; } = null;
+
         public BodyCollection Bodies => _world.BodyList;
         public PhysicsEngine()
         {
+            if (Instance != null)
+            {
+                throw new Exception("PhysicsEngine is a singleton and has already been created.");
+            }
+            Instance = this;
             _world = new World();
             _world.Gravity = new(0, 9.8f);
             _scale = 0;
