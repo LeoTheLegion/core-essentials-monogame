@@ -1,25 +1,35 @@
 {
     "version": "2.0.0",
     "tasks": [
-      {
-        "label": "Publish NuGet Package",
-        "type": "shell",
-        "command": "bash",
-        "args": [
-          "./scripts/publish.sh"
-        ],
-        "group": "build",
-        "problemMatcher": []
-      },
-      {
-        "label": "Test Soluation",
-        "type": "shell",
-        "command": "bash",
-        "args": [
-          "./scripts/test.sh"
-        ],
-        "group": "test",
-        "problemMatcher": []
-      }
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/CoreEssentials.Playground/CoreEssentials.Playground.csproj"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Publish NuGet Package",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "./scripts/publish.sh"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Test Soluation",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "./scripts/test.sh"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        }
     ]
-  }
+}
