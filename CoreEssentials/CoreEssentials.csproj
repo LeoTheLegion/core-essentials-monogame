@@ -3,7 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>CoreEssentials</RootNamespace>
     <PackageId>CoreEssentials-MonoGame</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Authors>Michael Mena</Authors>
     <Company>LeoTheLegion</Company>
     <PackageDescription>A jump start for monogame dev</PackageDescription>
