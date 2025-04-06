@@ -9,10 +9,18 @@ namespace CoreEssentials.Tests.GameSystems.Physics
     public class PhysicsEngineTests
     {
         [Fact]
+        public void SingletonInstance_AlwaysReturnsSameInstance()
+        {
+            var instance1 = PhysicsEngine.Instance;
+            var instance2 = PhysicsEngine.Instance;
+            Assert.Same(instance1, instance2);
+        }
+
+        [Fact]
         public void Constructor_DefaultScale_SetsScaleToZero()
         {
             // Arrange & Act
-            var physicsEngine = new PhysicsEngine();
+            var physicsEngine = PhysicsEngine.Instance;
             
             // Assert
             Assert.Equal(0, physicsEngine.Scale);
@@ -33,7 +41,8 @@ namespace CoreEssentials.Tests.GameSystems.Physics
         public void CreateBody_ValidParameters_ReturnsNewBody()
         {
             // Arrange
-            var physicsEngine = new PhysicsEngine();
+            var physicsEngine = PhysicsEngine.Instance;
+            physicsEngine.Reset();
             Vector2 position = new Vector2(10, 20);
             float rotation = 0.5f;
             BodyType bodyType = BodyType.Dynamic;
@@ -53,7 +62,8 @@ namespace CoreEssentials.Tests.GameSystems.Physics
         public void Destroy_Body_DisablesBody()
         {
             // Arrange
-            var physicsEngine = new PhysicsEngine();
+            var physicsEngine = PhysicsEngine.Instance;
+            physicsEngine.Reset();
             var body = physicsEngine.CreateBody(new Vector2(10, 20), 0, BodyType.Dynamic);
             
             // Act
@@ -67,7 +77,9 @@ namespace CoreEssentials.Tests.GameSystems.Physics
         public void FixedUpdate_SetsPhysicsStep()
         {
             // Arrange
-            var physicsEngine = new PhysicsEngine();
+            var physicsEngine = PhysicsEngine.Instance;
+
+            physicsEngine.Reset();
             var gameTime = new GameTime(
                 TimeSpan.FromSeconds(10),
                 TimeSpan.FromSeconds(1.0/60.0) // 16.67ms frame time (60 FPS)
@@ -95,7 +107,8 @@ namespace CoreEssentials.Tests.GameSystems.Physics
         public void AdjustSimSpeed_FewBodies_ReturnsFullSpeed()
         {
             // Use reflection to call the private method
-            var physicsEngine = new PhysicsEngine();
+            var physicsEngine = PhysicsEngine.Instance;
+            physicsEngine.Reset();
             
             // Create a few bodies (less than 1000)
             for (int i = 0; i < 10; i++)

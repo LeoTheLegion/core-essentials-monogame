@@ -7,7 +7,7 @@ using System;
 
 namespace CoreEssentials.GameSystems.Physics
 {
-    public class PhysicsEngine: GameSystem, IFixedUpdateGameSystem
+    public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem
     {
         private const float SIM_SPEED = 2;
         private int _scale;
@@ -26,20 +26,15 @@ namespace CoreEssentials.GameSystems.Physics
                 throw new Exception("PhysicsEngine is a singleton and has already been created.");
             }
             Instance = this;
-            _world = new World();
-            _world.Gravity = new(0, 9.8f);
-            _scale = 0;
-
-
-            // enable multithreading
-            _world.ContactManager.VelocityConstraintsMultithreadThreshold = 256;
-            _world.ContactManager.PositionConstraintsMultithreadThreshold = 256;
-            _world.ContactManager.CollideMultithreadThreshold = 256;
-
-            _worldPool = new WorldPool(_world);
+            Reset();
         }
 
         public PhysicsEngine(int scale) : this()
+        {
+            _scale = scale;
+        }
+
+        public void SetScale(int scale)
         {
             _scale = scale;
         }
@@ -63,10 +58,10 @@ namespace CoreEssentials.GameSystems.Physics
         //returns a float that adjusts the simulation speed based on the current state of the simulation
         //bodies above a certain threshold will slow down the simulation
         private float AdjustSimSpeed()
-        { 
+        {
             var bodies = Bodies.Count - _worldPool.Count;
 
-            if(bodies < 1000)
+            if (bodies < 1000)
             {
                 return 1;
             }
@@ -86,6 +81,21 @@ namespace CoreEssentials.GameSystems.Physics
         public void Destroy(Body body)
         {
             this._worldPool.DestroyBody(body);
+        }
+
+        public void Reset()
+        {
+            _world = new World();
+            _world.Gravity = new(0, 9.8f);
+            _scale = 0;
+
+
+            // enable multithreading
+            _world.ContactManager.VelocityConstraintsMultithreadThreshold = 256;
+            _world.ContactManager.PositionConstraintsMultithreadThreshold = 256;
+            _world.ContactManager.CollideMultithreadThreshold = 256;
+
+            _worldPool = new WorldPool(_world);
         }
     }
 }

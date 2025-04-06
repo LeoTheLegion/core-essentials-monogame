@@ -92,7 +92,7 @@ namespace CoreEssentials.Tests.Assets
                 var counts = (System.Collections.Generic.Dictionary<string, int>)countOfObjectsField.GetValue(null);
                 
                 // Assert
-                Assert.Equal(3, counts["test.xmmp"]);
+                Assert.Equal(3, counts["test.xmmp_String"]);
             }
             finally
             {
@@ -126,7 +126,7 @@ namespace CoreEssentials.Tests.Assets
                 var counts = (System.Collections.Generic.Dictionary<string, int>)countOfObjectsField.GetValue(null);
                 
                 // Assert
-                Assert.Equal(1, counts["test.xmmp"]);
+                Assert.Equal(1, counts["test.xmmp_String"]);
             }
             finally
             {

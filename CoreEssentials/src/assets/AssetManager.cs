@@ -66,6 +66,11 @@ namespace CoreEssentials.Assets
                 }
             }
             else {
+                var extention = Path.GetExtension(assetName);
+                if (extention != null && extention != string.Empty)
+                {
+                    throw new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} using an extention. Please remove it.");
+                }
                 asset = Content.Load<T>(assetName);
             }
              
@@ -79,14 +84,16 @@ namespace CoreEssentials.Assets
 
         public static void UnloadAsset<T>(string assetName)
         {
-            if (assetsLoaded.ContainsKey(assetName))
+            var AssetNameType = typeof(T).Name;
+            var AssetKey = assetName + "_" + AssetNameType;
+            if (assetsLoaded.ContainsKey(AssetKey))
             {
-                countOfObjectsUsingAsset[assetName]--;
-                if (countOfObjectsUsingAsset[assetName] == 0)
+                countOfObjectsUsingAsset[AssetKey]--;
+                if (countOfObjectsUsingAsset[AssetKey] == 0)
                 {
-                    assetsLoaded.Remove(assetName);
+                    assetsLoaded.Remove(AssetKey);
                     Content.UnloadAsset(assetName);
-                    Debug.Console.WriteLine(String.Format("Unloaded <{0}> {1}", typeof(T).Name, assetName));
+                    Debug.Console.WriteLine(String.Format("Unloaded <{0}> {1}", typeof(T).Name, AssetKey));
                 }
             }
         }

@@ -29,9 +29,7 @@ public static class EntityManagementSystem
 
     public static void Update(ref GameTime _gameTime)
     {
-        _entities.Sort(
-            (x, y) => x.GetSort().CompareTo(y.GetSort())
-            );
+        SortEntities();
 
         for (int i = 0; i < _entities.Count; i++)
         {
@@ -49,5 +47,23 @@ public static class EntityManagementSystem
         }
     }
 
+    public static void SortEntities()
+    {
+        _entities.Sort(
+            (x, y) => y.GetSort().CompareTo(x.GetSort())
+            );
+    }
 
+    public static List<Entity> GetEntities()
+    {
+        return _entities;
+    }
+
+    public static void ClearEntities()
+    {
+        for (int i = _entities.Count - 1 ; i < 0; i--)
+        {
+            _entities[i].Destroy();
+        }
+    }
 }
