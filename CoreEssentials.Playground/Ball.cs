@@ -22,8 +22,14 @@ public class Ball : Entity
     {
         _position = position;
         sort = 0;
+    }
 
-        _radius = 16f;
+    public override void LoadAssets()
+    {
+        this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.json");
+
+        // I hate this but I have to do it this way for now
+        _radius = this._sprite.GetSize().X / 2; // Assuming the sprite is a circle, use half the width as the radius
 
         this._body = PhysicsEngine.Instance.CreateBody(_position,0, BodyType.Dynamic);
 
@@ -33,11 +39,6 @@ public class Ball : Entity
         _collisionFixture = this._body.CreateCircle(_radius,1);
 
         _collisionFixture.Restitution = 1f; // Bounciness
-    }
-
-    public override void LoadAssets()
-    {
-        this._sprite = AssetManager.LoadAsset<Sprite>("Ball");
     }
 
     public override void Update(ref GameTime gameTime)
@@ -51,18 +52,8 @@ public class Ball : Entity
     public override void Render(ref SpriteBatch _spriteBatch)
     {
         _spriteBatch.Begin();
-        Vector2 spriteSize = _sprite.GetSize();
-        Vector2 targetSize = new Vector2(_radius * 2, _radius * 2);
-        Vector2 targetCenter = new Vector2(_radius, _radius);
-        Vector2 scale = new Vector2(targetSize.X / spriteSize.X, targetSize.Y / spriteSize.Y);
-        Vector2 origin = new Vector2(spriteSize.X / 2, spriteSize.Y / 2);
         float rotation = _body.Rotation; // Get the rotation from the physics body
-
-        _sprite.Draw(_spriteBatch, _position, Color.White, rotation , origin, scale, SpriteEffects.None, 0f);
-
-        Rectangle targetRectangle = new Rectangle((int)(_position.X - targetCenter.X), (int)(_position.Y - targetCenter.X), (int)(targetSize.X), (int)(targetSize.Y));
-
-        Debug.Primitives.DrawRectangle(_spriteBatch, targetRectangle, Color.Red, 1f);
+        _sprite.Draw(_spriteBatch, _position, Color.White, rotation , SpriteEffects.None, 0f);
         _spriteBatch.End();
     }
 }

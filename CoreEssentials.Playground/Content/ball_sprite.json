@@ -1,0 +1,12 @@
+{
+    "SourceType": "texture2d",
+    "Source": "ball",
+    "Size": {
+        "Width": 64,
+        "Height": 64
+    },
+    "Origin": {
+        "X": 32,
+        "Y": 32
+    }
+}

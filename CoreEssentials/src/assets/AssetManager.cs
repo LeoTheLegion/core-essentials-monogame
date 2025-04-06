@@ -43,20 +43,29 @@ namespace CoreEssentials.Assets
             if (typeof(Asset).IsAssignableFrom(typeof(T))) {
                 asset = (T)Activator.CreateInstance(typeof(T), new object[] { assetName });
             }
-            // Check if the asset is a .xmmp file
-            else if (assetName.EndsWith(".xmmp", StringComparison.OrdinalIgnoreCase))
+            else if (typeof(String).IsAssignableFrom(typeof(T)))
             {
-                string exePath = AppContext.BaseDirectory;
-                string filePath = Path.Combine(exePath, "Content", assetName);
-                if (typeof(T) == typeof(string))
+                var extention = Path.GetExtension(assetName);
+
+                if(extention != null && extention != string.Empty)
                 {
-                    asset = (T)(object)File.ReadAllText(filePath);
+                    string exePath = AppContext.BaseDirectory;
+                    string filePath = Path.Combine(exePath, "Content", assetName);
+                    if (typeof(T) == typeof(string))
+                    {
+                        asset = (T)(object)File.ReadAllText(filePath);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} from a text file.");
+                    }
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} from a text file.");
+                    asset = Content.Load<T>(assetName);
                 }
-            }else {
+            }
+            else {
                 asset = Content.Load<T>(assetName);
             }
              

@@ -28,10 +28,15 @@ public class PlaygroundGame : MainGame
             physicsDebugRenderer,
         };
 
-        for (int i = 0; i < Graphics.PreferredBackBufferWidth; i += 25){
-            Ball ball = new Ball(new Vector2(i, 200));
+        for (int i = 0; i < Graphics.PreferredBackBufferWidth; i += 10){
+
+            // Create a random y bettween 0 and 720
+            int padding = 32;
+            int y = random.Next(padding, Graphics.PreferredBackBufferHeight - padding);
+
+            Ball ball = new Ball(new Vector2(i, y));
             // add Random force to the ball
-            ball.Body.ApplyLinearImpulse(new Vector2((float)(random.NextDouble() * 10 - 5), (float)(random.NextDouble() * 10 - 5)));
+            //ball.Body.ApplyLinearImpulse(new Vector2((float)(random.NextDouble() * 10 - 5), (float)(random.NextDouble() * 10 - 5)));
         }
 
         WorldBorder worldBorder = new WorldBorder(new Vector2(0, 0), new Vector2(Graphics.PreferredBackBufferWidth, Graphics.PreferredBackBufferHeight));

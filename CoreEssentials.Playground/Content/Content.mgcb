@@ -13,6 +13,9 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin ball_sprite.json
+/copy:ball_sprite.json
+
 #begin Ball.png
 /importer:TextureImporter
 /processor:TextureProcessor
