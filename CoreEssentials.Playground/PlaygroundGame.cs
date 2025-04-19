@@ -11,12 +11,7 @@ public class PlaygroundGame : MainGame
     private Random random = new Random();
     protected override GameSystem[] LoadGameSystems()
     {
-        Graphics.PreferredBackBufferWidth = 1280;
-        Graphics.PreferredBackBufferHeight = 720;
-        Graphics.ApplyChanges();
-
         // Load all the game systems you want to use in your game here.
-
         PhysicsEngine physicsEngine = new PhysicsEngine();
         PhysicsDebugRenderer physicsDebugRenderer = new PhysicsDebugRenderer(physicsEngine);
         EntitySystem entitySystem = new EntitySystem();
@@ -33,7 +28,11 @@ public class PlaygroundGame : MainGame
 
     protected override void onStart()
     {
-        base.onStart();
+        // Run your startup code here.
+        
+        Graphics.PreferredBackBufferWidth = 1280;
+        Graphics.PreferredBackBufferHeight = 720;
+        Graphics.ApplyChanges();
 
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 

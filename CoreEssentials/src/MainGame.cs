@@ -84,9 +84,7 @@ namespace CoreEssentials
             onStart();
         }
 
-        protected virtual void onStart(){
-            
-        }
+        protected abstract void onStart();
 
         public T GetGameSystem<T>() where T : GameSystem
         {
