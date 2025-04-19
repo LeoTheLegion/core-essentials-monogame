@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace CoreEssentials.GUI
 {
+    /// <summary>
+    /// Manages GUI elements and rendering for the application.
+    /// Provides a centralized system for creating, maintaining and rendering UI components.
+    /// </summary>
     public static class GUIManager
     {
         static Desktop _desktop;
@@ -20,6 +24,12 @@ namespace CoreEssentials.GUI
         public static int Width { get { return (int)Root.Width; } }
         public static int Height { get { return (int)Root.Height; } }
 
+        /// <summary>
+        /// Initializes the GUI manager with the specified game instance and window dimensions.
+        /// </summary>
+        /// <param name="game">The game instance that will host the GUI.</param>
+        /// <param name="width">The width of the window in pixels.</param>
+        /// <param name="height">The height of the window in pixels.</param>
         public static void Init(Game game, int width, int height)
         {
             MyraEnvironment.Game = game;
@@ -32,12 +42,20 @@ namespace CoreEssentials.GUI
             _desktop.Root = panel;
         }
 
-        public static void AddWidget ( Widget widget)
+        /// <summary>
+        /// Adds a widget to the GUI desktop.
+        /// </summary>
+        /// <param name="widget">The widget to add to the GUI.</param>
+        public static void AddWidget(Widget widget)
         {
             Root.Widgets.Add(widget);
         }
 
-        public static void RemoveWidget (  Widget widget )
+        /// <summary>
+        /// Removes a widget from the GUI desktop.
+        /// </summary>
+        /// <param name="widget">The widget to remove from the GUI.</param>
+        public static void RemoveWidget(Widget widget)
         {
             Root.Widgets.Remove(widget);
         }
@@ -98,6 +116,10 @@ namespace CoreEssentials.GUI
             return widget.IsMouseInside || widget.IsTouchInside || widget.IsKeyboardFocused;
         }
 
+        /// <summary>
+        /// Draws all GUI elements.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public static void Draw(GameTime gameTime)
         {
             _desktop.Render();

@@ -9,11 +9,19 @@ using CoreEssentials.Debugging;
 
 namespace CoreEssentials.GameSystems.Physics
 {
+    /// <summary>
+    /// Debug renderer for physics bodies that visualizes physics shapes and colliders.
+    /// Provides visual representation of the physics entities in the game world.
+    /// </summary>
     public class PhysicsDebugRenderer : GameSystem, IDrawGameSystem
     {
         private PhysicsEngine _physicsEngine;
         private bool _drawDebug;
 
+        /// <summary>
+        /// Initializes a new instance of the PhysicsDebugRenderer class.
+        /// </summary>
+        /// <param name="_physicsEngine">The physics engine containing the bodies to debug render.</param>
         public PhysicsDebugRenderer(PhysicsEngine _physicsEngine)
         {
             this._physicsEngine = _physicsEngine;
@@ -22,6 +30,12 @@ namespace CoreEssentials.GameSystems.Physics
             Input.Keyboard.KeyPressed += OnKeyPressed;
         }
 
+        /// <summary>
+        /// Handles key press events to toggle debug rendering.
+        /// Press 'P' to toggle physics visualization.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="arg">Event arguments containing key information.</param>
         private void OnKeyPressed(object sender, KeyboardEventArgs arg)
         {
             if(arg.Key == Microsoft.Xna.Framework.Input.Keys.P)
@@ -30,6 +44,11 @@ namespace CoreEssentials.GameSystems.Physics
             }
         }
 
+        /// <summary>
+        /// Draws debug visualizations for all physics bodies.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             if (!_drawDebug)
@@ -55,6 +74,13 @@ namespace CoreEssentials.GameSystems.Physics
             spriteBatch.End();
         }
 
+        /// <summary>
+        /// Draws a physics fixture based on its shape type.
+        /// </summary>
+        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+        /// <param name="fixture">The physics fixture to draw.</param>
+        /// <param name="position">The position of the body containing the fixture.</param>
+        /// <param name="rotation">The rotation of the body containing the fixture.</param>
         private void DrawFixture(SpriteBatch spriteBatch, Fixture fixture, Vector2 position, float rotation)
         {
             var shape = fixture.Shape;
@@ -68,6 +94,13 @@ namespace CoreEssentials.GameSystems.Physics
             }
         }
 
+        /// <summary>
+        /// Draws a circular physics shape.
+        /// </summary>
+        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+        /// <param name="circleShape">The circle shape to draw.</param>
+        /// <param name="position">The position of the body containing the shape.</param>
+        /// <param name="rotation">The rotation of the body containing the shape.</param>
         private void DrawCircle(SpriteBatch spriteBatch, CircleShape circleShape, Vector2 position, float rotation)
         {
             var center = position + circleShape.Position;
@@ -81,6 +114,13 @@ namespace CoreEssentials.GameSystems.Physics
             Debug.Primitives.DrawCircle(spriteBatch, center, radius, Color.Green, 16);
         }
 
+        /// <summary>
+        /// Draws a polygon physics shape.
+        /// </summary>
+        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+        /// <param name="polygonShape">The polygon shape to draw.</param>
+        /// <param name="position">The position of the body containing the shape.</param>
+        /// <param name="rotation">The rotation of the body containing the shape.</param>
         private void DrawPolygon(SpriteBatch spriteBatch, PolygonShape polygonShape, Vector2 position, float rotation)
         {
             var vertices = polygonShape.Vertices;
@@ -109,6 +149,13 @@ namespace CoreEssentials.GameSystems.Physics
             }
         }
 
+        /// <summary>
+        /// Draws a rectangular physics shape.
+        /// </summary>
+        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+        /// <param name="polygonShape">The polygon shape representing a rectangle.</param>
+        /// <param name="position">The position of the body containing the shape.</param>
+        /// <param name="rotation">The rotation of the body containing the shape.</param>
         private void DrawRectangle(SpriteBatch spriteBatch, PolygonShape polygonShape, Vector2 position, float rotation)
         {
             var vertices = polygonShape.Vertices;
