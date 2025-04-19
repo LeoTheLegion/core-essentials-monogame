@@ -3,20 +3,51 @@ using System.Diagnostics;
 
 namespace CoreEssentials.Debugging
 {
+    /// <summary>
+    /// Provides performance diagnostics for game loops, tracking update, draw, and fixed update timing.
+    /// This class helps monitor performance and display metrics like FPS and frame times.
+    /// </summary>
     public class BaseGameDiagnostics
     {
+        /// <summary>
+        /// Stopwatches for measuring elapsed time in different game loop phases.
+        /// </summary>
         private Stopwatch _updateStopwatch, _drawStopwatch, _fixedUpdateStopwatch;
-        private float[] updateSample, drawSample,fixedUpdateSample;
+        
+        /// <summary>
+        /// Arrays for storing recent timing samples to calculate averages.
+        /// </summary>
+        private float[] updateSample, drawSample, fixedUpdateSample;
+        
+        /// <summary>
+        /// Current index positions in the sample arrays for storing new measurements.
+        /// </summary>
         private int updateSampleIndex, drawSampleIndex, fixedUpdateIndex;
 
+        /// <summary>
+        /// Gets the average update time in milliseconds.
+        /// </summary>
         public float UpdateAvg { private set; get; }
+        
+        /// <summary>
+        /// Gets the average draw time in milliseconds.
+        /// </summary>
         public float DrawAvg { private set; get; }
 
+        /// <summary>
+        /// Gets the average fixed update time in milliseconds.
+        /// </summary>
         public float FixedUpdateAvg { private set; get; }
 
-
+        /// <summary>
+        /// Reference to the StickyLog used to display diagnostic information.
+        /// </summary>
         private StickyLog stickyLog;
 
+        /// <summary>
+        /// Initializes a new instance of the BaseGameDiagnostics class.
+        /// </summary>
+        /// <param name="stickyLog">The StickyLog to use for displaying diagnostic information.</param>
         public BaseGameDiagnostics(StickyLog stickyLog)
         {
             _updateStopwatch = new Stopwatch();
@@ -34,11 +65,17 @@ namespace CoreEssentials.Debugging
             this.stickyLog = stickyLog;
         }
 
+        /// <summary>
+        /// Begins measurement of update time by starting the update stopwatch.
+        /// </summary>
         public void UpdateBegin()
         {
             _updateStopwatch.Restart();
         }
 
+        /// <summary>
+        /// Ends measurement of update time, calculates the average, and displays information in the StickyLog.
+        /// </summary>
         public void UpdateEnd()
         {
             _updateStopwatch.Stop();
@@ -64,11 +101,17 @@ namespace CoreEssentials.Debugging
             this.stickyLog.Log("FPS", String.Format("{0}fps", Math.Round(1000 / DrawAvg)));
         }
 
+        /// <summary>
+        /// Begins measurement of fixed update time by starting the fixed update stopwatch.
+        /// </summary>
         public void FixedUpdateBegin()
         {
             _fixedUpdateStopwatch.Restart();
         }
 
+        /// <summary>
+        /// Ends measurement of fixed update time and calculates the average.
+        /// </summary>
         public void FixedUpdateEnd()
         {
             _fixedUpdateStopwatch.Stop();
@@ -88,11 +131,17 @@ namespace CoreEssentials.Debugging
             this.FixedUpdateAvg = time;
         }
 
+        /// <summary>
+        /// Begins measurement of draw time by starting the draw stopwatch.
+        /// </summary>
         public void DrawBegin()
         {
             _drawStopwatch.Restart();
         }
 
+        /// <summary>
+        /// Ends measurement of draw time and calculates the average.
+        /// </summary>
         public void DrawEnd()
         {
             _drawStopwatch.Stop();
