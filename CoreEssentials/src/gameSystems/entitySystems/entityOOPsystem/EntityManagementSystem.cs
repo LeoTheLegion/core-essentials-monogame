@@ -19,14 +19,6 @@ public static class EntityManagementSystem
         _entities.Remove(e);
     }
 
-    public static void LoadAssets()
-    {
-        for (int i = 0; i < _entities.Count; i++)
-        {
-            _entities[i].LoadAssets();
-        }
-    }
-
     public static void Update(ref GameTime _gameTime)
     {
         SortEntities();

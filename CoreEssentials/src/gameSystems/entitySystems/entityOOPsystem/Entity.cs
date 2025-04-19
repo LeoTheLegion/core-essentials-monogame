@@ -16,10 +16,8 @@ public abstract class Entity
         _active = true;
         EntityManagementSystem.Register(this);
     }
-
-    public abstract void LoadAssets();
-    public abstract void Update(ref GameTime gameTime);
-    public abstract void Render(ref SpriteBatch _spriteBatch);
+    public virtual void Update(ref GameTime gameTime){}
+    public virtual void Render(ref SpriteBatch _spriteBatch){}
     public virtual void Destroy()
     {
         EntityManagementSystem.Unregister(this);

@@ -22,9 +22,11 @@ public class Ball : Entity
     {
         _position = position;
         sort = 0;
+
+        LoadAssets();
     }
 
-    public override void LoadAssets()
+    public void LoadAssets()
     {
         this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.json");
 

@@ -40,16 +40,4 @@ public class WorldBorder : Entity
         _borderBodies[3] = PhysicsEngine.Instance.CreateBody(new Vector2(_position.X + _size.X / 2, _position.Y + _size.Y), 0, BodyType.Static);
         _borderBodies[3].CreateRectangle(_size.X, 1, 1, Vector2.Zero);
     }
-
-    public override void LoadAssets()
-    {
-    }
-
-    public override void Render(ref SpriteBatch _spriteBatch)
-    {
-    }
-
-    public override void Update(ref GameTime gameTime)
-    {
-    }
 }

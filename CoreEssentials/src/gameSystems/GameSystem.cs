@@ -17,11 +17,6 @@ namespace CoreEssentials.GameSystems
         void Draw(GameTime gameTime, SpriteBatch spriteBatch);
     }
 
-    public interface ILoadAssetGameSystem
-    {
-        void LoadAssets();
-    }
-
     public interface IFixedUpdateGameSystem
     {
         void FixedUpdate(GameTime gameTime);

@@ -19,7 +19,6 @@ namespace CoreEssentials
         private float _fixedUpdateTime;
         private IUpdateGameSystem[] _updateSystems;
         private IDrawGameSystem[] _drawSystems;
-        private ILoadAssetGameSystem[] _loadAssets;
         private IFixedUpdateGameSystem[] _fixedUpdateSystems;
 
         protected abstract GameSystem[] LoadSystems();
@@ -45,19 +44,6 @@ namespace CoreEssentials
                     this.Exit();
             };
 
-            GameSystem[] _systems = LoadSystems();
-
-            _loadAssets = _systems.OfType<ILoadAssetGameSystem>().ToArray();
-            _updateSystems = _systems.OfType<IUpdateGameSystem>().ToArray();
-            _drawSystems = _systems.OfType<IDrawGameSystem>().ToArray();
-            _fixedUpdateSystems = _systems.OfType<IFixedUpdateGameSystem>().ToArray();
-
-            Debug.Console.WriteLine("Game Systems Loaded: " + _systems.Length.ToString());
-            Debug.Console.WriteLine("Load Asset Systems Loaded: " + _loadAssets.Length.ToString());
-            Debug.Console.WriteLine("Update Systems Loaded: " + _updateSystems.Length.ToString());
-            Debug.Console.WriteLine("Fixed Update Systems Loaded: " + _fixedUpdateSystems.Length.ToString());
-            Debug.Console.WriteLine("Draw Systems Loaded: " + _drawSystems.Length.ToString());
-
             base.Initialize();
         }
 
@@ -69,9 +55,19 @@ namespace CoreEssentials
             GUIManager.Init(this, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
             Debug.StickyLog.LoadGUI();
             Debug.Console.LoadGUI();
+            onStart();
+        }
 
-            for (int i = 0; i < _loadAssets.Length; i++)
-                _loadAssets[i].LoadAssets();
+        private void onStart(){
+            GameSystem[] _systems = LoadSystems();
+            _updateSystems = _systems.OfType<IUpdateGameSystem>().ToArray();
+            _drawSystems = _systems.OfType<IDrawGameSystem>().ToArray();
+            _fixedUpdateSystems = _systems.OfType<IFixedUpdateGameSystem>().ToArray();
+
+            Debug.Console.WriteLine("Game Systems Loaded: " + _systems.Length.ToString());
+            Debug.Console.WriteLine("Update Systems Loaded: " + _updateSystems.Length.ToString());
+            Debug.Console.WriteLine("Fixed Update Systems Loaded: " + _fixedUpdateSystems.Length.ToString());
+            Debug.Console.WriteLine("Draw Systems Loaded: " + _drawSystems.Length.ToString());
         }
 
         protected override void Update(GameTime gameTime)
