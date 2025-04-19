@@ -10,18 +10,43 @@ using System.Threading.Tasks;
 
 namespace CoreEssentials.Assets
 {
+    /// <summary>
+    /// Manages game assets with reference counting for efficient resource management.
+    /// Provides centralized loading and unloading of game resources.
+    /// </summary>
     public static class AssetManager
     {
-        
+        /// <summary>
+        /// Dictionary of loaded assets, indexed by a combination of asset name and type.
+        /// </summary>
         static Dictionary<string, object> assetsLoaded = new Dictionary<string, object>();
+        
+        /// <summary>
+        /// Dictionary tracking reference counts for each loaded asset.
+        /// </summary>
         static Dictionary<string, int> countOfObjectsUsingAsset = new Dictionary<string, int>();
 
+        /// <summary>
+        /// Content manager reference used to load assets from files.
+        /// </summary>
         static ContentManager Content;
+        
+        /// <summary>
+        /// Initializes the AssetManager with a ContentManager.
+        /// </summary>
+        /// <param name="content">The ContentManager to use for loading assets.</param>
         public static void Init(ContentManager content)
         {
             Content = content;
         }
 
+        /// <summary>
+        /// Loads an asset and manages its reference count.
+        /// If the asset is already loaded, its reference count is incremented.
+        /// </summary>
+        /// <typeparam name="T">The type of asset to load.</typeparam>
+        /// <param name="assetName">The name of the asset to load.</param>
+        /// <returns>The loaded asset.</returns>
         public static T LoadAsset<T>(string assetName)
         {
             var AssetNameType = typeof(T).Name;
@@ -82,6 +107,11 @@ namespace CoreEssentials.Assets
             return asset;
         }
 
+        /// <summary>
+        /// Decreases the reference count for an asset and unloads it if no longer used.
+        /// </summary>
+        /// <typeparam name="T">The type of asset to unload.</typeparam>
+        /// <param name="assetName">The name of the asset to unload.</param>
         public static void UnloadAsset<T>(string assetName)
         {
             var AssetNameType = typeof(T).Name;
