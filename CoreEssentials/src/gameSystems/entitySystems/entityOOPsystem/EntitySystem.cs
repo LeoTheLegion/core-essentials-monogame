@@ -9,7 +9,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem
 {
     private List<Entity> _entities = new List<Entity>();
 
-    public EntitySystem(MainGame game) : base(game)
+    public EntitySystem()
     {
     }
 

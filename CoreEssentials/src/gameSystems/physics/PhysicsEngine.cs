@@ -18,12 +18,12 @@ namespace CoreEssentials.GameSystems.Physics
 
         public BodyCollection Bodies => _world.BodyList;
         
-        public PhysicsEngine(MainGame mainGame) : base(mainGame)
+        public PhysicsEngine() 
         {
             Reset();
         }
 
-        public PhysicsEngine(MainGame mainGame,int scale) : this(mainGame)
+        public PhysicsEngine(int scale) 
         {
             _scale = scale;
         }

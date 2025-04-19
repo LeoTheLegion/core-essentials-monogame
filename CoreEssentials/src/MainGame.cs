@@ -68,6 +68,7 @@ namespace CoreEssentials
                     throw new Exception("Game System already exists: " + _systems[i].GetType().ToString());
 
                 _gameSystems.Add(_systems[i].GetType(), _systems[i]);
+                _systems[i].SetGame(this);
             }
             // Initialize all game systems
 

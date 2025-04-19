@@ -17,9 +17,9 @@ public class PlaygroundGame : MainGame
 
         // Load all the game systems you want to use in your game here.
 
-        PhysicsEngine physicsEngine = new PhysicsEngine(this);
-        PhysicsDebugRenderer physicsDebugRenderer = new PhysicsDebugRenderer(this,physicsEngine);
-        EntitySystem entitySystem = new EntitySystem(this);
+        PhysicsEngine physicsEngine = new PhysicsEngine();
+        PhysicsDebugRenderer physicsDebugRenderer = new PhysicsDebugRenderer(physicsEngine);
+        EntitySystem entitySystem = new EntitySystem();
 
         GameSystem[] systems = new GameSystem[]
         {
@@ -27,7 +27,7 @@ public class PlaygroundGame : MainGame
             entitySystem,
             physicsDebugRenderer,
         };
-        
+
         return systems;
     }
 

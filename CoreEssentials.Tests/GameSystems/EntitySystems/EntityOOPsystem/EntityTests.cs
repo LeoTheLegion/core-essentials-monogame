@@ -10,7 +10,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Entity_SetsActiveToFalse()
         {
-            var entity = new TestEntity();
+            EntitySystem entitySystem = new EntitySystem();
+            var entity = entitySystem.CreateEntity<TestEntity>();
             entity.SetActive(false);
             Assert.False(entity.GetActive());
         }
@@ -18,16 +19,16 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Entity_SetsSortValue()
         {
-            var entity = new TestEntity();
+            EntitySystem entitySystem = new EntitySystem();
+            var entity = entitySystem.CreateEntity<TestEntity>();
             entity.SetSort(5);
             Assert.Equal(5, entity.GetSort());
         }
 
         private class TestEntity : Entity
         {
-            public override void LoadAssets() { }
-            public override void Update(ref GameTime gameTime) { }
-            public override void Render(ref SpriteBatch spriteBatch) { }
+            public override void Update(GameTime gameTime) { }
+            public override void Render(SpriteBatch spriteBatch) { }
         }
     }
 }

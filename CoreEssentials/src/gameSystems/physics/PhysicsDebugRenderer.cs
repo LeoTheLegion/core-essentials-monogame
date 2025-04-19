@@ -14,7 +14,7 @@ namespace CoreEssentials.GameSystems.Physics
         private PhysicsEngine _physicsEngine;
         private bool _drawDebug;
 
-        public PhysicsDebugRenderer(MainGame mainGame, PhysicsEngine _physicsEngine): base(mainGame)
+        public PhysicsDebugRenderer(PhysicsEngine _physicsEngine)
         {
             this._physicsEngine = _physicsEngine;
             _drawDebug = false;

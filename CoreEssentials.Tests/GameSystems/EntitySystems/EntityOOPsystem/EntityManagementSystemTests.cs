@@ -1,5 +1,4 @@
 using Xunit;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPsystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -12,21 +11,25 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void RegistersAndUnregistersEntitiesCorrectly()
         {
-            var entity = new TestEntity();
-            Assert.Contains(entity, EntityManagementSystem.GetEntities());
+            EntitySystem entityManagementSystem = new EntitySystem();
+            var entity = entityManagementSystem.CreateEntity<TestEntity>();
+            Assert.Contains(entity, entityManagementSystem.GetEntities());
 
             entity.Destroy();
-            Assert.DoesNotContain(entity, EntityManagementSystem.GetEntities());
+            entityManagementSystem.Update(new GameTime());
+            // After the entity is destroyed, it should no longer be in the list of entities
+            Assert.DoesNotContain(entity, entityManagementSystem.GetEntities());
         }
 
         [Fact]
         public void SortsEntitiesCorrectly()
         {
-            var entity1 = new TestEntity().SetSort(1);
-            var entity2 = new TestEntity().SetSort(2);
+            EntitySystem entityManagementSystem = new EntitySystem();
+            var entity1 = entityManagementSystem.CreateEntity<TestEntity>().SetSort(1);
+            var entity2 = entityManagementSystem.CreateEntity<TestEntity>().SetSort(2);
 
-            EntityManagementSystem.SortEntities();
-            List<Entity> sortedEntities = EntityManagementSystem.GetEntities();
+            entityManagementSystem.SortEntities();
+            List<Entity> sortedEntities = entityManagementSystem.GetEntities();
             
             // check entity 2 is found before entity 1
             Assert.True(sortedEntities.IndexOf(entity2) < sortedEntities.IndexOf(entity1));
@@ -35,11 +38,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void UpdatesEntitiesCorrectly()
         {
-            var entity = new TestEntity();
-            EntityManagementSystem.Register(entity);
+            EntitySystem entityManagementSystem = new EntitySystem();
+            var entity = entityManagementSystem.CreateEntity<TestEntity>();
 
             var gameTime = new GameTime();
-            EntityManagementSystem.Update(ref gameTime);
+            entityManagementSystem.Update(gameTime);
 
             Assert.True(entity.Updated);
         }
@@ -48,14 +51,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         {
             public bool Updated { get; private set; }
 
-            public override void LoadAssets() { }
-
-            public override void Update(ref GameTime gameTime)
+            public override void Update(GameTime gameTime)
             {
                 Updated = true;
             }
 
-            public override void Render(ref SpriteBatch _spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
     }
 }

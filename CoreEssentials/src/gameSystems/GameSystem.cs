@@ -7,7 +7,11 @@ namespace CoreEssentials.GameSystems
     {
         private MainGame _game;
 
-        protected GameSystem(MainGame game)
+        protected GameSystem()
+        {
+        }
+
+        public void SetGame(MainGame game)
         {
             _game = game;
         }
