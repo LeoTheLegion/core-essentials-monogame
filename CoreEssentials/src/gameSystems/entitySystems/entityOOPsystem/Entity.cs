@@ -1,5 +1,3 @@
-
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPsystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -9,18 +7,37 @@ public abstract class Entity
 {
     protected Vector2 _position;
     protected int sort = -1;
+    protected bool _destroyed;
     protected bool _active;
+
+    private bool _hasStarted = false;
+
+    public bool Destroyed => _destroyed;
+    public bool HasStarted => _hasStarted;
+
+    protected EntitySystem EntitySystem;
 
     protected Entity()
     {
+        _position = Vector2.Zero;
+        sort = -1;
+        _destroyed = false;
         _active = true;
-        EntityManagementSystem.Register(this);
     }
-    public virtual void Update(ref GameTime gameTime){}
-    public virtual void Render(ref SpriteBatch _spriteBatch){}
+
+    public void SetGameSystem(EntitySystem entitySystem)
+    {
+        EntitySystem = entitySystem;
+    }
+
+    public virtual void OnStart(){
+        _hasStarted = true;
+    }
+    public virtual void Update(GameTime gameTime) { }
+    public virtual void Render(SpriteBatch _spriteBatch) { }
     public virtual void Destroy()
     {
-        EntityManagementSystem.Unregister(this);
+        _destroyed = true;
     }
 
     public virtual Entity SetSort(int x)

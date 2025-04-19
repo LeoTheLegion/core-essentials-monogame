@@ -7,6 +7,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Linq;
+using System.Collections.Generic;
+using System;
 
 namespace CoreEssentials
 {
@@ -17,11 +19,13 @@ namespace CoreEssentials
 
         private const float FIXED_UPDATE_MS = 1000 / 50;
         private float _fixedUpdateTime;
+
+        private Dictionary<Type, GameSystem> _gameSystems = new Dictionary<Type, GameSystem>();
         private IUpdateGameSystem[] _updateSystems;
         private IDrawGameSystem[] _drawSystems;
         private IFixedUpdateGameSystem[] _fixedUpdateSystems;
 
-        protected abstract GameSystem[] LoadSystems();
+        protected abstract GameSystem[] LoadGameSystems();
 
         protected GraphicsDeviceManager Graphics => _graphics;
 
@@ -55,11 +59,18 @@ namespace CoreEssentials
             GUIManager.Init(this, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
             Debug.StickyLog.LoadGUI();
             Debug.Console.LoadGUI();
-            onStart();
-        }
+            
+            GameSystem[] _systems = LoadGameSystems();
 
-        private void onStart(){
-            GameSystem[] _systems = LoadSystems();
+            for (int i = 0; i < _systems.Length; i++)
+            {
+                if (_gameSystems.ContainsKey(_systems[i].GetType()))
+                    throw new Exception("Game System already exists: " + _systems[i].GetType().ToString());
+
+                _gameSystems.Add(_systems[i].GetType(), _systems[i]);
+            }
+            // Initialize all game systems
+
             _updateSystems = _systems.OfType<IUpdateGameSystem>().ToArray();
             _drawSystems = _systems.OfType<IDrawGameSystem>().ToArray();
             _fixedUpdateSystems = _systems.OfType<IFixedUpdateGameSystem>().ToArray();
@@ -68,6 +79,20 @@ namespace CoreEssentials
             Debug.Console.WriteLine("Update Systems Loaded: " + _updateSystems.Length.ToString());
             Debug.Console.WriteLine("Fixed Update Systems Loaded: " + _fixedUpdateSystems.Length.ToString());
             Debug.Console.WriteLine("Draw Systems Loaded: " + _drawSystems.Length.ToString());
+
+            onStart();
+        }
+
+        protected virtual void onStart(){
+            
+        }
+
+        public T GetGameSystem<T>() where T : GameSystem
+        {
+            if (_gameSystems.ContainsKey(typeof(T)))
+                return (T)_gameSystems[typeof(T)];
+            else
+                throw new Exception("Game System not found: " + typeof(T).ToString());
         }
 
         protected override void Update(GameTime gameTime)

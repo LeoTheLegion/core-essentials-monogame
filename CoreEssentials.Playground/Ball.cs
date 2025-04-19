@@ -22,28 +22,30 @@ public class Ball : Entity
     {
         _position = position;
         sort = 0;
-
-        LoadAssets();
     }
 
-    public void LoadAssets()
+    public override void OnStart()
     {
+        base.OnStart();
+
         this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.json");
 
         // I hate this but I have to do it this way for now
         _radius = this._sprite.GetSize().X / 2; // Assuming the sprite is a circle, use half the width as the radius
 
-        this._body = PhysicsEngine.Instance.CreateBody(_position,0, BodyType.Dynamic);
+        PhysicsEngine physicsEngine = EntitySystem.GetGameSystem<PhysicsEngine>();
+        
+        this._body = physicsEngine.CreateBody(_position, 0, BodyType.Dynamic);
 
         this._body.FixedRotation = false; // Allow rotation
         this._body.Mass = 1f; // Set mass to 1 kg
 
-        _collisionFixture = this._body.CreateCircle(_radius,1);
+        _collisionFixture = this._body.CreateCircle(_radius, 1);
 
         _collisionFixture.Restitution = 1f; // Bounciness
     }
 
-    public override void Update(ref GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         if (_body != null)
         {
@@ -51,11 +53,11 @@ public class Ball : Entity
         }
     }
 
-    public override void Render(ref SpriteBatch _spriteBatch)
+    public override void Render(SpriteBatch _spriteBatch)
     {
         _spriteBatch.Begin();
         float rotation = _body.Rotation; // Get the rotation from the physics body
-        _sprite.Draw(_spriteBatch, _position, Color.White, rotation , SpriteEffects.None, 0f);
+        _sprite.Draw(_spriteBatch, _position, Color.White, rotation, SpriteEffects.None, 0f);
         _spriteBatch.End();
     }
 }

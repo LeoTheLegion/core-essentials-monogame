@@ -16,20 +16,14 @@ namespace CoreEssentials.GameSystems.Physics
         private WorldPool _worldPool;
         public int Scale => _scale;
 
-        public static PhysicsEngine Instance { get; private set; } = null;
-
         public BodyCollection Bodies => _world.BodyList;
-        public PhysicsEngine()
+        
+        public PhysicsEngine(MainGame mainGame) : base(mainGame)
         {
-            if (Instance != null)
-            {
-                throw new Exception("PhysicsEngine is a singleton and has already been created.");
-            }
-            Instance = this;
             Reset();
         }
 
-        public PhysicsEngine(int scale) : this()
+        public PhysicsEngine(MainGame mainGame,int scale) : this(mainGame)
         {
             _scale = scale;
         }

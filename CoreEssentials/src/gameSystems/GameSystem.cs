@@ -5,6 +5,17 @@ namespace CoreEssentials.GameSystems
 {
     public abstract class GameSystem
     {
+        private MainGame _game;
+
+        protected GameSystem(MainGame game)
+        {
+            _game = game;
+        }
+
+        public T GetGameSystem<T>() where T : GameSystem
+        {
+            return _game.GetGameSystem<T>();
+        }
     }
 
     public interface IUpdateGameSystem
