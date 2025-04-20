@@ -10,6 +10,9 @@ namespace CoreEssentials.SceneManagement;
 
 public abstract class Scene
 {
+    private SceneManager _sceneManager;
+
+    public SceneManager SceneManager => _sceneManager;
     /// <summary>
     /// Collection of all registered game systems mapped by their type.
     /// </summary>
@@ -42,6 +45,11 @@ public abstract class Scene
     {
         // Constructor logic can be added here if needed.
         IsLoaded = false;
+    }
+
+    public void SetSceneManager(SceneManager sceneManager)
+    {
+        _sceneManager = sceneManager;
     }
 
     public void Load()

@@ -37,6 +37,9 @@ namespace CoreEssentials
         /// </summary>
         public GraphicsDeviceManager Graphics => _graphics;
 
+
+        public SceneManager SceneManager { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the MainGame class.
         /// Sets up the graphics device manager with default settings and configures the content directory.
@@ -51,7 +54,8 @@ namespace CoreEssentials
             _graphics.ApplyChanges();
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            SceneManager.SetGame(this);
+            
+            SceneManager = new SceneManager(this);
         }
 
         /// <summary>

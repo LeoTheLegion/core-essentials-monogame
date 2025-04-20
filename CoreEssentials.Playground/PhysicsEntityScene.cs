@@ -60,13 +60,14 @@ public class PhysicsEntityScene : Scene
         Input.Keyboard.KeyReleased += Reset();
     }
 
-    private static EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
+    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
     {
+        var sceneManager = this.SceneManager;
         return (sender, args) =>
         {
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
             {
-                SceneManager.LoadScene(new PhysicsEntityScene());
+                sceneManager.LoadScene(new PhysicsEntityScene());
             }
         };
     }

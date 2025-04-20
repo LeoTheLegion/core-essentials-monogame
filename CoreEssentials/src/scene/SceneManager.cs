@@ -3,38 +3,42 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.SceneManagement;
-    /// <summary>
-    /// The SceneManager is responsible for managing the current scene and transitioning between scenes.
-    /// </summary>;
+/// <summary>
+/// The SceneManager is responsible for managing the current scene and transitioning between scenes.
+/// </summary>;
 
-public static class SceneManager
+public class SceneManager
 {
-    static MainGame _game;
-    static Scene _currentScene;
-    static Scene _nextScene;
-    static bool _isTransitioning = false;
+    MainGame _game;
+    Scene _currentScene;
+    Scene _nextScene;
+    bool _isTransitioning = false;
 
-    public static MainGame Game => _game;
+    public MainGame Game => _game;
 
-    static SceneManager()
+    public Scene CurrentScene => _currentScene;
+    public Scene NextScene => _nextScene;
+
+    public SceneManager(MainGame game) : this()
+    {
+        _game = game;
+    }
+
+    public SceneManager()
     {
         _currentScene = null;
         _nextScene = null;
     }
 
-    public static void SetGame(MainGame game)
-    {
-        _game = game;
-    }
-
-    public static void LoadScene(Scene scene)
+    public void LoadScene(Scene scene)
     {
         _nextScene = scene;
+        _nextScene.SetSceneManager(this);
         _isTransitioning = false;
     }
 
 
-    public static void Update(GameTime gameTime)
+    public void Update(GameTime gameTime)
     {
         if (_nextScene != null && !_isTransitioning)
         {
@@ -58,12 +62,12 @@ public static class SceneManager
         _currentScene?.Update(gameTime);
     }
 
-    public static void FixedUpdate(GameTime gameTime)
+    public void FixedUpdate(GameTime gameTime)
     {
         _currentScene?.FixedUpdate(gameTime);
     }
 
-    public static void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+    public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         _currentScene?.Draw(gameTime, spriteBatch);
     }

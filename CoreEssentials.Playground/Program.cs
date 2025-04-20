@@ -4,6 +4,6 @@ using CoreEssentials.SceneManagement;
 
 using var game = new CoreEssentials.MainGame();
 
-SceneManager.LoadScene(new PhysicsEntityScene());
+game.SceneManager.LoadScene(new PhysicsEntityScene());
 
 game.Run();
