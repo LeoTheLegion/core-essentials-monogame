@@ -1,12 +1,14 @@
-﻿using CoreEssentials.GameSystems;
-using CoreEssentials.GameSystems.Physics;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using Microsoft.Xna.Framework;
 using System;
+using CoreEssentials.GameSystems;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.Physics;
+using CoreEssentials.Inputs;
+using CoreEssentials.SceneManagement;
+using Microsoft.Xna.Framework;
 
 namespace CoreEssentials.Playground;
 
-public class PlaygroundGame : MainGame
+public class PhysicsEntityScene : Scene
 {
     private Random random = new Random();
     protected override GameSystem[] LoadGameSystems()
@@ -29,19 +31,22 @@ public class PlaygroundGame : MainGame
     protected override void onStart()
     {
         // Run your startup code here.
-        
-        Graphics.PreferredBackBufferWidth = 1280;
-        Graphics.PreferredBackBufferHeight = 720;
-        Graphics.ApplyChanges();
+
+        GraphicsDeviceManager graphics = SceneManager.Game.Graphics;
+
+        graphics.PreferredBackBufferWidth = 1280;
+        graphics.PreferredBackBufferHeight = 720;
+        graphics.ApplyChanges();
 
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 
 
-        for (int i = 0; i < Graphics.PreferredBackBufferWidth; i += 10){
+        for (int i = 0; i < graphics.PreferredBackBufferWidth; i += 10)
+        {
 
             // Create a random y bettween 0 and 720
             int padding = 32;
-            int y = random.Next(padding, Graphics.PreferredBackBufferHeight - padding);
+            int y = random.Next(padding, graphics.PreferredBackBufferHeight - padding);
 
             //Ball ball = new Ball(new Vector2(i, y));
             Ball ball = entitySystem.CreateEntity<Ball>(new Vector2(i, y));
@@ -50,8 +55,19 @@ public class PlaygroundGame : MainGame
         }
 
         // Create a world border
+        WorldBorder worldBorder = entitySystem.CreateEntity<WorldBorder>(new Vector2(0, 0), new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight));
 
+        Input.Keyboard.KeyReleased += Reset();
+    }
 
-        WorldBorder worldBorder = entitySystem.CreateEntity<WorldBorder>(new Vector2(0, 0), new Vector2(Graphics.PreferredBackBufferWidth, Graphics.PreferredBackBufferHeight));
+    private static EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
+    {
+        return (sender, args) =>
+        {
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
+            {
+                SceneManager.LoadScene(new PhysicsEntityScene());
+            }
+        };
     }
 }
