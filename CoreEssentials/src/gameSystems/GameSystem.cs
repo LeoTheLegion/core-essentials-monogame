@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.SceneManagement;
 
 namespace CoreEssentials.GameSystems
 {
@@ -11,20 +12,20 @@ namespace CoreEssentials.GameSystems
     /// </summary>
     public abstract class GameSystem
     {
-        private MainGame _game;
+        private Scene _scene;
 
         protected GameSystem()
         {
         }
 
         /// <summary>
-        /// Sets the main game instance for this system.
+        /// Sets the Scene instance for this system.
         /// This is called automatically during system registration.
         /// </summary>
-        /// <param name="game">The main game instance.</param>
-        public void SetGame(MainGame game)
+        /// <param name="scene">The scene instance.</param>
+        public void SetScene(Scene scene)
         {
-            _game = game;
+            _scene = scene;
         }
 
         /// <summary>
@@ -34,7 +35,7 @@ namespace CoreEssentials.GameSystems
         /// <returns>The game system instance of the specified type.</returns>
         public T GetGameSystem<T>() where T : GameSystem
         {
-            return _game.GetGameSystem<T>();
+            return _scene.GetGameSystem<T>();
         }
     }
 
