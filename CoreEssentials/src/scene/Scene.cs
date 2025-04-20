@@ -10,6 +10,9 @@ namespace CoreEssentials.SceneManagement;
 
 public abstract class Scene
 {
+    /// <summary>
+    /// Reference to the SceneManager that manages this scene.
+    /// </summary>
     private SceneManager _sceneManager;
 
     public SceneManager SceneManager => _sceneManager;
@@ -39,19 +42,34 @@ public abstract class Scene
     /// <returns>An array of GameSystem objects to be registered with the game.</returns>
     protected abstract GameSystem[] LoadGameSystems();
 
+    /// <summary>
+    /// Indicates whether the scene has been loaded and initialized.
+    /// </summary>
     public bool IsLoaded {get; private set; }
 
+    /// <summary>
+    /// Default constructor for the Scene class.
+    /// Initializes the IsLoaded property to false.
+    /// </summary>
     public Scene()
     {
         // Constructor logic can be added here if needed.
         IsLoaded = false;
     }
 
+    /// <summary>
+    /// Sets the SceneManager for this scene.
+    /// This method is called by the SceneManager when the scene is loaded.
+    /// </summary>
     public void SetSceneManager(SceneManager sceneManager)
     {
         _sceneManager = sceneManager;
     }
 
+    /// <summary>
+    /// Loads the scene and initializes all game systems.
+    /// This method should be called when the scene is loaded by the SceneManager.
+    /// </summary>
     public void Load()
     {
         // Load all the game systems you want to use in your game here.
@@ -100,6 +118,10 @@ public abstract class Scene
             throw new Exception("Game System not found: " + typeof(T).ToString());
     }
 
+    /// <summary>
+    /// Updates all game systems that implement the IUpdateGameSystem interface.
+    /// </summary>
+    /// <param name="gameTime">Provides a snapshot of timing values.</param>
     public void Update(GameTime gameTime)
     {
         // Update all game systems that implement IUpdateGameSystem
@@ -109,6 +131,11 @@ public abstract class Scene
         }
     }
 
+    /// <summary>
+    /// Updates all game systems that implement the IFixedUpdateGameSystem interface.
+    /// </summary>
+    /// <param name="gameTime">Provides a snapshot of timing values.</param>
+    /// <remarks>This method is called at a fixed interval, typically for physics updates.</remarks>
     public void FixedUpdate(GameTime gameTime)
     {
         // Update all game systems that implement IFixedUpdateGameSystem
@@ -118,6 +145,12 @@ public abstract class Scene
         }
     }
 
+    /// <summary>
+    /// Draws all game systems that implement the IDrawGameSystem interface.
+    /// </summary>
+    /// <param name="gameTime">Provides a snapshot of timing values.</param>
+    /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+    /// <remarks>This method is called to render the scene.</remarks>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         // Draw all game systems that implement IDrawGameSystem
@@ -127,6 +160,11 @@ public abstract class Scene
         }
     }
 
+    /// <summary>
+    /// Unloads the scene and performs any necessary cleanup.
+    /// This method should be called when the scene is unloaded by the SceneManager.
+    /// </summary>
+    /// <remarks>This method is called when the scene is unloaded by the SceneManager.</remarks>
     internal void Unload()
     {
         // Unload all game systems and perform any necessary cleanup
