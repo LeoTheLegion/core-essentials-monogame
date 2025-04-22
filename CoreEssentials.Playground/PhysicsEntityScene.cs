@@ -60,6 +60,14 @@ public class PhysicsEntityScene : Scene
         Input.Keyboard.KeyReleased += Reset();
     }
 
+    public override void Unload()
+    {
+        base.Unload();
+        Input.Keyboard.KeyReleased -= Reset();
+    }
+
+
+
     private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
     {
         var sceneManager = this.SceneManager;

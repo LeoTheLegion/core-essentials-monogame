@@ -165,7 +165,7 @@ public abstract class Scene
     /// This method should be called when the scene is unloaded by the SceneManager.
     /// </summary>
     /// <remarks>This method is called when the scene is unloaded by the SceneManager.</remarks>
-    internal void Unload()
+    public virtual void Unload()
     {
         // Unload all game systems and perform any necessary cleanup
         foreach (var system in _gameSystems.Values)
