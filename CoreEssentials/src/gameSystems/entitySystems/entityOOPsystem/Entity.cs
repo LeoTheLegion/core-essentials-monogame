@@ -98,9 +98,20 @@ public abstract class Entity
     /// Marks the entity for destruction.
     /// The entity will be removed from the system on the next update.
     /// </summary>
-    public virtual void Destroy()
+    public void Destroy()
     {
         _destroyed = true;
+        _active = false;
+    }
+    
+    /// <summary>
+    /// Called by Entity Sytem when the entity is destroyed.
+    /// Override this method to implement custom cleanup logic.
+    /// </summary>
+    public virtual void OnDestroy()
+    {
+        // Cleanup logic for when the entity is destroyed.
+        // Override this method in derived classes to implement custom cleanup.
     }
 
     /// <summary>

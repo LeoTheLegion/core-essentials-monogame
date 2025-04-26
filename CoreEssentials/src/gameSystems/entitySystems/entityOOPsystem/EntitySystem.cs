@@ -41,6 +41,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem
         {
             if (_entities[i].Destroyed)
             {
+                _entities[i].OnDestroy();
                 _entities.RemoveAt(i);
             }
         }
