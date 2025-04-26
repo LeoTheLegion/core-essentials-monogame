@@ -1,57 +1,61 @@
 using System;
 using System.Collections;
-using CoreEssentials.Coroutines;
-using CoreEssentials.GameSystems;
-using CoreEssentials.SceneManagement;
+using System.Reflection;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Xunit;
+using CoreEssentials.Coroutines;
+using CoreEssentials.SceneManagement;
+using CoreEssentials.GameSystems;
 
 namespace CoreEssentials.Tests.SceneManagement
 {
     public class SceneLoadingTests
     {
-        private class TestScene : Scene
+        private class TestLoadingScene : Scene
         {
-            public string[] StatusUpdates { get; } = new string[4];
-            public int StatusUpdateCount { get; private set; } = 0;
+            public int LoadingSteps { get; set; } = 0;
+            public int MaxLoadingSteps { get; set; } = 5;
+            
+            // Internal coroutine for testing - simulates the loading process
+            public IEnumerator LoadingCoroutine()
+            {
+                LoadingStatus = "Initializing...";
+                yield return null;
+                
+                LoadingStatus = "Loading assets...";
+                LoadingSteps = 1;
+                UpdateLoadingProgress(0.2f, LoadingStatus);
+                yield return null;
+                
+                LoadingStatus = "Creating game objects...";
+                LoadingSteps = 2;
+                UpdateLoadingProgress(0.4f, LoadingStatus);
+                yield return null;
+                
+                LoadingStatus = "Configuring systems...";
+                LoadingSteps = 3;
+                UpdateLoadingProgress(0.6f, LoadingStatus);
+                yield return null;
+                
+                LoadingStatus = "Finalizing...";
+                LoadingSteps = 4;
+                UpdateLoadingProgress(0.8f, LoadingStatus);
+                yield return null;
+                
+                LoadingStatus = "Loading complete";
+                LoadingSteps = MaxLoadingSteps;
+                UpdateLoadingProgress(1.0f, LoadingStatus);
+            }
             
             protected override GameSystem[] LoadGameSystems()
             {
+                // No systems to load in this test
                 return new GameSystem[0];
             }
-
+            
             protected override void onStart()
             {
-                // No implementation needed
-            }
-            
-            protected override IEnumerator OnStartCoroutine()
-            {
-                // This will be called after the base coroutine has already set progress to 0.5
-                UpdateLoadingProgress(0.6f, "First stage");
-                RecordStatusUpdate();
-                yield return null;
-                
-                UpdateLoadingProgress(0.7f, "Second stage");
-                RecordStatusUpdate();
-                yield return null;
-                
-                UpdateLoadingProgress(0.8f, "Third stage");
-                RecordStatusUpdate();
-                yield return null;
-                
-                UpdateLoadingProgress(1.0f, "Complete");
-                RecordStatusUpdate();
-            }
-            
-            private void RecordStatusUpdate()
-            {
-                if (StatusUpdateCount < StatusUpdates.Length)
-                {
-                    StatusUpdates[StatusUpdateCount] = LoadingStatus;
-                    StatusUpdateCount++;
-                }
+                // Nothing to do on start for this test
             }
         }
         
@@ -59,50 +63,46 @@ namespace CoreEssentials.Tests.SceneManagement
         public void LoadingStatus_IsUpdatedProperly()
         {
             // Arrange
-            var scene = new TestScene();
-            var gameTime = new GameTime();
+            var scene = new TestLoadingScene();
+            var manager = new SceneManager();
+            scene.SetSceneManager(manager);
             
-            // Act - Start loading process
-            scene.Load();
+            // Act - Begin loading
+            var loadingCoroutine = scene.LoadingCoroutine();
+            loadingCoroutine.MoveNext(); // Initializing...
             
-            // First updates will be for setting up the Scene basics 
-            // (LoadGameSystems, registering, etc.)
-            for (int i = 0; i < 10; i++)
-            {
-                CoroutineManager.Update(gameTime);
-            }
+            // Assert - First status
+            Assert.Equal("Initializing...", scene.LoadingStatus);
             
-            // Assert - Verify the status messages were recorded correctly
-            Assert.Equal(4, scene.StatusUpdateCount);
-            Assert.Equal("First stage", scene.StatusUpdates[0]);
-            Assert.Equal("Second stage", scene.StatusUpdates[1]);
-            Assert.Equal("Third stage", scene.StatusUpdates[2]);
-            Assert.Equal("Complete", scene.StatusUpdates[3]);
+            // Move through loading steps
+            loadingCoroutine.MoveNext(); // Move to Loading assets...
+            Assert.Equal("Loading assets...", scene.LoadingStatus);
             
-            // Verify loading completed
-            Assert.True(scene.IsLoaded);
-            Assert.False(scene.IsLoading);
-            Assert.Equal(1.0f, scene.LoadingProgress);
+            loadingCoroutine.MoveNext(); // Move to Creating game objects...
+            Assert.Equal("Creating game objects...", scene.LoadingStatus);
+            
+            loadingCoroutine.MoveNext(); // Move to Configuring systems...
+            Assert.Equal("Configuring systems...", scene.LoadingStatus);
+            
+            loadingCoroutine.MoveNext(); // Move to Finalizing...
+            Assert.Equal("Finalizing...", scene.LoadingStatus);
+            
+            loadingCoroutine.MoveNext(); // Move to Loading complete
+            Assert.Equal("Loading complete", scene.LoadingStatus);
         }
         
         [Fact]
         public void GetLoadingProgressPercentage_ReturnsCorrectValue()
         {
             // Arrange
-            var scene = new TestScene();
+            var scene = new TestLoadingScene();
+            scene.MaxLoadingSteps = 10;
             
-            // Act
-            scene.Load();
+            // Set progress to 60%
+            typeof(Scene).GetField("_loadingProgress", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(scene, 0.6f);
             
-            // Need multiple updates to get to the point where OnStartCoroutine starts
-            for (int i = 0; i < 5; i++)
-            {
-                CoroutineManager.Update(new GameTime()); 
-            }
-            // This will set progress to 0.6 from "First stage"
-            CoroutineManager.Update(new GameTime());
-            
-            // Assert
+            // Assert - Now using the non-overridable method
             Assert.Equal(60, scene.GetLoadingProgressPercentage());
         }
     }

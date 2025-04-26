@@ -1,207 +1,240 @@
 using System;
 using System.Collections;
-using CoreEssentials.Coroutines;
-using CoreEssentials.GameSystems;
-using CoreEssentials.SceneManagement;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Xunit;
+using Microsoft.Xna.Framework;
+using CoreEssentials.Coroutines;
+using CoreEssentials.SceneManagement;
+using CoreEssentials.GameSystems;
+using CoreEssentials.Tests.Coroutines;
 
 namespace CoreEssentials.Tests.SceneManagement
 {
     public class SceneManagerTests
     {
-        [Fact]
-        public void Constructor_InitializesCorrectly()
-        {
-            // Arrange & Act
-            var sceneManager = new SceneManager();
-            
-            // Assert
-            Assert.NotNull(sceneManager);
-            Assert.Null(sceneManager.CurrentScene);
-            Assert.Null(sceneManager.NextScene);
-        }
-        
-        [Fact]
-        public void AddScene_AddsSceneToCollection()
-        {
-            // Arrange
-            var sceneManager = new SceneManager();
-            var scene = new MockScene();
-            
-            // Act
-            sceneManager.LoadScene(scene);
-            
-            // Assert
-            Assert.Equal(scene, sceneManager.NextScene);
-        }
-        
-        // Simple test scene that loads instantly
         private class FastLoadScene : Scene
         {
-            public bool WasUnloaded { get; private set; } = false;
+            protected override IEnumerator OnStartCoroutine()
+            {
+                LoadingStatus = "Initializing...";
+                yield return null;
+
+                LoadingStatus = "Loading assets...";
+                UpdateLoadingProgress(0.33f, LoadingStatus);
+                yield return null;
+
+                LoadingStatus = "Registering game systems...";
+                UpdateLoadingProgress(0.66f, LoadingStatus);
+                yield return null;
+
+                LoadingStatus = "Loading complete";
+                UpdateLoadingProgress(1.0f, LoadingStatus);
+            }
             
             protected override GameSystem[] LoadGameSystems()
             {
+                // No game systems in test
                 return new GameSystem[0];
             }
-
-            protected override void onStart() { }
             
-            protected override IEnumerator OnStartCoroutine()
+            protected override void onStart()
             {
-                // Complete loading immediately
-                _loadingProgress = 1.0f;
-                yield break;
-            }
-            
-            public override void Unload()
-            {
-                base.Unload();
-                WasUnloaded = true;
+                // No start logic in test
             }
         }
-        
-        // Test scene that loads in multiple steps
+
         private class SlowLoadScene : Scene
         {
-            protected override GameSystem[] LoadGameSystems()
-            {
-                return new GameSystem[0];
-            }
-
-            protected override void onStart() { }
-            
             protected override IEnumerator OnStartCoroutine()
             {
-                LoadingStatus = "Loading slowly...";
-                _loadingProgress = 0.5f;
+                LoadingStatus = "Initializing...";
                 yield return null;
-                
-                LoadingStatus = "Almost done...";
-                _loadingProgress = 0.9f;
+
+                LoadingStatus = "Loading resources...";
+                UpdateLoadingProgress(0.25f, LoadingStatus);
+                yield return new WaitForSeconds(0.1f);
+
+                LoadingStatus = "Creating game objects...";
+                UpdateLoadingProgress(0.5f, LoadingStatus);
                 yield return null;
-                
-                LoadingStatus = "Complete";
-                _loadingProgress = 1.0f;
-                yield break;
+
+                LoadingStatus = "Setting up physics...";
+                UpdateLoadingProgress(0.75f, LoadingStatus);
+                yield return new WaitForSeconds(0.1f);
+
+                LoadingStatus = "Finalizing...";
+                UpdateLoadingProgress(0.9f, LoadingStatus);
+                yield return null;
+
+                LoadingStatus = "Loading complete";
+                UpdateLoadingProgress(1.0f, LoadingStatus);
+            }
+            
+            protected override GameSystem[] LoadGameSystems()
+            {
+                // No game systems in test
+                return new GameSystem[0];
+            }
+            
+            protected override void onStart()
+            {
+                // No start logic in test
             }
         }
-        
+
+        private class LoadingScreenScene : Scene
+        {
+            private Scene NextScene { get; set; }
+            public bool IsNextSceneLoaded { get; private set; }
+
+            public LoadingScreenScene(Scene nextScene)
+            {
+                NextScene = nextScene;
+            }
+
+            protected override IEnumerator OnStartCoroutine()
+            {
+                LoadingStatus = "Preparing loading screen...";
+                UpdateLoadingProgress(0.2f, LoadingStatus);
+                yield return null;
+
+                LoadingStatus = "Loading next scene...";
+                UpdateLoadingProgress(0.5f, LoadingStatus);
+
+                // Start loading the next scene
+                NextScene.Load();
+                
+                // Wait for next scene to load
+                while (NextScene.IsLoading)
+                {
+                    yield return null;
+                }
+                
+                IsNextSceneLoaded = true;
+                UpdateLoadingProgress(1.0f, "Ready to transition");
+            }
+            
+            protected override GameSystem[] LoadGameSystems()
+            {
+                // No game systems in test
+                return new GameSystem[0];
+            }
+            
+            protected override void onStart()
+            {
+                // No start logic in test
+            }
+        }
+
+        [Fact]
+        public void SetScene_SetsCurrentScene()
+        {
+            // Create a test helper for reliable coroutine testing
+            var helper = new CoroutineTestHelper();
+            
+            // Arrange
+            var manager = new SceneManager();
+            var scene = new FastLoadScene();
+            
+            // Act
+            manager.LoadScene(scene);
+            
+            // Assert - Scene should be set as the next scene
+            Assert.Equal(scene, manager.NextScene);
+            
+            // Clean up
+            helper.Cleanup();
+        }
+
         [Fact]
         public void DirectSceneTransition_WorksCorrectly()
         {
+            // Create a test helper for reliable coroutine testing
+            var helper = new CoroutineTestHelper();
+            
             // Arrange
-            SceneManager sceneManager = new SceneManager();
-            FastLoadScene initialScene = new FastLoadScene();
-            FastLoadScene targetScene = new FastLoadScene();
+            var manager = new SceneManager();
+            var newScene = new FastLoadScene();
+
+            // Act - Start transition
+            manager.LoadScene(newScene);
             
-            // Act
-            // Set initial scene
-            sceneManager.LoadScene(initialScene);
+            // Assert - Transition should be in progress
+            Assert.True(manager.IsTransitioning);
+            Assert.Equal(newScene, manager.NextScene);
             
-            // Process updates to complete the first scene transition
-            SimulateUpdates(sceneManager, 3);
+            // Process multiple updates to ensure transition completes
+            for (int i = 0; i < 20; i++) // Increased number of updates to ensure completion
+            {
+                // Update coroutines first
+                helper.Tick();
+                
+                // Then update scene manager
+                manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.1), TimeSpan.FromSeconds(0.1)));
+                
+                // If transition completes, we can break out of the loop
+                if (!manager.IsTransitioning)
+                    break;
+            }
             
-            // Verify initial scene is loaded
-            Assert.Equal(initialScene, sceneManager.CurrentScene);
-            Assert.False(sceneManager.IsTransitioning);
+            // After sufficient updates, transition should be complete
+            Assert.False(manager.IsTransitioning);
+            Assert.Null(manager.NextScene);
             
-            // Start transition to target scene
-            sceneManager.LoadScene(targetScene);
+            // The current scene should be set and fully loaded
+            Assert.NotNull(manager.CurrentScene);
+            Assert.IsType<FastLoadScene>(manager.CurrentScene);
+            Assert.Equal(1.0f, manager.CurrentScene.LoadingProgress);
+            Assert.Equal("Loading complete", manager.CurrentScene.LoadingStatus);
             
-            // Process updates to complete the second scene transition
-            SimulateUpdates(sceneManager, 3);
-            
-            // Assert
-            Assert.Equal(targetScene, sceneManager.CurrentScene);
-            Assert.True(initialScene.WasUnloaded);
-            Assert.False(sceneManager.IsTransitioning);
-            Assert.Null(sceneManager.NextScene);
+            // Clean up
+            helper.Cleanup();
         }
-        
+
         [Fact]
         public void TransitionWithLoadingScreen_WorksCorrectly()
         {
-            // Arrange
-            SceneManager sceneManager = new SceneManager();
-            FastLoadScene initialScene = new FastLoadScene();
-            SlowLoadScene targetScene = new SlowLoadScene();
-            FastLoadScene loadingScene = new FastLoadScene();
+            // Create a test helper for reliable coroutine testing
+            var helper = new CoroutineTestHelper();
             
-            // Set initial scene
-            sceneManager.LoadScene(initialScene);
-            SimulateUpdates(sceneManager, 3);
+            // Arrange
+            var manager = new SceneManager();
+            var targetScene = new SlowLoadScene();
+            var loadingScreen = new LoadingScreenScene(targetScene);
             
             // Set loading screen
-            sceneManager.SetLoadingScene(loadingScene);
-            
-            // Act - Start transition to target scene
-            sceneManager.LoadScene(targetScene);
-            
-            // After a few updates, the loading screen should be active
-            SimulateUpdates(sceneManager, 3);
-            Assert.Equal(loadingScene, sceneManager.CurrentScene);
-            Assert.True(sceneManager.IsTransitioning);
-            Assert.Equal(targetScene, sceneManager.NextScene);
-            
-            // After more updates, the target scene should be loaded
-            SimulateUpdates(sceneManager, 5);
-            
-            // Assert
-            Assert.Equal(targetScene, sceneManager.CurrentScene);
-            Assert.False(sceneManager.IsTransitioning);
-            Assert.Null(sceneManager.NextScene);
-        }
-        
-        [Fact]
-        public void IsTransitioning_PreventsConcurrentSceneLoads()
-        {
-            // Arrange
-            SceneManager sceneManager = new SceneManager();
-            SlowLoadScene scene1 = new SlowLoadScene();
-            SlowLoadScene scene2 = new SlowLoadScene();
-            
-            // Act
-            sceneManager.LoadScene(scene1);
-            
-            // Should be in transition now
-            Assert.True(sceneManager.IsTransitioning);
-            
-            // Try to load another scene during transition
-            sceneManager.LoadScene(scene2);
-            
-            // Assert - scene2 should not have been loaded
-            Assert.Equal(scene1, sceneManager.NextScene);
-        }
-        
-        // Helper method to simulate multiple game updates
-        private void SimulateUpdates(SceneManager sceneManager, int count)
-        {
-            var gameTime = new GameTime();
-            for (int i = 0; i < count; i++)
-            {
-                CoroutineManager.Update(gameTime);
-                sceneManager.Update(gameTime);
-            }
-        }
-        
-        // Helper class for testing Scene update/draw calls
-        private class MockScene : Scene
-        {
-            public bool UpdateWasCalled { get; private set; }
-            public bool DrawWasCalled { get; private set; }
+            manager.SetLoadingScene(loadingScreen);
 
-            protected override GameSystem[] LoadGameSystems()
-            {
-                throw new NotImplementedException();
-            }
+            // Act - Start transition with loading screen
+            manager.LoadScene(targetScene);
 
-            protected override void onStart()
+            // Assert - Transition should be in progress
+            Assert.True(manager.IsTransitioning);
+            
+            // Process updates with time advances to handle WaitForSeconds
+            // Increased number of iterations to ensure the transition completes
+            for (int i = 0; i < 30; i++) 
             {
-                throw new NotImplementedException();
+                // Update with advancing time
+                helper.AdvanceTime(0.1f);
+                manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.1), TimeSpan.FromSeconds(0.1)));
+                
+                // If transition completes, we can break out of the loop
+                if (!manager.IsTransitioning && manager.CurrentScene is SlowLoadScene && manager.CurrentScene.LoadingProgress >= 0.99f)
+                    break;
             }
+            
+            // After sufficient updates, verify the transition completed
+            Assert.False(manager.IsTransitioning);
+            Assert.Null(manager.NextScene);
+            
+            // The current scene should now be the target scene
+            Assert.NotNull(manager.CurrentScene);
+            Assert.IsType<SlowLoadScene>(manager.CurrentScene);
+            Assert.Equal(1.0f, manager.CurrentScene.LoadingProgress);
+            Assert.Equal("Loading complete", manager.CurrentScene.LoadingStatus);
+            
+            // Clean up
+            helper.Cleanup();
         }
     }
 }

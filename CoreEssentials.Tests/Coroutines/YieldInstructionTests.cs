@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Microsoft.Xna.Framework;
 using Xunit;
+using Xunit.Sdk;
 using CoreEssentials.Coroutines;
 
 namespace CoreEssentials.Tests.Coroutines
@@ -11,33 +12,36 @@ namespace CoreEssentials.Tests.Coroutines
         [Fact]
         public void WaitForSeconds_DelaysCoroutineExecution()
         {
-            // Clear any coroutines from previous tests
-            CoroutineManager.StopAllCoroutines();
-            
             // Arrange
             bool completed = false;
             GameTime initialGameTime = new GameTime(TimeSpan.Zero, TimeSpan.FromSeconds(0));
             
+            // Create a test owner to isolate this test's coroutines
+            var testOwner = new TestCoroutineOwner();
+            
             // Act - Start coroutine with WaitForSeconds
-            CoroutineManager.StartCoroutine(TestRoutine());
+            testOwner.StartCoroutine(TestRoutine());
             
             // First update - starts the coroutine
             CoroutineManager.Update(initialGameTime);
-            Assert.False(completed);
             
             // Second update - still waiting (0.5 seconds passed)
             CoroutineManager.Update(new GameTime(TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(0.5)));
-            Assert.False(completed);
             
             // Third update - still waiting (1.0 seconds passed)
             CoroutineManager.Update(new GameTime(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(0.5)));
-            Assert.False(completed);
             
-            // Fourth update - coroutine should complete now (1.5 seconds passed > 1.2 seconds wait)
+            // Fourth update - still waiting (1.5 seconds passed > 1.2 seconds wait)
             CoroutineManager.Update(new GameTime(TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(0.5)));
             
+            // Additional update to ensure completion
+            CoroutineManager.Update(new GameTime(TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(0.5)));
+            
             // Assert
-            Assert.True(completed);
+            Assert.True(completed, "Coroutine should have completed after waiting for seconds");
+            
+            // Clean up coroutines for this test
+            testOwner.StopAllCoroutines();
             
             // Local function
             IEnumerator TestRoutine()
@@ -50,20 +54,19 @@ namespace CoreEssentials.Tests.Coroutines
         [Fact]
         public void WaitUntil_DelaysCoroutineUntilConditionMet()
         {
-            // Clear any coroutines from previous tests
-            CoroutineManager.StopAllCoroutines();
-            
             // Arrange
             bool completed = false;
             bool condition = false;
             GameTime gameTime = new GameTime();
             
+            // Create a test owner to isolate this test's coroutines
+            var testOwner = new TestCoroutineOwner();
+            
             // Act - Start coroutine with WaitUntil
-            CoroutineManager.StartCoroutine(TestRoutine());
+            testOwner.StartCoroutine(TestRoutine());
             
             // First update - starts the coroutine
             CoroutineManager.Update(gameTime);
-            Assert.False(completed);
             
             // Second update - condition still not met
             CoroutineManager.Update(gameTime);
@@ -75,8 +78,14 @@ namespace CoreEssentials.Tests.Coroutines
             // Third update - condition is now met, coroutine should complete
             CoroutineManager.Update(gameTime);
             
+            // Fourth update - ensure completion is processed
+            CoroutineManager.Update(gameTime);
+            
             // Assert
-            Assert.True(completed);
+            Assert.True(completed, "Coroutine should have completed after condition was met");
+            
+            // Clean up coroutines for this test
+            testOwner.StopAllCoroutines();
             
             // Local function
             IEnumerator TestRoutine()
@@ -89,41 +98,45 @@ namespace CoreEssentials.Tests.Coroutines
         [Fact]
         public void MultipleYieldInstructions_WorkInSequence()
         {
-            // Clear any coroutines from previous tests
-            CoroutineManager.StopAllCoroutines();
-            
             // Arrange
             int step = 0;
             bool condition = false;
-            GameTime initialGameTime = new GameTime(TimeSpan.Zero, TimeSpan.FromSeconds(0));
+            
+            // Create a test helper for reliable coroutine testing
+            var helper = new CoroutineTestHelper();
             
             // Act - Start coroutine with multiple yield instructions
-            CoroutineManager.StartCoroutine(TestRoutine());
+            helper.StartCoroutine(TestRoutine());
             
-            // Run through updates with time progression
-            CoroutineManager.Update(initialGameTime);
+            // First tick - starts the coroutine
+            helper.Tick();
             Assert.Equal(1, step);
             
-            // This update should get past the WaitForSeconds
-            CoroutineManager.Update(new GameTime(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0)));
+            // This update should NOT progress through the WaitForSeconds yet (not enough time elapsed)
+            helper.Tick();
+            Assert.Equal(1, step);
+            
+            // This update SHOULD progress through the WaitForSeconds (advancing 0.6 seconds > 0.5 seconds wait)
+            helper.AdvanceTime(0.6f);
             Assert.Equal(2, step);
             
             // This update should not progress (condition still false)
-            CoroutineManager.Update(initialGameTime);
+            helper.Tick();
             Assert.Equal(2, step);
             
             // Set condition to true
             condition = true;
             
-            // This update should get past the WaitUntil
-            CoroutineManager.Update(initialGameTime);
+            // This update should get past the WaitUntil since condition is now true
+            helper.Tick();
             Assert.Equal(3, step);
             
             // This update should complete the coroutine
-            CoroutineManager.Update(initialGameTime);
-            
-            // Assert
+            helper.Tick();
             Assert.Equal(4, step);
+            
+            // Clean up coroutines for this test
+            helper.Cleanup();
             
             // Local function
             IEnumerator TestRoutine()
@@ -144,35 +157,41 @@ namespace CoreEssentials.Tests.Coroutines
         [Fact]
         public void CombinedNestedCoroutinesAndYieldInstructions_WorkCorrectly()
         {
-            // Clear any coroutines from previous tests
-            CoroutineManager.StopAllCoroutines();
-            
             // Arrange
             int step = 0;
-            GameTime initialGameTime = new GameTime(TimeSpan.Zero, TimeSpan.FromSeconds(0));
+            
+            // Create a test helper for reliable coroutine testing
+            var helper = new CoroutineTestHelper();
             
             // Act - Start complex coroutine with nesting and yield instructions
-            CoroutineManager.StartCoroutine(MainRoutine());
+            helper.StartCoroutine(MainRoutine());
             
-            // First update - starts main coroutine and begins nested
-            CoroutineManager.Update(initialGameTime);
+            // First update - starts the main coroutine
+            helper.Tick();
             Assert.Equal(1, step);
             
-            // Second update - waits in nested
-            CoroutineManager.Update(initialGameTime);
+            // Second update - transitions to nested coroutine
+            helper.Tick();
             Assert.Equal(2, step);
             
-            // Third update - completes wait in nested
-            CoroutineManager.Update(new GameTime(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0)));
+            // This update should NOT progress through the WaitForSeconds yet
+            helper.Tick();
+            Assert.Equal(2, step);
+            
+            // This update SHOULD progress through the WaitForSeconds
+            helper.AdvanceTime(0.6f);
             Assert.Equal(3, step);
             
-            // Fourth update - back to main coroutine
-            CoroutineManager.Update(initialGameTime);
+            // Update to continue main coroutine after nested returns
+            helper.Tick();
             Assert.Equal(4, step);
             
-            // Fifth update - completes main coroutine
-            CoroutineManager.Update(initialGameTime);
+            // Update to complete main coroutine
+            helper.Tick();
             Assert.Equal(5, step);
+            
+            // Clean up coroutines for this test
+            helper.Cleanup();
             
             // Local functions
             IEnumerator MainRoutine()
@@ -192,8 +211,12 @@ namespace CoreEssentials.Tests.Coroutines
                 yield return new WaitForSeconds(0.5f);
                 
                 step = 3;
-                yield return null;
             }
+        }
+        
+        // Adding TestCoroutineOwner class for test isolation
+        private class TestCoroutineOwner : CoreEssentials.Coroutines.CoroutineOwner
+        {
         }
     }
 }

@@ -191,9 +191,11 @@ namespace CoreEssentials.Coroutines
         {
             lock (_syncLock)
             {
+                // Clear all tracking collections at once to ensure consistency
                 _activeCoroutines.Clear();
                 _currentYieldInstructions.Clear();
                 _nestedCoroutines.Clear();
+                _coroutinesToRemove.Clear();
             }
         }
         

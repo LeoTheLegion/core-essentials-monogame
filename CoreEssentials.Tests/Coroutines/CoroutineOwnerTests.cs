@@ -11,7 +11,7 @@ namespace CoreEssentials.Tests.Coroutines
     {
         private class TestCoroutineOwner : CoroutineOwner
         {
-            public int CompletedCount { get; private set; }
+            public int CompletedCount { get; set; }
             
             public void RunTestCoroutine()
             {
@@ -26,6 +26,15 @@ namespace CoreEssentials.Tests.Coroutines
             private IEnumerator TestCoroutine()
             {
                 yield return null;
+                CompletedCount++;
+            }
+            
+            public IEnumerator LongRunningCoroutine(int id)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    yield return null;
+                }
                 CompletedCount++;
             }
         }
@@ -83,56 +92,80 @@ namespace CoreEssentials.Tests.Coroutines
         [Fact]
         public void StopAllCoroutines_StopsAllActiveCoroutines()
         {
-            // Clear any coroutines from previous tests
-            CoroutineManager.StopAllCoroutines();
-            
             // Arrange
             var owner = new TestCoroutineOwner();
+            owner.CompletedCount = 0; // Reset completion count
             
-            // Start multiple coroutines
-            owner.RunTestCoroutine();
-            owner.RunTestCoroutine();
-            owner.RunTestCoroutine();
+            // Start multiple coroutines - these should increment CompletedCount
+            // when they complete, unless they're stopped
+            Guid id1 = owner.StartCoroutine(owner.LongRunningCoroutine(1));
+            Guid id2 = owner.StartCoroutine(owner.LongRunningCoroutine(2));
+            Guid id3 = owner.StartCoroutine(owner.LongRunningCoroutine(3));
             
-            // Assert initial count
+            // Initial active count should be 3
             Assert.Equal(3, owner.ActiveCoroutineCount);
             
-            // Act
+            // Update once to ensure coroutines are properly registered
+            CoroutineManager.Update(new GameTime());
+            
+            // Act - Stop all coroutines for THIS OWNER only
             owner.StopAllCoroutines();
             
-            // Verify the owner's tracked coroutines are cleared
+            // Verify no active coroutines for this owner
             Assert.Equal(0, owner.ActiveCoroutineCount);
-            Assert.Equal(0, owner.CompletedCount); // Stopped before completion
+            
+            // Multiple additional updates to ensure any coroutines won't run to completion
+            for (int i = 0; i < 10; i++)
+            {
+                CoroutineManager.Update(new GameTime());
+            }
+            
+            // Verify no coroutines completed (CompletedCount remains 0)
+            Assert.Equal(0, owner.CompletedCount);
         }
         
         [Fact]
         public void StopCoroutine_StopsSpecificCoroutine()
         {
-            // Clear any coroutines from previous tests
-            CoroutineManager.StopAllCoroutines();
-            
             // Arrange
             var owner = new TestCoroutineOwner();
+            owner.CompletedCount = 0; // Reset completion count
             
-            // Start two coroutines and keep their IDs
-            Guid id1 = owner.StartCoroutine(DelayedCoroutine(1));
-            Guid id2 = owner.StartCoroutine(DelayedCoroutine(2));
+            // Start two named coroutines so we can track them separately
+            string coroutineName1 = "Coroutine1";
+            string coroutineName2 = "Coroutine2";
+            
+            Guid id1 = owner.StartCoroutine(owner.LongRunningCoroutine(1), coroutineName1);
+            Guid id2 = owner.StartCoroutine(owner.LongRunningCoroutine(2), coroutineName2);
             
             // Assert initial count
             Assert.Equal(2, owner.ActiveCoroutineCount);
             
+            // Update a couple times to ensure coroutines are properly started
+            CoroutineManager.Update(new GameTime());
+            
             // Act - Stop only the first coroutine
             bool result = owner.StopCoroutine(id1);
             
-            // Assert
-            Assert.True(result); // Should return true for successfully stopped
-            Assert.Equal(1, owner.ActiveCoroutineCount); // One coroutine should remain
+            // The StopCoroutine should return true for a valid coroutine ID
+            Assert.True(result, "StopCoroutine should return true for a valid coroutine ID");
             
-            // Local coroutines
-            IEnumerator DelayedCoroutine(int id)
+            // Only one coroutine should remain active now
+            Assert.Equal(1, owner.ActiveCoroutineCount);
+            
+            // The first coroutine should be removed from active coroutines
+            var activeNames = owner.GetActiveCoroutineNames();
+            Assert.DoesNotContain(coroutineName1, activeNames);
+            Assert.Contains(coroutineName2, activeNames);
+            
+            // Run remaining coroutines to completion
+            for (int i = 0; i < 10; i++)
             {
-                yield return null;
+                CoroutineManager.Update(new GameTime());
             }
+            
+            // Only the second coroutine should have completed
+            Assert.Equal(1, owner.CompletedCount);
         }
         
         [Fact]
