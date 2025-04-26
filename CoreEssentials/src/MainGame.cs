@@ -10,6 +10,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using CoreEssentials.SceneManagement;
+using CoreEssentials.Coroutines;
 
 namespace CoreEssentials
 {
@@ -95,6 +96,9 @@ namespace CoreEssentials
             Debug.baseGameDiagnostics.UpdateBegin();
 
             Input.Update(gameTime);
+
+            // Update all active coroutines
+            CoroutineManager.Update(gameTime);
 
             _fixedUpdateTime += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 
