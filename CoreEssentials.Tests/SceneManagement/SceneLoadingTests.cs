@@ -52,10 +52,10 @@ namespace CoreEssentials.Tests.SceneManagement
                 // No systems to load in this test
                 return new GameSystem[0];
             }
-            
-            protected override void onStart()
+
+            protected override IEnumerator OnStartCoroutine()
             {
-                // Nothing to do on start for this test
+                throw new NotImplementedException();
             }
         }
         

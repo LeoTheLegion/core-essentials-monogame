@@ -202,21 +202,7 @@ public abstract class Scene
     /// This coroutine allows for asynchronous initialization of the scene.
     /// </summary>
     /// <returns>An IEnumerator used by the coroutine system.</returns>
-    protected virtual IEnumerator OnStartCoroutine()
-    {
-        // Default implementation just calls the legacy onStart method
-        // but derived classes can override this to provide a coroutine
-        // implementation that updates loading progress
-        onStart();
-        _loadingProgress = 1.0f;
-        yield break;
-    }
-    
-    /// <summary>
-    /// Called when the scene is loaded and all game systems are registered.
-    /// This method should be overridden in derived classes to perform any additional initialization.
-    /// </summary>
-    protected abstract void onStart();
+    protected abstract IEnumerator OnStartCoroutine();
 
     /// <summary>
     /// Gets a game system by its type.

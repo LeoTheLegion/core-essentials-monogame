@@ -31,12 +31,6 @@ public class PhysicsEntityScene : Scene
 
         return systems;
     }
-
-    protected override void onStart()
-    {
-        // This legacy method is still required but we'll leave it empty
-        // since we're using OnStartCoroutine instead
-    }
     
     // Override the coroutine version of onStart to demonstrate our new loading status system
     protected override IEnumerator OnStartCoroutine()

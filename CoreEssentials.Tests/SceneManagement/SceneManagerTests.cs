@@ -35,11 +35,6 @@ namespace CoreEssentials.Tests.SceneManagement
                 // No game systems in test
                 return new GameSystem[0];
             }
-            
-            protected override void onStart()
-            {
-                // No start logic in test
-            }
         }
 
         private class SlowLoadScene : Scene
@@ -73,11 +68,6 @@ namespace CoreEssentials.Tests.SceneManagement
             {
                 // No game systems in test
                 return new GameSystem[0];
-            }
-            
-            protected override void onStart()
-            {
-                // No start logic in test
             }
         }
 
@@ -117,11 +107,6 @@ namespace CoreEssentials.Tests.SceneManagement
             {
                 // No game systems in test
                 return new GameSystem[0];
-            }
-            
-            protected override void onStart()
-            {
-                // No start logic in test
             }
         }
 

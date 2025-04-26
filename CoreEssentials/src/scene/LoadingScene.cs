@@ -83,18 +83,13 @@ namespace CoreEssentials.SceneManagement
             // Loading screen doesn't need any game systems
             return new GameSystem[0];
         }
-
-        protected override void onStart()
-        {
-            // Initial setup, kept simple for fast loading
-            Debug.Console.WriteLine("Loading screen initialized");
-        }
         
         /// <summary>
         /// The loading scene loads very quickly since it has minimal initialization.
         /// </summary>
         protected override IEnumerator OnStartCoroutine()
         {
+            Debug.Console.WriteLine("Loading screen initialized");
             // Update progress immediately to 100% since loading screen is simple
             _loadingProgress = 1.0f;
             yield break;
