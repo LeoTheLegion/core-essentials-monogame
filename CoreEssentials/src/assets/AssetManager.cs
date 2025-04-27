@@ -122,7 +122,12 @@ namespace CoreEssentials.Assets
                 if (countOfObjectsUsingAsset[AssetKey] == 0)
                 {
                     assetsLoaded.Remove(AssetKey);
-                    Content.UnloadAsset(assetName);
+                    
+                    if (Content != null)
+                    {
+                        Content.UnloadAsset(assetName);
+                    }
+                    
                     Debug.Console.WriteLine(String.Format("Unloaded <{0}> {1}", typeof(T).Name, AssetKey));
                 }
             }
