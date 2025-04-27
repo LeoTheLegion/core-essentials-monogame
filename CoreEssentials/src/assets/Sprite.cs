@@ -14,7 +14,9 @@ namespace CoreEssentials.Assets;
 public class Sprite : Asset
 {
     private Texture2D _texture;
+    private SpriteSheet _spriteSheet;
     private SpriteMeta _metaData;
+    private int _defaultFrame; // Default frame for sprite sheet rendering
 
     /// <summary>
     /// Initializes a new instance of the Sprite class.
@@ -44,6 +46,10 @@ public class Sprite : Asset
         {
             case "texture2d":
                 _texture = AssetManager.LoadAsset<Texture2D>(_metaData.Source);
+                break;
+            case "spritesheet":
+                _spriteSheet = AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
+                _defaultFrame = _metaData.Frame ?? 0; // Use specified frame or default to 0
                 break;
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
@@ -79,7 +85,8 @@ public class Sprite : Asset
                     {
                         X = xmlData.Origin.X,
                         Y = xmlData.Origin.Y
-                    }
+                    },
+                    Frame = xmlData.Frame
                 };
             }
         }
@@ -102,11 +109,14 @@ public class Sprite : Asset
     /// <exception cref="InvalidOperationException">Thrown when the source type is unknown.</exception>
     public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, SpriteEffects effects, float layerDepth)
     {
+        // Handle drawing based on source type
+        Rectangle targetRectangle;
+        
         switch (_metaData.SourceType)
         {
             case "texture2d":
                 Vector2 TextureScale = new Vector2(_metaData.Size.Width / _texture.Width,
-                                         _metaData.Size.Height / _texture.Height);
+                                      _metaData.Size.Height / _texture.Height);
 
                 float xFactor = _metaData.Origin.X / _metaData.Size.Width;
                 float yFactor = _metaData.Origin.Y / _metaData.Size.Height;
@@ -126,15 +136,46 @@ public class Sprite : Asset
                 effects,
                 layerDepth);
 
+                targetRectangle = new Rectangle(
+                    (int)(position.X - _metaData.Origin.X), (int)(position.Y - _metaData.Origin.Y),
+                    (int)(GetSize().X), (int)(GetSize().Y)
+                );
                 break;
+                
+            case "spritesheet":
+                // Use the default frame for spritesheet
+                if (_spriteSheet == null)
+                {
+                    throw new InvalidOperationException("SpriteSheet is null");
+                }
+                
+                // Get the default frame rectangle
+                Rectangle sourceRect = _spriteSheet.GetFrame(_defaultFrame);
+                
+                // Use origin from metadata
+                Vector2 origin = new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
+                
+                spriteBatch.Draw(
+                    _spriteSheet.Texture,
+                    position,
+                    sourceRect,
+                    color,
+                    rotation,
+                    origin,
+                    1.0f,
+                    effects,
+                    layerDepth
+                );
+                
+                targetRectangle = new Rectangle(
+                    (int)(position.X - origin.X), (int)(position.Y - origin.Y),
+                    sourceRect.Width, sourceRect.Height
+                );
+                break;
+                
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
         }
-
-        Rectangle targetRectangle = new Rectangle(
-            (int)(position.X - _metaData.Origin.X), (int)(position.Y - _metaData.Origin.X),
-             (int)(GetSize().X), (int)(GetSize().Y)
-        );
 
         Debug.Primitives.DrawRectangle(spriteBatch, targetRectangle, Color.Red, 1f);
     }
@@ -145,6 +186,12 @@ public class Sprite : Asset
     /// <returns>A Vector2 containing the width and height of the sprite in pixels.</returns>
     public Vector2 GetSize()
     {
+        if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
+        {
+            Vector2 frameSize = _spriteSheet.GetFrameSize();
+            return frameSize;
+        }
+        
         Vector2 size = new Vector2(_metaData.Size.Width, _metaData.Size.Height);
         return size;
     }
@@ -205,6 +252,11 @@ public class Sprite : Asset
         /// Gets or sets the origin point of the sprite.
         /// </summary>
         public Origin Origin { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the initial frame for sprite sheet animations.
+        /// </summary>
+        public int? Frame { get; set; }
     }
 
     /// <summary>
@@ -218,6 +270,9 @@ public class Sprite : Asset
         
         public SizeXml Size { get; set; }
         public OriginXml Origin { get; set; }
+        
+        [XmlElement(IsNullable = true)]
+        public int? Frame { get; set; }
         
         public class SizeXml
         {

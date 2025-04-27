@@ -28,3 +28,21 @@
 /processorParam:TextureFormat=Color
 /build:Ball.png
 
+#begin character_malePerson_sheetHD.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:character_malePerson_sheetHD.png
+
+#begin character_sheet.xml
+/copy:character_sheet.xml
+
+#begin character_sprite.xml
+/copy:character_sprite.xml
+
