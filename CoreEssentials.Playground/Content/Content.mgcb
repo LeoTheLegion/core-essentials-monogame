@@ -13,8 +13,8 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin ball_sprite.json
-/copy:ball_sprite.json
+#begin ball_sprite.xml
+/copy:ball_sprite.xml
 
 #begin Ball.png
 /importer:TextureImporter
