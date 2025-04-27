@@ -1,5 +1,6 @@
 using System;
-using System.Text.Json;
+using System.Xml.Serialization;
+using System.IO;
 using CoreEssentials.Debugging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,34 +14,85 @@ namespace CoreEssentials.Assets;
 public class Sprite : Asset
 {
     private Texture2D _texture;
+    private SpriteSheet _spriteSheet;
     private SpriteMeta _metaData;
+    private int _defaultFrame; // Default frame for sprite sheet rendering
 
     /// <summary>
     /// Initializes a new instance of the Sprite class.
-    /// Loads sprite metadata from a JSON file and the associated texture.
+    /// Loads sprite metadata from an XML file and the associated texture.
     /// </summary>
     /// <param name="name">The name of the sprite asset to load.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the asset name or JSON data is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the asset name or data is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when metadata deserialization fails or the source type is unknown.</exception>
     public Sprite(string name) : base(name)
     {
-        var json = AssetManager.LoadAsset<string>(name);
-        if (json == null)
+        string extension = Path.GetExtension(name);
+        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentNullException("json", "Asset name cannot be null or empty.");
+            LoadFromXml(name);
         }
-        _metaData = JsonSerializer.Deserialize<SpriteMeta>(json);
-        if (_metaData == null)
+        else
         {
-            throw new InvalidOperationException("Failed to deserialize sprite metadata.");
+            throw new InvalidOperationException($"Unsupported sprite data format: {extension}. Use .xml format");
         }
+
+        if (_metaData.SourceType == null)
+        {
+            throw new InvalidOperationException("Sprite metadata source type cannot be null.");
+        }
+        
         switch (_metaData.SourceType)
         {
             case "texture2d":
-                _texture = AssetManager.LoadAsset<Texture2D>(this._metaData.Source);
+                _texture = AssetManager.LoadAsset<Texture2D>(_metaData.Source);
+                break;
+            case "spritesheet":
+                _spriteSheet = AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
+                _defaultFrame = _metaData.Frame ?? 0; // Use specified frame or default to 0
                 break;
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
+        }
+    }
+
+    private void LoadFromXml(string name)
+    {
+        var xml = AssetManager.LoadAsset<string>(name);
+        if (xml == null)
+        {
+            throw new ArgumentNullException("xml", "XML data cannot be null.");
+        }
+
+        try
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(SpriteDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
+            using (StringReader reader = new StringReader(xml))
+            {
+                var xmlData = (SpriteDataXml)serializer.Deserialize(reader);
+                
+                // Convert XML data to SpriteMeta format
+                _metaData = new SpriteMeta
+                {
+                    SourceType = xmlData.SourceType,
+                    Source = xmlData.Source,
+                    Size = new Size
+                    {
+                        Width = xmlData.Size.Width,
+                        Height = xmlData.Size.Height
+                    },
+                    Origin = new Origin
+                    {
+                        X = xmlData.Origin.X,
+                        Y = xmlData.Origin.Y
+                    },
+                    Frame = xmlData.Frame
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to deserialize XML sprite metadata: {ex.Message}", ex);
         }
     }
 
@@ -57,11 +109,14 @@ public class Sprite : Asset
     /// <exception cref="InvalidOperationException">Thrown when the source type is unknown.</exception>
     public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, SpriteEffects effects, float layerDepth)
     {
+        // Handle drawing based on source type
+        Rectangle targetRectangle;
+        
         switch (_metaData.SourceType)
         {
             case "texture2d":
                 Vector2 TextureScale = new Vector2(_metaData.Size.Width / _texture.Width,
-                                         _metaData.Size.Height / _texture.Height);
+                                      _metaData.Size.Height / _texture.Height);
 
                 float xFactor = _metaData.Origin.X / _metaData.Size.Width;
                 float yFactor = _metaData.Origin.Y / _metaData.Size.Height;
@@ -81,15 +136,46 @@ public class Sprite : Asset
                 effects,
                 layerDepth);
 
+                targetRectangle = new Rectangle(
+                    (int)(position.X - _metaData.Origin.X), (int)(position.Y - _metaData.Origin.Y),
+                    (int)(GetSize().X), (int)(GetSize().Y)
+                );
                 break;
+                
+            case "spritesheet":
+                // Use the default frame for spritesheet
+                if (_spriteSheet == null)
+                {
+                    throw new InvalidOperationException("SpriteSheet is null");
+                }
+                
+                // Get the default frame rectangle
+                Rectangle sourceRect = _spriteSheet.GetFrame(_defaultFrame);
+                
+                // Use origin from metadata
+                Vector2 origin = new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
+                
+                spriteBatch.Draw(
+                    _spriteSheet.Texture,
+                    position,
+                    sourceRect,
+                    color,
+                    rotation,
+                    origin,
+                    1.0f,
+                    effects,
+                    layerDepth
+                );
+                
+                targetRectangle = new Rectangle(
+                    (int)(position.X - origin.X), (int)(position.Y - origin.Y),
+                    sourceRect.Width, sourceRect.Height
+                );
+                break;
+                
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
         }
-
-        Rectangle targetRectangle = new Rectangle(
-            (int)(position.X - _metaData.Origin.X), (int)(position.Y - _metaData.Origin.X),
-             (int)(GetSize().X), (int)(GetSize().Y)
-        );
 
         Debug.Primitives.DrawRectangle(spriteBatch, targetRectangle, Color.Red, 1f);
     }
@@ -100,6 +186,12 @@ public class Sprite : Asset
     /// <returns>A Vector2 containing the width and height of the sprite in pixels.</returns>
     public Vector2 GetSize()
     {
+        if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
+        {
+            Vector2 frameSize = _spriteSheet.GetFrameSize();
+            return frameSize;
+        }
+        
         Vector2 size = new Vector2(_metaData.Size.Width, _metaData.Size.Height);
         return size;
     }
@@ -137,7 +229,7 @@ public class Sprite : Asset
     }
 
     /// <summary>
-    /// Contains metadata about a sprite, loaded from JSON.
+    /// Contains metadata about a sprite, loaded from XML.
     /// </summary>
     private class SpriteMeta
     {
@@ -160,5 +252,38 @@ public class Sprite : Asset
         /// Gets or sets the origin point of the sprite.
         /// </summary>
         public Origin Origin { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the initial frame for sprite sheet animations.
+        /// </summary>
+        public int? Frame { get; set; }
+    }
+
+    /// <summary>
+    /// XML serializable class for sprite data
+    /// </summary>
+    [XmlRoot("SpriteData", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+    public class SpriteDataXml
+    {
+        public string SourceType { get; set; }
+        public string Source { get; set; }
+        
+        public SizeXml Size { get; set; }
+        public OriginXml Origin { get; set; }
+        
+        [XmlElement(IsNullable = true)]
+        public int? Frame { get; set; }
+        
+        public class SizeXml
+        {
+            public float Width { get; set; }
+            public float Height { get; set; }
+        }
+        
+        public class OriginXml
+        {
+            public float X { get; set; }
+            public float Y { get; set; }
+        }
     }
 }

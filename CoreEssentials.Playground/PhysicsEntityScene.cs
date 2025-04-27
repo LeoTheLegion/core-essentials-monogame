@@ -116,7 +116,7 @@ public class PhysicsEntityScene : Scene
         {
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
             {
-                sceneManager.LoadScene(new PhysicsEntityScene());
+                sceneManager.LoadScene(new CharacterScene());
             }
         };
     }
