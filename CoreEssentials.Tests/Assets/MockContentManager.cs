@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,6 +14,7 @@ namespace CoreEssentials.Tests.Assets
     public class MockContentManager : ContentManager
     {
         private readonly Dictionary<string, object> _mockAssets = new Dictionary<string, object>();
+        private readonly Dictionary<string, TextureDimensions> _textureDimensions = new Dictionary<string, TextureDimensions>();
         
         public MockContentManager() : base(CreateMockServiceProvider())
         {
@@ -41,6 +43,11 @@ namespace CoreEssentials.Tests.Assets
             // we just store type information and handle it specially in Load<T>
             _mockAssets.Add("default_texture", typeof(Texture2D));
             _mockAssets.Add("ball", typeof(Texture2D));
+            
+            // Register some default texture dimensions
+            _textureDimensions["default_texture"] = new TextureDimensions(100, 100);
+            _textureDimensions["ball"] = new TextureDimensions(64, 64);
+            _textureDimensions["characterSheet"] = new TextureDimensions(300, 200);
         }
         
         /// <summary>
@@ -52,15 +59,40 @@ namespace CoreEssentials.Tests.Assets
         }
         
         /// <summary>
+        /// Register dimensions for a texture asset
+        /// </summary>
+        public void RegisterTestTexture(string assetName, int width, int height)
+        {
+            _textureDimensions[assetName] = new TextureDimensions(width, height);
+        }
+        
+        /// <summary>
+        /// Get dimensions for a registered texture
+        /// </summary>
+        public TextureDimensions GetTextureDimensions(string assetName)
+        {
+            if (_textureDimensions.TryGetValue(assetName, out var dimensions))
+            {
+                return dimensions;
+            }
+            return new TextureDimensions(100, 100); // Default size
+        }
+        
+        /// <summary>
         /// Override Load to return dummy objects instead of loading from disk
         /// </summary>
         public override T Load<T>(string assetName)
         {
-            // Special handling for different types since we can't mock them all
+            // Special handling for Texture2D - we can't create these without a GraphicsDevice
             if (typeof(T) == typeof(Texture2D))
             {
-                // For Texture2D, return a dummy object - we'll just check for null in tests
-                return (T)(object)null;
+                // Instead of trying to create a real Texture2D, return a mock object
+                var mock = new Mock<Texture2D>();
+                
+                // Unfortunately we can't mock Width/Height as they're not virtual
+                // The SpriteSheet class will need to be modified for testability
+                
+                return (T)(object)mock.Object;
             }
 
             if (_mockAssets.TryGetValue(assetName, out var mockAsset))
@@ -72,13 +104,32 @@ namespace CoreEssentials.Tests.Assets
                 }
                 
                 // If we stored a Type marker, create a special dummy object
-                if (mockAsset is Type type && type == typeof(T))
+                if (mockAsset is Type && typeof(T).IsAssignableFrom((Type)mockAsset))
                 {
+                    // For basic types, return default
                     return default;
                 }
             }
             
-            throw new ContentLoadException($"No mock registered for asset '{assetName}' of type {typeof(T).Name}");
+            // For non-registered assets, try to create a mock
+            if (typeof(T).IsInterface || typeof(T).IsAbstract)
+            {
+                var mockType = typeof(Mock<>).MakeGenericType(typeof(T));
+                var mock = Activator.CreateInstance(mockType);
+                var objectProperty = mockType.GetProperty("Object");
+                return (T)objectProperty.GetValue(mock);
+            }
+            
+            // Try to create an instance using default constructor
+            try
+            {
+                return Activator.CreateInstance<T>();
+            }
+            catch
+            {
+                // If all else fails
+                throw new ContentLoadException($"No mock registered for asset '{assetName}' of type {typeof(T).Name}");
+            }
         }
         
         /// <summary>
@@ -87,6 +138,7 @@ namespace CoreEssentials.Tests.Assets
         public override void Unload()
         {
             _mockAssets.Clear();
+            _textureDimensions.Clear();
             SetupDefaultMocks();
         }
         
@@ -99,6 +151,26 @@ namespace CoreEssentials.Tests.Assets
             {
                 _mockAssets.Remove(assetName);
             }
+            
+            if (_textureDimensions.ContainsKey(assetName))
+            {
+                _textureDimensions.Remove(assetName);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Simple structure to store texture dimensions
+    /// </summary>
+    public struct TextureDimensions
+    {
+        public int Width { get; }
+        public int Height { get; }
+        
+        public TextureDimensions(int width, int height)
+        {
+            Width = width;
+            Height = height;
         }
     }
 }
