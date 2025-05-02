@@ -78,13 +78,17 @@ public class Sprite : Asset
                     Source = xmlData.Source,
                     Size = new Size
                     {
-                        Width = xmlData.Size.Width,
-                        Height = xmlData.Size.Height
+                        Width = xmlData.Size?.Width ?? 0,
+                        Height = xmlData.Size?.Height ?? 0
                     },
-                    Origin = new Origin
+                    Origin = xmlData.Origin != null ? new Origin
                     {
                         X = xmlData.Origin.X,
                         Y = xmlData.Origin.Y
+                    } : new Origin
+                    {
+                        X = 0,
+                        Y = 0
                     },
                     Frame = xmlData.Frame
                 };
@@ -153,7 +157,7 @@ public class Sprite : Asset
                 Rectangle sourceRect = _spriteSheet.GetFrame(_defaultFrame);
                 
                 // Use origin from metadata
-                Vector2 origin = new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
+                Vector2 origin = _spriteSheet.FrameOrigin;
                 
                 spriteBatch.Draw(
                     _spriteSheet.Texture,
@@ -251,7 +255,7 @@ public class Sprite : Asset
         /// <summary>
         /// Gets or sets the origin point of the sprite.
         /// </summary>
-        public Origin Origin { get; set; }
+        public Origin? Origin { get; set; }
         
         /// <summary>
         /// Gets or sets the initial frame for sprite sheet animations.
@@ -269,7 +273,8 @@ public class Sprite : Asset
         public string Source { get; set; }
         
         public SizeXml Size { get; set; }
-        public OriginXml Origin { get; set; }
+        [XmlElement(IsNullable = true)]
+        public OriginXml? Origin { get; set; }
         
         [XmlElement(IsNullable = true)]
         public int? Frame { get; set; }

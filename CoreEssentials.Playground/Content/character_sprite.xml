@@ -6,9 +6,5 @@
     <Width>192</Width>
     <Height>256</Height>
   </Size>
-  <Origin>
-    <X>96</X>
-    <Y>128</Y>
-  </Origin>
   <Frame>0</Frame>
 </SpriteData>
