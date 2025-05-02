@@ -40,15 +40,20 @@ public class CharacterScene : Scene
         graphics.PreferredBackBufferHeight = 720;
         graphics.ApplyChanges();
         
-        UpdateLoadingProgress(0.5f, "Creating character...");
+        UpdateLoadingProgress(0.5f, "Creating characters...");
         yield return null;
         
         // Get access to the entity system
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
         
-        // Create a character entity at the center of the screen
-        CharacterEntity character = entitySystem.CreateEntity<CharacterEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2)
+        // Create a static character entity at the left side of the screen
+        CharacterEntity staticCharacter = entitySystem.CreateEntity<CharacterEntity>(
+            new Vector2(graphics.PreferredBackBufferWidth / 4, graphics.PreferredBackBufferHeight / 2)
+        );
+
+        // Create an animated character entity at the right side of the screen
+        AnimatedCharacterEntity animatedCharacter = entitySystem.CreateEntity<AnimatedCharacterEntity>(
+            new Vector2(graphics.PreferredBackBufferWidth * 3 / 4, graphics.PreferredBackBufferHeight / 2)
         );
 
         // Register input handler
