@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -15,6 +16,9 @@ namespace CoreEssentials.Tests.Assets
     {
         private readonly Dictionary<string, object> _mockAssets = new Dictionary<string, object>();
         private readonly Dictionary<string, TextureDimensions> _textureDimensions = new Dictionary<string, TextureDimensions>();
+        
+        // Using TypeReplacer to handle certain sealed types in tests
+        private static readonly TypeReplacer _typeReplacer = new TypeReplacer();
         
         public MockContentManager() : base(CreateMockServiceProvider())
         {
@@ -48,6 +52,7 @@ namespace CoreEssentials.Tests.Assets
             _textureDimensions["default_texture"] = new TextureDimensions(100, 100);
             _textureDimensions["ball"] = new TextureDimensions(64, 64);
             _textureDimensions["characterSheet"] = new TextureDimensions(300, 200);
+            _textureDimensions["testSpriteSheet"] = new TextureDimensions(300, 200);
         }
         
         /// <summary>
@@ -86,13 +91,11 @@ namespace CoreEssentials.Tests.Assets
             // Special handling for Texture2D - we can't create these without a GraphicsDevice
             if (typeof(T) == typeof(Texture2D))
             {
-                // Instead of trying to create a real Texture2D, return a mock object
-                var mock = new Mock<Texture2D>();
+                // Get dimensions or use defaults
+                var dimensions = GetTextureDimensions(assetName);
                 
-                // Unfortunately we can't mock Width/Height as they're not virtual
-                // The SpriteSheet class will need to be modified for testability
-                
-                return (T)(object)mock.Object;
+                // Use our TextureWrapper helper to create a test texture
+                return (T)(object)TextureWrapper.CreateTestTexture(dimensions.Width, dimensions.Height);
             }
 
             if (_mockAssets.TryGetValue(assetName, out var mockAsset))
@@ -145,7 +148,7 @@ namespace CoreEssentials.Tests.Assets
         /// <summary>
         /// Simulates unloading a specific asset
         /// </summary>
-        public new void UnloadAsset(string assetName)
+        public void UnloadAsset(string assetName)
         {
             if (_mockAssets.ContainsKey(assetName))
             {
@@ -156,6 +159,35 @@ namespace CoreEssentials.Tests.Assets
             {
                 _textureDimensions.Remove(assetName);
             }
+            
+            // Signal that the asset was unloaded
+            OnAssetUnloaded(assetName);
+        }
+
+        /// <summary>
+        /// Called when an asset is unloaded - useful for tests to monitor
+        /// </summary>
+        private void OnAssetUnloaded(string assetName)
+        {
+            // This method exists to provide a hook for tests
+            // In a real implementation, this would handle resource cleanup
+            // For testing, we just make sure the method exists for reflection calls
+        }
+    }
+    
+    /// <summary>
+    /// Helper class for handling type replacements in test contexts
+    /// </summary>
+    public class TypeReplacer
+    {
+        /// <summary>
+        /// Creates an instance that can pass as the specified type in tests
+        /// </summary>
+        public T CreateInstance<T>(dynamic source)
+        {
+            // For test cases where we need to return something that behaves like a Texture2D
+            // This is a hack - it works because in tests we only access properties not methods
+            return (T)source;
         }
     }
     

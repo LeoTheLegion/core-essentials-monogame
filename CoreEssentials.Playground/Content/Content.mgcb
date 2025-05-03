@@ -28,6 +28,9 @@
 /processorParam:TextureFormat=Color
 /build:Ball.png
 
+#begin character_anim_walk.xml
+/copy:character_anim_walk.xml
+
 #begin character_malePerson_sheetHD.png
 /importer:TextureImporter
 /processor:TextureProcessor

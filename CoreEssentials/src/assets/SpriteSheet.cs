@@ -14,7 +14,7 @@ namespace CoreEssentials.Assets;
 public class SpriteSheet : Asset
 {
     private Texture2D _texture;
-    private SpriteMeta _metaData;
+    private SpriteSheetMetadata _metaData;
     private Rectangle[] _frames;
     
     /// <summary>
@@ -104,7 +104,7 @@ public class SpriteSheet : Asset
                 var xmlData = (SpriteSheetDataXml)serializer.Deserialize(reader);
                 
                 // Convert XML data to SpriteMeta format
-                _metaData = new SpriteMeta
+                _metaData = new SpriteSheetMetadata
                 {
                     SourceType = xmlData.SourceType,
                     Source = xmlData.Source,
@@ -196,7 +196,7 @@ public class SpriteSheet : Asset
     /// <summary>
     /// Contains metadata about a sprite sheet, loaded from XML.
     /// </summary>
-    private class SpriteMeta
+    private class SpriteSheetMetadata
     {
         /// <summary>
         /// Gets or sets the type of source for the sprite sheet (e.g., "texture2d").
