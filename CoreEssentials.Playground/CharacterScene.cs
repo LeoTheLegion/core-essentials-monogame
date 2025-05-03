@@ -1,14 +1,13 @@
 using System;
 using System.Collections;
-using CoreEssentials.Assets;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Debugging;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using CoreEssentials.Audio;
 
 namespace CoreEssentials.Playground;
 
@@ -18,6 +17,8 @@ namespace CoreEssentials.Playground;
 public class CharacterScene : Scene
 {
     private Random random = new Random();
+
+    private string songID;
     
     protected override GameSystem[] LoadGameSystems()
     {
@@ -58,15 +59,19 @@ public class CharacterScene : Scene
 
         // Register input handler
         Input.Keyboard.KeyReleased += Reset();
+        Input.Keyboard.KeyReleased += PlaySound();
         
         UpdateLoadingProgress(1.0f, "Scene ready!");
         Debug.Console.WriteLine("Character scene loaded successfully!");
+
+        songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
 
     public override void Unload()
     {
         base.Unload();
         Input.Keyboard.KeyReleased -= Reset();
+        Input.Keyboard.KeyReleased -= PlaySound();
     }
 
     private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
@@ -75,46 +80,49 @@ public class CharacterScene : Scene
         {
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
             {
+                AudioManager.Instance.StopSound(songID);
                 // Use SceneManager property directly here to get the current reference at the time of the event
                 SceneManager.LoadScene(new PhysicsEntityScene());
             }
         };
     }
-}
 
-/// <summary>
-/// A simple entity that displays a character from a sprite sheet.
-/// </summary>
-public class CharacterEntity : Entity
-{
-    private Sprite _sprite;
-    
-    public CharacterEntity(Vector2 position)
+    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
     {
-        _position = position;
-        
-        // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        Debug.Console.WriteLine("Character entity created!");
-    }
-    
-    public override void Render(SpriteBatch spriteBatch)
-    {
-        spriteBatch.Begin();
-        // Draw the character with the current frame
-        _sprite.Draw(
-            spriteBatch, 
-            _position, 
-            Color.White, 
-            0f, 
-            SpriteEffects.None, 
-            0f
-        );
-        spriteBatch.End();
+        return (sender, args) =>
+        {
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Q)
+            {
+                // Play the sound effect
+                var id = AudioManager.Instance.PlayOneShotSound("footstep1_sound.xml");
+                Debug.Console.WriteLine($"Sound played with ID: {id}");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.W)
+            {
+                // Play the sound effect
+                var id = AudioManager.Instance.PlayOneShotSound("footstep2_sound.xml");
+                Debug.Console.WriteLine($"Sound played with ID: {id}");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.E)
+            {
+                // Play the sound effect
+                var id = AudioManager.Instance.PlayOneShotSound("footstep3_sound.xml");
+                Debug.Console.WriteLine($"Sound played with ID: {id}");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Z)
+            {
+                AudioManager.Instance.SetMasterVolume(0.1f);
+                Debug.Console.WriteLine("Volume set to 10%");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.X)
+            {
+                AudioManager.Instance.SetMasterVolume(1.0f);
+                Debug.Console.WriteLine("Volume set to 100%");
+            }
+        };
     }
 }

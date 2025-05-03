@@ -82,10 +82,8 @@ public class Ball : Entity
 
     public override void Render(SpriteBatch _spriteBatch)
     {
-        _spriteBatch.Begin();
         float rotation = _body.Rotation; // Get the rotation from the physics body
         _sprite.Draw(_spriteBatch, _position, Color.White, rotation, SpriteEffects.None, 0f);
-        _spriteBatch.End();
     }
 
     public override void OnDestroy()

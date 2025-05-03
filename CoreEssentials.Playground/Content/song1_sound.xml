@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SoundData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+  <Source>Goblins_Den_(Regular)</Source>
+  <SourceType>song</SourceType>
+  <Volume>1</Volume>
+  <Loop>true</Loop>
+</SoundData>
