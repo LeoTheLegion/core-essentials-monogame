@@ -1,13 +1,11 @@
 using System;
 using System.Collections;
-using CoreEssentials.Assets;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Debugging;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace CoreEssentials.Playground;
@@ -79,42 +77,5 @@ public class CharacterScene : Scene
                 SceneManager.LoadScene(new PhysicsEntityScene());
             }
         };
-    }
-}
-
-/// <summary>
-/// A simple entity that displays a character from a sprite sheet.
-/// </summary>
-public class CharacterEntity : Entity
-{
-    private Sprite _sprite;
-    
-    public CharacterEntity(Vector2 position)
-    {
-        _position = position;
-        
-        // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        Debug.Console.WriteLine("Character entity created!");
-    }
-    
-    public override void Render(SpriteBatch spriteBatch)
-    {
-        spriteBatch.Begin();
-        // Draw the character with the current frame
-        _sprite.Draw(
-            spriteBatch, 
-            _position, 
-            Color.White, 
-            0f, 
-            SpriteEffects.None, 
-            0f
-        );
-        spriteBatch.End();
     }
 }

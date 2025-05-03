@@ -54,11 +54,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
+        spriteBatch.Begin();
         for (int i = 0; i < _entities.Count; i++)
         {
             if (_entities[i].GetActive())
                 _entities[i].Render(spriteBatch);
         }
+        spriteBatch.End();
     }
 
     /// <summary>

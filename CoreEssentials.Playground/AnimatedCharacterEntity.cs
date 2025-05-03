@@ -49,7 +49,7 @@ namespace CoreEssentials.Playground
         
         public override void Render(SpriteBatch spriteBatch)
         {
-            spriteBatch.Begin();SpriteEffects effects = SpriteEffects.None;
+            SpriteEffects effects = SpriteEffects.None;
             
             // Draw the animated character using the current animation state
             _animationState.Draw(
@@ -60,8 +60,6 @@ namespace CoreEssentials.Playground
                 effects,
                 0f
             );
-            
-            spriteBatch.End();
         }
         
         public override void OnDestroy()
