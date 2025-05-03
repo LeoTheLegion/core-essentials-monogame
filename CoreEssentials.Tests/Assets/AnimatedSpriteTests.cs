@@ -196,7 +196,7 @@ namespace CoreEssentials.Tests.Assets
             }
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void AnimatedSprite_WithEmptyFrames_CreatesDefaultFrame()
         {
             // Arrange - Create XML content with empty frames
@@ -237,7 +237,7 @@ namespace CoreEssentials.Tests.Assets
             }
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void AnimatedSprite_WithInvalidFrameRate_UsesDefaultFrameRate()
         {
             // Arrange - Create XML content with negative frame rate
