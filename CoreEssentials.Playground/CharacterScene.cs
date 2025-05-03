@@ -7,6 +7,7 @@ using CoreEssentials.Debugging;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using CoreEssentials.Audio;
 
 namespace CoreEssentials.Playground;
 
@@ -56,6 +57,7 @@ public class CharacterScene : Scene
 
         // Register input handler
         Input.Keyboard.KeyReleased += Reset();
+        Input.Keyboard.KeyReleased += PlaySound();
         
         UpdateLoadingProgress(1.0f, "Scene ready!");
         Debug.Console.WriteLine("Character scene loaded successfully!");
@@ -65,6 +67,7 @@ public class CharacterScene : Scene
     {
         base.Unload();
         Input.Keyboard.KeyReleased -= Reset();
+        Input.Keyboard.KeyReleased -= PlaySound();
     }
 
     private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
@@ -75,6 +78,33 @@ public class CharacterScene : Scene
             {
                 // Use SceneManager property directly here to get the current reference at the time of the event
                 SceneManager.LoadScene(new PhysicsEntityScene());
+            }
+        };
+    }
+
+    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
+    {
+        return (sender, args) =>
+        {
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Q)
+            {
+                // Play the sound effect
+                var id = AudioManager.Instance.PlayOneShotSound("footstep1_sound.xml");
+                Debug.Console.WriteLine($"Sound played with ID: {id}");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.W)
+            {
+                // Play the sound effect
+                var id = AudioManager.Instance.PlayOneShotSound("footstep2_sound.xml");
+                Debug.Console.WriteLine($"Sound played with ID: {id}");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.E)
+            {
+                // Play the sound effect
+                var id = AudioManager.Instance.PlayOneShotSound("footstep3_sound.xml");
+                Debug.Console.WriteLine($"Sound played with ID: {id}");
             }
         };
     }

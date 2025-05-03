@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Coroutines;
+using CoreEssentials.Audio;
 
 namespace CoreEssentials
 {
@@ -113,7 +114,9 @@ namespace CoreEssentials
 
             }
 
-            SceneManager.Update(gameTime);         
+            SceneManager.Update(gameTime);    
+
+            AudioManager.Instance.Update(gameTime);     
 
             base.Update(gameTime);
 
