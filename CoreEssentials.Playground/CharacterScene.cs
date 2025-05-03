@@ -71,12 +71,12 @@ public class CharacterScene : Scene
 
     private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
     {
-        var sceneManager = this.SceneManager;
         return (sender, args) =>
         {
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
             {
-                sceneManager.LoadScene(new PhysicsEntityScene());
+                // Use SceneManager property directly here to get the current reference at the time of the event
+                SceneManager.LoadScene(new PhysicsEntityScene());
             }
         };
     }
