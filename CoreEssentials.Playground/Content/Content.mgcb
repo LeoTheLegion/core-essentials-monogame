@@ -76,3 +76,12 @@
 #begin footstep3_sound.xml
 /copy:footstep3_sound.xml
 
+#begin Goblins_Den_(Regular).wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Goblins_Den_(Regular).wav
+
+#begin song1_sound.xml
+/copy:song1_sound.xml
+

@@ -10,6 +10,8 @@ public class AudioClip : Asset
     public SoundEffect SoundEffect { get; internal set; }
     public float Volume { get; internal set; }
 
+    public bool Loop { get; set; }
+
     public AudioClip(string name) : base(name)
     {
         string extension = Path.GetExtension(name);
@@ -51,6 +53,9 @@ public class AudioClip : Asset
                 
                 // Load the sound effect
                 SoundEffect = AssetManager.LoadAsset<SoundEffect>(xmlData.Source);
+
+                Loop = xmlData.Loop?.ToLower() == "true" || xmlData.Loop?.ToLower() == "yes";
+
                 Volume = volume;
             }
         }
@@ -69,5 +74,7 @@ public class AudioClip : Asset
         public string Source { get; set; }
         public string SourceType { get; set; }
         public string Volume { get; set; }
+
+        public string Loop { get; set; } // Added for future use
     }
 }

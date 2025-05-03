@@ -1,5 +1,6 @@
 using System;
 using CoreEssentials.Assets;
+using CoreEssentials.Debugging;
 using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Audio;
@@ -8,6 +9,8 @@ public class AudioClipInstance
 {
     private AudioClip audioClip;
     private SoundEffectInstance soundEffectInstance;
+
+    public AudioClip AudioClip => audioClip;
 
     public AudioClipInstance(AudioClip audioClip)
     {
@@ -64,6 +67,7 @@ public class AudioClipInstance
         if (soundEffectInstance != null)
         {
             soundEffectInstance.Volume = audioClip.Volume * masterVolume;
+            Debug.Console.WriteLine($"AudioClipInstance: Volume set to {soundEffectInstance.Volume}");
         }
     }
 }

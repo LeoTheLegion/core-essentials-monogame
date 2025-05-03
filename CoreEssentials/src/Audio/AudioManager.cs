@@ -28,8 +28,15 @@ public class AudioManager
         {
             if (_audioClipInstances[key].IsDonePlaying())
             {
-                _audioClipInstances[key].Stop();
-                _audioClipInstances.Remove(key);
+                if(_audioClipInstances[key].AudioClip.Loop)
+                {
+                    _audioClipInstances[key].Play(_masterVolume);
+                }
+                else
+                {
+                    _audioClipInstances[key].Stop();
+                    _audioClipInstances.Remove(key);
+                }
             }
         }
     }
@@ -51,6 +58,11 @@ public class AudioManager
         _audioClipInstances[id] = instance;
 
         return id;
+    }
+
+    public string PlaySound(string name)
+    {
+        return PlayOneShotSound(name);
     }
 
     private AudioClipInstance CreateAudioClipInstance(AudioClip audioClip)

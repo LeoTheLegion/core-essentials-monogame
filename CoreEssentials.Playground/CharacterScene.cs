@@ -17,6 +17,8 @@ namespace CoreEssentials.Playground;
 public class CharacterScene : Scene
 {
     private Random random = new Random();
+
+    private string songID;
     
     protected override GameSystem[] LoadGameSystems()
     {
@@ -61,6 +63,8 @@ public class CharacterScene : Scene
         
         UpdateLoadingProgress(1.0f, "Scene ready!");
         Debug.Console.WriteLine("Character scene loaded successfully!");
+
+        songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
 
     public override void Unload()
@@ -76,6 +80,7 @@ public class CharacterScene : Scene
         {
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
             {
+                AudioManager.Instance.StopSound(songID);
                 // Use SceneManager property directly here to get the current reference at the time of the event
                 SceneManager.LoadScene(new PhysicsEntityScene());
             }
@@ -105,6 +110,18 @@ public class CharacterScene : Scene
                 // Play the sound effect
                 var id = AudioManager.Instance.PlayOneShotSound("footstep3_sound.xml");
                 Debug.Console.WriteLine($"Sound played with ID: {id}");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Z)
+            {
+                AudioManager.Instance.SetMasterVolume(0.1f);
+                Debug.Console.WriteLine("Volume set to 10%");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.X)
+            {
+                AudioManager.Instance.SetMasterVolume(1.0f);
+                Debug.Console.WriteLine("Volume set to 100%");
             }
         };
     }
