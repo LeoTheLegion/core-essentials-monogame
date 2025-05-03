@@ -22,6 +22,10 @@ namespace CoreEssentials.Tests.Assets
         private readonly string _fullSpriteXmlPath;
         private readonly Mock<SpriteBatch> _mockSpriteBatch;
         
+        // Width and height values we're expecting for our texture
+        private const int TextureWidth = 300;
+        private const int TextureHeight = 200;
+        
         public SpriteWithSpriteSheetTests()
         {
             // Setup mock content manager
@@ -141,10 +145,24 @@ namespace CoreEssentials.Tests.Assets
             countDict.Clear();
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void Sprite_Constructor_LoadsSpriteSheetData()
         {
-            // Skip - requires a real texture
+            // Arrange - Our TextureWrapper approach allows this test to run
+            
+            // Act - This would throw an exception if loading fails
+            var sprite = new Sprite(_testSpriteXmlPath); // Use _testSpriteXmlPath, not _testSpriteSheetXmlPath
+            
+            // Assert
+            Assert.NotNull(sprite);
+            Assert.Equal(_testSpriteXmlPath, sprite.Name);
+            
+            // Use reflection to access private _spriteSheet field
+            var spriteSheetField = typeof(Sprite).GetField("_spriteSheet", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(spriteSheetField);
+            
+            var spriteSheet = spriteSheetField.GetValue(sprite) as SpriteSheet;
+            Assert.NotNull(spriteSheet);
         }
         
         [Fact]
@@ -154,28 +172,95 @@ namespace CoreEssentials.Tests.Assets
             Assert.Throws<InvalidOperationException>(() => new Sprite("invalid_sprite_no_extension"));
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void GetSize_WithSpriteSheet_ReturnsFrameSize()
         {
-            // Skip - requires a real texture
+            // Arrange
+            var sprite = new Sprite(_testSpriteXmlPath); // Use _testSpriteXmlPath, not _testSpriteSheetXmlPath
+            
+            // Act
+            Vector2 size = sprite.GetSize();
+            
+            // Assert - Size should be the size of a frame in the spritesheet
+            float expectedWidth = TextureWidth / 3;  // 3 columns
+            float expectedHeight = TextureHeight / 2;  // 2 rows
+            Assert.Equal(expectedWidth, size.X);
+            Assert.Equal(expectedHeight, size.Y);
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void Draw_WithSpriteSheet_DrawsDefaultFrame()
         {
-            // Skip - requires a real texture
+            // Skip actual draw test as it requires SpriteBatch which is hard to fully mock
+            // Instead, verify we can access what we need without exceptions
+            
+            // Arrange
+            var sprite = new Sprite(_testSpriteXmlPath); // Use _testSpriteXmlPath, not _testSpriteSheetXmlPath
+            
+            // Use reflection to access private fields
+            var spriteSheetField = typeof(Sprite).GetField("_spriteSheet", BindingFlags.NonPublic | BindingFlags.Instance);
+            var defaultFrameField = typeof(Sprite).GetField("_defaultFrame", BindingFlags.NonPublic | BindingFlags.Instance);
+            
+            Assert.NotNull(spriteSheetField);
+            Assert.NotNull(defaultFrameField);
+            
+            var spriteSheet = spriteSheetField.GetValue(sprite) as SpriteSheet;
+            int defaultFrame = (int)defaultFrameField.GetValue(sprite);
+            
+            // Act & Assert - No exception should be thrown
+            Exception ex = Record.Exception(() => {
+                var frame = spriteSheet.GetFrame(defaultFrame);
+                Assert.NotEqual(Rectangle.Empty, frame);
+            });
+            
+            Assert.Null(ex);
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void Draw_WithSpriteSheetAndFrameIndex_DrawsSpecificFrame()
         {
-            // Skip - requires a real texture
+            // Skip actual draw test as it requires SpriteBatch which is hard to fully mock
+            // Instead, verify frame rectangle is correct for a specific frame
+            
+            // Arrange
+            var sprite = new Sprite(_testSpriteXmlPath); // Use _testSpriteXmlPath, not _testSpriteSheetXmlPath
+            int testFrame = 2;
+            
+            // Use reflection to access private fields
+            var spriteSheetField = typeof(Sprite).GetField("_spriteSheet", BindingFlags.NonPublic | BindingFlags.Instance);
+            var defaultFrameField = typeof(Sprite).GetField("_defaultFrame", BindingFlags.NonPublic | BindingFlags.Instance);
+            
+            Assert.NotNull(spriteSheetField);
+            Assert.NotNull(defaultFrameField);
+            
+            var spriteSheet = spriteSheetField.GetValue(sprite) as SpriteSheet;
+            
+            // Set defaultFrame via reflection
+            defaultFrameField.SetValue(sprite, testFrame);
+            
+            // Verify frame rectangle is correct
+            var frameRect = spriteSheet.GetFrame(testFrame);
+            int expectedX = (testFrame % 3) * (TextureWidth / 3);  // Column * frame width
+            int expectedY = (testFrame / 3) * (TextureHeight / 2);  // Row * frame height
+            
+            Assert.Equal(new Rectangle(expectedX, expectedY, TextureWidth / 3, TextureHeight / 2), frameRect);
         }
         
-        [Fact(Skip = "Requires mocking of sealed Texture2D class")]
+        [Fact]
         public void Sprite_WithSpriteSheet_HasCorrectDefaultFrame()
         {
-            // Skip - requires a real texture
+            // Arrange
+            var sprite = new Sprite(_testSpriteXmlPath);
+            
+            // Use reflection to access private _defaultFrame field
+            var defaultFrameField = typeof(Sprite).GetField("_defaultFrame", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(defaultFrameField);
+            
+            // Act - Get default frame
+            int defaultFrame = (int)defaultFrameField.GetValue(sprite);
+            
+            // Assert - Default frame should be 0 unless specified otherwise in XML
+            Assert.Equal(2, defaultFrame); // Default frame set to 2 in our test XML
         }
     }
 }

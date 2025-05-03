@@ -111,11 +111,28 @@ namespace CoreEssentials.Tests.Assets
             countDict.Clear();
         }
         
-        [Fact(Skip = "Requires real GraphicsDevice")]
+        [Fact]
         public void Sprite_Constructor_LoadsXmlData()
         {
-            // This test requires a real GraphicsDevice to load textures
-            // Skip it in automated testing as it would fail without a proper GraphicsDevice
+            // Arrange - Our TextureWrapper approach allows this test to run
+            
+            // Act - This would throw an exception if loading fails
+            var sprite = new Sprite(_testSpriteXmlPath);
+            
+            // Assert
+            Assert.NotNull(sprite);
+            Assert.Equal(_testSpriteXmlPath, sprite.Name);
+            
+            // Use reflection to access private _texture field
+            var textureField = typeof(Sprite).GetField("_texture", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(textureField);
+            
+            var texture = textureField.GetValue(sprite) as Texture2D;
+            Assert.NotNull(texture);
+            
+            // Verify texture dimensions
+            Assert.Equal(64, texture.Width);
+            Assert.Equal(64, texture.Height);
         }
         
         [Fact]
@@ -125,11 +142,18 @@ namespace CoreEssentials.Tests.Assets
             Assert.Throws<InvalidOperationException>(() => new Sprite("invalid_sprite_no_extension"));
         }
         
-        [Fact(Skip = "Requires real GraphicsDevice")]
+        [Fact]
         public void GetSize_ReturnsCorrectDimensions()
         {
-            // This test requires a real GraphicsDevice to load textures
-            // Skip it in automated testing as it would fail without a proper GraphicsDevice
+            // Arrange - Our TextureWrapper approach allows this test to run
+            var sprite = new Sprite(_testSpriteXmlPath);
+            
+            // Act
+            var size = sprite.GetSize();
+            
+            // Assert
+            Assert.Equal(64, size.X);
+            Assert.Equal(64, size.Y);
         }
         
         [Fact(Skip = "This test requires a complete graphics device setup")]
