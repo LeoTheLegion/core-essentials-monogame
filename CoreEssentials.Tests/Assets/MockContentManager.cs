@@ -148,7 +148,7 @@ namespace CoreEssentials.Tests.Assets
         /// <summary>
         /// Simulates unloading a specific asset
         /// </summary>
-        public new void UnloadAsset(string assetName)
+        public void UnloadAsset(string assetName)
         {
             if (_mockAssets.ContainsKey(assetName))
             {
@@ -159,6 +159,19 @@ namespace CoreEssentials.Tests.Assets
             {
                 _textureDimensions.Remove(assetName);
             }
+            
+            // Signal that the asset was unloaded
+            OnAssetUnloaded(assetName);
+        }
+
+        /// <summary>
+        /// Called when an asset is unloaded - useful for tests to monitor
+        /// </summary>
+        private void OnAssetUnloaded(string assetName)
+        {
+            // This method exists to provide a hook for tests
+            // In a real implementation, this would handle resource cleanup
+            // For testing, we just make sure the method exists for reflection calls
         }
     }
     
