@@ -100,7 +100,10 @@ namespace CoreEssentials.Assets
             }
              
             assetsLoaded.Add(AssetKey, asset);
-            countOfObjectsUsingAsset.Add(AssetKey, 1);
+            if (!countOfObjectsUsingAsset.ContainsKey(AssetKey))
+                countOfObjectsUsingAsset.Add(AssetKey, 1);
+            else
+                countOfObjectsUsingAsset[AssetKey]++;
 
             Debug.Console.WriteLine(String.Format("Loaded <{0}> {1}", typeof(T).Name, AssetKey));
 

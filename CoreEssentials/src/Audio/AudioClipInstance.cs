@@ -23,8 +23,7 @@ public class AudioClipInstance
 
         if (soundEffectInstance.State == SoundState.Stopped)
         {
-            soundEffectInstance.Dispose();
-            soundEffectInstance = null;
+            Cleanup();
             return true;
         }
 
@@ -47,11 +46,16 @@ public class AudioClipInstance
 
     internal void Stop()
     {
+        Cleanup();
+    }
+
+    private void Cleanup()
+    {
         if (soundEffectInstance != null)
         {
-            soundEffectInstance.Stop(true);
             soundEffectInstance.Dispose();
             soundEffectInstance = null;
+            AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
         }
     }
 
