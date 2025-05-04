@@ -26,7 +26,11 @@ public class AudioClipInstance
 
         if (soundEffectInstance.State == SoundState.Stopped)
         {
-            Cleanup();
+            // Don't cleanup if this is a looping sound, as we'll want to restart it
+            if (!audioClip.Loop)
+            {
+                Cleanup();
+            }
             return true;
         }
 
@@ -39,16 +43,16 @@ public class AudioClipInstance
         {
             soundEffectInstance = audioClip.SoundEffect.CreateInstance();
             UpdateVolume(masterVolume);
-            soundEffectInstance.Play();
         }
-        else
-        {
-            soundEffectInstance.Play();
-        }
+        soundEffectInstance.Play();
     }
 
     public virtual void Stop()
     {
+        if (soundEffectInstance != null)
+        {
+            soundEffectInstance.Stop();
+        }
         Cleanup();
     }
 
