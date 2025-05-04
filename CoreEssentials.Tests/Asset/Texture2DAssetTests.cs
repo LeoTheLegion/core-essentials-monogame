@@ -42,13 +42,40 @@ namespace CoreEssentials.Tests
 
         public override void Load(IContentManager contentManager)
         {
-            // Mock loading logic
-            var texture = new Texture2D(null, 1, 1); // Mocked texture
-            typeof(Texture2DAsset).GetField("_texture", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(this, texture);
+            if (contentManager == null) throw new ArgumentNullException(nameof(contentManager));
+            
+            // Just store a flag that we've loaded, don't try to create a real texture
+            _isLoaded = true;
         }
-        public Texture2D GetTexture()
+        
+        public override void Unload(IContentManager contentManager)
         {
-            return (Texture2D)typeof(Texture2DAsset).GetField("_texture", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(this)!;
-        }  
+            if (contentManager == null) throw new ArgumentNullException(nameof(contentManager));
+            
+            _isLoaded = false;
+        }
+        
+        private bool _isLoaded;
+        
+        // Override the Texture property to return our fake texture for testing
+        public new Texture2D Texture => _isLoaded ? FakeTexture2D.Instance : null;
+        
+        public bool IsLoaded => _isLoaded;
+    }
+
+    // A static holder for a fake Texture2D instance that doesn't actually create a real Texture2D
+    // This avoids GraphicsDevice requirements completely
+    public static class FakeTexture2D
+    {
+        // Using null is dangerous as it might lead to NullReferenceExceptions
+        // Instead, use reflection to instantiate a Texture2D without calling its constructor
+        public static readonly Texture2D Instance;
+        
+        static FakeTexture2D()
+        {
+            // Use FormatterServices.GetUninitializedObject to create a Texture2D without calling constructor
+            // This is a special case for testing only, not for production code
+            Instance = (Texture2D)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Texture2D));
+        }
     }
 }
