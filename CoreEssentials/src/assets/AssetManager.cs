@@ -47,15 +47,29 @@ namespace CoreEssentials.Assets
         /// <typeparam name="T">The type of asset to load.</typeparam>
         /// <param name="assetName">The name of the asset to load.</param>
         /// <returns>The loaded asset.</returns>
-        public static Asset LoadAsset<T>(string assetName)
+        public static T LoadAsset<T>(string assetName) where T : Asset
         {
+            if(Content == null)
+            {
+                throw new InvalidOperationException("AssetManager has not been initialized with a ContentManager.");
+            }
+
+            if (string.IsNullOrEmpty(assetName))
+            {
+                throw new ArgumentNullException(nameof(assetName), "Asset name cannot be null or empty.");
+            }
+
+            if(!typeof(Asset).IsAssignableFrom(typeof(T))) {
+                throw new ArgumentException("Asset type must inherit from Asset.", nameof(T));
+            }
+
             var AssetNameType = typeof(T).Name;
             var AssetKey = assetName + "_" + AssetNameType;
 
             if (assetsLoaded.ContainsKey(AssetKey))
             {
                 countOfObjectsUsingAsset[AssetKey]++;
-                return assetsLoaded[AssetKey];
+                return (T)assetsLoaded[AssetKey];
             }
 
             if (assetName == null || assetName == string.Empty)
@@ -80,7 +94,7 @@ namespace CoreEssentials.Assets
 
             Debug.Console.WriteLine(String.Format("Loaded <{0}> {1}", typeof(T).Name, AssetKey));
 
-            return asset;
+            return (T)asset;
         }
 
         /// <summary>

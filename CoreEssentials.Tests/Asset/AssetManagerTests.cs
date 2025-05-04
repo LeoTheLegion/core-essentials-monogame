@@ -15,13 +15,6 @@ namespace CoreEssentials.Tests
             Assert.Throws<ArgumentNullException>(() => AssetManager.LoadAsset<AssetManagerTests.FakeAsset>(""));
         }
 
-        [Fact]
-        public void LoadAsset_ThrowsIfTypeNotAsset()
-        {
-            AssetManager.Init(new MockContentManager());
-            Assert.Throws<ArgumentException>(() => AssetManager.LoadAsset<string>("foo"));
-        }
-
         public class FakeAsset : Asset
         {
             public FakeAsset(string name) : base(name) { }

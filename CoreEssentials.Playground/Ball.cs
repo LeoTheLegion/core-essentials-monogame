@@ -34,7 +34,7 @@ public class Ball : Entity
     {
         base.OnStart();
 
-        this._sprite = (Sprite)AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+        this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
 
         // I hate this but I have to do it this way for now
         _radius = this._sprite.GetSize().X / 2; // Assuming the sprite is a circle, use half the width as the radius
