@@ -17,7 +17,7 @@ public class AudioClipInstance
         this.audioClip = audioClip;
     }
 
-    internal bool IsDonePlaying()
+    internal virtual bool IsDonePlaying()
     {
         if (soundEffectInstance == null)
         {
@@ -33,7 +33,7 @@ public class AudioClipInstance
         return false;
     }
 
-    internal void Play(float masterVolume)
+    internal virtual void Play(float masterVolume)
     {
         if (soundEffectInstance == null)
         {
@@ -47,12 +47,12 @@ public class AudioClipInstance
         }
     }
 
-    internal void Stop()
+    internal virtual void Stop()
     {
         Cleanup();
     }
 
-    private void Cleanup()
+    protected virtual void Cleanup()
     {
         if (soundEffectInstance != null)
         {
@@ -62,7 +62,7 @@ public class AudioClipInstance
         }
     }
 
-    internal void UpdateVolume(float masterVolume)
+    internal virtual void UpdateVolume(float masterVolume)
     {
         if (soundEffectInstance != null)
         {
