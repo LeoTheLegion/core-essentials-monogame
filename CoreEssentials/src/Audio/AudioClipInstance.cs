@@ -5,19 +5,19 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Audio;
 
-public class AudioClipInstance
+public class AudioClipInstance : IAudioClipInstance
 {
-    private AudioClip audioClip;
-    private SoundEffectInstance soundEffectInstance;
+    private IAudioClip audioClip;
+    private ISoundEffectInstance soundEffectInstance;
 
-    public AudioClip AudioClip => audioClip;
+    public IAudioClip AudioClip => audioClip;
 
-    public AudioClipInstance(AudioClip audioClip)
+    public AudioClipInstance(IAudioClip audioClip)
     {
         this.audioClip = audioClip;
     }
 
-    internal bool IsDonePlaying()
+    public bool IsDonePlaying()
     {
         if (soundEffectInstance == null)
         {
@@ -33,7 +33,7 @@ public class AudioClipInstance
         return false;
     }
 
-    internal void Play(float masterVolume)
+    public void Play(float masterVolume)
     {
         if (soundEffectInstance == null)
         {
@@ -47,7 +47,7 @@ public class AudioClipInstance
         }
     }
 
-    internal void Stop()
+    public virtual void Stop()
     {
         Cleanup();
     }
@@ -58,11 +58,15 @@ public class AudioClipInstance
         {
             soundEffectInstance.Dispose();
             soundEffectInstance = null;
-            AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
+            // Only unload if it's an actual AudioClip (not a mock in tests)
+            if (audioClip is Asset)
+            {
+               AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
+            }
         }
     }
 
-    internal void UpdateVolume(float masterVolume)
+    public void UpdateVolume(float masterVolume)
     {
         if (soundEffectInstance != null)
         {
