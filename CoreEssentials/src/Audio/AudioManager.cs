@@ -10,7 +10,7 @@ public class AudioManager
 {
     private static AudioManager _instance;
 
-    private Dictionary<string, AudioClipInstance> _audioClipInstances = new Dictionary<string, AudioClipInstance>();
+    private Dictionary<string, IAudioClipInstance> _audioClipInstances = new Dictionary<string, IAudioClipInstance>();
     private float _masterVolume;
 
     public static AudioManager Instance => _instance ??= new AudioManager();

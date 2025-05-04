@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Audio;
 
-public class AudioClipInstance
+public class AudioClipInstance : IAudioClipInstance
 {
     private IAudioClip audioClip;
     private ISoundEffectInstance soundEffectInstance;
@@ -17,7 +17,7 @@ public class AudioClipInstance
         this.audioClip = audioClip;
     }
 
-    internal virtual bool IsDonePlaying()
+    public bool IsDonePlaying()
     {
         if (soundEffectInstance == null)
         {
@@ -33,7 +33,7 @@ public class AudioClipInstance
         return false;
     }
 
-    internal virtual void Play(float masterVolume)
+    public void Play(float masterVolume)
     {
         if (soundEffectInstance == null)
         {
@@ -47,12 +47,12 @@ public class AudioClipInstance
         }
     }
 
-    internal virtual void Stop()
+    public virtual void Stop()
     {
         Cleanup();
     }
 
-    protected virtual void Cleanup()
+    private void Cleanup()
     {
         if (soundEffectInstance != null)
         {
@@ -66,7 +66,7 @@ public class AudioClipInstance
         }
     }
 
-    internal virtual void UpdateVolume(float masterVolume)
+    public void UpdateVolume(float masterVolume)
     {
         if (soundEffectInstance != null)
         {
