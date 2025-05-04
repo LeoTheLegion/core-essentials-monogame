@@ -7,12 +7,12 @@ namespace CoreEssentials.Audio;
 
 public class AudioClipInstance
 {
-    private AudioClip audioClip;
+    private IAudioClip audioClip;
     private ISoundEffectInstance soundEffectInstance;
 
-    public AudioClip AudioClip => audioClip;
+    public IAudioClip AudioClip => audioClip;
 
-    public AudioClipInstance(AudioClip audioClip)
+    public AudioClipInstance(IAudioClip audioClip)
     {
         this.audioClip = audioClip;
     }
@@ -58,7 +58,11 @@ public class AudioClipInstance
         {
             soundEffectInstance.Dispose();
             soundEffectInstance = null;
-            AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
+            // Only unload if it's an actual AudioClip (not a mock in tests)
+            if (audioClip is AudioClip actualClip)
+            {
+                AssetManager.UnloadAsset<AudioClip>(actualClip.Name);
+            }
         }
     }
 

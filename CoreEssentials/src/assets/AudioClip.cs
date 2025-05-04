@@ -6,13 +6,21 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Assets;
 
+public interface IAudioClip{
+    ISoundEffect SoundEffect { get; }
+    float Volume { get; }
+    bool Loop { get; set; }
+    string Name { get; }
+}
+
 // Concrete implementation
-public class AudioClip : Asset
+public class AudioClip : Asset, IAudioClip
 {
     public ISoundEffect SoundEffect { get; internal set; }
     public float Volume { get; internal set; }
 
     public bool Loop { get; set; }
+    string IAudioClip.Name => base.Name;
 
     public AudioClip(string name) : base(name)
     {
@@ -27,7 +35,7 @@ public class AudioClip : Asset
         }
     }
 
-    private void LoadFromXml(string name)
+    protected virtual void LoadFromXml(string name)
     {
         var xml = AssetManager.LoadAsset<string>(name);
         if (xml == null)
