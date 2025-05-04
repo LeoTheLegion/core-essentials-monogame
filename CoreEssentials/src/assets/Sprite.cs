@@ -13,7 +13,7 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class Sprite : Asset
 {
-    private Texture2D _texture;
+    private Texture2DAsset _texture;
     private SpriteSheet _spriteSheet;
     private SpriteMeta _metaData;
     private int _defaultFrame; // Default frame for sprite sheet rendering
@@ -27,38 +27,12 @@ public class Sprite : Asset
     /// <exception cref="InvalidOperationException">Thrown when metadata deserialization fails or the source type is unknown.</exception>
     public Sprite(string name) : base(name)
     {
-        string extension = Path.GetExtension(name);
-        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
-        {
-            LoadFromXml(name);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported sprite data format: {extension}. Use .xml format");
-        }
-
-        if (_metaData.SourceType == null)
-        {
-            throw new InvalidOperationException("Sprite metadata source type cannot be null.");
-        }
         
-        switch (_metaData.SourceType)
-        {
-            case "texture2d":
-                _texture = AssetManager.LoadAsset<Texture2D>(_metaData.Source);
-                break;
-            case "spritesheet":
-                _spriteSheet = AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
-                _defaultFrame = _metaData.Frame ?? 0; // Use specified frame or default to 0
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
-        }
     }
 
     private void LoadFromXml(string name)
     {
-        var xml = AssetManager.LoadAsset<string>(name);
+        var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
         if (xml == null)
         {
             throw new ArgumentNullException("xml", "XML data cannot be null.");
@@ -67,7 +41,7 @@ public class Sprite : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SpriteDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
-            using (StringReader reader = new StringReader(xml))
+            using (StringReader reader = new StringReader(xml.XMLContent))
             {
                 var xmlData = (SpriteDataXml)serializer.Deserialize(reader);
                 
@@ -130,7 +104,7 @@ public class Sprite : Asset
                     _texture.Height * yFactor
                 );
 
-                spriteBatch.Draw(_texture,
+                spriteBatch.Draw(_texture.Texture,
                 position,
                 null,
                 color,
@@ -198,6 +172,52 @@ public class Sprite : Asset
         
         Vector2 size = new Vector2(_metaData.Size.Width, _metaData.Size.Height);
         return size;
+    }
+
+    public override void Load(IContentManager contentManager)
+    {
+        string extension = Path.GetExtension(Name);
+        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
+        {
+            LoadFromXml(Name);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unsupported sprite data format: {extension}. Use .xml format");
+        }
+
+        if (_metaData.SourceType == null)
+        {
+            throw new InvalidOperationException("Sprite metadata source type cannot be null.");
+        }
+        
+        switch (_metaData.SourceType)
+        {
+            case "texture2d":
+                _texture = (Texture2DAsset)AssetManager.LoadAsset<Texture2DAsset>(_metaData.Source);
+                break;
+            case "spritesheet":
+                _spriteSheet = (SpriteSheet)AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
+                _defaultFrame = _metaData.Frame ?? 0; // Use specified frame or default to 0
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
+        }
+    }
+
+    public override void Unload(IContentManager contentManager)
+    {
+        if (_texture != null)
+        {
+            AssetManager.UnloadAsset<Texture2DAsset>(_texture.Name);
+            _texture = null;
+        }
+        
+        if (_spriteSheet != null)
+        {
+            AssetManager.UnloadAsset<SpriteSheet>(_texture.Name);
+            _spriteSheet = null;
+        }
     }
 
     /// <summary>

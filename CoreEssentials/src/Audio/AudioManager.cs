@@ -10,7 +10,7 @@ public class AudioManager
 {
     private static AudioManager _instance;
 
-    private Dictionary<string, IAudioClipInstance> _audioClipInstances = new Dictionary<string, IAudioClipInstance>();
+    private Dictionary<string, AudioClipInstance> _audioClipInstances = new Dictionary<string, AudioClipInstance>();
     private float _masterVolume;
 
     public static AudioManager Instance => _instance ??= new AudioManager();
@@ -46,11 +46,11 @@ public class AudioManager
     public string PlayOneShotSound(string soundName)
     {
         // Play sound logic here
-        var audioClip = AssetManager.LoadAsset<AudioClip>(soundName);
+        var audioClip = (AudioClip)AssetManager.LoadAsset<AudioClip>(soundName);
         return PlaySound(audioClip);
     }
 
-    public string PlaySound(IAudioClip audioClip)
+    public string PlaySound(AudioClip audioClip)
     {
         var instance = CreateAudioClipInstance(audioClip);
 
@@ -70,7 +70,7 @@ public class AudioManager
     }
 
     // Changed from private to protected to allow derived classes to override
-    protected virtual AudioClipInstance CreateAudioClipInstance(IAudioClip audioClip)
+    protected virtual AudioClipInstance CreateAudioClipInstance(AudioClip audioClip)
     {
         return new AudioClipInstance(audioClip);
     }

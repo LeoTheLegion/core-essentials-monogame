@@ -23,4 +23,8 @@ public abstract class Asset
         
         _assetName = name;
     }
+
+    public abstract void Load(IContentManager contentManager);
+
+    public abstract void Unload(IContentManager contentManager);
 }

@@ -14,30 +14,21 @@ public interface IAudioClip{
 }
 
 // Concrete implementation
-public class AudioClip : Asset, IAudioClip
+public class AudioClip : Asset
 {
     public ISoundEffect SoundEffect { get; internal set; }
     public float Volume { get; internal set; }
 
     public bool Loop { get; set; }
-    string IAudioClip.Name => base.Name;
 
     public AudioClip(string name) : base(name)
     {
-        string extension = Path.GetExtension(name);
-        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
-        {
-            LoadFromXml(name);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported audio data format: {extension}. Use .xml format");
-        }
+        
     }
 
     protected virtual void LoadFromXml(string name)
     {
-        var xml = AssetManager.LoadAsset<string>(name);
+        var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
         if (xml == null)
         {
             throw new ArgumentNullException("xml", "XML data cannot be null.");
@@ -46,7 +37,7 @@ public class AudioClip : Asset, IAudioClip
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SoundDataXml), "http://schemas.coreessentials.monogame/2025/audio");
-            using (StringReader reader = new StringReader(xml))
+            using (StringReader reader = new StringReader(xml.XMLContent))
             {
                 var xmlData = (SoundDataXml)serializer.Deserialize(reader);
                 
@@ -62,8 +53,8 @@ public class AudioClip : Asset, IAudioClip
                 }
                 
                 // Load the sound effect and wrap it with our adapter
-                var soundEffect = AssetManager.LoadAsset<SoundEffect>(xmlData.Source);
-                SoundEffect = new SoundEffectAdapter(soundEffect);
+                var soundEffect = (SoundEffectAsset)AssetManager.LoadAsset<SoundEffectAsset>(xmlData.Source);
+                SoundEffect = new SoundEffectAdapter(soundEffect.SoundEffect);
 
                 Loop = xmlData.Loop?.ToLower() == "true" || xmlData.Loop?.ToLower() == "yes";
 
@@ -73,6 +64,28 @@ public class AudioClip : Asset, IAudioClip
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Failed to deserialize XML sound data: {ex.Message}", ex);
+        }
+    }
+
+    public override void Load(IContentManager contentManager)
+    {
+        string extension = Path.GetExtension(Name);
+        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
+        {
+            LoadFromXml(Name);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unsupported audio data format: {extension}. Use .xml format");
+        }
+    }
+
+    public override void Unload(IContentManager contentManager)
+    {
+        if (SoundEffect != null)
+        {
+            contentManager.Unload(Name);
+            SoundEffect = null;
         }
     }
 

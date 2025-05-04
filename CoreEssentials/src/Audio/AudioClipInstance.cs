@@ -5,14 +5,14 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Audio;
 
-public class AudioClipInstance : IAudioClipInstance
+public class AudioClipInstance
 {
-    private IAudioClip audioClip;
+    private AudioClip audioClip;
     private ISoundEffectInstance soundEffectInstance;
 
-    public IAudioClip AudioClip => audioClip;
+    public AudioClip AudioClip => audioClip;
 
-    public AudioClipInstance(IAudioClip audioClip)
+    public AudioClipInstance(AudioClip audioClip)
     {
         this.audioClip = audioClip;
     }
@@ -26,7 +26,11 @@ public class AudioClipInstance : IAudioClipInstance
 
         if (soundEffectInstance.State == SoundState.Stopped)
         {
-            Cleanup();
+            // Don't cleanup if this is a looping sound, as we'll want to restart it
+            if (!audioClip.Loop)
+            {
+                Cleanup();
+            }
             return true;
         }
 
@@ -39,16 +43,16 @@ public class AudioClipInstance : IAudioClipInstance
         {
             soundEffectInstance = audioClip.SoundEffect.CreateInstance();
             UpdateVolume(masterVolume);
-            soundEffectInstance.Play();
         }
-        else
-        {
-            soundEffectInstance.Play();
-        }
+        soundEffectInstance.Play();
     }
 
     public virtual void Stop()
     {
+        if (soundEffectInstance != null)
+        {
+            soundEffectInstance.Stop();
+        }
         Cleanup();
     }
 
@@ -58,11 +62,7 @@ public class AudioClipInstance : IAudioClipInstance
         {
             soundEffectInstance.Dispose();
             soundEffectInstance = null;
-            // Only unload if it's an actual AudioClip (not a mock in tests)
-            if (audioClip is Asset)
-            {
-               AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
-            }
+            AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
         }
     }
 

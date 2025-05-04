@@ -1,309 +1,267 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 using CoreEssentials.Assets;
 using CoreEssentials.Audio;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using Xunit;
-using Moq;
+using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Tests.Audio
 {
     public class AudioManagerTests
     {
-        // Test helper class to expose the internal/protected members of AudioManager for testing
-        private class TestableAudioManager : AudioManager
+        private MockContentManager contentManager;
+        
+        public AudioManagerTests()
         {
-            // Keep track of our mocks created for testing
-            private readonly List<MockAudioClipInstance> _mockInstances = new List<MockAudioClipInstance>();
-
-            private readonly Dictionary<string, IAudioClipInstance> _audioClipInstances;
-
-            public TestableAudioManager()
+            // Set up content manager for tests
+            contentManager = new MockContentManager();
+            
+            // Replace AssetManager's internal content manager - requires reflection
+            var contentManagerField = typeof(AssetManager).GetField("_contentManager", 
+                BindingFlags.NonPublic | BindingFlags.Static);
+            contentManagerField?.SetValue(null, contentManager);
+        }
+        
+        [Fact]
+        public void Instance_ReturnsNonNullSingleton()
+        {
+            // Act
+            var instance = AudioManager.Instance;
+            
+            // Assert
+            Assert.NotNull(instance);
+        }
+        
+        [Fact]
+        public void PlaySound_WithAudioClip_ReturnsValidId()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var audioClip = new MockAudioClip("test.xml") { 
+                SoundEffect = new MockSoundEffect() 
+            };
+            
+            // Act
+            var id = mockManager.PlaySound(audioClip);
+            
+            // Assert
+            Assert.NotNull(id);
+            Assert.NotEmpty(id);
+        }
+        
+        [Fact]
+        public void PlaySound_WithName_CallsPlayOneShotSound()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            
+            // Need to setup AssetManager to return a mock asset
+            var audioClip = new MockAudioClip("test.xml") {
+                SoundEffect = new MockSoundEffect()
+            };
+            SetupAssetManagerToReturnMock(audioClip);
+            
+            // Act
+            var id = mockManager.PlaySound("test.xml");
+            
+            // Assert
+            Assert.NotNull(id);
+            Assert.NotEmpty(id);
+        }
+        
+        [Fact]
+        public void StopSound_RemovesAudioClipInstance()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var audioClip = new MockAudioClip("test.xml") {
+                SoundEffect = new MockSoundEffect()
+            };
+            var id = mockManager.PlaySound(audioClip);
+            
+            // Get the instances field to verify proper cleanup
+            var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            
+            // Act
+            mockManager.StopSound(id);
+            
+            // Assert
+            Assert.False(instances.ContainsKey(id), "Audio clip instance should be removed after stopping");
+        }
+        
+        [Fact]
+        public void SetMasterVolume_ClampsValuesBetweenZeroAndOne()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            
+            // Act - Test upper bound
+            mockManager.SetTestMasterVolume(1.5f);  // Too high
+            
+            // Assert
+            Assert.Equal(1.0f, mockManager.GetMasterVolume());
+            
+            // Act again - Test lower bound
+            mockManager.SetTestMasterVolume(-0.5f); // Too low
+            
+            // Assert
+            Assert.Equal(0.0f, mockManager.GetMasterVolume());
+        }
+        
+        [Fact]
+        public void SetMasterVolume_UpdatesAllAudioClipInstances()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var mockSoundEffect = new MockSoundEffect();
+            var mockSoundEffectInstance = new MockSoundEffectInstance();
+            
+            // Setup the relationship between mock objects
+            mockSoundEffect.LastCreatedInstance = mockSoundEffectInstance;
+            
+            var audioClip = new MockAudioClip("test.xml", 0.5f) {
+                SoundEffect = mockSoundEffect
+            };
+            
+            var id = mockManager.PlaySound(audioClip);
+            
+            // Get the audio clip instance
+            var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            var instance = instances[id];
+            
+            // Use reflection to replace the sound effect instance with our mock
+            var soundEffectInstanceField = typeof(AudioClipInstance).GetField("soundEffectInstance",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            soundEffectInstanceField.SetValue(instance, mockSoundEffectInstance);
+            
+            // Act
+            mockManager.SetTestMasterVolume(0.7f);
+            
+            // Assert - The volume should be audioClip.Volume * masterVolume = 0.5 * 0.7 = 0.35
+            Assert.Equal(0.35f, mockSoundEffectInstance.Volume, 0.001f);
+        }
+        
+        [Fact]
+        public void Update_RemovesDonePlayingSounds()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var mockSoundEffect = new MockSoundEffect();
+            
+            var audioClip = new MockAudioClip("test.xml") {
+                SoundEffect = mockSoundEffect,
+                Loop = false // Important - don't loop
+            };
+            
+            var id = mockManager.PlaySound(audioClip);
+            
+            // Get instances dictionary to check state
+            var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            
+            // Verify initial state
+            Assert.True(instances.ContainsKey(id));
+            
+            // Simulate a sound that's finished playing by making it report as "done"
+            var instance = instances[id];
+            ForceSoundEffectInstanceToReport(instance, isDonePlaying: true);
+            
+            // Act
+            mockManager.Update(new GameTime());
+            
+            // Assert
+            Assert.False(instances.ContainsKey(id), "Audio clip instance should be removed after it's done playing");
+        }
+        
+        [Fact]
+        public void Update_RestartsSoundsWithLoopEnabled()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var mockSoundEffect = new MockSoundEffect();
+            var mockSoundEffectInstance = new MockSoundEffectInstance();
+            
+            var audioClip = new MockAudioClip("test.xml") {
+                SoundEffect = mockSoundEffect,
+                Loop = true // Important - enable looping
+            };
+            
+            var id = mockManager.PlaySound(audioClip);
+            
+            // Get instances dictionary to check state
+            var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            
+            // Get the instance that was created
+            var instance = instances[id];
+            
+            // Replace with our mock instance that we can control
+            var soundEffectInstanceField = typeof(AudioClipInstance).GetField("soundEffectInstance",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            soundEffectInstanceField.SetValue(instance, mockSoundEffectInstance);
+            
+            // Use reflection to make the instance report it's done playing
+            ForceSoundEffectInstanceToReport(instance, isDonePlaying: true);
+            
+            // Act
+            mockManager.Update(new GameTime());
+            
+            // Assert
+            Assert.True(instances.ContainsKey(id), "Looping audio clip instance should not be removed after update");
+            Assert.Equal(1, mockSoundEffectInstance.PlayCallCount);
+        }
+        
+        #region Helper Methods
+        
+        private void SetupAssetManagerToReturnMock(MockAudioClip audioClip)
+        {
+            // Add mock to the asset dictionary - requires reflection
+            var assetsField = typeof(AssetManager).GetField("_assets", BindingFlags.NonPublic | BindingFlags.Static);
+            var assets = assetsField?.GetValue(null) as Dictionary<string, Asset>;
+            
+            if (assets != null)
             {
-                // Use reflection to access the private field
-                var field = typeof(AudioManager).GetField("_audioClipInstances", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
-                _audioClipInstances = (Dictionary<string, IAudioClipInstance>)field.GetValue(this);
-            }
-
-            public Dictionary<string, IAudioClipInstance> GetAudioClipInstances()
-            {
-                return _audioClipInstances;
-            }
-
-            // Instead of trying to override or use CreateAudioClipInstance,
-            // we'll directly insert our mock into the dictionary
-            public new string PlaySound(IAudioClip audioClip)
-            {
-                // Create mock instance
-                var mockInstance = new MockAudioClipInstance(audioClip);
-                _mockInstances.Add(mockInstance);
-                
-                // Generate ID same way the real implementation does
-                var id = Guid.NewGuid().ToString();
-                
-                // Add directly to dictionary
-                _audioClipInstances[id] = mockInstance;
-                
-                // Simulate Play being called
-                mockInstance.Play(1.0f); // Use default volume
-                
-                return id;
-            }
-
-            public MockAudioClipInstance GetMockInstance(string id)
-            {
-                if (_audioClipInstances.TryGetValue(id, out var instance))
+                if (assets.ContainsKey(audioClip.Name))
                 {
-                    return instance as MockAudioClipInstance;
+                    assets[audioClip.Name] = audioClip;
                 }
-                return null;
+                else
+                {
+                    assets.Add(audioClip.Name, audioClip);
+                }
             }
-            
-            public List<MockAudioClipInstance> GetAllMockInstances()
+        }
+        
+        private void ForceSoundEffectInstanceToReport(AudioClipInstance instance, bool isDonePlaying)
+        {
+            // This method affects how IsDonePlaying() behaves
+            if (isDonePlaying)
             {
-                return _mockInstances;
+                var field = typeof(AudioClipInstance).GetField("soundEffectInstance", 
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                
+                var soundEffectInstance = field?.GetValue(instance) as MockSoundEffectInstance;
+                if (soundEffectInstance != null)
+                {
+                    // Set the state to Stopped which will make IsDonePlaying return true
+                    soundEffectInstance.SetState(SoundState.Stopped);
+                }
+                else
+                {
+                    // Fall back to original behavior if the instance isn't a MockSoundEffectInstance
+                    field?.SetValue(instance, null);
+                }
             }
         }
-
-        // Pure mock implementation of IAudioClipInstance for testing
-        private class MockAudioClipInstance : IAudioClipInstance
-        {
-            public bool PlayCalled { get; set; }
-            public bool StopCalled { get; set; }
-            public float LastVolume { get; set; }
-            public bool DonePlaying { get; set; }
-            public IAudioClip AudioClip { get; }
-
-            public MockAudioClipInstance(IAudioClip audioClip)
-            {
-                AudioClip = audioClip;
-                PlayCalled = false;
-                StopCalled = false;
-                LastVolume = 0;
-                DonePlaying = false;
-            }
-
-            public void Play(float masterVolume)
-            {
-                PlayCalled = true;
-                LastVolume = masterVolume;
-            }
-
-            public void Stop()
-            {
-                StopCalled = true;
-            }
-
-            public bool IsDonePlaying()
-            {
-                return DonePlaying;
-            }
-
-            public void UpdateVolume(float masterVolume)
-            {
-                LastVolume = masterVolume;
-            }
-        }
-
-        // Mock implementation of IAudioClip for testing
-        private class MockAudioClip : IAudioClip
-        {
-            public ISoundEffect SoundEffect { get; }
-            public float Volume { get; }
-            public bool Loop { get; set; }
-            public string Name { get; }
-
-            public MockAudioClip(string name, float volume = 1.0f, bool loop = false)
-            {
-                Name = name;
-                Volume = volume;
-                Loop = loop;
-                SoundEffect = new MockSoundEffect();
-            }
-        }
-
-        // Mock implementation of ISoundEffect for testing
-        private class MockSoundEffect : ISoundEffect
-        {
-            public ISoundEffectInstance CreateInstance()
-            {
-                return new MockSoundEffectInstance();
-            }
-
-            public TimeSpan Duration => TimeSpan.FromSeconds(1);
-
-            public float MasterVolume { get; set; } = 1.0f;
-        }
-
-        // Mock implementation of ISoundEffectInstance for testing
-        private class MockSoundEffectInstance : ISoundEffectInstance
-        {
-            public void Play() { }
-            public void Stop() { }
-            public void Pause() { }
-            public SoundState State { get; set; } = SoundState.Stopped;
-            public float Volume { get; set; }
-            public bool IsLooped { get; set; }
-            public float Pitch { get; set; }
-            public float Pan { get; set; }
-            public void Dispose() { }
-        }
-
-        [Fact]
-        public void PlaySound_WithAudioClip_ReturnsIdAndAddsToInstances()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-            var mockAudioClip = new MockAudioClip("testClip");
-
-            // Act
-            string soundId = audioManager.PlaySound(mockAudioClip);
-
-            // Assert
-            Assert.NotNull(soundId);
-            Assert.NotEmpty(soundId);
-            var instances = audioManager.GetAudioClipInstances();
-            Assert.True(instances.ContainsKey(soundId));
-            
-            var mockInstance = audioManager.GetMockInstance(soundId);
-            Assert.NotNull(mockInstance);
-            Assert.True(mockInstance.PlayCalled);
-        }
-
-        [Fact]
-        public void StopSound_WithValidId_RemovesFromInstances()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-            var mockAudioClip = new MockAudioClip("testClip");
-            string soundId = audioManager.PlaySound(mockAudioClip);
-            var instances = audioManager.GetAudioClipInstances();
-            Assert.True(instances.ContainsKey(soundId));
-
-            // Act
-            audioManager.StopSound(soundId);
-
-            // Assert
-            Assert.False(instances.ContainsKey(soundId));
-        }
-
-        [Fact]
-        public void StopSound_WithInvalidId_DoesNotThrow()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-
-            // Act & Assert - should not throw
-            audioManager.StopSound("nonexistent");
-        }
-
-        [Fact]
-        public void SetMasterVolume_UpdatesAllInstances()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-            var mockAudioClip1 = new MockAudioClip("testClip1");
-            var mockAudioClip2 = new MockAudioClip("testClip2");
-            
-            string soundId1 = audioManager.PlaySound(mockAudioClip1);
-            string soundId2 = audioManager.PlaySound(mockAudioClip2);
-            
-            var mockInstances = audioManager.GetAllMockInstances();
-            Assert.Equal(2, mockInstances.Count);
-            
-            // Act
-            float newVolume = 0.5f;
-            audioManager.SetMasterVolume(newVolume);
-
-            // Assert
-            foreach (var instance in mockInstances)
-            {
-                Assert.Equal(newVolume, instance.LastVolume);
-            }
-        }
-
-        [Fact]
-        public void SetMasterVolume_ClampsValues()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-            var mockAudioClip = new MockAudioClip("testClip");
-            string soundId = audioManager.PlaySound(mockAudioClip);
-            var mockInstance = audioManager.GetMockInstance(soundId);
-
-            // Act - test value below 0
-            audioManager.SetMasterVolume(-0.5f);
-            
-            // Assert
-            Assert.Equal(0.0f, mockInstance.LastVolume);
-            
-            // Act - test value above 1
-            audioManager.SetMasterVolume(1.5f);
-            
-            // Assert
-            Assert.Equal(1.0f, mockInstance.LastVolume);
-        }
-
-        [Fact]
-        public void Update_RemovesDonePlayingInstances()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-            var mockAudioClip = new MockAudioClip("testClip");
-            string soundId = audioManager.PlaySound(mockAudioClip);
-            var instances = audioManager.GetAudioClipInstances();
-            var mockInstance = audioManager.GetMockInstance(soundId);
-            mockInstance.DonePlaying = true;
-
-            // Act
-            audioManager.Update(new GameTime());
-
-            // Assert
-            Assert.False(instances.ContainsKey(soundId));
-        }
-
-        [Fact]
-        public void Update_RestartsLoopingSounds()
-        {
-            // Arrange
-            var audioManager = new TestableAudioManager();
-            var mockAudioClip = new MockAudioClip("testClip", loop: true);
-            string soundId = audioManager.PlaySound(mockAudioClip);
-            var instances = audioManager.GetAudioClipInstances();
-            var mockInstance = audioManager.GetMockInstance(soundId);
-            
-            // Reset the PlayCalled flag to false after initial play
-            mockInstance.PlayCalled = false;
-            mockInstance.DonePlaying = true;
-
-            // Act
-            audioManager.Update(new GameTime());
-
-            // Assert
-            Assert.True(instances.ContainsKey(soundId)); // Instance should still be there
-            Assert.True(mockInstance.PlayCalled); // Play should have been called again
-        }
-
-        // This test is skipped because it requires mocking the AssetManager
-        [Fact(Skip = "Requires mocking AssetManager")]
-        public void PlayOneShotSound_LoadsAndPlaysSound()
-        {
-            // This test requires mocking the AssetManager which is more complex
-            // For now, we'll skip implementation as it would require more context
-            // about how AssetManager works in this system
-        }
-
-        // This test is skipped because it requires mocking another string-based method
-        [Fact(Skip = "Requires mocking PlayOneShotSound")]
-        public void PlaySound_WithString_CallsPlayOneShotSound()
-        {
-            // This would require mocking PlayOneShotSound which is complex
-            // without changing the core implementation
-        }
+        
+        #endregion
     }
 }
