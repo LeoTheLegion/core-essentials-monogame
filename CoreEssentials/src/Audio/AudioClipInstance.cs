@@ -59,9 +59,9 @@ public class AudioClipInstance
             soundEffectInstance.Dispose();
             soundEffectInstance = null;
             // Only unload if it's an actual AudioClip (not a mock in tests)
-            if (audioClip is AudioClip actualClip)
+            if (audioClip is Asset)
             {
-                AssetManager.UnloadAsset<AudioClip>(actualClip.Name);
+               AssetManager.UnloadAsset<AudioClip>(audioClip.Name);
             }
         }
     }
