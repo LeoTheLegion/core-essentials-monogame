@@ -53,34 +53,12 @@ public class AnimatedSprite : Asset
     /// <exception cref="InvalidOperationException">Thrown when metadata deserialization fails or the source type is unknown.</exception>
     public AnimatedSprite(string name) : base(name)
     {
-        string extension = Path.GetExtension(name);
-        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
-        {
-            LoadFromXml(name);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported animated sprite data format: {extension}. Use .xml format");
-        }
-
-        if (_metaData.SourceType == null)
-        {
-            throw new InvalidOperationException("Animated sprite metadata source type cannot be null.");
-        }
         
-        // Only support spritesheet source type
-        if (_metaData.SourceType != "spritesheet")
-        {
-            throw new InvalidOperationException($"Unsupported source type for animated sprite: {_metaData.SourceType}. Only spritesheet is supported.");
-        }
-
-        // Load the sprite sheet
-        _spriteSheet = AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
     }
 
     private void LoadFromXml(string name)
     {
-        var xml = AssetManager.LoadAsset<string>(name);
+        var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
         if (xml == null)
         {
             throw new ArgumentNullException("xml", "XML data cannot be null.");
@@ -89,7 +67,7 @@ public class AnimatedSprite : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(AnimatedSpriteDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
-            using (StringReader reader = new StringReader(xml))
+            using (StringReader reader = new StringReader(xml.XMLContent))
             {
                 var xmlData = (AnimatedSpriteDataXml)serializer.Deserialize(reader);
                 
@@ -210,6 +188,46 @@ public class AnimatedSprite : Asset
         );
         
         Debug.Primitives.DrawRectangle(spriteBatch, targetRectangle, Color.Red, 1f);
+    }
+
+    public override void Load(IContentManager contentManager)
+    {
+        string extension = Path.GetExtension(Name);
+        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
+        {
+            LoadFromXml(Name);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unsupported animated sprite data format: {extension}. Use .xml format");
+        }
+
+        if (_metaData.SourceType == null)
+        {
+            throw new InvalidOperationException("Animated sprite metadata source type cannot be null.");
+        }
+        
+        // Only support spritesheet source type
+        if (_metaData.SourceType != "spritesheet")
+        {
+            throw new InvalidOperationException($"Unsupported source type for animated sprite: {_metaData.SourceType}. Only spritesheet is supported.");
+        }
+
+        // Load the sprite sheet
+        _spriteSheet = (SpriteSheet)AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
+    }
+
+    public override void Unload(IContentManager contentManager)
+    {
+        if (_spriteSheet != null)
+        {
+            AssetManager.UnloadAsset<SpriteSheet>(_spriteSheet.Name);
+            _spriteSheet = null;
+        }
+        
+        // Clear the metadata and frames
+        _metaData = null;
+        _frames = null;
     }
 
     /// <summary>
