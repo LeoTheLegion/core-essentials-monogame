@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SoundData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+<SoundData xmlns="http://schemas.coreessentials.monogame/2025/audio">
   <Source>footstep02</Source>
   <SourceType>soundeffect</SourceType>
   <Volume>1</Volume>

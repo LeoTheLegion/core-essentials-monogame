@@ -35,7 +35,7 @@ public class AudioClip : Asset
 
         try
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(SoundDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
+            XmlSerializer serializer = new XmlSerializer(typeof(SoundDataXml), "http://schemas.coreessentials.monogame/2025/audio");
             using (StringReader reader = new StringReader(xml))
             {
                 var xmlData = (SoundDataXml)serializer.Deserialize(reader);
@@ -68,7 +68,7 @@ public class AudioClip : Asset
     /// <summary>
     /// XML serializable class for sound data
     /// </summary>
-    [XmlRoot("SoundData", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+    [XmlRoot("SoundData", Namespace = "http://schemas.coreessentials.monogame/2025/audio")]
     public class SoundDataXml
     {
         public string Source { get; set; }
