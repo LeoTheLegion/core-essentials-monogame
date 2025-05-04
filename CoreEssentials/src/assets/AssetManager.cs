@@ -19,7 +19,7 @@ namespace CoreEssentials.Assets
         /// <summary>
         /// Dictionary of loaded assets, indexed by a combination of asset name and type.
         /// </summary>
-        static Dictionary<string, object> assetsLoaded = new Dictionary<string, object>();
+        static Dictionary<string, Asset> assetsLoaded = new Dictionary<string, Asset>();
         
         /// <summary>
         /// Dictionary tracking reference counts for each loaded asset.
@@ -29,13 +29,13 @@ namespace CoreEssentials.Assets
         /// <summary>
         /// Content manager reference used to load assets from files.
         /// </summary>
-        static ContentManager Content;
+        static IContentManager Content;
         
         /// <summary>
         /// Initializes the AssetManager with a ContentManager.
         /// </summary>
         /// <param name="content">The ContentManager to use for loading assets.</param>
-        public static void Init(ContentManager content)
+        public static void Init(IContentManager content)
         {
             Content = content;
         }
@@ -47,7 +47,7 @@ namespace CoreEssentials.Assets
         /// <typeparam name="T">The type of asset to load.</typeparam>
         /// <param name="assetName">The name of the asset to load.</param>
         /// <returns>The loaded asset.</returns>
-        public static T LoadAsset<T>(string assetName)
+        public static Asset LoadAsset<T>(string assetName)
         {
             var AssetNameType = typeof(T).Name;
             var AssetKey = assetName + "_" + AssetNameType;
@@ -55,7 +55,7 @@ namespace CoreEssentials.Assets
             if (assetsLoaded.ContainsKey(AssetKey))
             {
                 countOfObjectsUsingAsset[AssetKey]++;
-                return (T)assetsLoaded[AssetKey];
+                return assetsLoaded[AssetKey];
             }
 
             if (assetName == null || assetName == string.Empty)
@@ -63,42 +63,15 @@ namespace CoreEssentials.Assets
                 throw new ArgumentNullException("assetName", "Asset name cannot be null or empty.");
             }
 
-            T asset;
+            Asset asset;
 
-            if (typeof(Asset).IsAssignableFrom(typeof(T))) {
-                asset = (T)Activator.CreateInstance(typeof(T), new object[] { assetName });
-            }
-            else if (typeof(String).IsAssignableFrom(typeof(T)))
-            {
-                var extention = Path.GetExtension(assetName);
-
-                if(extention != null && extention != string.Empty)
-                {
-                    string exePath = AppContext.BaseDirectory;
-                    string filePath = Path.Combine(exePath, "Content", assetName);
-                    if (typeof(T) == typeof(string))
-                    {
-                        asset = (T)(object)File.ReadAllText(filePath);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} from a text file.");
-                    }
-                }
-                else
-                {
-                    asset = Content.Load<T>(assetName);
-                }
-            }
-            else {
-                var extention = Path.GetExtension(assetName);
-                if (extention != null && extention != string.Empty)
-                {
-                    throw new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} using an extention. Please remove it.");
-                }
-                asset = Content.Load<T>(assetName);
+            if (!typeof(Asset).IsAssignableFrom(typeof(T))) {
+                throw new ArgumentException("Asset type must inherit from Asset.", nameof(T));
             }
              
+            asset = (Asset)Activator.CreateInstance(typeof(T), new object[] { assetName });
+            asset.Load(Content);
+            
             assetsLoaded.Add(AssetKey, asset);
             if (!countOfObjectsUsingAsset.ContainsKey(AssetKey))
                 countOfObjectsUsingAsset.Add(AssetKey, 1);
@@ -128,7 +101,7 @@ namespace CoreEssentials.Assets
                     
                     if (Content != null)
                     {
-                        Content.UnloadAsset(assetName);
+                        Content.Unload(assetName);
                     }
                     
                     Debug.Console.WriteLine(String.Format("Unloaded <{0}> {1}", typeof(T).Name, AssetKey));

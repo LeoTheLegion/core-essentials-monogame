@@ -5,14 +5,14 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Audio;
 
-public class AudioClipInstance : IAudioClipInstance
+public class AudioClipInstance
 {
-    private IAudioClip audioClip;
+    private AudioClip audioClip;
     private ISoundEffectInstance soundEffectInstance;
 
-    public IAudioClip AudioClip => audioClip;
+    public AudioClip AudioClip => audioClip;
 
-    public AudioClipInstance(IAudioClip audioClip)
+    public AudioClipInstance(AudioClip audioClip)
     {
         this.audioClip = audioClip;
     }

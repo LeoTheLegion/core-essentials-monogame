@@ -18,7 +18,7 @@ public class CharacterEntity : Entity
         _position = position;
         
         // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
+        _sprite = (Sprite)AssetManager.LoadAsset<Sprite>("character_sprite.xml");
     }
     
     public override void OnStart()

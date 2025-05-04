@@ -82,7 +82,9 @@ namespace CoreEssentials
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            AssetManager.Init(Content);
+            IContentManager contentManagerWrapper = new ContentManagerWrapper(Content);
+
+            AssetManager.Init(contentManagerWrapper);
             GUIManager.Init(this, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
             Debug.StickyLog.LoadGUI();
             Debug.Console.LoadGUI();

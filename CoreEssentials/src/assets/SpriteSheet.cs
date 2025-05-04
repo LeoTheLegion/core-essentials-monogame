@@ -13,14 +13,14 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class SpriteSheet : Asset
 {
-    private Texture2D _texture;
+    private Texture2DAsset _texture;
     private SpriteSheetMetadata _metaData;
     private Rectangle[] _frames;
     
     /// <summary>
     /// Gets the texture used by this sprite sheet.
     /// </summary>
-    public Texture2D Texture => _texture;
+    public Texture2D Texture => _texture.Texture;
     
     /// <summary>
     /// Gets the origin point for all frames in this sprite sheet.
@@ -36,32 +36,7 @@ public class SpriteSheet : Asset
     /// <exception cref="InvalidOperationException">Thrown when metadata deserialization fails or the source type is unknown.</exception>
     public SpriteSheet(string name) : base(name)
     {
-        string extension = Path.GetExtension(name);
-        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
-        {
-            LoadFromXml(name);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported sprite sheet data format: {extension}. Use .xml format");
-        }
-
-        if (_metaData.SourceType == null)
-        {
-            throw new InvalidOperationException("Sprite sheet metadata source type cannot be null.");
-        }
         
-        switch (_metaData.SourceType)
-        {
-            case "texture2d":
-                _texture = AssetManager.LoadAsset<Texture2D>(_metaData.Source);
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
-        }
-        
-        // Initialize frames based on the grid
-        InitializeFrames();
     }
     
     private void InitializeFrames()
@@ -90,7 +65,7 @@ public class SpriteSheet : Asset
 
     private void LoadFromXml(string name)
     {
-        var xml = AssetManager.LoadAsset<string>(name);
+        var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
         if (xml == null)
         {
             throw new ArgumentNullException("xml", "XML data cannot be null.");
@@ -99,7 +74,7 @@ public class SpriteSheet : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SpriteSheetDataXml), "http://schemas.coreessentials.monogame/2025/spritesheet");
-            using (StringReader reader = new StringReader(xml))
+            using (StringReader reader = new StringReader(xml.XMLContent))
             {
                 var xmlData = (SpriteSheetDataXml)serializer.Deserialize(reader);
                 
@@ -192,7 +167,49 @@ public class SpriteSheet : Asset
         int index = row * _metaData.Grid.Columns + column;
         return _frames[index];
     }
-    
+
+    public override void Load(IContentManager contentManager)
+    {
+        string extension = Path.GetExtension(Name);
+        if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
+        {
+            LoadFromXml(Name);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unsupported sprite sheet data format: {extension}. Use .xml format");
+        }
+
+        if (_metaData.SourceType == null)
+        {
+            throw new InvalidOperationException("Sprite sheet metadata source type cannot be null.");
+        }
+        
+        switch (_metaData.SourceType)
+        {
+            case "texture2d":
+                _texture = (Texture2DAsset)AssetManager.LoadAsset<Texture2DAsset>(_metaData.Source);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
+        }
+        
+        // Initialize frames based on the grid
+        InitializeFrames();
+    }
+
+    public override void Unload(IContentManager contentManager)
+    {
+        if (_texture != null)
+        {
+            AssetManager.UnloadAsset<Texture2DAsset>(_texture.Name);
+            _texture = null;
+        }
+        
+        _frames = null;
+        _metaData = null;
+    }
+
     /// <summary>
     /// Contains metadata about a sprite sheet, loaded from XML.
     /// </summary>

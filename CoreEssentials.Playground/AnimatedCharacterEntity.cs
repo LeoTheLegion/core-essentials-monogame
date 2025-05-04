@@ -24,7 +24,7 @@ namespace CoreEssentials.Playground
             _position = position;
             
             // Load the animated sprite
-            _animatedSprite = AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
+            _animatedSprite = (AnimatedSprite)AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
             
             // Create animation state for this instance
             _animationState = new AnimationState(_animatedSprite);
