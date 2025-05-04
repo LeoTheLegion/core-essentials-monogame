@@ -1,13 +1,15 @@
 using System;
 using System.IO;
 using System.Xml.Serialization;
+using CoreEssentials.Audio;
 using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Assets;
 
+// Concrete implementation
 public class AudioClip : Asset
 {
-    public SoundEffect SoundEffect { get; internal set; }
+    public ISoundEffect SoundEffect { get; internal set; }
     public float Volume { get; internal set; }
 
     public bool Loop { get; set; }
@@ -51,8 +53,9 @@ public class AudioClip : Asset
                     if (volume > 1f) volume = 1f;
                 }
                 
-                // Load the sound effect
-                SoundEffect = AssetManager.LoadAsset<SoundEffect>(xmlData.Source);
+                // Load the sound effect and wrap it with our adapter
+                var soundEffect = AssetManager.LoadAsset<SoundEffect>(xmlData.Source);
+                SoundEffect = new SoundEffectAdapter(soundEffect);
 
                 Loop = xmlData.Loop?.ToLower() == "true" || xmlData.Loop?.ToLower() == "yes";
 

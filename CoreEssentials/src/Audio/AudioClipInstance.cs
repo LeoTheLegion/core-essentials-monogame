@@ -8,7 +8,7 @@ namespace CoreEssentials.Audio;
 public class AudioClipInstance
 {
     private AudioClip audioClip;
-    private SoundEffectInstance soundEffectInstance;
+    private ISoundEffectInstance soundEffectInstance;
 
     public AudioClip AudioClip => audioClip;
 
