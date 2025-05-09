@@ -1,5 +1,4 @@
-﻿using CoreEssentials.Debugging;
-using Microsoft.Xna.Framework.Content;
+﻿using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -92,7 +91,7 @@ namespace CoreEssentials.Assets
             else
                 countOfObjectsUsingAsset[AssetKey]++;
 
-            Debug.Console.WriteLine(String.Format("Loaded <{0}> {1}", typeof(T).Name, AssetKey));
+            Console.WriteLine(String.Format("Loaded <{0}> {1}", typeof(T).Name, AssetKey));
 
             return (T)asset;
         }
@@ -118,7 +117,7 @@ namespace CoreEssentials.Assets
                         Content.Unload(assetName);
                     }
                     
-                    Debug.Console.WriteLine(String.Format("Unloaded <{0}> {1}", typeof(T).Name, AssetKey));
+                    Console.WriteLine(String.Format("Unloaded <{0}> {1}", typeof(T).Name, AssetKey));
                 }
             }
         }

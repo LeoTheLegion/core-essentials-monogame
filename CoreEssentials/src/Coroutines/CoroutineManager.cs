@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using System.Collections;
-using CoreEssentials.Debugging;
 
 namespace CoreEssentials.Coroutines
 {
@@ -142,7 +141,7 @@ namespace CoreEssentials.Coroutines
                         catch (Exception e)
                         {
                             // Log exception and remove the faulty coroutine
-                            Debug.Console.WriteLine($"Error in coroutine: {e.Message}");
+                            Console.WriteLine($"Error in coroutine: {e.Message}");
                             _coroutinesToRemove.Add(id);
                             continue;
                         }

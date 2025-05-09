@@ -1,4 +1,3 @@
-using CoreEssentials.Debugging;
 using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -104,7 +103,7 @@ public class SceneManager
         // If a transition is already in progress, don't start another one
         if (_isTransitioning)
         {
-            Debug.Console.WriteLine($"Cannot load scene {scene.GetType().Name} - another scene is already loading");
+            Console.WriteLine($"Cannot load scene {scene.GetType().Name} - another scene is already loading");
             return;
         }
         
@@ -130,7 +129,7 @@ public class SceneManager
         }
         
         _isTransitioning = true;
-        Debug.Console.WriteLine($"Started loading scene: {_nextScene.GetType().Name}");
+        Console.WriteLine($"Started loading scene: {_nextScene.GetType().Name}");
     }
     
     /// <summary>
@@ -138,7 +137,7 @@ public class SceneManager
     /// </summary>
     private IEnumerator DirectTransitionCoroutine()
     {
-        Debug.Console.WriteLine("Starting direct scene transition");
+        Console.WriteLine("Starting direct scene transition");
         
         // Start loading the new scene
         _nextScene.Load();
@@ -152,7 +151,7 @@ public class SceneManager
         // Unload the current scene if it exists
         if (_currentScene != null)
         {
-            Debug.Console.WriteLine($"Unloading scene: {_currentScene.GetType().Name}");
+            Console.WriteLine($"Unloading scene: {_currentScene.GetType().Name}");
             _currentScene.Unload();
         }
         
@@ -162,7 +161,7 @@ public class SceneManager
         
         // Transition complete
         _isTransitioning = false;
-        Debug.Console.WriteLine("Direct scene transition complete");
+        Console.WriteLine("Direct scene transition complete");
     }
     
     /// <summary>
@@ -170,18 +169,18 @@ public class SceneManager
     /// </summary>
     private IEnumerator TransitionWithLoadingScreenCoroutine()
     {
-        Debug.Console.WriteLine("Starting scene transition with loading screen");
+        Console.WriteLine("Starting scene transition with loading screen");
         
         // Step 1: Show loading screen
         if (_currentScene != null)
         {
             // Unload current scene
-            Debug.Console.WriteLine($"Unloading scene: {_currentScene.GetType().Name}");
+            Console.WriteLine($"Unloading scene: {_currentScene.GetType().Name}");
             _currentScene.Unload();
         }
         
         // Load the loading screen scene first (quickly)
-        Debug.Console.WriteLine("Loading transition screen");
+        Console.WriteLine("Loading transition screen");
         _loadingScene.Load();
         
         // Wait for the loading screen to finish loading
@@ -192,7 +191,7 @@ public class SceneManager
         
         // Set loading screen as current scene
         _currentScene = _loadingScene;
-        Debug.Console.WriteLine("Transition screen ready");
+        Console.WriteLine("Transition screen ready");
         
         // Step 2: Load the target scene in the background
         _nextScene.Load();
@@ -205,7 +204,7 @@ public class SceneManager
         }
         
         // Target scene is loaded, switch to it
-        Debug.Console.WriteLine($"Target scene loaded, switching from loading screen to: {_nextScene.GetType().Name}");
+        Console.WriteLine($"Target scene loaded, switching from loading screen to: {_nextScene.GetType().Name}");
         
         // No need to unload loading screen as we'll reuse it
         _currentScene = _nextScene;
@@ -213,7 +212,7 @@ public class SceneManager
         
         // Transition complete
         _isTransitioning = false;
-        Debug.Console.WriteLine("Scene transition complete");
+        Console.WriteLine("Scene transition complete");
     }
 
     /// <summary>

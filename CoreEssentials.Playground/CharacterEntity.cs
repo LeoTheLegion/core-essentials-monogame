@@ -1,8 +1,8 @@
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.Debugging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace CoreEssentials.Playground;
 
@@ -24,7 +24,7 @@ public class CharacterEntity : Entity
     public override void OnStart()
     {
         base.OnStart();
-        Debug.Console.WriteLine("Character entity created!");
+        Console.WriteLine("Character entity created!");
     }
     
     public override void Render(SpriteBatch spriteBatch)

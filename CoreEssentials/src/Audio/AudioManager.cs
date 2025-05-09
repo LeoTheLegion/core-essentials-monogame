@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using CoreEssentials.Assets;
 using Microsoft.Xna.Framework;
-using CoreEssentials.Debugging;
 
 namespace CoreEssentials.Audio;
 
@@ -57,7 +56,7 @@ public class AudioManager
         var id = Guid.NewGuid().ToString();
         instance.Play(_masterVolume);
 
-        Debug.Console.WriteLine($"Playing sound with ID: {id}");
+        Console.WriteLine($"Playing sound with ID: {id}");
 
         _audioClipInstances[id] = instance;
 
