@@ -98,7 +98,7 @@ namespace YourGameNamespace
             Input.Keyboard.KeyReleased += OnKeyReleased();
             
             UpdateLoadingProgress(1.0f, "Ready!");
-            Debug.Console.WriteLine("Main menu loaded successfully!");
+            Console.WriteLine("Main menu loaded successfully!");
         }
         
         public override void Unload()

@@ -13,19 +13,19 @@ Coroutines are implemented using C#'s `IEnumerator` interface, allowing you to p
 private IEnumerator MyCoroutine()
 {
     // Do something on the first frame
-    Debug.Console.WriteLine("Starting coroutine");
+    Console.WriteLine("Starting coroutine");
     
     // Wait for 2 seconds
     yield return new WaitForSeconds(2.0f);
     
     // Do something after the wait
-    Debug.Console.WriteLine("2 seconds have passed");
+    Console.WriteLine("2 seconds have passed");
     
     // Wait until a condition is met
     yield return new WaitUntil(() => Input.Keyboard.IsKeyDown(Keys.Space));
     
     // Do something after the condition is met
-    Debug.Console.WriteLine("Space key was pressed");
+    Console.WriteLine("Space key was pressed");
 }
 ```
 
@@ -113,7 +113,7 @@ private IEnumerator MainSequence()
 {
     yield return StartCoroutine(SubSequence1());
     yield return StartCoroutine(SubSequence2());
-    Debug.Console.WriteLine("All sequences complete");
+    Console.WriteLine("All sequences complete");
 }
 
 private IEnumerator SubSequence1()

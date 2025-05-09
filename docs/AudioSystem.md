@@ -84,21 +84,21 @@ private EventHandler<KeyboardEventArgs> PlaySound()
         {
             // Play a sound effect
             var id = AudioManager.Instance.PlayOneShotSound("footstep1_sound.xml");
-            Debug.Console.WriteLine($"Sound played with ID: {id}");
+            Console.WriteLine($"Sound played with ID: {id}");
         }
         
         if (args.Key == Keys.Z)
         {
             // Lower volume
             AudioManager.Instance.SetMasterVolume(0.1f);
-            Debug.Console.WriteLine("Volume set to 10%");
+            Console.WriteLine("Volume set to 10%");
         }
         
         if (args.Key == Keys.X)
         {
             // Reset volume
             AudioManager.Instance.SetMasterVolume(1.0f);
-            Debug.Console.WriteLine("Volume set to 100%");
+            Console.WriteLine("Volume set to 100%");
         }
     };
 }
