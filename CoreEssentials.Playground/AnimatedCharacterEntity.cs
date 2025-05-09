@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.Debugging;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -29,14 +28,14 @@ namespace CoreEssentials.Playground
             // Create animation state for this instance
             _animationState = new AnimationState(_animatedSprite);
             
-            Debug.Console.WriteLine($"Animation has {_animatedSprite.FrameCount} frames with base frame rate of {_animatedSprite.FrameRate}s per frame");
-            Debug.Console.WriteLine($"Effective frame time with speed {_animationState.Speed}: {_animationState.EffectiveFrameTime}s per frame");
+            Console.WriteLine($"Animation has {_animatedSprite.FrameCount} frames with base frame rate of {_animatedSprite.FrameRate}s per frame");
+            Console.WriteLine($"Effective frame time with speed {_animationState.Speed}: {_animationState.EffectiveFrameTime}s per frame");
         }
         
         public override void OnStart()
         {
             base.OnStart();
-            Debug.Console.WriteLine("Animated character entity created!");
+            Console.WriteLine("Animated character entity created!");
         }
         
         public override void Update(GameTime gameTime)
@@ -66,7 +65,7 @@ namespace CoreEssentials.Playground
         {
             base.OnDestroy();
             
-            Debug.Console.WriteLine("Animated character entity destroyed!");
+            Console.WriteLine("Animated character entity destroyed!");
         }
     }
 }

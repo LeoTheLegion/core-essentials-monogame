@@ -2,29 +2,6 @@
 
 CoreEssentials-MonoGame provides a comprehensive suite of debugging tools to help you develop, test, and troubleshoot your games. These tools include logging capabilities, visual debugging aids, and diagnostic information displays.
 
-## Debug Console
-
-The `Debug.Console` class provides logging functionality that can be displayed in-game or redirected to other outputs:
-
-```csharp
-// Basic console output
-Debug.Console.WriteLine("Player spawned");
-
-// Categorized logging with different log levels
-Debug.Console.WriteLine("Physics collision detected", LogCategory.Physics);
-Debug.Console.WriteLine("Critical error in asset loading", LogCategory.Error);
-
-// Format strings
-Debug.Console.WriteLine($"Player position: {player.Position}");
-
-// Toggle console visibility
-Debug.Console.IsVisible = true;  // Show the console
-Debug.Console.IsVisible = false; // Hide the console
-
-// Clear console
-Debug.Console.Clear();
-```
-
 ## StickyLog
 
 The `StickyLog` feature allows you to display persistent information on the screen, ideal for showing FPS, entity counts, or other stats:
@@ -156,11 +133,11 @@ Debug tools are used throughout the Playground examples:
 
 ```csharp
 // From PhysicsEntityScene
-Debug.Console.WriteLine("Physics entity scene initialization complete!");
+Console.WriteLine("Physics entity scene initialization complete!");
 
 // From CharacterScene
-Debug.Console.WriteLine("Character scene loaded successfully!");
-Debug.Console.WriteLine($"Sound played with ID: {id}");
+Console.WriteLine("Character scene loaded successfully!");
+Console.WriteLine($"Sound played with ID: {id}");
 ```
 
 ## Best Practices

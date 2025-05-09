@@ -5,7 +5,6 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.Physics;
 using CoreEssentials.Inputs;
 using CoreEssentials.SceneManagement;
-using CoreEssentials.Debugging;
 using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
 
@@ -100,7 +99,7 @@ public class PhysicsEntityScene : Scene
         // Final progress update
         UpdateLoadingProgress(1.0f, "Scene ready!");
         
-        Debug.Console.WriteLine("Physics entity scene initialization complete!");
+        Console.WriteLine("Physics entity scene initialization complete!");
     }
 
     public override void Unload()

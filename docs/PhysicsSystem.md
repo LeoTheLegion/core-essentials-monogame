@@ -111,14 +111,14 @@ body.CollidesWith = Category.Cat2 | Category.Cat3;
 body.OnCollision += (bodyA, bodyB, contact) =>
 {
     // Called at the start of a collision
-    Debug.Console.WriteLine("Collision started!");
+    Console.WriteLine("Collision started!");
     return true; // Return true to allow the collision
 };
 
 body.OnSeparation += (bodyA, bodyB) =>
 {
     // Called when bodies separate
-    Debug.Console.WriteLine("Collision ended!");
+    Console.WriteLine("Collision ended!");
 };
 ```
 

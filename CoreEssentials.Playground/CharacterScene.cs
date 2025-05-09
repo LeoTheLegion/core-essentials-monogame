@@ -3,7 +3,6 @@ using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.SceneManagement;
-using CoreEssentials.Debugging;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -62,7 +61,7 @@ public class CharacterScene : Scene
         Input.Keyboard.KeyReleased += PlaySound();
         
         UpdateLoadingProgress(1.0f, "Scene ready!");
-        Debug.Console.WriteLine("Character scene loaded successfully!");
+        Console.WriteLine("Character scene loaded successfully!");
 
         songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
@@ -95,33 +94,33 @@ public class CharacterScene : Scene
             {
                 // Play the sound effect
                 var id = AudioManager.Instance.PlayOneShotSound("footstep1_sound.xml");
-                Debug.Console.WriteLine($"Sound played with ID: {id}");
+                Console.WriteLine($"Sound played with ID: {id}");
             }
 
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.W)
             {
                 // Play the sound effect
                 var id = AudioManager.Instance.PlayOneShotSound("footstep2_sound.xml");
-                Debug.Console.WriteLine($"Sound played with ID: {id}");
+                Console.WriteLine($"Sound played with ID: {id}");
             }
 
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.E)
             {
                 // Play the sound effect
                 var id = AudioManager.Instance.PlayOneShotSound("footstep3_sound.xml");
-                Debug.Console.WriteLine($"Sound played with ID: {id}");
+                Console.WriteLine($"Sound played with ID: {id}");
             }
 
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Z)
             {
                 AudioManager.Instance.SetMasterVolume(0.1f);
-                Debug.Console.WriteLine("Volume set to 10%");
+                Console.WriteLine("Volume set to 10%");
             }
 
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.X)
             {
                 AudioManager.Instance.SetMasterVolume(1.0f);
-                Debug.Console.WriteLine("Volume set to 100%");
+                Console.WriteLine("Volume set to 100%");
             }
         };
     }

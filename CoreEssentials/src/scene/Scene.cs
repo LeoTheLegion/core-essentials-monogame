@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
-using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems;
 using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
@@ -145,7 +144,7 @@ public abstract class Scene
     /// <returns>An IEnumerator used by the coroutine system.</returns>
     private IEnumerator LoadCoroutine()
     {
-        Debug.Console.WriteLine($"Starting to load scene: {this.GetType().Name}");
+        Console.WriteLine($"Starting to load scene: {this.GetType().Name}");
         
         // Phase 1: Load game systems (25% of progress)
         UpdateLoadingProgress(0.05f, "Loading game systems...");
@@ -178,9 +177,9 @@ public abstract class Scene
         _drawSystems = systems.OfType<IDrawGameSystem>().ToArray();
         _fixedUpdateSystems = systems.OfType<IFixedUpdateGameSystem>().ToArray();
 
-        Debug.Console.WriteLine("Loaded Update Systems: " + _updateSystems.Length.ToString());
-        Debug.Console.WriteLine("Loaded Fixed Update Systems: " + _fixedUpdateSystems.Length.ToString());
-        Debug.Console.WriteLine("Loaded Draw Systems: " + _drawSystems.Length.ToString());
+        Console.WriteLine("Loaded Update Systems: " + _updateSystems.Length.ToString());
+        Console.WriteLine("Loaded Fixed Update Systems: " + _fixedUpdateSystems.Length.ToString());
+        Console.WriteLine("Loaded Draw Systems: " + _drawSystems.Length.ToString());
         
         UpdateLoadingProgress(0.5f, "Initializing scene...");
         yield return null;
@@ -194,7 +193,7 @@ public abstract class Scene
         IsLoaded = true;
         IsLoading = false;
         
-        Debug.Console.WriteLine($"Scene loaded: {this.GetType().Name}");
+        Console.WriteLine($"Scene loaded: {this.GetType().Name}");
     }
     
     /// <summary>

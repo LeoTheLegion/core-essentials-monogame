@@ -1,5 +1,4 @@
 using CoreEssentials.GameSystems;
-using CoreEssentials.Debugging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -89,7 +88,7 @@ namespace CoreEssentials.SceneManagement
         /// </summary>
         protected override IEnumerator OnStartCoroutine()
         {
-            Debug.Console.WriteLine("Loading screen initialized");
+            Console.WriteLine("Loading screen initialized");
             // Update progress immediately to 100% since loading screen is simple
             _loadingProgress = 1.0f;
             yield break;
@@ -131,7 +130,7 @@ namespace CoreEssentials.SceneManagement
                 );
                 
                 // Draw the bars
-                Debug.Primitives.DrawRectangle(spriteBatch, barBg, _loadingBarColor.WithAlpha(0.5f));
+                CoreEssentials.Debugging.Debug.Primitives.DrawRectangle(spriteBatch, barBg, _loadingBarColor.WithAlpha(0.5f));
                 
                 // Fill the progress bar
                 Texture2D pixel = new Texture2D(graphicsDevice, 1, 1);
@@ -181,7 +180,7 @@ namespace CoreEssentials.SceneManagement
                     6,
                     10
                 );
-                Debug.Primitives.DrawRectangle(spriteBatch, charRect, color);
+                CoreEssentials.Debugging.Debug.Primitives.DrawRectangle(spriteBatch, charRect, color);
             }
         }
     }
