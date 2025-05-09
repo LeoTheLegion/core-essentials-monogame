@@ -87,7 +87,6 @@ namespace CoreEssentials
             AssetManager.Init(contentManagerWrapper);
             GUIManager.Init(this, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
             Debug.StickyLog.LoadGUI();
-            Debug.Console.LoadGUI();
         }
 
         /// <summary>
