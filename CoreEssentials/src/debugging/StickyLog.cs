@@ -155,5 +155,81 @@ namespace CoreEssentials.Debugging
 
             log[key] = valueLabel;
         }
+
+        /// <summary>
+        /// Sets the position of the StickyLog on the screen.
+        /// </summary>
+        /// <param name="position">The position in screen coordinates.</param>
+        public void SetPosition(Vector2 position)
+        {
+            if (_canvas != null)
+            {
+                _canvas.SetPosition(position);
+            }
+        }
+
+        /// <summary>
+        /// Removes a specific log entry by key.
+        /// </summary>
+        /// <param name="key">The key of the log entry to remove.</param>
+        public void Remove(string key)
+        {
+            if (_grid != null && log.ContainsKey(key))
+            {
+                // Find the row of the entry to remove
+                int rowToRemove = -1;
+                foreach (var widget in _grid.Widgets)
+                {
+                    if (widget is Label label && label == log[key])
+                    {
+                        rowToRemove = Grid.GetRow(label);
+                        break;
+                    }
+                }
+
+                if (rowToRemove >= 0)
+                {
+                    // Remove the widgets for this entry
+                    List<Widget> widgetsToRemove = new List<Widget>();
+                    foreach (var widget in _grid.Widgets)
+                    {
+                        if (Grid.GetRow(widget) == rowToRemove)
+                        {
+                            widgetsToRemove.Add(widget);
+                        }
+                    }
+
+                    foreach (var widget in widgetsToRemove)
+                    {
+                        _grid.Widgets.Remove(widget);
+                    }
+
+                    // Shift up the rows for widgets below the removed row
+                    foreach (var widget in _grid.Widgets)
+                    {
+                        int row = Grid.GetRow(widget);
+                        if (row > rowToRemove)
+                        {
+                            Grid.SetRow(widget, row - 1);
+                        }
+                    }
+
+                    // Remove from dictionary
+                    log.Remove(key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clears all log entries.
+        /// </summary>
+        public void Clear()
+        {
+            if (_grid != null)
+            {
+                _grid.Widgets.Clear();
+                log.Clear();
+            }
+        }
     }
 }

@@ -20,13 +20,36 @@ Debug.StickyLog.IsVisible = !Debug.StickyLog.IsVisible;
 
 The StickyLog is built on top of the Canvas system, which handles positioning and updating of UI elements. It's automatically updated in the game's main update loop.
 
-StickyLog positions itself at the top-left corner of the screen by default, but you can customize its position in your game code:
+### Positioning
+
+StickyLog positions itself at the top-left corner of the screen by default, but you can customize its position:
 
 ```csharp
 // Custom positioning (must be done after LoadGUI has been called)
 // This will position the StickyLog at the top-right corner with 10px margin
 var screenWidth = GraphicsDevice.Viewport.Width;
-_canvas.SetPosition(new Vector2(screenWidth - 210, 10));
+Debug.StickyLog.SetPosition(new Vector2(screenWidth - 210, 10));
+```
+
+### Managing Entries
+
+You can remove specific entries or clear all entries:
+
+```csharp
+// Remove a specific entry by key
+Debug.StickyLog.Remove("FPS");
+
+// Clear all entries
+Debug.StickyLog.Clear();
+```
+
+### Update Cycle
+
+StickyLog needs to be updated each frame, but this is already handled in the MainGame class:
+
+```csharp
+// This is already implemented in MainGame.Update
+Debug.StickyLog.Update(gameTime);
 ```
 
 ## Physics Debug Renderer
