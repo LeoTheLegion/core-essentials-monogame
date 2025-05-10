@@ -61,7 +61,7 @@ public class FontAsset : Asset
     /// </summary>
     /// <param name="text">The text to measure.</param>
     /// <returns>The width of the text in pixels.</returns>
-    public float MeasureString(string text)
+    public virtual float MeasureString(string text)
     {
         if (_spriteFont == null)
         {
@@ -76,7 +76,7 @@ public class FontAsset : Asset
     /// </summary>
     /// <param name="text">The text to measure.</param>
     /// <returns>The size of the text in pixels.</returns>
-    public Vector2 MeasureStringVector(string text)
+    public virtual Vector2 MeasureStringVector(string text)
     {
         if (_spriteFont == null)
         {
