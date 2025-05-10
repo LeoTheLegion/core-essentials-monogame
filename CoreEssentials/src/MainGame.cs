@@ -12,6 +12,7 @@ using System;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
+using Myra;
 
 namespace CoreEssentials
 {
@@ -80,7 +81,10 @@ namespace CoreEssentials
         /// </summary>
         protected override void LoadContent()
         {
+
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            MyraEnvironment.Game = this;
 
             IContentManager contentManagerWrapper = new ContentManagerWrapper(Content);
 

@@ -9,7 +9,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 /// Manages game entities in an object-oriented architecture.
 /// Handles the creation, updating, rendering, and destruction of entities.
 /// </summary>
-public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem
+public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDisposable
 {
     /// <summary>
     /// The list of all entities managed by this system.
@@ -105,7 +105,14 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem
     {
         for (int i = _entities.Count - 1 ; i >= 0; i--)
         {
-            _entities[i].Destroy();
+            _entities[i].OnDestroy();
+            _entities.RemoveAt(i);
         }
+    }
+
+    public void Dispose()
+    {
+        ClearEntities();
+        _entities = null;
     }
 }

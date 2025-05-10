@@ -32,8 +32,6 @@ namespace CoreEssentials.GUI
         /// <param name="height">The height of the window in pixels.</param>
         public static void Init(Game game, int width, int height)
         {
-            MyraEnvironment.Game = game;
-
             Panel panel = new Panel();
             panel.Width = width;
             panel.Height = height;
