@@ -262,7 +262,53 @@ When testing GUI components, consider these approaches:
 4. **Integration Testing**: Test interactions between components (e.g., Canvas and GUIManager)
 5. **Component State Verification**: Check that component state changes correctly after operations
 
-For more detailed examples, see the `CanvasTests.cs` file in the test project.
+For more detailed examples, see the `CanvasTests.cs` and `GUIManagerTests.cs` files in the test project.
+
+### Testing GUIManager
+
+The static `GUIManager` class can be tested using similar approaches:
+
+```csharp
+public class GUIManagerTests : IDisposable
+{
+    private readonly Game _mockGame;
+
+    public GUIManagerTests()
+    {
+        // Create a real Game instance for testing
+        _mockGame = new Game1();
+        
+        // Set Myra environment before tests
+        MyraEnvironment.Game = _mockGame;
+    }
+    
+    void IDisposable.Dispose()
+    {
+        // Clean up resources
+        _mockGame?.Dispose();
+    }
+    
+    [Fact]
+    public void AddWidget_AddsWidgetToRootPanel()
+    {
+        // Arrange
+        GUIManager.Init(_mockGame, 800, 600);
+        var widget = new Label { Text = "Test Label" };
+        
+        // Act
+        GUIManager.AddWidget(widget);
+        
+        // Assert
+        var rootPanelGetter = typeof(GUIManager).GetProperty("Root", 
+            BindingFlags.NonPublic | BindingFlags.Static);
+        var rootPanel = (Panel)rootPanelGetter.GetValue(null);
+        
+        Assert.Contains(widget, rootPanel.Widgets);
+    }
+    
+    // Additional tests for other GUIManager functionality
+}
+```
 
 ```csharp
 // Create a form-like interface
