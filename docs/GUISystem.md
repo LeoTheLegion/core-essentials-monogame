@@ -98,6 +98,172 @@ Myra provides a wide range of UI components:
 - **Advanced Widgets**: ScrollPane, Window, TabControl, ProgressBar
 - **Dialogs**: FileDialog, MessageBox
 
+## Using the Canvas System
+
+The `Canvas` class provides a convenient way to manage a group of UI components that can be positioned together. It acts as a container for Myra UI widgets, allowing them to be treated as a cohesive unit.
+
+### Creating a Canvas
+
+You can create a Canvas instance and add widgets to it:
+
+```csharp
+// Create a new canvas
+Canvas canvas = new Canvas();
+
+// Set the canvas position (in screen coordinates)
+canvas.SetPosition(new Vector2(100, 50));
+
+// Add widgets to the canvas
+var label = new Label { Text = "Hello World" };
+canvas.AddWidget(label);
+
+var button = new Button();
+button.Content = "Click Me";
+canvas.AddWidget(button);
+```
+
+### Managing Canvas Content
+
+The Canvas provides methods to add, remove, and manage widgets:
+
+```csharp
+// Add a widget to the canvas
+canvas.AddWidget(new Label { Text = "New Label" });
+
+// Remove a specific widget
+canvas.RemoveWidget(label);
+
+// Update the canvas (typically called in your game's Update method)
+canvas.Update(gameTime);
+
+// Clean up resources when done
+canvas.CleanUp();
+```
+
+### Canvas Features
+
+- **Positioning**: Set the position of the entire canvas and all its contained widgets
+- **Widget Management**: Add, remove, and manage multiple widgets as a group
+- **Automatic Integration**: Seamlessly works with the GUIManager system
+- **Clean Resource Management**: Properly disposes of resources when no longer needed
+
+### Example Usage
+
+```csharp
+// In your scene's LoadContent method
+private Canvas _hudCanvas;
+
+public override void LoadContent()
+{
+    base.LoadContent();
+    
+    // Create HUD canvas
+    _hudCanvas = new Canvas();
+    _hudCanvas.SetPosition(new Vector2(10, 10));
+    
+    // Add score display
+    var scoreLabel = new Label { Text = "Score: 0" };
+    _hudCanvas.AddWidget(scoreLabel);
+    
+    // Add health bar
+    var healthBar = new ProgressBar { 
+        Width = 200, 
+        Height = 20,
+        Value = 100,
+        Minimum = 0,
+        Maximum = 100
+    };
+    healthBar.Top = 30;
+    _hudCanvas.AddWidget(healthBar);
+}
+
+// In your scene's Update method
+public override void Update(GameTime gameTime)
+{
+    base.Update(gameTime);
+    
+    // Update canvas position if needed
+    _hudCanvas.Update(gameTime);
+}
+
+// When cleaning up
+public override void UnloadContent()
+{    _hudCanvas.CleanUp();
+    base.UnloadContent();
+}
+```
+
+## Testing GUI Components
+
+Testing GUI components can be challenging due to their dependencies on the graphics system and Myra environment. The CoreEssentials test suite provides examples of how to test GUI components effectively.
+
+### Testing Canvas with xUnit
+
+Here's how the Canvas class is tested:
+
+```csharp
+public class CanvasTests : IDisposable
+{
+    private readonly Game _mockGame;
+
+    public CanvasTests()
+    {
+        // Create a real Game instance for testing
+        _mockGame = new Game1();
+        
+        // Set up Myra environment
+        MyraEnvironment.Game = _mockGame;
+    }
+    
+    void IDisposable.Dispose()
+    {
+        // Clean up resources
+        _mockGame?.Dispose();
+    }
+    
+    // Helper method to initialize GUIManager before tests
+    private void InitializeGUIManager()
+    {
+        // Initialize GUIManager with real Game instance
+        GUIManager.Init(_mockGame, 800, 600);
+    }
+    
+    [Fact]
+    public void AddWidget_AddsWidgetToRootPanel()
+    {
+        // Arrange
+        InitializeGUIManager();
+        var canvas = new Canvas();
+        var widget = new Label();
+
+        // Act
+        canvas.AddWidget(widget);
+
+        // Assert
+        // Use reflection to access _rootPanel
+        var rootPanelField = typeof(Canvas).GetField("_rootPanel", 
+            BindingFlags.NonPublic | BindingFlags.Instance);
+        var rootPanel = (Panel)rootPanelField.GetValue(canvas);
+        
+        Assert.Contains(widget, rootPanel.Widgets);
+    }
+    
+    // Additional test methods for other Canvas functionality
+}
+```
+
+### Key Testing Patterns
+
+When testing GUI components, consider these approaches:
+
+1. **Environment Setup**: Properly initialize the Myra environment with a Game instance
+2. **Reflection for Private Members**: Use reflection to access and verify private state
+3. **Clean Resource Management**: Implement IDisposable to clean up after tests
+4. **Integration Testing**: Test interactions between components (e.g., Canvas and GUIManager)
+5. **Component State Verification**: Check that component state changes correctly after operations
+
+For more detailed examples, see the `CanvasTests.cs` file in the test project.
+
 ```csharp
 // Create a form-like interface
 var form = new VerticalStackPanel
