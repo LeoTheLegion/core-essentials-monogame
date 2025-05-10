@@ -7,6 +7,8 @@ using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using CoreEssentials.Audio;
+using CoreEssentials.Assets;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Playground;
 
@@ -16,8 +18,9 @@ namespace CoreEssentials.Playground;
 public class CharacterScene : Scene
 {
     private Random random = new Random();
-
     private string songID;
+    private string _infoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene";
+    private string _characterInfo = "Static Character (Left) | Animated Character (Right)";
     
     protected override GameSystem[] LoadGameSystems()
     {
@@ -54,6 +57,21 @@ public class CharacterScene : Scene
         // Create an animated character entity at the right side of the screen
         AnimatedCharacterEntity animatedCharacter = entitySystem.CreateEntity<AnimatedCharacterEntity>(
             new Vector2(graphics.PreferredBackBufferWidth * 3 / 4, graphics.PreferredBackBufferHeight / 2)
+        );
+        
+        // Create text entities for UI information
+        TextEntity infoTextEntity = entitySystem.CreateEntity<TextEntity>(
+            new Vector2(graphics.PreferredBackBufferWidth / 2, 20),
+            _infoText,
+            Color.White,
+            TextEntity.TextAlignment.Center
+        );
+        
+        TextEntity characterInfoTextEntity = entitySystem.CreateEntity<TextEntity>(
+            new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight - 40),
+            _characterInfo,
+            Color.LightGreen,
+            TextEntity.TextAlignment.Center
         );
 
         // Register input handler

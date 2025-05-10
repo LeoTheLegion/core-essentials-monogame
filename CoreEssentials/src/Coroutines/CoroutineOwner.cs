@@ -1,25 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace CoreEssentials.Coroutines
 {
     /// <summary>
-    /// Base class for objects that own coroutines.
-    /// Provides methods for starting, stopping, and tracking coroutines.
+    /// Acts as an owner of coroutines that will be stopped when the owner is disposed.
+    /// This allows for automatic cleanup of coroutines when their owner is destroyed.
     /// </summary>
-    public class CoroutineOwner
+    public class CoroutineOwner : IDisposable
     {
-        /// <summary>
-        /// Dictionary mapping coroutine IDs to their names for easier debugging.
-        /// </summary>
+        // Dictionary of active coroutine IDs and their names for this owner
         private readonly Dictionary<Guid, string> _activeCoroutines = new Dictionary<Guid, string>();
         
-        /// <summary>
-        /// Lock object for thread safety
-        /// </summary>
+        // Lock object for thread-safety
         private readonly object _syncLock = new object();
+        
+        // Flag to prevent double disposal
+        private bool _isDisposed = false;
 
         /// <summary>
         /// Starts a new coroutine and returns its identifier.
@@ -28,7 +27,18 @@ namespace CoreEssentials.Coroutines
         /// <returns>A unique identifier for the coroutine.</returns>
         public Guid StartCoroutine(IEnumerator routine)
         {
-            return StartCoroutine(routine, "Anonymous");
+            return StartCoroutine(routine, "Anonymous", true);
+        }
+        
+        /// <summary>
+        /// Starts a new coroutine with error handling control and returns its identifier.
+        /// </summary>
+        /// <param name="routine">The enumerator representing the coroutine.</param>
+        /// <param name="allowFailure">If true, exceptions are caught and logged; if false, exceptions are thrown immediately.</param>
+        /// <returns>A unique identifier for the coroutine.</returns>
+        public Guid StartCoroutine(IEnumerator routine, bool allowFailure)
+        {
+            return StartCoroutine(routine, "Anonymous", allowFailure);
         }
 
         /// <summary>
@@ -39,9 +49,26 @@ namespace CoreEssentials.Coroutines
         /// <returns>A unique identifier for the coroutine.</returns>
         public Guid StartCoroutine(IEnumerator routine, string name)
         {
+            return StartCoroutine(routine, name, true);
+        }
+        
+        /// <summary>
+        /// Starts a new coroutine with a name and error handling control, and returns its identifier.
+        /// </summary>
+        /// <param name="routine">The enumerator representing the coroutine.</param>
+        /// <param name="name">A name for the coroutine, useful for debugging.</param>
+        /// <param name="allowFailure">If true, exceptions are caught and logged; if false, exceptions are thrown immediately.</param>
+        /// <returns>A unique identifier for the coroutine.</returns>
+        public Guid StartCoroutine(IEnumerator routine, string name, bool allowFailure)
+        {
             lock (_syncLock)
             {
-                Guid id = CoroutineManager.StartCoroutine(routine);
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException("CoroutineOwner", "Cannot start a coroutine on a disposed CoroutineOwner.");
+                }
+                
+                Guid id = CoroutineManager.StartCoroutine(routine, allowFailure);
                 _activeCoroutines[id] = name;
                 return id;
             }
@@ -58,40 +85,30 @@ namespace CoreEssentials.Coroutines
             {
                 if (_activeCoroutines.ContainsKey(id))
                 {
-                    bool result = CoroutineManager.StopCoroutine(id);
-                    if (result)
-                    {
-                        _activeCoroutines.Remove(id);
-                    }
-                    return result;
+                    _activeCoroutines.Remove(id);
+                    return CoroutineManager.StopCoroutine(id);
                 }
                 return false;
             }
         }
 
         /// <summary>
-        /// Stops all coroutines owned by this object.
+        /// Stops all coroutines owned by this instance.
         /// </summary>
         public void StopAllCoroutines()
         {
             lock (_syncLock)
             {
-                // Create a copy of IDs to avoid modification during enumeration
-                Guid[] ids = _activeCoroutines.Keys.ToArray();
-                
-                // Stop each coroutine individually
-                foreach (var id in ids)
+                foreach (var id in _activeCoroutines.Keys)
                 {
                     CoroutineManager.StopCoroutine(id);
                 }
-                
-                // Clear the collection
                 _activeCoroutines.Clear();
             }
         }
 
         /// <summary>
-        /// Gets the number of active coroutines owned by this object.
+        /// Returns the number of active coroutines owned by this instance.
         /// </summary>
         public int ActiveCoroutineCount
         {
@@ -103,17 +120,38 @@ namespace CoreEssentials.Coroutines
                 }
             }
         }
+
+        /// <summary>
+        /// Disposes the CoroutineOwner and stops all owned coroutines.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
         
         /// <summary>
-        /// Gets the names of all active coroutines owned by this object.
+        /// Disposes the CoroutineOwner and stops all owned coroutines.
         /// </summary>
-        /// <returns>An array of coroutine names.</returns>
-        public string[] GetActiveCoroutineNames()
+        /// <param name="disposing">True if being called from Dispose(); false if being called from the finalizer.</param>
+        protected virtual void Dispose(bool disposing)
         {
-            lock (_syncLock)
+            if (!_isDisposed)
             {
-                return _activeCoroutines.Values.ToArray();
+                if (disposing)
+                {
+                    StopAllCoroutines();
+                }
+                _isDisposed = true;
             }
+        }
+        
+        /// <summary>
+        /// Finalizer to ensure coroutines are stopped if Dispose is not called.
+        /// </summary>
+        ~CoroutineOwner()
+        {
+            Dispose(false);
         }
     }
 }

@@ -28,6 +28,13 @@
 /processorParam:TextureFormat=Color
 /build:Ball.png
 
+#begin base.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:base.spritefont
+
 #begin character_anim_walk.xml
 /copy:character_anim_walk.xml
 
