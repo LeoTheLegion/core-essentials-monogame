@@ -1,6 +1,6 @@
 # Asset Management
 
-The Asset Management system in CoreEssentials-MonoGame simplifies the loading, caching, and use of various game assets such as textures, sprites, audio, and custom XML data.
+The Asset Management system in CoreEssentials-MonoGame simplifies the loading, caching, and use of various game assets such as textures, sprites, audio, fonts, and custom XML data.
 
 ## Key Components
 
@@ -20,6 +20,9 @@ SpriteSheet spriteSheet = assetManager.LoadSpriteSheet("character_sheet.xml");
 
 // Load audio
 SoundEffect soundEffect = assetManager.LoadSoundEffect("explosion.wav");
+
+// Load a font
+FontAsset font = assetManager.LoadAsset<FontAsset>("base");
 ```
 
 ## Sprite Management
@@ -60,6 +63,108 @@ Sprite idleSprite = sheet.GetSprite("character_idle");
 
 // Get an animation by name
 Animation walkAnimation = sheet.GetAnimation("character_walk");
+```
+
+## Text Rendering with FontAsset
+
+CoreEssentials provides font management through the `FontAsset` class:
+
+### FontAsset
+
+The `FontAsset` class represents a SpriteFont resource for rendering text:
+
+```csharp
+// Load a font asset
+FontAsset fontAsset = assetManager.LoadAsset<FontAsset>("base");
+
+// Use the font in a SpriteBatch
+spriteBatch.DrawString(fontAsset.Font, "Hello, World!", new Vector2(100, 100), Color.White);
+
+// Measure text width for positioning
+float textWidth = fontAsset.MeasureString("Hello, World!");
+Vector2 position = new Vector2(screenWidth / 2 - textWidth / 2, 100); // Center text horizontally
+
+// Get full text dimensions as a Vector2
+Vector2 textSize = fontAsset.MeasureStringVector("Hello, World!");
+Vector2 center = new Vector2(screenWidth / 2 - textSize.X / 2, 
+                             screenHeight / 2 - textSize.Y / 2); // Center text on screen
+```
+
+### Using MonoGame SpriteFont
+
+The FontAsset class uses MonoGame's built-in SpriteFont system. Font files should be added to your Content project as `.spritefont` files and processed by the MonoGame Content Pipeline:
+
+```xml
+<!-- Example base.spritefont (this is processed by MonoGame's content pipeline) -->
+<?xml version="1.0" encoding="utf-8"?>
+<XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
+  <Asset Type="Graphics:FontDescription">
+    <FontName>ComicMono.ttf</FontName>
+    <Size>14</Size>
+    <Spacing>0</Spacing>
+    <UseKerning>true</UseKerning>
+    <Style>Regular</Style>
+    <CharacterRegions>
+      <CharacterRegion>
+        <Start>&#32;</Start>
+        <End>&#126;</End>
+      </CharacterRegion>
+    </CharacterRegions>
+  </Asset>
+</XnaContent>
+```
+
+### Text Alignment Example
+
+The `TextEntity` class in the playground demonstrates how to use FontAsset with different alignment options:
+
+```csharp
+public class TextEntity : Entity
+{
+    private FontAsset _font;
+    private string _text;
+    private Color _color;
+    private TextAlignment _alignment;
+    
+    public enum TextAlignment
+    {
+        Left,
+        Center,
+        Right
+    }
+    
+    public override void OnStart()
+    {
+        base.OnStart();
+        
+        // Load the font asset
+        _font = AssetManager.LoadAsset<FontAsset>("base");
+    }
+    
+    public override void Render(SpriteBatch spriteBatch)
+    {
+        base.Render(spriteBatch);
+        
+        if (_font == null || _font.Font == null)
+            return;
+            
+        Vector2 textSize = _font.MeasureStringVector(_text);
+        Vector2 drawPosition = _position;
+        
+        // Apply alignment
+        switch (_alignment)
+        {
+            case TextAlignment.Center:
+                drawPosition.X -= textSize.X / 2;
+                break;
+            case TextAlignment.Right:
+                drawPosition.X -= textSize.X;
+                break;
+        }
+        
+        spriteBatch.DrawString(_font.Font, _text, drawPosition, _color);
+    }
+}
 ```
 
 ## XML-Based Asset Definitions
