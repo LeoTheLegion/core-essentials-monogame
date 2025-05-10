@@ -31,6 +31,11 @@ namespace CoreEssentials.Coroutines
         /// </summary>
         private static readonly List<Guid> _coroutinesToRemove = new List<Guid>();
 
+        /// <summary>
+        /// Set of coroutine IDs that are marked as unfailable (exceptions should be rethrown).
+        /// </summary>
+        private static readonly HashSet<Guid> _unfailableCoroutines = new HashSet<Guid>();
+
         // Lock object for thread-safety
         private static readonly object _syncLock = new object();
 
@@ -41,10 +46,28 @@ namespace CoreEssentials.Coroutines
         /// <returns>A unique identifier for the coroutine.</returns>
         public static Guid StartCoroutine(IEnumerator routine)
         {
+            return StartCoroutine(routine, true);
+        }
+        
+        /// <summary>
+        /// Starts a new coroutine and returns its identifier, with control over exception handling.
+        /// </summary>
+        /// <param name="routine">The enumerator representing the coroutine.</param>
+        /// <param name="allowFailure">If true, exceptions are caught and logged; if false, exceptions are thrown immediately.</param>
+        /// <returns>A unique identifier for the coroutine.</returns>
+        public static Guid StartCoroutine(IEnumerator routine, bool allowFailure)
+        {
             lock (_syncLock)
             {
                 Guid id = Guid.NewGuid();
                 _activeCoroutines.Add(id, routine);
+                
+                // If this coroutine doesn't allow failure, track it separately
+                if (!allowFailure)
+                {
+                    _unfailableCoroutines.Add(id);
+                }
+                
                 return id;
             }
         }
@@ -69,6 +92,7 @@ namespace CoreEssentials.Coroutines
                     
                     _activeCoroutines.Remove(id);
                     _currentYieldInstructions.Remove(id);
+                    _unfailableCoroutines.Remove(id);
                     return true;
                 }
                 return false;
@@ -133,6 +157,7 @@ namespace CoreEssentials.Coroutines
                     if (shouldContinue)
                     {
                         bool hasMoreSteps;
+                        bool isUnfailable = _unfailableCoroutines.Contains(id);
                         
                         try
                         {
@@ -140,7 +165,25 @@ namespace CoreEssentials.Coroutines
                         }
                         catch (Exception e)
                         {
-                            // Log exception and remove the faulty coroutine
+                            // Check if this is an unfailable coroutine
+                            if (isUnfailable)
+                            {
+                                // Make sure to remove the coroutine from tracking collections before rethrowing
+                                _activeCoroutines.Remove(id);
+                                _currentYieldInstructions.Remove(id);
+                                _unfailableCoroutines.Remove(id);
+                                
+                                // Also remove any nested coroutines associated with this one
+                                if (_nestedCoroutines.TryGetValue(id, out Guid childId))
+                                {
+                                    StopCoroutine(childId);
+                                    _nestedCoroutines.Remove(id);
+                                }
+                                
+                                throw; // Rethrow the exception
+                            }
+                            
+                            // For normal coroutines, just log the error
                             Console.WriteLine($"Error in coroutine: {e.Message}");
                             _coroutinesToRemove.Add(id);
                             continue;
@@ -150,6 +193,13 @@ namespace CoreEssentials.Coroutines
                         {
                             // Coroutine has completed
                             _coroutinesToRemove.Add(id);
+                            
+                            // Also remove from unfailable list if present
+                            if (isUnfailable)
+                            {
+                                _unfailableCoroutines.Remove(id);
+                            }
+                            
                             continue;
                         }
                         
@@ -163,7 +213,8 @@ namespace CoreEssentials.Coroutines
                             else if (routine.Current is IEnumerator nestedEnumerator)
                             {
                                 // Start the nested coroutine
-                                Guid newNestedId = StartCoroutine(nestedEnumerator);
+                                // Pass down the allowFailure setting from the parent
+                                Guid newNestedId = StartCoroutine(nestedEnumerator, !isUnfailable);
                                 // Link the parent to the nested coroutine
                                 _nestedCoroutines[id] = newNestedId;
                             }
@@ -178,6 +229,7 @@ namespace CoreEssentials.Coroutines
                     {
                         _activeCoroutines.Remove(id);
                         _currentYieldInstructions.Remove(id);
+                        _unfailableCoroutines.Remove(id);
                     }
                 }
             }
@@ -195,6 +247,7 @@ namespace CoreEssentials.Coroutines
                 _currentYieldInstructions.Clear();
                 _nestedCoroutines.Clear();
                 _coroutinesToRemove.Clear();
+                _unfailableCoroutines.Clear();
             }
         }
         

@@ -134,8 +134,8 @@ public abstract class Scene
         IsLoading = true;
         _loadingProgress = 0f;
         
-        // Start the loading coroutine
-        CoroutineManager.StartCoroutine(LoadCoroutine());
+        // Start the loading coroutine and mark it as unfailable to ensure errors are thrown
+        CoroutineManager.StartCoroutine(LoadCoroutine(), false);
     }
     
     /// <summary>

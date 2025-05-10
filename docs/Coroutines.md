@@ -58,6 +58,41 @@ StartCoroutine(MyCoroutine());
 
 // In other classes with a reference to a coroutine owner
 coroutineOwner.StartCoroutine(MyCoroutine());
+
+// Start a coroutine that must not fail silently
+StartCoroutine(CriticalCoroutine(), false);
+```
+
+### Exception Handling in Coroutines
+
+CoreEssentials provides two modes of exception handling for coroutines:
+
+- **Failable coroutines** (default): Exceptions are caught internally, logged, and the coroutine is terminated without crashing the application.
+- **Unfailable coroutines**: Exceptions are rethrown to the caller, potentially crashing the application if not handled properly.
+
+```csharp
+// Default mode - exceptions are caught and logged (failable)
+StartCoroutine(MyCoroutine());
+// Same as
+StartCoroutine(MyCoroutine(), true);
+
+// Critical mode - exceptions are rethrown (unfailable)
+StartCoroutine(CriticalCoroutine(), false);
+
+private IEnumerator MyCoroutine()
+{
+    yield return null;
+    // If this throws, it will be caught internally
+    ProcessData();
+}
+
+private IEnumerator CriticalCoroutine()
+{
+    yield return null;
+    // If this throws, it will be rethrown to the caller
+    // You should handle the exception or let it crash the application
+    LoadCriticalData();
+}
 ```
 
 ## Practical Applications
@@ -129,6 +164,34 @@ private IEnumerator SubSequence2()
 }
 ```
 
+### Error Handling with Unfailable Coroutines
+
+Use unfailable coroutines when you need to ensure critical operations don't silently fail:
+
+```csharp
+try
+{
+    // Start a critical coroutine where errors should never be ignored
+    StartCoroutine(LoadSceneCoroutine(), false);
+}
+catch (Exception ex)
+{
+    // Handle the exception
+    Logger.LogError($"Failed to load scene: {ex.Message}");
+    ShowErrorScreen("Failed to load scene. Check logs for details.");
+}
+
+private IEnumerator LoadSceneCoroutine()
+{
+    // If any error occurs here, it will be thrown to the caller
+    yield return null;
+    LoadSceneAssets();
+    InitializeSceneObjects();
+    yield return null;
+    ConnectSceneSystems();
+}
+```
+
 ## Example from Playground
 
 The `PhysicsEntityScene` demonstrates coroutines for creating entities with progress updates:
@@ -157,6 +220,28 @@ protected override IEnumerator OnStartCoroutine()
 }
 ```
 
+## Scene-Specific Coroutine Handling
+
+Scene loading uses unfailable coroutines by default to ensure loading errors are properly reported:
+
+```csharp
+// This is how scenes are loaded internally
+public void Load()
+{
+    if (IsLoading || IsLoaded)
+        return;
+        
+    IsLoading = true;
+    _loadingProgress = 0f;
+    
+    // Use unfailable mode for scene loading
+    CoroutineManager.StartCoroutine(LoadCoroutine(), false);
+}
+
+// Your OnStartCoroutine will be called during this process
+protected abstract IEnumerator OnStartCoroutine();
+```
+
 ## Best Practices
 
 - Use coroutines for operations that need to span multiple frames
@@ -164,3 +249,6 @@ protected override IEnumerator OnStartCoroutine()
 - Clean up running coroutines when objects are destroyed
 - Use appropriate yield instructions to control timing
 - Utilize nested coroutines for complex sequences
+- Use unfailable coroutines (allowFailure=false) for critical operations where errors should never be silently handled
+- Use failable coroutines (the default) for most gameplay and animation scenarios where recovery is possible
+- Always handle exceptions from unfailable coroutines at an appropriate level
