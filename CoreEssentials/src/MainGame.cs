@@ -117,11 +117,13 @@ namespace CoreEssentials
 
                 _fixedUpdateTime -= FIXED_UPDATE_MS;
 
-            }
-
+            }            
+            
             SceneManager.Update(gameTime);    
 
-            AudioManager.Instance.Update(gameTime);     
+            AudioManager.Instance.Update(gameTime);
+            
+            Debug.StickyLog.Update(gameTime);
 
             base.Update(gameTime);
 
