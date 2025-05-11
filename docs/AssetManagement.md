@@ -6,23 +6,23 @@ The Asset Management system in CoreEssentials-MonoGame simplifies the loading, c
 
 ### AssetManager
 
-The `AssetManager` class is the central component for asset loading and management:
+The `AssetManager` class is the central static component for asset loading and management:
 
 ```csharp
-// Access the asset manager (typically available through the MainGame instance)
-AssetManager assetManager = SceneManager.Game.AssetManager;
+// Load assets through the static AssetManager class
+Texture2DAsset textureAsset = AssetManager.LoadAsset<Texture2DAsset>("character_malePerson_sheetHD");
 
-// Load a texture
-Texture2D texture = assetManager.LoadTexture("character_sprite.png");
+// Load a sprite that references a sprite sheet
+Sprite sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
-// Load a sprite sheet
-SpriteSheet spriteSheet = assetManager.LoadSpriteSheet("character_sheet.xml");
+// Load an animated sprite
+AnimatedSprite animSprite = AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
 
 // Load audio
-SoundEffect soundEffect = assetManager.LoadSoundEffect("explosion.wav");
+SoundAsset sound = AssetManager.LoadAsset<SoundAsset>("footstep1_sound.xml");
 
 // Load a font
-FontAsset font = assetManager.LoadAsset<FontAsset>("base");
+FontAsset font = AssetManager.LoadAsset<FontAsset>("base");
 ```
 
 ## Sprite Management
@@ -31,38 +31,33 @@ CoreEssentials provides robust sprite and animation support:
 
 ### Sprite
 
-The `Sprite` class represents a single image or a part of a texture:
+The `Sprite` class represents a single image or a part of a texture, and is loaded from XML:
 
 ```csharp
-// Create a sprite from a texture
-Sprite sprite = new Sprite(texture);
-
-// Create a sprite from a region of a texture
-Sprite sprite = new Sprite(texture, new Rectangle(0, 0, 32, 32));
-
-// Set sprite properties
-sprite.Origin = new Vector2(16, 16); // Set origin to center
-sprite.Color = Color.White * 0.8f;  // Apply tinting/transparency
-sprite.Scale = new Vector2(2, 2);   // Scale the sprite
-sprite.Rotation = MathHelper.ToRadians(45); // Rotate 45 degrees
+// Load a sprite from XML definition
+Sprite sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
 // Draw the sprite
-sprite.Draw(spriteBatch, position);
+sprite.Draw(
+    spriteBatch,
+    position,
+    Color.White,
+    0f,
+    SpriteEffects.None,
+    0f
+);
 ```
 
 ### SpriteSheet
 
-The `SpriteSheet` class manages sprite atlases and animations:
+The `SpriteSheet` class manages sprite atlases and defines frames:
 
 ```csharp
 // Load a sprite sheet from XML definition
-SpriteSheet sheet = assetManager.LoadSpriteSheet("character_sheet.xml");
+SpriteSheet sheet = AssetManager.LoadAsset<SpriteSheet>("character_sheet.xml");
 
-// Get a specific sprite from the sheet by name
-Sprite idleSprite = sheet.GetSprite("character_idle");
-
-// Get an animation by name
-Animation walkAnimation = sheet.GetAnimation("character_walk");
+// Sprite sheets are typically used by Sprite and AnimatedSprite classes
+// and not directly manipulated
 ```
 
 ## Text Rendering with FontAsset
@@ -175,78 +170,113 @@ CoreEssentials uses XML files for defining complex assets:
 
 ```xml
 <!-- Example sprite sheet XML (character_sheet.xml) -->
-<SpriteSheet>
-  <Texture>character_malePerson_sheetHD.png</Texture>
-  <Sprites>
-    <Sprite name="idle" x="0" y="0" width="64" height="128" />
-    <Sprite name="walk1" x="64" y="0" width="64" height="128" />
-    <Sprite name="walk2" x="128" y="0" width="64" height="128" />
-    <Sprite name="jump" x="192" y="0" width="64" height="128" />
-  </Sprites>
-  <Animations>
-    <Animation name="walk" fps="8" loop="true">
-      <Frame sprite="walk1" />
-      <Frame sprite="walk2" />
-    </Animation>
-    <Animation name="idle_anim" fps="4" loop="true">
-      <Frame sprite="idle" />
-    </Animation>
-  </Animations>
-</SpriteSheet>
+<SpriteSheetData xmlns="http://schemas.coreessentials.monogame/2025/spritesheet">
+  <SourceType>texture2d</SourceType>
+  <Source>character_malePerson_sheetHD</Source>
+  <Grid>
+    <Rows>5</Rows>
+    <Columns>9</Columns>
+  </Grid>
+  <Origin>
+    <X>96</X>
+    <Y>128</Y>
+  </Origin>
+</SpriteSheetData>
+```
+
+### Sprite XML
+
+```xml
+<!-- Example sprite XML (character_sprite.xml) -->
+<SpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+  <SourceType>spritesheet</SourceType>
+  <Source>character_sheet.xml</Source>
+  <Size>
+    <Width>192</Width>
+    <Height>256</Height>
+  </Size>
+  <Frame>0</Frame>
+</SpriteData>
+```
+
+### Animated Sprite XML
+
+```xml
+<!-- Example animated sprite XML (character_anim_walk.xml) -->
+<AnimatedSpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+  <SourceType>spritesheet</SourceType>
+  <Source>character_sheet.xml</Source>
+  <Size>
+    <Width>192</Width>
+    <Height>256</Height>
+  </Size>
+  <Frames>36,37,38,39,40,41,42,43</Frames>
+  <FrameRate>11</FrameRate>
+</AnimatedSpriteData>
 ```
 
 ### Audio Asset XML
 
 ```xml
-<!-- Example sound effect XML (footstep_sound.xml) -->
-<SoundEffect>
-  <File>footstep01.ogg</File>
-  <Volume>0.8</Volume>
-  <Pitch>0.0</Pitch>
-  <Pan>0.0</Pan>
-</SoundEffect>
+<!-- Example sound effect XML (footstep1_sound.xml) -->
+<SoundData xmlns="http://schemas.coreessentials.monogame/2025/audio">
+  <Source>footstep00</Source>
+  <SourceType>soundeffect</SourceType>
+  <Volume>1</Volume>
+</SoundData>
 ```
 
 ## Animation System
 
-CoreEssentials includes a robust animation system:
+CoreEssentials includes a robust animation system with `AnimatedSprite` and `AnimationState`:
 
 ```csharp
-// Load an animation from a sprite sheet
-Animation walkAnimation = spriteSheet.GetAnimation("walk");
+// Load an animated sprite from XML definition
+AnimatedSprite animatedSprite = AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
 
-// Create an animation player
-AnimationPlayer animPlayer = new AnimationPlayer(walkAnimation);
+// Create an animation state to track the animation progress for an instance
+AnimationState animState = new AnimationState(animatedSprite);
 
 // Control animation playback
-animPlayer.Play();
-animPlayer.Pause();
-animPlayer.Stop();
-animPlayer.IsLooping = true;
-animPlayer.PlaybackSpeed = 1.5f; // Speed up animation
+animState.IsPlaying = true; // Play the animation (default is true)
+animState.IsLooping = true; // Loop the animation (default is true)
+animState.Speed = 1.5f; // Speed up animation
 
 // Update animation (call in Update method)
-animPlayer.Update(gameTime);
-
-// Get the current sprite from the animation
-Sprite currentSprite = animPlayer.CurrentSprite;
+animState.Update(gameTime);
 
 // Draw the current animation frame
-currentSprite.Draw(spriteBatch, position);
+animState.Draw(
+    spriteBatch, 
+    position, 
+    Color.White,
+    0f,
+    SpriteEffects.None,
+    0f
+);
+
+// You can also listen for animation completion
+animState.AnimationCompleted += (sender, e) => {
+    // Handle animation completion
+};
 ```
 
 ## Asset Caching
 
-The AssetManager caches assets to prevent redundant loading:
+The AssetManager caches assets and manages reference counting to prevent redundant loading:
 
 ```csharp
 // First load - loads from file and caches
-Texture2D texture1 = assetManager.LoadTexture("character.png");
+Sprite sprite1 = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
 // Second load - returns cached asset
-Texture2D texture2 = assetManager.LoadTexture("character.png");
+Sprite sprite2 = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
-// texture1 and texture2 reference the same object
+// sprite1 and sprite2 reference the same object
+
+// The AssetManager keeps track of how many objects are using each asset
+// When assets are no longer needed, they can be properly unloaded
+// AssetManager.UnloadAsset(sprite1); // This decreases the reference count for the asset
 ```
 
 ## Example from Playground
@@ -256,75 +286,91 @@ The `CharacterScene` demonstrates asset usage:
 ```csharp
 public class CharacterEntity : Entity
 {
-    protected Sprite _sprite;
+    private Sprite _sprite;
     
-    public override void Initialize()
+    public CharacterEntity(Vector2 position)
     {
-        base.Initialize();
+        _position = position;
         
-        // Load character sprite from XML definition
-        SpriteSheet sheet = Scene.AssetManager.LoadSpriteSheet("character_sprite.xml");
-        _sprite = sheet.GetSprite("default");
-        
-        // Center the sprite origin
-        _sprite.Origin = new Vector2(_sprite.Width / 2, _sprite.Height / 2);
+        // Load the character sprite that references the sprite sheet
+        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
     }
     
-    public override void Draw(SpriteBatch spriteBatch)
+    public override void OnStart()
     {
-        base.Draw(spriteBatch);
-        
-        // Draw the sprite at the entity position
-        _sprite.Draw(spriteBatch, Position);
+        base.OnStart();
+        Console.WriteLine("Character entity created!");
+    }
+    
+    public override void Render(SpriteBatch spriteBatch)
+    {
+        // Draw the character with the current frame
+        _sprite.Draw(
+            spriteBatch, 
+            _position, 
+            Color.White, 
+            0f, 
+            SpriteEffects.None, 
+            0f
+        );
     }
 }
 
 public class AnimatedCharacterEntity : Entity
 {
-    protected Animation _walkAnimation;
-    protected AnimationPlayer _animPlayer;
+    private AnimatedSprite _animatedSprite;
+    private AnimationState _animationState;
     
-    public override void Initialize()
+    public AnimatedCharacterEntity(Vector2 position)
     {
-        base.Initialize();
+        _position = position;
         
-        // Load animation from XML definition
-        SpriteSheet sheet = Scene.AssetManager.LoadSpriteSheet("character_anim_walk.xml");
-        _walkAnimation = sheet.GetAnimation("walk");
+        // Load the animated sprite
+        _animatedSprite = (AnimatedSprite)AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
         
-        // Create and play animation
-        _animPlayer = new AnimationPlayer(_walkAnimation);
-        _animPlayer.Play();
-        _animPlayer.IsLooping = true;
+        // Create animation state for this instance
+        _animationState = new AnimationState(_animatedSprite);
+    }
+    
+    public override void OnStart()
+    {
+        base.OnStart();
+        Console.WriteLine("Animated character entity created!");
     }
     
     public override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
         
-        // Update animation
-        _animPlayer.Update(gameTime);
+        // Update the animation
+        _animationState.Update(gameTime);
     }
     
-    public override void Draw(SpriteBatch spriteBatch)
+    public override void Render(SpriteBatch spriteBatch)
     {
-        base.Draw(spriteBatch);
+        SpriteEffects effects = SpriteEffects.None;
         
-        // Draw the current animation frame
-        Sprite currentSprite = _animPlayer.CurrentSprite;
-        currentSprite.Draw(spriteBatch, Position);
+        // Draw the animated character using the current animation state
+        _animationState.Draw(
+            spriteBatch, 
+            _position, 
+            Color.White,
+            0f,
+            effects,
+            0f
+        );
     }
 }
 ```
 
 ## Best Practices
 
-- Use XML files to define complex assets like sprite sheets and animations
-- Organize assets in a logical folder structure
-- Access assets through the AssetManager for automatic caching
-- Unload assets when scenes change if memory usage is a concern
-- Define reusable assets in shared XML files
-- Set sprite origins appropriately for rotation and positioning
-- Use clear, descriptive names for sprites and animations
+- Define assets through XML files following the proper schema namespaces
+- Organize assets in a logical folder structure in the Content directory
+- Always access assets through the static AssetManager.LoadAsset<T> method for automatic caching and reference counting
+- Let animations play through AnimationState instances rather than manipulating the AnimatedSprite directly
+- Make use of the Origin defined in sprite sheets for proper centering and rotation
+- Use descriptive filenames for your XML asset definitions
 - Consider memory usage when working with large textures
-- Use asset preprocessing to optimize at build time
+- Process your content assets through the MonoGame Content Pipeline
+- Use AssetManager's reference counting to help manage memory efficiently
