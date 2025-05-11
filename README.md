@@ -85,6 +85,7 @@ The repository includes a `CoreEssentials.Playground` project with example scene
 
 - **Character Scene**: Demonstrates sprite animation, character entities, and audio management
 - **Physics Entity Scene**: Shows physics simulation with multiple dynamic bodies
+- **GUI Examples**: Includes Canvas usage for creating UI layouts and interactive elements
 
 To run the examples:
 
@@ -98,6 +99,31 @@ cd core-essentials-monogame
 # Build and run the playground
 dotnet build
 dotnet run --project CoreEssentials.Playground
+```
+
+## Code Examples
+
+### Creating a UI with Canvas
+
+```csharp
+// Create a new canvas for UI elements
+Canvas hudCanvas = new Canvas();
+hudCanvas.SetPosition(new Vector2(20, 20));
+
+// Add widgets to the canvas
+var healthLabel = new Label { Text = "Health: 100" };
+hudCanvas.AddWidget(healthLabel);
+
+var inventoryButton = new Button();
+inventoryButton.Content = "Inventory";
+inventoryButton.Top = 30;
+hudCanvas.AddWidget(inventoryButton);
+
+// Update the canvas position in your game loop
+hudCanvas.Update(gameTime);
+
+// Clean up when done
+hudCanvas.CleanUp();
 ```
 
 ## Building from Source

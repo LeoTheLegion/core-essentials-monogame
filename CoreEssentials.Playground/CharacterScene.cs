@@ -16,10 +16,9 @@ namespace CoreEssentials.Playground;
 /// A scene to demonstrate the SpriteSheet functionality with a character display.
 /// </summary>
 public class CharacterScene : Scene
-{
-    private Random random = new Random();
+{    private Random random = new Random();
     private string songID;
-    private string _infoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene";
+    private string _infoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
     private string _characterInfo = "Static Character (Left) | Animated Character (Right)";
     
     protected override GameSystem[] LoadGameSystems()
@@ -72,6 +71,38 @@ public class CharacterScene : Scene
             _characterInfo,
             Color.LightGreen,
             TextEntity.TextAlignment.Center
+        );
+
+        // Create sound button entities
+        entitySystem.CreateEntity<SoundButtonEntity>(
+            new Vector2(100, 100),
+            "footstep1_sound.xml",
+            "Footstep 1"
+        );
+        
+        entitySystem.CreateEntity<SoundButtonEntity>(
+            new Vector2(100, 150),
+            "footstep2_sound.xml",
+            "Footstep 2"
+        );
+        
+        entitySystem.CreateEntity<SoundButtonEntity>(
+            new Vector2(100, 200),
+            "footstep3_sound.xml",
+            "Footstep 3"
+        );
+        
+        // Create volume control buttons
+        var volumeDownButton = entitySystem.CreateEntity<VolumeButtonEntity>(
+            new Vector2(100, 250),
+            0.1f,
+            "Volume: 10%"
+        );
+        
+        var volumeUpButton = entitySystem.CreateEntity<VolumeButtonEntity>(
+            new Vector2(100, 300),
+            1.0f,
+            "Volume: 100%"
         );
 
         // Register input handler

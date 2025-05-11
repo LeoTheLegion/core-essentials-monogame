@@ -4,19 +4,52 @@ CoreEssentials-MonoGame provides a comprehensive suite of debugging tools to hel
 
 ## StickyLog
 
-The `StickyLog` feature allows you to display persistent information on the screen, ideal for showing FPS, entity counts, or other stats:
+The `StickyLog` feature allows you to display persistent information on the screen, ideal for showing FPS, entity counts, or other stats. It uses the Canvas system to position and manage UI elements.
 
 ```csharp
 // Create a sticky log entry that persists across frames
-StickyLog.SetValue("FPS", $"{1 / gameTime.ElapsedGameTime.TotalSeconds:F1}");
-StickyLog.SetValue("Entities", $"{entitySystem.EntityCount}");
-StickyLog.SetValue("Memory", $"{GC.GetTotalMemory(false) / 1024 / 1024:F1} MB");
+Debug.StickyLog.Log("FPS", $"{1 / gameTime.ElapsedGameTime.TotalSeconds:F1}");
+Debug.StickyLog.Log("Entities", $"{entitySystem.EntityCount}");
+Debug.StickyLog.Log("Memory", $"{GC.GetTotalMemory(false) / 1024 / 1024:F1} MB");
 
-// Remove a sticky log entry when no longer needed
-StickyLog.Remove("Entities");
+// Toggle visibility
+Debug.StickyLog.IsVisible = !Debug.StickyLog.IsVisible;
 
-// Clear all sticky log entries
-StickyLog.Clear();
+// By default, StickyLog visibility can be toggled with the R key
+```
+
+The StickyLog is built on top of the Canvas system, which handles positioning and updating of UI elements. It's automatically updated in the game's main update loop.
+
+### Positioning
+
+StickyLog positions itself at the top-left corner of the screen by default, but you can customize its position:
+
+```csharp
+// Custom positioning (must be done after LoadGUI has been called)
+// This will position the StickyLog at the top-right corner with 10px margin
+var screenWidth = GraphicsDevice.Viewport.Width;
+Debug.StickyLog.SetPosition(new Vector2(screenWidth - 210, 10));
+```
+
+### Managing Entries
+
+You can remove specific entries or clear all entries:
+
+```csharp
+// Remove a specific entry by key
+Debug.StickyLog.Remove("FPS");
+
+// Clear all entries
+Debug.StickyLog.Clear();
+```
+
+### Update Cycle
+
+StickyLog needs to be updated each frame, but this is already handled in the MainGame class:
+
+```csharp
+// This is already implemented in MainGame.Update
+Debug.StickyLog.Update(gameTime);
 ```
 
 ## Physics Debug Renderer
