@@ -26,6 +26,12 @@ The `Entity` class is the base class for all game objects. Extend this class to 
 ```csharp
 public class YourEntity : Entity
 {
+    // Constructor often sets initial position
+    public YourEntity(Vector2 position)
+    {
+        Position = position; // Public Position property
+    }
+    
     // Called when the entity is created
     public override void Initialize()
     {
@@ -48,6 +54,13 @@ public class YourEntity : Entity
     }
 }
 ```
+
+The Entity class provides these key properties and methods:
+
+- `Position`: Gets or sets the entity position as a Vector2
+- `Rotation`: Gets or sets the entity rotation in radians
+- `SetActive(bool)`: Activates or deactivates the entity
+- `Destroy()`: Marks the entity for removal
 
 ## Entity Lifecycle
 

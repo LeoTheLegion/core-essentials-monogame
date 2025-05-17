@@ -14,6 +14,17 @@ All game systems inherit from the `GameSystem` abstract class:
 // Basic structure of a game system
 public class YourGameSystem : GameSystem
 {
+    // Access the main game instance
+    public void DoSomethingWithGame()
+    {
+        // Game property returns the MainGame instance
+        MainGame game = Game;
+        
+        // Use the game instance to access game resources
+        var content = game.Content;
+        var graphics = game.GraphicsDevice;
+    }
+    
     // Called when the system is initialized
     public override void Initialize()
     {
@@ -44,7 +55,7 @@ Game systems are registered with a scene in the `LoadGameSystems` method:
 ```csharp
 protected override GameSystem[] LoadGameSystems()
 {
-    return new GameSystem[]
+    return new GameSystem[] 
     {
         new PhysicsEngine(),
         new EntitySystem(),
@@ -64,6 +75,24 @@ PhysicsEngine physicsEngine = GetGameSystem<PhysicsEngine>();
 
 // Use the system
 Entity entity = entitySystem.CreateEntity<YourEntity>(new Vector2(100, 100));
+
+// Access the MainGame instance from any game system
+public class YourGameSystem : GameSystem
+{
+    public void SomeMethod()
+    {
+        // Access the Game property to get the MainGame instance
+        MainGame game = Game;
+        
+        // Use it to access MonoGame resources
+        ContentManager content = game.Content;
+        GraphicsDevice graphics = game.GraphicsDevice;
+        
+        // Or to access application-wide resources
+        var screenWidth = game.Graphics.PreferredBackBufferWidth;
+        var screenHeight = game.Graphics.PreferredBackBufferHeight;
+    }
+}
 ```
 
 ## Communication Between Systems

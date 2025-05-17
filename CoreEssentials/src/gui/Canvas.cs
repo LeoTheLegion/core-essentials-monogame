@@ -19,15 +19,17 @@ public class Canvas
         Position = Vector2.Zero;
 
         GUIManager.AddWidget(_rootPanel);
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Sets the position of the canvas in screen coordinates.
     /// </summary>
     /// <param name="position">The position to set.</param>
     public void SetPosition(Vector2 position)
     {
         Position = position;
+        
+        // Update the panel position immediately
+        _rootPanel.Left = (int)position.X;
+        _rootPanel.Top = (int)position.Y;
     }
 
     public void AddWidget(Widget widget)

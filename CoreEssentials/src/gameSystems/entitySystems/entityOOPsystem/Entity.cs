@@ -15,6 +15,29 @@ public abstract class Entity
     protected Vector2 _position;
 
     /// <summary>
+    /// Gets or sets the position of the entity in the game world.
+    /// </summary>
+    public Vector2 Position
+    {
+        get => _position;
+        set => _position = value;
+    }
+
+    /// <summary>
+    /// The rotation of the entity in radians.
+    /// </summary>
+    protected float _rotation = 0f;
+
+    /// <summary>
+    /// Gets or sets the rotation of the entity in radians.
+    /// </summary>
+    public float Rotation
+    {
+        get => _rotation;
+        set => _rotation = value;
+    }
+
+    /// <summary>
     /// The sort order of the entity, used to determine rendering order.
     /// Higher values are rendered first (further back in the scene).
     /// </summary>

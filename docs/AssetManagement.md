@@ -37,7 +37,7 @@ The `Sprite` class represents a single image or a part of a texture, and is load
 // Load a sprite from XML definition
 Sprite sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
-// Draw the sprite
+// Draw the sprite with default scale (1.0)
 sprite.Draw(
     spriteBatch,
     position,
@@ -46,7 +46,31 @@ sprite.Draw(
     SpriteEffects.None,
     0f
 );
+
+// Draw the sprite with a scale factor (2x size)
+sprite.Draw(
+    spriteBatch,
+    position,
+    Color.White,
+    0f,
+    2.0f,  // Scale the sprite to twice its size
+    SpriteEffects.None,
+    0f
+);
+
+// Draw the sprite with non-uniform scaling (stretched)
+sprite.Draw(
+    spriteBatch,
+    position,
+    Color.White,
+    0f,
+    new Vector2(1.5f, 0.8f),  // Wider but shorter
+    SpriteEffects.None,
+    0f
+);
 ```
+
+For more details on sprite scaling, see the [SpriteScaling.md](SpriteScaling.md) documentation.
 
 ### SpriteSheet
 

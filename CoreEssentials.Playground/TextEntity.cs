@@ -20,12 +20,11 @@ public class TextEntity : Entity
         Center,
         Right
     }
-    
-    // Constructor that matches what's being passed in CharacterScene.cs
+      // Constructor that matches what's being passed in CharacterScene.cs
     // Called by entitySystem.CreateEntity<TextEntity>(position, text, color, alignment)
     public TextEntity(Vector2 position, string text, Color color, TextAlignment alignment) : base()
     {
-        _position = position;
+        Position = position;
         _text = text;
         _color = color;
         _alignment = alignment;
@@ -51,8 +50,7 @@ public class TextEntity : Entity
         get => _color;
         set => _color = value;
     }
-    
-    public override void Render(SpriteBatch spriteBatch)
+      public override void Render(SpriteBatch spriteBatch)
     {
         base.Render(spriteBatch);
         
@@ -60,7 +58,7 @@ public class TextEntity : Entity
             return;
             
         Vector2 textSize = _font.MeasureStringVector(_text);
-        Vector2 drawPosition = _position + _offset;
+        Vector2 drawPosition = Position + _offset;
         
         // Apply alignment
         switch (_alignment)
