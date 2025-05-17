@@ -12,24 +12,41 @@ using nkast.Aether.Physics2D.Dynamics;
 namespace CoreEssentials.Playground;
 
 public class Ball : Entity
-{
-    private Sprite _sprite;
+{    private Sprite _sprite;
     private Body _body;
     private Fixture _collisionFixture;
     private float _radius;
+    private float _scale = 1.0f; // Add a scale field
 
     static Random _random = new Random();
 
     private CoroutineOwner _coroutineOwner;
 
     public Body Body => _body;    
+
+    // Add a Scale property
+    public float Scale
+    {
+        get => _scale;
+        set
+        {
+            _scale = value;
+            if (_body != null && _collisionFixture != null)
+            {
+                // Update the physics body when scale changes
+                UpdatePhysicsBody();
+            }
+        }
+    }
+
     public Ball(Vector2 position)
     {
         Position = position;
         sort = 0;
-    }
-
-    public override void OnStart()
+        
+        // Randomize the scale between 0.5 and 1.5
+        _scale = (float)(_random.NextDouble() + 0.5f);
+    }    public override void OnStart()
     {
         base.OnStart();
 
@@ -40,18 +57,38 @@ public class Ball : Entity
 
         PhysicsEngine physicsEngine = EntitySystem.GetGameSystem<PhysicsEngine>();
         
-        this._body = physicsEngine.CreateBody(Position, 0, BodyType.Dynamic);
-
-        this._body.FixedRotation = false; // Allow rotation
-        this._body.Mass = 1f; // Set mass to 1 kg
-
-        _collisionFixture = this._body.CreateCircle(_radius, 1);
-
-        _collisionFixture.Restitution = 1f; // Bounciness
+        // Create the physics body with appropriate scale
+        CreatePhysicsBody(physicsEngine);
 
         _coroutineOwner = new CoroutineOwner();
-
         _coroutineOwner.StartCoroutine(RandomMovementCoroutine());
+    }
+
+    private void CreatePhysicsBody(PhysicsEngine physicsEngine)
+    {
+        this._body = physicsEngine.CreateBody(Position, 0, BodyType.Dynamic);
+        this._body.FixedRotation = false; // Allow rotation
+        this._body.Mass = 1f * _scale * _scale; // Scale the mass proportionally to the area (scale squared)
+
+        // Create a circle fixture with the scaled radius
+        _collisionFixture = this._body.CreateCircle(_radius * _scale, 1);
+        _collisionFixture.Restitution = 1f; // Bounciness
+    }
+
+    private void UpdatePhysicsBody()
+    {
+        if (_body != null && _collisionFixture != null)
+        {
+            // Remove the old fixture
+            _body.Remove(_collisionFixture);
+            
+            // Create a new fixture with the updated scale
+            _collisionFixture = _body.CreateCircle(_radius * _scale, 1);
+            _collisionFixture.Restitution = 1f;
+            
+            // Update mass based on scale
+            _body.Mass = 1f * _scale * _scale;
+        }
     }
 
     public override void Update(GameTime gameTime)
@@ -78,12 +115,12 @@ public class Ball : Entity
             // Wait for a short duration before applying the next force
             yield return new WaitForSeconds(_random.Next(1, 5)); // Random wait time between 1 and 5 seconds
         }
-    }
-
-    public override void Render(SpriteBatch _spriteBatch)
+    }    public override void Render(SpriteBatch _spriteBatch)
     {
         float rotation = _body.Rotation; // Get the rotation from the physics body
-        _sprite.Draw(_spriteBatch, _position, Color.White, rotation, SpriteEffects.None, 0f);
+        
+        // Use the new Draw method with scale
+        _sprite.Draw(_spriteBatch, Position, Color.White, rotation, _scale, SpriteEffects.None, 0f);
     }
 
     public override void OnDestroy()

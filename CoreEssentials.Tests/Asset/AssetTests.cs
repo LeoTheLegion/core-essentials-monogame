@@ -2,7 +2,7 @@ using System;
 using CoreEssentials.Assets;
 using Xunit;
 
-namespace CoreEssentials.Tests
+namespace CoreEssentials.Tests.Assets
 {
     public class AssetTests
     {
@@ -26,7 +26,7 @@ namespace CoreEssentials.Tests
         }
 
         // Minimal concrete implementation for testing
-        private class TestAsset : Asset
+        private class TestAsset : CoreEssentials.Assets.Asset
         {
             public TestAsset(string name) : base(name) { }
             public override void Load(IContentManager contentManager) { }

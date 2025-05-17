@@ -3,7 +3,7 @@ using CoreEssentials.Assets;
 using Xunit;
 using System.Reflection;
 
-namespace CoreEssentials.Tests
+namespace CoreEssentials.Tests.Assets
 {
     public class AssetManagerTests
     {
@@ -15,7 +15,7 @@ namespace CoreEssentials.Tests
             Assert.Throws<ArgumentNullException>(() => AssetManager.LoadAsset<AssetManagerTests.FakeAsset>(""));
         }
 
-        public class FakeAsset : Asset
+        public class FakeAsset : CoreEssentials.Assets.Asset
         {
             public FakeAsset(string name) : base(name) { }
             public override void Load(IContentManager contentManager) { }

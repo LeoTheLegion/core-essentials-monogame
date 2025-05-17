@@ -72,9 +72,7 @@ public class Sprite : Asset
         {
             throw new InvalidOperationException($"Failed to deserialize XML sprite metadata: {ex.Message}", ex);
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Draws the sprite at the specified position with the given parameters.
     /// Also draws a debug outline around the sprite bounds.
     /// </summary>
@@ -87,6 +85,24 @@ public class Sprite : Asset
     /// <exception cref="InvalidOperationException">Thrown when the source type is unknown.</exception>
     public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, SpriteEffects effects, float layerDepth)
     {
+        // Use the default scale of 1.0f (no scaling)
+        Draw(spriteBatch, position, color, rotation, Vector2.One, effects, layerDepth);
+    }
+
+    /// <summary>
+    /// Draws the sprite at the specified position with the given parameters including scale.
+    /// Also draws a debug outline around the sprite bounds.
+    /// </summary>
+    /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+    /// <param name="position">The position to draw the sprite at.</param>
+    /// <param name="color">The color to tint the sprite with.</param>
+    /// <param name="rotation">The rotation angle of the sprite in radians.</param>
+    /// <param name="scale">The scale to apply to the sprite (Vector2.One for no scaling).</param>
+    /// <param name="effects">Sprite effects like flipping horizontally or vertically.</param>
+    /// <param name="layerDepth">The layer depth to draw the sprite at (0 to 1).</param>
+    /// <exception cref="InvalidOperationException">Thrown when the source type is unknown.</exception>
+    public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects effects, float layerDepth)
+    {
         // Handle drawing based on source type
         Rectangle targetRectangle;
         
@@ -95,6 +111,9 @@ public class Sprite : Asset
             case "texture2d":
                 Vector2 TextureScale = new Vector2(_metaData.Size.Width / _texture.Width,
                                       _metaData.Size.Height / _texture.Height);
+
+                // Apply the additional scale factor
+                TextureScale *= scale;
 
                 float xFactor = _metaData.Origin.X / _metaData.Size.Width;
                 float yFactor = _metaData.Origin.Y / _metaData.Size.Height;
@@ -115,8 +134,10 @@ public class Sprite : Asset
                 layerDepth);
 
                 targetRectangle = new Rectangle(
-                    (int)(position.X - _metaData.Origin.X), (int)(position.Y - _metaData.Origin.Y),
-                    (int)(GetSize().X), (int)(GetSize().Y)
+                    (int)(position.X - _metaData.Origin.X * scale.X), 
+                    (int)(position.Y - _metaData.Origin.Y * scale.Y),
+                    (int)(GetSize().X * scale.X), 
+                    (int)(GetSize().Y * scale.Y)
                 );
                 break;
                 
@@ -140,14 +161,16 @@ public class Sprite : Asset
                     color,
                     rotation,
                     origin,
-                    1.0f,
+                    scale,
                     effects,
                     layerDepth
                 );
                 
                 targetRectangle = new Rectangle(
-                    (int)(position.X - origin.X), (int)(position.Y - origin.Y),
-                    sourceRect.Width, sourceRect.Height
+                    (int)(position.X - origin.X * scale.X), 
+                    (int)(position.Y - origin.Y * scale.Y),
+                    (int)(sourceRect.Width * scale.X), 
+                    (int)(sourceRect.Height * scale.Y)
                 );
                 break;
                 
@@ -156,6 +179,20 @@ public class Sprite : Asset
         }
 
         Debug.Primitives.DrawRectangle(spriteBatch, targetRectangle, Color.Red, 1f);
+    }    /// <summary>
+    /// Draws the sprite at the specified position with the given parameters including a uniform scale.
+    /// Also draws a debug outline around the sprite bounds.
+    /// </summary>
+    /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+    /// <param name="position">The position to draw the sprite at.</param>
+    /// <param name="color">The color to tint the sprite with.</param>
+    /// <param name="rotation">The rotation angle of the sprite in radians.</param>
+    /// <param name="scale">The uniform scale to apply to both width and height (1.0f for no scaling).</param>
+    /// <param name="effects">Sprite effects like flipping horizontally or vertically.</param>
+    /// <param name="layerDepth">The layer depth to draw the sprite at (0 to 1).</param>
+    public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, float scale, SpriteEffects effects, float layerDepth)
+    {
+        Draw(spriteBatch, position, color, rotation, new Vector2(scale, scale), effects, layerDepth);
     }
 
     /// <summary>
