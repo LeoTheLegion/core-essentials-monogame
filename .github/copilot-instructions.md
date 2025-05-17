@@ -13,3 +13,6 @@ Branching startegy is as follows:
 
 See the scripts folder for any scripts that are used to build the project or run tests.
 If I am missing a script that you think would be useful, please add it.
+
+If you get stuck, please ask for help. Once you learn something the is project specific and not part of the documentation,
+please document it in the .github/memory.md file. An example could be on how to run a script.

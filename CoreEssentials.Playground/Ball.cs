@@ -22,11 +22,10 @@ public class Ball : Entity
 
     private CoroutineOwner _coroutineOwner;
 
-    public Body Body => _body;
-
+    public Body Body => _body;    
     public Ball(Vector2 position)
     {
-        _position = position;
+        Position = position;
         sort = 0;
     }
 
@@ -41,7 +40,7 @@ public class Ball : Entity
 
         PhysicsEngine physicsEngine = EntitySystem.GetGameSystem<PhysicsEngine>();
         
-        this._body = physicsEngine.CreateBody(_position, 0, BodyType.Dynamic);
+        this._body = physicsEngine.CreateBody(Position, 0, BodyType.Dynamic);
 
         this._body.FixedRotation = false; // Allow rotation
         this._body.Mass = 1f; // Set mass to 1 kg
@@ -59,7 +58,8 @@ public class Ball : Entity
     {
         if (_body != null)
         {
-            _position = _body.Position;
+            Position = _body.Position;
+            Rotation = _body.Rotation;
         }
     }
 
