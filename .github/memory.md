@@ -1,103 +1,31 @@
 # Core Essentials MonoGame - Development Notes
 
-## Entity Position/Rotation Properties
+## Game Access in Systems
 
-Added public Position and Rotation properties to the Entity base class to allow for easier manipulation of entity positions and rotations.
+Game systems can access the main Game instance through a property chain:
 
-### What We Learned
-- Entities previously used protected `_position` field that couldn't be accessed from outside the entity class
-- Adding public properties for Position and Rotation allows for external code to read and modify entity positions
-- For physics-based entities, we should sync the Position/Rotation with the physics body in the Update method
-- For consistency, entity constructor and methods should use Position property rather than directly modifying `_position` field
+1. `GameSystem.Game` property provides access to the `MainGame` instance
+2. Internally, this follows the path: `GameSystem -> Scene -> SceneManager -> MainGame` 
+3. The scene reference is automatically set by the Scene when registering game systems
 
-### Implementation
-- Added public Position (Vector2) and Rotation (float) properties to Entity base class
-- Updated all sample entities to use the properties instead of the protected fields
-- Created tests to verify the properties work correctly
-- Updated documentation in EntityPositionRotation.md and EntitySystem.md
+This is useful for systems that need direct access to game resources (Content, GraphicsDevice, etc.)
+without having to explicitly pass references around.
 
-### Sample Usage
-```csharp
-// Getting entity position
-Vector2 currentPos = myEntity.Position;
+## Running Tests
 
-// Setting entity position
-myEntity.Position = new Vector2(100, 200);
-
-// Getting entity rotation
-float currentRotation = myEntity.Rotation;
-
-// Setting entity rotation
-myEntity.Rotation = 1.5f; // About 90 degrees
+To run all tests in the solution:
+```bash
+dotnet test
 ```
 
-## Sprite Scaling
-
-Added support for scaling in the Sprite class to allow for dynamic resizing of sprites without modifying the original assets.
-
-### What We Learned
-- Sprites needed a way to be rendered with different scales
-- For physics-based entities, the physics bodies should match the visual size
-- Scale can be applied uniformly (with a single float) or non-uniformly (with a Vector2)
-- For best results, scale should be applied to the origin point as well
-
-### Implementation
-- Added two new Draw methods to the Sprite class: 
-  - One with Vector2 scale parameter (for non-uniform scaling)
-  - One with float scale parameter (for uniform scaling)
-- Updated the existing Draw method to call the new method with a default scale of 1.0
-- Made all rendering code scale-aware
-- Created a test class to verify the scaling functionality
-- Updated documentation in SpriteScaling.md and AssetManagement.md
-
-### Sample Usage
-```csharp
-// Draw with uniform scale (1.5x normal size)
-sprite.Draw(
-    spriteBatch, 
-    position, 
-    Color.White, 
-    rotation, 
-    1.5f,           // Scale factor
-    SpriteEffects.None, 
-    0f
-);
-
-// Draw with different X and Y scaling
-sprite.Draw(
-    spriteBatch, 
-    position, 
-    Color.White, 
-    rotation, 
-    new Vector2(2.0f, 1.0f),  // 2x width, normal height
-    SpriteEffects.None, 
-    0f
-);
+To run tests for a specific project:
+```bash
+dotnet test CoreEssentials.Tests/CoreEssentials.Tests.csproj
 ```
 
-## Test File Namespace Best Practices
+## Debugging Tips
 
-### What We Learned
-- When creating test files in a folder named after a class or namespace, be careful of namespace conflicts
-- For example, putting tests in a folder named "Asset" with the namespace "CoreEssentials.Tests.Asset" can create conflicts with the actual "Asset" class
-- Always use plural form for namespaces that correspond to folders containing tests for multiple classes (e.g., use "Assets" instead of "Asset")
-
-### Implementation
-- Changed namespace in Asset folder test files from `CoreEssentials.Tests.Asset` to `CoreEssentials.Tests.Assets`
-- When referencing the actual Asset class, use fully qualified name `CoreEssentials.Assets.Asset` to avoid confusion
-- Added proper test execution for sprite scaling tests without needing a real GraphicsDevice
-
-### Sample Usage
-```csharp
-// Good practice in test files
-namespace CoreEssentials.Tests.Assets
-{
-    public class AssetTests
-    {
-        private class TestAsset : CoreEssentials.Assets.Asset
-        {
-            // Implementation
-        }
-    }
-}
-```
+When the Game property returns null in systems, check:
+1. Is the system properly registered with a Scene?
+2. Has the Scene been properly initialized with a SceneManager?
+3. Is the SceneManager's Game property set correctly?

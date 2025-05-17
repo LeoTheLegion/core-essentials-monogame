@@ -140,6 +140,26 @@ namespace CoreEssentials.Tests.GameSystems
             // Assert
             Assert.True(updateSystem.UpdateCalled);
             Assert.True(fixedUpdateSystem.FixedUpdateCalled);
+        }        [Fact]
+        public void Game_Property_ReturnMainGameFromSceneManager()
+        {
+            // Arrange
+            var gameSystem = new TestGameSystem();
+            var mockGame = new Mock<MainGame>();
+            
+            // Create a TestScene with the SceneManager set properly
+            var sceneManager = new SceneManager(mockGame.Object);
+            var testScene = new TestScene();
+            testScene.SetSceneManager(sceneManager);
+            
+            // Set the scene on our game system
+            gameSystem.SetScene(testScene);
+            
+            // Act
+            var game = gameSystem.Game;
+              // Assert
+            Assert.NotNull(game);
+            Assert.Same(mockGame.Object, game);
         }
     }
 }

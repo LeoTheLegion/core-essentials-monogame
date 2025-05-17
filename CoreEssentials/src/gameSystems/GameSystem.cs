@@ -14,6 +14,11 @@ namespace CoreEssentials.GameSystems
     {
         private Scene _scene;
 
+        /// <summary>
+        /// Gets the MainGame instance associated with this system.
+        /// </summary>
+        public MainGame Game => _scene?.SceneManager?.Game;
+
         protected GameSystem()
         {
         }
