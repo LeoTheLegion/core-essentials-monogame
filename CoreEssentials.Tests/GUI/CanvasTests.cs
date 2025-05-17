@@ -79,6 +79,27 @@ namespace CoreEssentials.Tests.GUI
         }
 
         [Fact]
+        public void SetPosition_ImmediatelyUpdatesRootPanelPosition()
+        {
+            // Arrange
+            InitializeGUIManager();
+            var canvas = new Canvas();
+            Vector2 newPosition = new Vector2(100, 200);
+
+            // Act
+            canvas.SetPosition(newPosition);
+
+            // Assert
+            var rootPanelField = typeof(Canvas).GetField("_rootPanel", 
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var rootPanel = (Panel)rootPanelField.GetValue(canvas);
+            
+            // Check that the panel position was updated immediately, without calling Update
+            Assert.Equal((int)newPosition.X, rootPanel.Left);
+            Assert.Equal((int)newPosition.Y, rootPanel.Top);
+        }
+
+        [Fact]
         public void AddWidget_AddsWidgetToRootPanel()
         {
             // Arrange

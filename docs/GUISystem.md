@@ -111,6 +111,7 @@ You can create a Canvas instance and add widgets to it:
 Canvas canvas = new Canvas();
 
 // Set the canvas position (in screen coordinates)
+// This immediately updates the position of all contained widgets
 canvas.SetPosition(new Vector2(100, 50));
 
 // Add widgets to the canvas
@@ -142,7 +143,7 @@ canvas.CleanUp();
 
 ### Canvas Features
 
-- **Positioning**: Set the position of the entire canvas and all its contained widgets
+- **Positioning**: Set the position of the entire canvas and all its contained widgets immediately
 - **Widget Management**: Add, remove, and manage multiple widgets as a group
 - **Automatic Integration**: Seamlessly works with the GUIManager system
 - **Clean Resource Management**: Properly disposes of resources when no longer needed
