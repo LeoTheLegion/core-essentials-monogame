@@ -74,3 +74,30 @@ sprite.Draw(
     0f
 );
 ```
+
+## Test File Namespace Best Practices
+
+### What We Learned
+- When creating test files in a folder named after a class or namespace, be careful of namespace conflicts
+- For example, putting tests in a folder named "Asset" with the namespace "CoreEssentials.Tests.Asset" can create conflicts with the actual "Asset" class
+- Always use plural form for namespaces that correspond to folders containing tests for multiple classes (e.g., use "Assets" instead of "Asset")
+
+### Implementation
+- Changed namespace in Asset folder test files from `CoreEssentials.Tests.Asset` to `CoreEssentials.Tests.Assets`
+- When referencing the actual Asset class, use fully qualified name `CoreEssentials.Assets.Asset` to avoid confusion
+- Added proper test execution for sprite scaling tests without needing a real GraphicsDevice
+
+### Sample Usage
+```csharp
+// Good practice in test files
+namespace CoreEssentials.Tests.Assets
+{
+    public class AssetTests
+    {
+        private class TestAsset : CoreEssentials.Assets.Asset
+        {
+            // Implementation
+        }
+    }
+}
+```
