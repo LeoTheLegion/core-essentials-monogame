@@ -18,6 +18,7 @@ CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame th
 - **Audio Management**: Play, pause, and manage sound effects and music
 - **Debugging Tools**: In-game console, logging, and physics visualization
 - **GUI System**: User interface components built with Myra
+- **XML Documentation**: IntelliSense support for easier API usage
 
 ## Getting Started
 
@@ -65,6 +66,7 @@ namespace YourGame
 - [Input Handling](./InputHandling.md)
 - [Audio System](./AudioSystem.md)
 - [Debugging Tools](./DebuggingTools.md)
+- [XML Documentation](./XMLDocumentation.md)
 
 ## Playground Examples
 
