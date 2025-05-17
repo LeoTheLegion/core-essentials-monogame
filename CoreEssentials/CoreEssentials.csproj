@@ -1,5 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>CoreEssentials</RootNamespace>
     <PackageId>CoreEssentials-MonoGame</PackageId>
@@ -8,6 +7,12 @@
     <Company>LeoTheLegion</Company>
     <PackageDescription>A jump start for monogame dev</PackageDescription>
     <RepositoryUrl>https://github.com/LeoTheLegion/core-essentials-monogame</RepositoryUrl>
+    <!-- XML Documentation Generation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\CoreEssentials.xml</DocumentationFile>
+    <!-- Including Documentation in NuGet Package -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105">
@@ -17,10 +22,14 @@
     <PackageReference Include="Aether.Physics2D.MG" Version="2.1.1" />
     <PackageReference Include="MonoGame.Extended" Version="4.0.2" />
     <PackageReference Include="Myra" Version="1.5.5" />
-  </ItemGroup>
-  <ItemGroup>
+  </ItemGroup>  <ItemGroup>
     <Folder Include="src\Coroutines\" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <Target Name="CoreEssentials_Tests" DependsOnTargets="Build">
     <Exec Command="dotnet test ..\CoreEssentials.Tests\CoreEssentials.Tests.csproj" />
   </Target>

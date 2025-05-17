@@ -18,6 +18,7 @@ A comprehensive framework built on top of MonoGame that provides essential build
 - **💪 Physics Integration**: Built-in physics using Aether.Physics2D
 - **🖼️ GUI System**: User interface components powered by Myra
 - **🎨 Asset Management**: Simplified asset loading, caching and management
+- **📚 IntelliSense Support**: Full XML documentation for improved developer experience
 
 ## Getting Started
 
