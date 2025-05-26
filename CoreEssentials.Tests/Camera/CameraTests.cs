@@ -126,5 +126,38 @@ namespace CoreEssentials.Tests.Cameras
             // a world position of (150,150) should be transformed to something different
             Assert.NotEqual(worldPosition, screenPosition);
         }
+
+        [Fact]
+        public void Dispose_WhenIsMainCamera_SetsMainCameraToNull()
+        {
+            // Arrange
+            var camera = new CoreEssentials.Cameras.Camera();
+            camera.SetAsMainCamera();
+            Assert.Same(camera, CoreEssentials.Cameras.Camera.MainCamera); // Ensure it was set
+
+            // Act
+            camera.Dispose();
+
+            // Assert
+            Assert.Null(CoreEssentials.Cameras.Camera.MainCamera);
+        }
+
+        [Fact]
+        public void Dispose_WhenNotMainCamera_DoesNotAffectMainCamera()
+        {
+            // Arrange
+            var mainCam = new CoreEssentials.Cameras.Camera();
+            mainCam.SetAsMainCamera();
+
+            var otherCamera = new CoreEssentials.Cameras.Camera();
+            Assert.NotSame(otherCamera, CoreEssentials.Cameras.Camera.MainCamera); // Ensure it's not main
+
+            // Act
+            otherCamera.Dispose();
+
+            // Assert
+            Assert.Same(mainCam, CoreEssentials.Cameras.Camera.MainCamera); // MainCamera should still be mainCam
+            mainCam.Dispose(); // Clean up mainCam
+        }
     }
 }

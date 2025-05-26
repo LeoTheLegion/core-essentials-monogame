@@ -29,6 +29,21 @@ camera.SetAsMainCamera();
 Camera.SetMainCamera(camera);
 ```
 
+### Disposing a Camera
+
+The `Camera` class implements `IDisposable`. When a camera instance is no longer needed, you should call its `Dispose()` method to release resources. A key behavior of `Dispose()` is that if the camera instance being disposed is currently set as the `Camera.MainCamera`, `Dispose()` will set `Camera.MainCamera` to `null`.
+
+```csharp
+Camera myCamera = new Camera();
+myCamera.SetAsMainCamera();
+
+// ...later, when the camera is no longer needed...
+myCamera.Dispose(); 
+// Now, Camera.MainCamera will be null (if myCamera was indeed the MainCamera)
+```
+
+This is important for preventing the game from trying to use a disposed camera instance for rendering or other calculations.
+
 ### Using the Camera in Rendering
 
 ```csharp
