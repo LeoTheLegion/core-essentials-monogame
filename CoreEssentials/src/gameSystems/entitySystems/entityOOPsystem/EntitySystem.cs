@@ -54,7 +54,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        var camera = Camera.Camera.MainCamera;
+        var camera = Cameras.Camera.MainCamera;
         if (camera == null)
         {
             spriteBatch.Begin();

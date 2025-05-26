@@ -100,27 +100,35 @@ Myra provides a wide range of UI components:
 
 ## Using the Canvas System
 
-The `Canvas` class provides a convenient way to manage a group of UI components that can be positioned together. It acts as a container for Myra UI widgets, allowing them to be treated as a cohesive unit.
+The `Canvas` class provides a convenient way to manage a group of UI components that can be positioned together. It acts as a container for Myra UI widgets, allowing them to be treated as a cohesive unit. Canvas can operate in either screen space (default) or world space.
 
 ### Creating a Canvas
 
 You can create a Canvas instance and add widgets to it:
 
 ```csharp
-// Create a new canvas
-Canvas canvas = new Canvas();
+// Create a new canvas in screen space (default)
+Canvas screenCanvas = new Canvas();
 
-// Set the canvas position (in screen coordinates)
-// This immediately updates the position of all contained widgets
-canvas.SetPosition(new Vector2(100, 50));
+// Or explicitly specify screen space
+Canvas explicitScreenCanvas = new Canvas(true);
+
+// Create a canvas in world space
+Canvas worldCanvas = new Canvas(false);
+
+// Set the canvas position
+// For screen canvas: position is in screen coordinates
+// For world canvas: position is in world coordinates
+screenCanvas.SetPosition(new Vector2(100, 50));
+worldCanvas.SetPosition(new Vector2(500, 300)); // World position
 
 // Add widgets to the canvas
 var label = new Label { Text = "Hello World" };
-canvas.AddWidget(label);
+screenCanvas.AddWidget(label);
 
 var button = new Button();
 button.Content = "Click Me";
-canvas.AddWidget(button);
+worldCanvas.AddWidget(button);
 ```
 
 ### Managing Canvas Content

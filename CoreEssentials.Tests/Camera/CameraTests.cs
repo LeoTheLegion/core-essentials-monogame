@@ -1,9 +1,9 @@
-using CoreEssentials.Camera;
+using CoreEssentials.Cameras;
 using Microsoft.Xna.Framework;
 using System;
 using Xunit;
 
-namespace CoreEssentials.Tests.Camera
+namespace CoreEssentials.Tests.Cameras
 {
     public class CameraTests
     {
@@ -11,7 +11,7 @@ namespace CoreEssentials.Tests.Camera
         public void Constructor_SetsDefaultValues()
         {
             // Arrange & Act
-            var camera = new CoreEssentials.Camera.Camera();
+            var camera = new CoreEssentials.Cameras.Camera();
 
             // Assert
             Assert.Equal(Vector2.Zero, camera.Position);
@@ -24,33 +24,33 @@ namespace CoreEssentials.Tests.Camera
         public void SetAsMainCamera_SetsInstanceAsMainCamera()
         {
             // Arrange
-            var camera = new CoreEssentials.Camera.Camera();
+            var camera = new CoreEssentials.Cameras.Camera();
 
             // Act
             camera.SetAsMainCamera();
 
             // Assert
-            Assert.Same(camera, CoreEssentials.Camera.Camera.MainCamera);
+            Assert.Same(camera, CoreEssentials.Cameras.Camera.MainCamera);
         }
 
         [Fact]
         public void SetMainCamera_SetsSpecifiedCameraAsMainCamera()
         {
             // Arrange
-            var camera = new CoreEssentials.Camera.Camera();
+            var camera = new CoreEssentials.Cameras.Camera();
 
             // Act
-            CoreEssentials.Camera.Camera.SetMainCamera(camera);
+            CoreEssentials.Cameras.Camera.SetMainCamera(camera);
 
             // Assert
-            Assert.Same(camera, CoreEssentials.Camera.Camera.MainCamera);
+            Assert.Same(camera, CoreEssentials.Cameras.Camera.MainCamera);
         }
 
         [Fact]
         public void Move_UpdatesPosition()
         {
             // Arrange
-            var camera = new CoreEssentials.Camera.Camera();
+            var camera = new CoreEssentials.Cameras.Camera();
             var initialPosition = Vector2.Zero;
             var moveAmount = new Vector2(10, 20);
 
@@ -65,7 +65,7 @@ namespace CoreEssentials.Tests.Camera
         public void ViewMatrix_ReturnsCorrectTransformationMatrix()
         {
             // Arrange
-            var camera = new CoreEssentials.Camera.Camera
+            var camera = new CoreEssentials.Cameras.Camera
             {
                 Position = new Vector2(100, 200),
                 Zoom = 2.0f,
@@ -89,7 +89,7 @@ namespace CoreEssentials.Tests.Camera
         public void ScreenToWorld_TransformsScreenCoordinatesToWorldCoordinates()
         {
             // Arrange
-            var camera = new CoreEssentials.Camera.Camera
+            var camera = new CoreEssentials.Cameras.Camera
             {
                 Position = new Vector2(100, 100),
                 Zoom = 2.0f
@@ -110,7 +110,7 @@ namespace CoreEssentials.Tests.Camera
         public void WorldToScreen_TransformsWorldCoordinatesToScreenCoordinates()
         {
             // Arrange
-            var camera = new CoreEssentials.Camera.Camera
+            var camera = new CoreEssentials.Cameras.Camera
             {
                 Position = new Vector2(100, 100),
                 Zoom = 2.0f

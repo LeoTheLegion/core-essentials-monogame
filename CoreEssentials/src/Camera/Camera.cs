@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
-namespace CoreEssentials.Camera
+namespace CoreEssentials.Cameras
 {
     /// <summary>
     /// Represents an orthographic camera that can be attached to an entity.
