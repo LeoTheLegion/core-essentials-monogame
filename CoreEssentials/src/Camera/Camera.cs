@@ -8,7 +8,7 @@ namespace CoreEssentials.Cameras
     /// Represents an orthographic camera that can be attached to an entity.
     /// Provides functionality for view and projection matrix transformations.
     /// </summary>
-    public class Camera
+    public class Camera : IDisposable
     {
         #region Static Properties and Methods
 
@@ -20,7 +20,7 @@ namespace CoreEssentials.Cameras
         /// <summary>
         /// Sets the specified camera as the main camera
         /// </summary>
-        /// <param name="camera">The camera to set as main</param>
+        /// <param name="camera">The camera to set as main, or null to clear the main camera.</param>
         public static void SetMainCamera(Camera camera)
         {
             MainCamera = camera;
@@ -133,6 +133,52 @@ namespace CoreEssentials.Cameras
                    Matrix.CreateRotationZ(Rotation) *
                    Matrix.CreateScale(new Vector3(Zoom, Zoom, 1.0f)) *
                    Matrix.CreateTranslation(new Vector3(Origin, 0.0f));
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        private bool _disposed = false;
+
+        /// <summary>
+        /// Releases all resources used by the <see cref="Camera"/> object.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="Camera"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Dispose managed state (managed objects).
+                    if (MainCamera == this)
+                    {
+                        SetMainCamera(null);
+                    }
+                }
+
+                // Free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // Set large fields to null.
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Finalizes an instance of the <see cref="Camera"/> class.
+        /// </summary>
+        ~Camera()
+        {
+            Dispose(false);
         }
 
         #endregion
