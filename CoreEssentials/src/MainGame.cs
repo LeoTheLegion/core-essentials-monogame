@@ -13,6 +13,7 @@ using CoreEssentials.SceneManagement;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
 using Myra;
+using CoreEssentials.Timing;
 
 namespace CoreEssentials
 {
@@ -99,6 +100,7 @@ namespace CoreEssentials
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            Time.SetDeltaTime((float)gameTime.ElapsedGameTime.TotalMilliseconds);
             Debug.baseGameDiagnostics.UpdateBegin();
 
             Input.Update(gameTime);
