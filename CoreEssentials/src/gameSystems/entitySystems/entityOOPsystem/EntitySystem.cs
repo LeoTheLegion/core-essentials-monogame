@@ -32,7 +32,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         SortEntities();
 
         for (int i = 0; i < _entities.Count; i++)
-        {                
+        {
             if (_entities[i].GetActive())
                 _entities[i].Update(gameTime);
         }
@@ -54,7 +54,24 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        spriteBatch.Begin();
+        var camera = Camera.Camera.MainCamera;
+        if (camera == null)
+        {
+            spriteBatch.Begin();
+        }
+        else
+        {
+            spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone,
+                null,
+                camera.ViewMatrix
+            );
+        }
+
         for (int i = 0; i < _entities.Count; i++)
         {
             if (_entities[i].GetActive())
@@ -69,9 +86,9 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <typeparam name="T">The type of entity to create.</typeparam>
     /// <param name="args">Constructor arguments for the entity.</param>
     /// <returns>The newly created entity.</returns>
-    public T CreateEntity<T>( params object[] args ) where T : Entity
+    public T CreateEntity<T>(params object[] args) where T : Entity
     {
-        T entity = (T)Activator.CreateInstance(typeof(T),args);
+        T entity = (T)Activator.CreateInstance(typeof(T), args);
         entity.SetGameSystem(this);
         _entities.Add(entity);
         entity.OnStart();
@@ -103,7 +120,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// </summary>
     public void ClearEntities()
     {
-        for (int i = _entities.Count - 1 ; i >= 0; i--)
+        for (int i = _entities.Count - 1; i >= 0; i--)
         {
             _entities[i].OnDestroy();
             _entities.RemoveAt(i);
