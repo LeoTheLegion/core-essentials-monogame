@@ -7,6 +7,8 @@ The documentation is in the docs folder.
 
 New features or bug fixes must be accompanied by tests, documentation, and on a new branch.
 
+Break your work into steps where you pause to get feedback from the developer.
+
 Branching startegy is as follows:
 - master: This is the main branch. It should always be in a releasable state.
 - feature/xxx: This is a feature branch. It should be used for new features or bug fixes.

@@ -1,38 +1,77 @@
 # Input Handling
 
-The Input Handling system in CoreEssentials-MonoGame provides a simplified interface for detecting and responding to user input from keyboard, mouse, and gamepads. It abstracts MonoGame's input mechanisms into an event-driven model for easier integration with your game logic.
+The Input Handling system in CoreEssentials-MonoGame provides a simplified interface for detecting and responding to user input from keyboard, mouse, and gamepads. It abstracts MonoGame's input mechanisms, offering both event-driven and polling methods for easier integration with your game logic.
 
 ## Key Components
 
 ### Input Manager
 
-The `Input` class is the central access point for all input handling:
+The `Input` class is the central static access point for all input handling:
 
 ```csharp
 // Access input devices
-var keyboard = Input.Keyboard;
-var mouse = Input.Mouse;
-var gamepad = Input.Gamepad;
+var keyboard = Input.Keyboard; // CoreEssentials.Inputs.Keyboard
+var mouse = Input.Mouse;     // MonoGame.Extended.Input.InputListeners.MouseListener
+// var gamepad = Input.Gamepad; // Example, if implemented
 ```
 
-### Keyboard Input
+### Keyboard Input (`CoreEssentials.Inputs.Keyboard`)
 
-Handle keyboard events and check key states:
+The `CoreEssentials.Inputs.Keyboard` class wraps `MonoGame.Extended.Input.InputListeners.KeyboardListener` to provide enhanced polling capabilities and a testable interface.
+
+#### Polling Key States
+
+For continuous actions like movement, polling methods are preferred. These should typically be called within an `Update` loop.
 
 ```csharp
-// Check if a key is currently pressed
-bool isSpacePressed = Input.Keyboard.IsKeyDown(Keys.Space);
+// In your entity's Update method
+public override void Update(GameTime gameTime)
+{
+    // Check if a key is currently held down
+    if (Input.Keyboard.IsKeyDown(Keys.Space))
+    {
+        // Player jumps or action continues
+    }
 
-// Subscribe to key events
+    // Check if a key was pressed once in this frame
+    if (Input.Keyboard.IsKeyPressedOnce(Keys.P))
+    {
+        // Pause the game (action on initial press)
+    }
+
+    // Check if a key is currently up (not pressed)
+    if (Input.Keyboard.IsKeyUp(Keys.LeftShift))
+    {
+        // Player is not sprinting
+    }
+
+    // Check if a key was released in this frame
+    if (Input.Keyboard.IsKeyReleasedOnce(Keys.Enter))
+    { 
+        // Confirm selection (action on release)
+    }
+}
+```
+
+**Important:** For the polling methods (`IsKeyDown`, `IsKeyUp`, `IsKeyPressedOnce`, `IsKeyReleasedOnce`) to work correctly, `Input.Update(gameTime)` must be called once per frame, typically in your main game loop. This, in turn, calls `Input.Keyboard.Update(gameTime)`, which updates the internal previous and current keyboard states.
+
+#### Event-Based Key Input
+
+For discrete actions that should happen once per press or release, you can subscribe to events. These are forwarded from the underlying `MonoGame.Extended.Input.InputListeners.KeyboardListener`.
+
+```csharp
+// Subscribe to key events (e.g., in an OnStart or Initialize method)
 Input.Keyboard.KeyPressed += OnKeyPressed;
 Input.Keyboard.KeyReleased += OnKeyReleased;
 
 // Event handler examples
 private void OnKeyPressed(object sender, KeyboardEventArgs args)
 {
-    if (args.Key == Keys.Space)
+    // This event fires repeatedly while a key is held down.
+    // For single-press logic, consider IsKeyPressedOnce in Update or use KeyReleased.
+    if (args.Key == Keys.F)
     {
-        // Respond to space bar press
+        // Respond to F key press (e.g., fire weapon, interact)
     }
 }
 
@@ -40,12 +79,17 @@ private void OnKeyReleased(object sender, KeyboardEventArgs args)
 {
     if (args.Key == Keys.Escape)
     {
-        // Respond to escape key release
+        // Respond to escape key release (e.g., open menu)
     }
 }
+
+// Remember to unsubscribe from events when the object is destroyed or scene unloads
+// e.g., in OnDestroy or Unload method
+// Input.Keyboard.KeyPressed -= OnKeyPressed;
+// Input.Keyboard.KeyReleased -= OnKeyReleased;
 ```
 
-### Mouse Input
+### Mouse Input (`MonoGame.Extended.Input.InputListeners.MouseListener`)
 
 Handle mouse events and check mouse states:
 

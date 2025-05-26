@@ -7,6 +7,7 @@ using CoreEssentials.Inputs;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace CoreEssentials.Playground;
 
@@ -112,10 +113,10 @@ public class PhysicsEntityScene : Scene
     {
         return (sender, args) =>
         {
-            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Add || args.Key == Keys.OemPlus)
             {
                 // Use SceneManager property directly here to get the current reference at the time of the event
-                SceneManager.LoadScene(new CharacterScene());
+                SceneManager.LoadScene(new CameraScene());
             }
         };
     }

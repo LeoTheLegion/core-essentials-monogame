@@ -19,6 +19,7 @@ A comprehensive framework built on top of MonoGame that provides essential build
 - **🖼️ GUI System**: User interface components powered by Myra
 - **🎨 Asset Management**: Simplified asset loading, caching and management
 - **📚 IntelliSense Support**: Full XML documentation for improved developer experience
+- **📷 Orthographic Camera**: Flexible camera system with zoom, pan and coordinate transformation
 
 ## Getting Started
 
@@ -78,6 +79,7 @@ Comprehensive documentation is available in the [docs](docs) folder:
 - [Game Systems](docs/GameSystems.md)
 - [Asset Management](docs/AssetManagement.md)
 - [GUI System](docs/GUISystem.md)
+- [Camera System](docs/CameraSystem.md)
 - [Advanced Topics](docs/AdvancedTopics.md)
 
 ## Playground Examples
@@ -87,6 +89,7 @@ The repository includes a `CoreEssentials.Playground` project with example scene
 - **Character Scene**: Demonstrates sprite animation, character entities, and audio management
 - **Physics Entity Scene**: Shows physics simulation with multiple dynamic bodies
 - **GUI Examples**: Includes Canvas usage for creating UI layouts and interactive elements
+- **Camera Scene**: Shows orthographic camera functionality with zoom, pan, and entity tracking
 
 To run the examples:
 

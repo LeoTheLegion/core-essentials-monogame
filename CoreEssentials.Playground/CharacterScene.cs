@@ -126,7 +126,7 @@ public class CharacterScene : Scene
     {
         return (sender, args) =>
         {
-            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Right)
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.Add || args.Key == Keys.OemPlus)
             {
                 AudioManager.Instance.StopSound(songID);
                 // Use SceneManager property directly here to get the current reference at the time of the event

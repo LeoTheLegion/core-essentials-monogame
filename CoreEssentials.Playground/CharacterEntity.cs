@@ -12,7 +12,7 @@ namespace CoreEssentials.Playground;
 public class CharacterEntity : Entity
 {
     private Sprite _sprite;
-      public CharacterEntity(Vector2 position)
+    public CharacterEntity(Vector2 position)
     {
         Position = position;
         

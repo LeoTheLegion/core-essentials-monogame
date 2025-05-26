@@ -15,9 +15,9 @@ namespace CoreEssentials.Inputs
         public static TouchListener Touch { private set; get; }
 
         /// <summary>
-        /// Gets the keyboard input handler with events for key presses and releases.
+        /// Gets the keyboard input handler with events for key presses and releases, and polling methods.
         /// </summary>
-        public static KeyboardListener Keyboard { private set; get; }
+        public static Keyboard Keyboard { private set; get; } // Changed type to CoreEssentials.Inputs.Keyboard
 
         /// <summary>
         /// Gets the mouse input handler with events for mouse movement and button presses.
@@ -27,7 +27,7 @@ namespace CoreEssentials.Inputs
         static Input()
         {
             Touch = new TouchListener();
-            Keyboard = new KeyboardListener();
+            Keyboard = new Keyboard(); // Changed to instantiate our new Keyboard class
             Mouse = new MouseListener();
         }
 
@@ -38,7 +38,7 @@ namespace CoreEssentials.Inputs
         public static void Update(GameTime gameTime)
         {
             Touch.Update(gameTime);
-            Keyboard.Update(gameTime);
+            Keyboard.Update(gameTime); // This will now call Keyboard.Update()
             Mouse.Update(gameTime);
         }
     }
