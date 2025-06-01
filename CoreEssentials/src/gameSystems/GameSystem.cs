@@ -42,6 +42,15 @@ namespace CoreEssentials.GameSystems
         {
             return _scene.GetGameSystem<T>();
         }
+
+        /// <summary>
+        /// Called after all game systems have been loaded and initialized.
+        /// Override this method to perform any setup that depends on other game systems.
+        /// </summary>
+        public virtual void OnStart()
+        {
+            // Default implementation does nothing.
+        }
     }
 
     /// <summary>

@@ -25,11 +25,23 @@ public class YourGameSystem : GameSystem
         var graphics = game.GraphicsDevice;
     }
     
-    // Called when the system is initialized
-    public override void Initialize()
+    // Called when the system is initialized by the Scene
+    // This is now primarily for internal setup before OnStart
+    // public override void Initialize() // This method might be obsolete or repurposed
+    // {
+    //     base.Initialize();
+    //     // Initialize your system
+    // }
+
+    /// <summary>
+    /// Called after all game systems in a scene have been loaded and registered.
+    /// Override this method to perform any setup that requires access to other
+    /// game systems or when all systems are guaranteed to be available.
+    /// </summary>
+    public virtual void OnStart()
     {
-        base.Initialize();
-        // Initialize your system
+        // Default implementation does nothing.
+        // Example: OtherSystem otherSystem = Scene.GetGameSystem<OtherSystem>();
     }
 
     // Called every frame for logic updates

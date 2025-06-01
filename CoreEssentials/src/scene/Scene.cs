@@ -181,7 +181,18 @@ public abstract class Scene
         Console.WriteLine("Loaded Fixed Update Systems: " + _fixedUpdateSystems.Length.ToString());
         Console.WriteLine("Loaded Draw Systems: " + _drawSystems.Length.ToString());
         
-        UpdateLoadingProgress(0.5f, "Initializing scene...");
+        UpdateLoadingProgress(0.5f, "Starting game systems...");
+        yield return null;
+
+        // Call OnStart for all game systems
+        foreach (var system in _gameSystems.Values)
+        {
+            system.OnStart();
+            // Potentially yield here if OnStart methods are lengthy
+            // yield return null; 
+        }
+        
+        UpdateLoadingProgress(0.5f, "Initializing scene..."); // Or a new progress point e.g. 0.6f
         yield return null;
         
         // Phase 3: Call onStart for additional initialization (50-100% progress)
