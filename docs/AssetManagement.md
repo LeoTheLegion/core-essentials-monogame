@@ -25,6 +25,23 @@ SoundAsset sound = AssetManager.LoadAsset<SoundAsset>("footstep1_sound.xml");
 FontAsset font = AssetManager.LoadAsset<FontAsset>("base");
 ```
 
+### EffectAsset
+
+The `EffectAsset` class is a wrapper for MonoGame's `Effect` class, used for custom shaders.
+
+```csharp
+// Load an effect asset (custom shader)
+EffectAsset customEffectAsset = AssetManager.LoadAsset<EffectAsset>("MyCustomShader");
+
+// Access the underlying Effect object
+Effect shader = customEffectAsset.Effect;
+
+// Apply the shader in your draw call
+// spriteBatch.Begin(effect: shader);
+// ... draw objects ...
+// spriteBatch.End();
+```
+
 ## Sprite Management
 
 CoreEssentials provides robust sprite and animation support:

@@ -225,7 +225,7 @@ namespace CoreEssentials.Tests.Audio
         {
             // Add mock to the asset dictionary - requires reflection
             var assetsField = typeof(AssetManager).GetField("_assets", BindingFlags.NonPublic | BindingFlags.Static);
-            var assets = assetsField?.GetValue(null) as Dictionary<string, Asset>;
+            var assets = assetsField?.GetValue(null) as Dictionary<string, CoreEssentials.Assets.Asset>; // Explicitly use CoreEssentials.Assets.Asset
             
             if (assets != null)
             {
