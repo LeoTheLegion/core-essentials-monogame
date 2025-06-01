@@ -72,9 +72,11 @@ UpdateLoadingProgress(0.5f, "Loading assets...");
 The framework handles scene transitions automatically. When loading a new scene:
 
 1. The current scene is unloaded (if any)
-2. The new scene's `LoadGameSystems` method is called
-3. The new scene's `OnStartCoroutine` is executed, showing loading progress
-4. When loading is complete, the scene becomes active
+2. The new scene's `LoadGameSystems` method is called to instantiate game systems.
+3. Each registered game system has its `SetScene` method called.
+4. After all systems are registered, each game system's `OnStart()` virtual method is called. This is the ideal place for systems to perform initialization that might depend on other systems being available (e.g., fetching a reference to another system using `Scene.GetGameSystem<T>()`).
+5. The new scene's `OnStartCoroutine` is executed, showing loading progress. This coroutine is for scene-specific asynchronous setup.
+6. When loading is complete, the scene becomes active
 
 ## Example from Playground
 
