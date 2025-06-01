@@ -30,6 +30,28 @@ namespace CoreEssentials.Tests.GameSystems.Physics
         }
         
         [Fact]
+        public void Constructor_Default_ShouldInitializeWorld()
+        {
+            // Arrange & Act
+            var physicsEngine = new PhysicsEngine();
+
+            // Assert
+            Assert.NotNull(physicsEngine.Bodies);
+            Assert.Equal(0, physicsEngine.Bodies.Count);
+        }
+
+        [Fact]
+        public void Constructor_WithScale_ShouldInitializeWorld()
+        {
+            // Arrange & Act
+            var physicsEngine = new PhysicsEngine(100);
+
+            // Assert
+            Assert.NotNull(physicsEngine.Bodies);
+            Assert.Equal(0, physicsEngine.Bodies.Count);
+        }
+        
+        [Fact]
         public void CreateBody_ValidParameters_ReturnsNewBody()
         {
             // Arrange
