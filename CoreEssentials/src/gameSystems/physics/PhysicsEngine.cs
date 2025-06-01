@@ -38,18 +38,27 @@ namespace CoreEssentials.GameSystems.Physics
         /// Initializes a new instance of the PhysicsEngine class.
         /// Sets up gravity and creates a physics world.
         /// </summary>
-        public PhysicsEngine() 
+        public PhysicsEngine() : this(0)
         {
-            Reset();
         }
 
         /// <summary>
         /// Initializes a new instance of the PhysicsEngine class with a specified scale.
         /// </summary>
         /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>
-        public PhysicsEngine(int scale) 
+        public PhysicsEngine(int scale)
         {
             _scale = scale;
+
+            _world = new World();
+            _world.Gravity = new(0, 9.8f);
+
+            // enable multithreading
+            _world.ContactManager.VelocityConstraintsMultithreadThreshold = 256;
+            _world.ContactManager.PositionConstraintsMultithreadThreshold = 256;
+            _world.ContactManager.CollideMultithreadThreshold = 256;
+
+            _worldPool = new WorldPool(_world);
         }
 
         /// <summary>
@@ -123,24 +132,6 @@ namespace CoreEssentials.GameSystems.Physics
         public void Destroy(Body body)
         {
             this._worldPool.DestroyBody(body);
-        }
-
-        /// <summary>
-        /// Resets the physics world and initializes its properties.
-        /// </summary>
-        public void Reset()
-        {
-            _world = new World();
-            _world.Gravity = new(0, 9.8f);
-            _scale = 0;
-
-
-            // enable multithreading
-            _world.ContactManager.VelocityConstraintsMultithreadThreshold = 256;
-            _world.ContactManager.PositionConstraintsMultithreadThreshold = 256;
-            _world.ContactManager.CollideMultithreadThreshold = 256;
-
-            _worldPool = new WorldPool(_world);
         }
     }
 }
