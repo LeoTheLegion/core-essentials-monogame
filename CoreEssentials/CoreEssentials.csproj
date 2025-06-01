@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <RootNamespace>CoreEssentials</RootNamespace>
     <PackageId>CoreEssentials-MonoGame</PackageId>
     <Version>0.12.1</Version>
@@ -13,6 +15,14 @@
     <!-- Including Documentation in NuGet Package -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- Debug symbol and SourceLink configuration -->
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EmbedAllSources>true</EmbedAllSources> <!-- Embeds all sources into the PDB. Alternatively, rely on SourceLink to fetch from repo. -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105">
@@ -22,6 +32,7 @@
     <PackageReference Include="Aether.Physics2D.MG" Version="2.1.1" />
     <PackageReference Include="MonoGame.Extended" Version="4.0.2" />
     <PackageReference Include="Myra" Version="1.5.5" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>  <ItemGroup>
     <Folder Include="src\Coroutines\" />
   </ItemGroup>
