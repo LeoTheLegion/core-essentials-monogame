@@ -15,15 +15,34 @@ without having to explicitly pass references around.
 
 The PhysicsEngine supports runtime configuration of solver settings through the `Config` property:
 
+### Recommended Approach (New)
+```csharp
+var physicsEngine = new PhysicsEngine();
+physicsEngine.Config.Scale = 100;  // Set scale via Config
+physicsEngine.Config.VelocityIterations = 8;
+physicsEngine.Config.PositionIterations = 3;
+physicsEngine.Config.ContinuousPhysics = true;
+```
+
+### Legacy Approach (Deprecated)
+```csharp
+// The following are deprecated and will be removed in a future version:
+var physicsEngine = new PhysicsEngine(scale: 100);  // Obsolete constructor
+physicsEngine.SetScale(100);  // Obsolete method
+int scale = physicsEngine.Scale;  // Obsolete property
+```
+
 ### Default Settings (Balanced)
 ```csharp
-var physicsEngine = new PhysicsEngine(scale: 100);
-// Defaults: VelocityIterations=8, PositionIterations=3, ContinuousPhysics=true
+var physicsEngine = new PhysicsEngine();
+physicsEngine.Config.Scale = 100;
+// Defaults: Scale=0, VelocityIterations=8, PositionIterations=3, ContinuousPhysics=true
 ```
 
 ### Particle Systems (1000+ bodies) - Performance Optimized
 ```csharp
-var physicsEngine = new PhysicsEngine(scale: 100);
+var physicsEngine = new PhysicsEngine();
+physicsEngine.Config.Scale = 100;
 physicsEngine.Config.VelocityIterations = 4;      // Lower for speed
 physicsEngine.Config.PositionIterations = 2;       // Lower for speed
 physicsEngine.Config.ContinuousPhysics = false;    // Disable CCD
@@ -32,7 +51,8 @@ physicsEngine.Config.ContinuousPhysics = false;    // Disable CCD
 
 ### Precision Stacking - Accuracy Optimized
 ```csharp
-var physicsEngine = new PhysicsEngine(scale: 100);
+var physicsEngine = new PhysicsEngine();
+physicsEngine.Config.Scale = 100;
 physicsEngine.Config.VelocityIterations = 10;     // Higher for accuracy
 physicsEngine.Config.PositionIterations = 4;      // Higher for accuracy
 physicsEngine.Config.ContinuousPhysics = true;    // Prevent tunneling

@@ -7,6 +7,13 @@ namespace CoreEssentials.GameSystems.Physics
     public class PhysicsConfig
     {
         /// <summary>
+        /// Gets or sets the pixel-to-meter scale factor for the physics world.
+        /// This determines how physics units map to rendering units.
+        /// Default: 0.
+        /// </summary>
+        public int Scale { get; set; } = 0;
+
+        /// <summary>
         /// Number of velocity constraint solver iterations per step.
         /// Higher values provide more accurate velocity resolution but slower performance.
         /// Default: 8 (high accuracy). Recommended for particle systems: 4-6.

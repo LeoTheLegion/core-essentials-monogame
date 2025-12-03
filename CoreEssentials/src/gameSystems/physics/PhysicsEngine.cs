@@ -15,7 +15,6 @@ namespace CoreEssentials.GameSystems.Physics
     public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem
     {
         private const float SIM_SPEED = 2;
-        private int _scale;
         private World _world;
 
         /// <summary>
@@ -32,7 +31,12 @@ namespace CoreEssentials.GameSystems.Physics
         /// Gets or sets the pixel-to-meter scale factor for the physics world.
         /// This determines how physics units map to rendering units.
         /// </summary>
-        public int Scale => _scale;
+        [Obsolete("Use Config.Scale instead. This property will be removed in a future version.")]
+        public int Scale
+        {
+            get => _config.Scale;
+            set => _config.Scale = value;
+        }
 
         /// <summary>
         /// Gets the physics configuration. Modify properties to tune performance vs accuracy.
@@ -48,18 +52,8 @@ namespace CoreEssentials.GameSystems.Physics
         /// Initializes a new instance of the PhysicsEngine class.
         /// Sets up gravity and creates a physics world.
         /// </summary>
-        public PhysicsEngine() : this(0)
+        public PhysicsEngine()
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PhysicsEngine class with a specified scale.
-        /// </summary>
-        /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>
-        public PhysicsEngine(int scale)
-        {
-            _scale = scale;
-
             _world = new World();
             _world.Gravity = new(0, 9.8f);
 
@@ -72,12 +66,23 @@ namespace CoreEssentials.GameSystems.Physics
         }
 
         /// <summary>
+        /// Initializes a new instance of the PhysicsEngine class with a specified scale.
+        /// </summary>
+        /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>
+        [Obsolete("Use PhysicsEngine() and set Config.Scale instead. This constructor will be removed in a future version.")]
+        public PhysicsEngine(int scale) : this()
+        {
+            _config.Scale = scale;
+        }
+
+        /// <summary>
         /// Sets the pixel-to-meter scale factor for the physics world.
         /// </summary>
         /// <param name="scale">The new scale factor.</param>
+        [Obsolete("Use Config.Scale = value instead. This method will be removed in a future version.")]
         public void SetScale(int scale)
         {
-            _scale = scale;
+            _config.Scale = scale;
         }
 
         /// <summary>

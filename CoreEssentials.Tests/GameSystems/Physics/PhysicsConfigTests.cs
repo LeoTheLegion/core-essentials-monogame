@@ -12,9 +12,23 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             var config = new PhysicsConfig();
             
             // Assert - defaults should match Aether's defaults for stability
+            Assert.Equal(0, config.Scale);
             Assert.Equal(8, config.VelocityIterations);
             Assert.Equal(3, config.PositionIterations);
             Assert.True(config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Scale_CanBeModified()
+        {
+            // Arrange
+            var config = new PhysicsConfig();
+            
+            // Act
+            config.Scale = 100;
+            
+            // Assert
+            Assert.Equal(100, config.Scale);
         }
 
         [Fact]
@@ -99,11 +113,13 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             var config = new PhysicsConfig();
             
             // Act
+            config.Scale = 50;
             config.VelocityIterations = 6;
             config.PositionIterations = 5;
             config.ContinuousPhysics = false;
             
             // Assert - verify all properties are independent
+            Assert.Equal(50, config.Scale);
             Assert.Equal(6, config.VelocityIterations);
             Assert.Equal(5, config.PositionIterations);
             Assert.False(config.ContinuousPhysics);

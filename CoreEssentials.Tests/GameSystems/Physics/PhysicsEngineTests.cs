@@ -141,11 +141,70 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             // Arrange & Act
             var physicsEngine = new PhysicsEngine();
             
-            // Assert - defaults should match Aether's defaults (8, 3, true)
+            // Assert - defaults should match Aether's defaults (0, 8, 3, true)
             Assert.NotNull(physicsEngine.Config);
+            Assert.Equal(0, physicsEngine.Config.Scale);
             Assert.Equal(8, physicsEngine.Config.VelocityIterations);
             Assert.Equal(3, physicsEngine.Config.PositionIterations);
             Assert.True(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Config_CanModifyScale()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act
+            physicsEngine.Config.Scale = 100;
+            
+            // Assert
+            Assert.Equal(100, physicsEngine.Config.Scale);
+        }
+
+        [Fact]
+        public void ObsoleteScaleProperty_WorksCorrectly()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act - Use the obsolete Scale property
+            #pragma warning disable CS0618 // Type or member is obsolete
+            physicsEngine.Scale = 50;
+            
+            // Assert - Both Scale and Config.Scale should reflect the change
+            Assert.Equal(50, physicsEngine.Scale);
+            Assert.Equal(50, physicsEngine.Config.Scale);
+            #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void ObsoleteSetScaleMethod_WorksCorrectly()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act - Use the obsolete SetScale method
+            #pragma warning disable CS0618 // Type or member is obsolete
+            physicsEngine.SetScale(75);
+            
+            // Assert - Both Scale and Config.Scale should reflect the change
+            Assert.Equal(75, physicsEngine.Scale);
+            Assert.Equal(75, physicsEngine.Config.Scale);
+            #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void ObsoleteConstructor_WorksCorrectly()
+        {
+            // Arrange & Act - Use the obsolete constructor
+            #pragma warning disable CS0618 // Type or member is obsolete
+            var physicsEngine = new PhysicsEngine(100);
+            
+            // Assert - Both Scale and Config.Scale should be set
+            Assert.Equal(100, physicsEngine.Scale);
+            Assert.Equal(100, physicsEngine.Config.Scale);
+            #pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
