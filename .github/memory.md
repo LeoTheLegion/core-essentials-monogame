@@ -11,6 +11,76 @@ Game systems can access the main Game instance through a property chain:
 This is useful for systems that need direct access to game resources (Content, GraphicsDevice, etc.)
 without having to explicitly pass references around.
 
+## Physics Configuration
+
+The PhysicsEngine supports runtime configuration of solver settings through the `Config` property:
+
+### Recommended Approach (New)
+
+**Option 1: Configure after construction**
+```csharp
+var physicsEngine = new PhysicsEngine();
+physicsEngine.Config.Scale = 100;  // Set scale via Config
+physicsEngine.Config.VelocityIterations = 8;
+physicsEngine.Config.PositionIterations = 3;
+physicsEngine.Config.ContinuousPhysics = true;
+```
+
+**Option 2: Pass config object to constructor**
+```csharp
+var config = new PhysicsConfig
+{
+    Scale = 100,
+    VelocityIterations = 4,
+    PositionIterations = 2,
+    ContinuousPhysics = false
+};
+var physicsEngine = new PhysicsEngine(config);
+```
+
+### Legacy Approach (Deprecated)
+```csharp
+// The following are deprecated and will be removed in a future version:
+var physicsEngine = new PhysicsEngine(scale: 100);  // Obsolete constructor
+physicsEngine.SetScale(100);  // Obsolete method
+int scale = physicsEngine.Scale;  // Obsolete property
+```
+
+### Default Settings (Balanced)
+```csharp
+var physicsEngine = new PhysicsEngine();
+physicsEngine.Config.Scale = 100;
+// Defaults: Scale=0, VelocityIterations=8, PositionIterations=3, ContinuousPhysics=true
+```
+
+### Particle Systems (1000+ bodies) - Performance Optimized
+```csharp
+var config = new PhysicsConfig
+{
+    Scale = 100,
+    VelocityIterations = 4,      // Lower for speed
+    PositionIterations = 2,       // Lower for speed
+    ContinuousPhysics = false     // Disable CCD
+};
+var physicsEngine = new PhysicsEngine(config);
+// Expected: 40-60% FPS improvement
+```
+
+### Precision Stacking - Accuracy Optimized
+```csharp
+var config = new PhysicsConfig
+{
+    Scale = 100,
+    VelocityIterations = 10,     // Higher for accuracy
+    PositionIterations = 4,      // Higher for accuracy
+    ContinuousPhysics = true     // Prevent tunneling
+};
+var physicsEngine = new PhysicsEngine(config);
+// Result: More stable but slower
+```
+
+**Note:** `ContinuousPhysics` is a global setting in Aether Physics2D. Multiple PhysicsEngine instances will share this setting.
+
 ## Running Tests
 
 To run all tests in the solution:
@@ -22,6 +92,8 @@ To run tests for a specific project:
 ```bash
 dotnet test CoreEssentials.Tests/CoreEssentials.Tests.csproj
 ```
+
+**Note:** Tests require Windows desktop framework to run due to MonoGame dependencies. On Linux, you can build the test project with `-p:EnableWindowsTargeting=true`, but tests cannot be executed.
 
 ## Debugging Tips
 

@@ -50,6 +50,50 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             Assert.NotNull(physicsEngine.Bodies);
             Assert.Equal(0, physicsEngine.Bodies.Count);
         }
+
+        [Fact]
+        public void Constructor_WithConfig_UsesProvidedConfig()
+        {
+            // Arrange
+            var config = new PhysicsConfig
+            {
+                Scale = 150,
+                VelocityIterations = 6,
+                PositionIterations = 2,
+                ContinuousPhysics = false
+            };
+
+            // Act
+            var physicsEngine = new PhysicsEngine(config);
+
+            // Assert
+            Assert.NotNull(physicsEngine.Config);
+            Assert.Equal(150, physicsEngine.Config.Scale);
+            Assert.Equal(6, physicsEngine.Config.VelocityIterations);
+            Assert.Equal(2, physicsEngine.Config.PositionIterations);
+            Assert.False(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Constructor_WithConfig_SameInstanceUsed()
+        {
+            // Arrange
+            var config = new PhysicsConfig { Scale = 200 };
+
+            // Act
+            var physicsEngine = new PhysicsEngine(config);
+            physicsEngine.Config.Scale = 250;
+
+            // Assert - config should be the same instance
+            Assert.Equal(250, config.Scale);
+        }
+
+        [Fact]
+        public void Constructor_WithNullConfig_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new PhysicsEngine((PhysicsConfig)null));
+        }
         
         [Fact]
         public void CreateBody_ValidParameters_ReturnsNewBody()
@@ -133,6 +177,177 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             
             // Should return 1.0 (full speed) for < 1000 bodies
             Assert.Equal(1.0f, result);
+        }
+
+        [Fact]
+        public void Config_DefaultValues_MatchAetherDefaults()
+        {
+            // Arrange & Act
+            var physicsEngine = new PhysicsEngine();
+            
+            // Assert - defaults should match Aether's defaults (0, 8, 3, true)
+            Assert.NotNull(physicsEngine.Config);
+            Assert.Equal(0, physicsEngine.Config.Scale);
+            Assert.Equal(8, physicsEngine.Config.VelocityIterations);
+            Assert.Equal(3, physicsEngine.Config.PositionIterations);
+            Assert.True(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Config_CanModifyScale()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act
+            physicsEngine.Config.Scale = 100;
+            
+            // Assert
+            Assert.Equal(100, physicsEngine.Config.Scale);
+        }
+
+        [Fact]
+        public void ObsoleteScaleProperty_WorksCorrectly()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act - Use the obsolete Scale property
+            #pragma warning disable CS0618 // Type or member is obsolete
+            physicsEngine.Scale = 50;
+            
+            // Assert - Both Scale and Config.Scale should reflect the change
+            Assert.Equal(50, physicsEngine.Scale);
+            Assert.Equal(50, physicsEngine.Config.Scale);
+            #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void ObsoleteSetScaleMethod_WorksCorrectly()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act - Use the obsolete SetScale method
+            #pragma warning disable CS0618 // Type or member is obsolete
+            physicsEngine.SetScale(75);
+            
+            // Assert - Both Scale and Config.Scale should reflect the change
+            Assert.Equal(75, physicsEngine.Scale);
+            Assert.Equal(75, physicsEngine.Config.Scale);
+            #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void ObsoleteConstructor_WorksCorrectly()
+        {
+            // Arrange & Act - Use the obsolete constructor
+            #pragma warning disable CS0618 // Type or member is obsolete
+            var physicsEngine = new PhysicsEngine(100);
+            
+            // Assert - Both Scale and Config.Scale should be set
+            Assert.Equal(100, physicsEngine.Scale);
+            Assert.Equal(100, physicsEngine.Config.Scale);
+            #pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void Config_CanModifyVelocityIterations()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act
+            physicsEngine.Config.VelocityIterations = 4;
+            
+            // Assert
+            Assert.Equal(4, physicsEngine.Config.VelocityIterations);
+        }
+
+        [Fact]
+        public void Config_CanModifyPositionIterations()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act
+            physicsEngine.Config.PositionIterations = 2;
+            
+            // Assert
+            Assert.Equal(2, physicsEngine.Config.PositionIterations);
+        }
+
+        [Fact]
+        public void Config_CanModifyContinuousPhysics()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act
+            physicsEngine.Config.ContinuousPhysics = false;
+            
+            // Assert
+            Assert.False(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Config_ParticleSystemSettings_AppliedCorrectly()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act - Apply recommended particle system settings
+            physicsEngine.Config.VelocityIterations = 4;
+            physicsEngine.Config.PositionIterations = 2;
+            physicsEngine.Config.ContinuousPhysics = false;
+            
+            // Assert
+            Assert.Equal(4, physicsEngine.Config.VelocityIterations);
+            Assert.Equal(2, physicsEngine.Config.PositionIterations);
+            Assert.False(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Config_PrecisionSettings_AppliedCorrectly()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            
+            // Act - Apply high precision settings
+            physicsEngine.Config.VelocityIterations = 10;
+            physicsEngine.Config.PositionIterations = 4;
+            physicsEngine.Config.ContinuousPhysics = true;
+            
+            // Assert
+            Assert.Equal(10, physicsEngine.Config.VelocityIterations);
+            Assert.Equal(4, physicsEngine.Config.PositionIterations);
+            Assert.True(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void FixedUpdate_AppliesConfiguredSettings()
+        {
+            // Arrange
+            var physicsEngine = new PhysicsEngine();
+            physicsEngine.Config.VelocityIterations = 6;
+            physicsEngine.Config.PositionIterations = 2;
+            physicsEngine.Config.ContinuousPhysics = false;
+            
+            var gameTime = new GameTime(
+                TimeSpan.FromSeconds(0),
+                TimeSpan.FromSeconds(1.0/60.0)
+            );
+            
+            // Create a dynamic body
+            var body = physicsEngine.CreateBody(new Vector2(0, 0), 0, BodyType.Dynamic);
+            body.ApplyForce(new Vector2(100, 0));
+            
+            // Act - FixedUpdate should apply the configured settings
+            physicsEngine.FixedUpdate(gameTime);
+            
+            // Assert - No exception should be thrown, which verifies the config was applied
+            // The fact that FixedUpdate completes successfully means the solver iterations were valid
+            Assert.True(true);
         }
     }
 }

@@ -15,7 +15,6 @@ namespace CoreEssentials.GameSystems.Physics
     public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem
     {
         private const float SIM_SPEED = 2;
-        private int _scale;
         private World _world;
 
         /// <summary>
@@ -24,10 +23,25 @@ namespace CoreEssentials.GameSystems.Physics
         private WorldPool _worldPool;
 
         /// <summary>
+        /// The configuration for the physics solver.
+        /// </summary>
+        private PhysicsConfig _config = new PhysicsConfig();
+
+        /// <summary>
         /// Gets or sets the pixel-to-meter scale factor for the physics world.
         /// This determines how physics units map to rendering units.
         /// </summary>
-        public int Scale => _scale;
+        [Obsolete("Use Config.Scale instead. This property will be removed in a future version.")]
+        public int Scale
+        {
+            get => _config.Scale;
+            set => _config.Scale = value;
+        }
+
+        /// <summary>
+        /// Gets the physics configuration. Modify properties to tune performance vs accuracy.
+        /// </summary>
+        public PhysicsConfig Config => _config;
 
         /// <summary>
         /// Gets all bodies currently in the physics world.
@@ -38,18 +52,8 @@ namespace CoreEssentials.GameSystems.Physics
         /// Initializes a new instance of the PhysicsEngine class.
         /// Sets up gravity and creates a physics world.
         /// </summary>
-        public PhysicsEngine() : this(0)
+        public PhysicsEngine()
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PhysicsEngine class with a specified scale.
-        /// </summary>
-        /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>
-        public PhysicsEngine(int scale)
-        {
-            _scale = scale;
-
             _world = new World();
             _world.Gravity = new(0, 9.8f);
 
@@ -62,12 +66,32 @@ namespace CoreEssentials.GameSystems.Physics
         }
 
         /// <summary>
+        /// Initializes a new instance of the PhysicsEngine class with a configuration object.
+        /// </summary>
+        /// <param name="config">The physics configuration to use.</param>
+        public PhysicsEngine(PhysicsConfig config) : this()
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the PhysicsEngine class with a specified scale.
+        /// </summary>
+        /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>
+        [Obsolete("Use PhysicsEngine() and set Config.Scale instead. This constructor will be removed in a future version.")]
+        public PhysicsEngine(int scale) : this()
+        {
+            _config.Scale = scale;
+        }
+
+        /// <summary>
         /// Sets the pixel-to-meter scale factor for the physics world.
         /// </summary>
         /// <param name="scale">The new scale factor.</param>
+        [Obsolete("Use Config.Scale = value instead. This method will be removed in a future version.")]
         public void SetScale(int scale)
         {
-            _scale = scale;
+            _config.Scale = scale;
         }
 
         /// <summary>
@@ -81,7 +105,20 @@ namespace CoreEssentials.GameSystems.Physics
 
             var speed = SIM_SPEED * adjust;
 
-            _world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * speed);
+            // Apply user-configured solver iterations
+            var iterations = new nkast.Aether.Physics2D.Dynamics.SolverIterations
+            {
+                VelocityIterations = _config.VelocityIterations,
+                PositionIterations = _config.PositionIterations,
+                TOIVelocityIterations = _config.VelocityIterations,
+                TOIPositionIterations = _config.PositionIterations * 2
+            };
+
+            // Apply CCD setting (Note: This is a global setting in Aether Physics2D.
+            // If using multiple PhysicsEngine instances, they will share this setting.)
+            nkast.Aether.Physics2D.Settings.ContinuousPhysics = _config.ContinuousPhysics;
+
+            _world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * speed, ref iterations);
 
             int bodies = _world.BodyList.Count;
             int activeBodies = bodies - _worldPool.Count;
