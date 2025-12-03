@@ -1,0 +1,39 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore CoreEssentials/CoreEssentials.csproj
+      
+    - name: Build
+      run: dotnet build CoreEssentials/CoreEssentials.csproj --no-restore -c Release
+      
+    - name: Pack (verify packaging works)
+      run: dotnet pack CoreEssentials/CoreEssentials.csproj --no-build -c Release
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-package
+        path: CoreEssentials/bin/Release/*.nupkg
+        retention-days: 7
+        
+    # Note: Tests require Windows due to MonoGame.Framework.WindowsDX dependency
+    # They cannot be run on Linux runners. Tests should be run locally on Windows.

@@ -1,7 +1,7 @@
 # CoreEssentials-MonoGame
 
 [![NuGet](https://img.shields.io/nuget/v/CoreEssentials-MonoGame.svg)](https://www.nuget.org/packages/CoreEssentials-MonoGame)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/LeoTheLegion/core-essentials-monogame)
+[![Build Status](https://github.com/LeoTheLegion/core-essentials-monogame/actions/workflows/ci.yml/badge.svg)](https://github.com/LeoTheLegion/core-essentials-monogame/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A comprehensive framework built on top of MonoGame that provides essential building blocks for game development. CoreEssentials-MonoGame accelerates game development by offering ready-to-use systems for common game development challenges.
