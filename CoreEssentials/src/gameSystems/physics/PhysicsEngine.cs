@@ -100,7 +100,8 @@ namespace CoreEssentials.GameSystems.Physics
                 TOIPositionIterations = _config.PositionIterations * 2
             };
 
-            // Apply CCD setting
+            // Apply CCD setting (Note: This is a global setting in Aether Physics2D.
+            // If using multiple PhysicsEngine instances, they will share this setting.)
             nkast.Aether.Physics2D.Settings.ContinuousPhysics = _config.ContinuousPhysics;
 
             _world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * speed, ref iterations);

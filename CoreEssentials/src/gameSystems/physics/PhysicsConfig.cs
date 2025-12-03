@@ -24,6 +24,8 @@ namespace CoreEssentials.GameSystems.Physics
         /// Enable continuous collision detection (CCD) to prevent tunneling of fast-moving objects.
         /// Disable for slow-moving or short-lived objects to improve performance.
         /// Default: true. Recommended for particle systems: false.
+        /// Note: This is a global setting in the underlying physics library. If using multiple
+        /// PhysicsEngine instances, they will share this setting.
         /// </summary>
         public bool ContinuousPhysics { get; set; } = true;
     }
