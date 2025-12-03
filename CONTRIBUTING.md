@@ -142,14 +142,26 @@ GitHub Actions will automatically:
 If you need to publish manually for any reason:
 
 ```bash
-# Build and pack
+# First, configure the GitHub NuGet source (one-time setup):
+dotnet nuget add source https://nuget.pkg.github.com/LeoTheLegion/index.json \
+  --name github \
+  --username YOUR_GITHUB_USERNAME \
+  --password YOUR_GITHUB_PAT \
+  --store-password-in-clear-text
+
+# Set the GITHUB_NUGET_TOKEN environment variable:
+export GITHUB_NUGET_TOKEN="YOUR_GITHUB_PAT"
+
+# Build and pack using the script:
 bash ./scripts/publish.sh
 
 # The script handles:
 # - Extracting version from .csproj
 # - Running dotnet pack
-# - Pushing to GitHub Packages (requires GITHUB_NUGET_TOKEN env var)
+# - Pushing to the pre-configured "github" NuGet source
 ```
+
+**Note:** The automated GitHub Actions workflow is the recommended approach. Manual publishing should only be used in exceptional circumstances.
 
 ## Code Style
 

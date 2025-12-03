@@ -32,8 +32,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: nuget-package
-        path: CoreEssentials/bin/Release/*.nupkg
+        path: |
+          CoreEssentials/bin/Release/CoreEssentials-MonoGame.*.nupkg
+          CoreEssentials/bin/Release/CoreEssentials-MonoGame.*.snupkg
         retention-days: 7
+        if-no-files-found: error
         
     # Note: Tests require Windows due to MonoGame.Framework.WindowsDX dependency
     # They cannot be run on Linux runners. Tests should be run locally on Windows.
