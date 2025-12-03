@@ -66,6 +66,15 @@ namespace CoreEssentials.GameSystems.Physics
         }
 
         /// <summary>
+        /// Initializes a new instance of the PhysicsEngine class with a configuration object.
+        /// </summary>
+        /// <param name="config">The physics configuration to use.</param>
+        public PhysicsEngine(PhysicsConfig config) : this()
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+        }
+
+        /// <summary>
         /// Initializes a new instance of the PhysicsEngine class with a specified scale.
         /// </summary>
         /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>

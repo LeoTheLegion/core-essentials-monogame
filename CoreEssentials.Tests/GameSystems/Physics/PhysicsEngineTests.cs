@@ -50,6 +50,50 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             Assert.NotNull(physicsEngine.Bodies);
             Assert.Equal(0, physicsEngine.Bodies.Count);
         }
+
+        [Fact]
+        public void Constructor_WithConfig_UsesProvidedConfig()
+        {
+            // Arrange
+            var config = new PhysicsConfig
+            {
+                Scale = 150,
+                VelocityIterations = 6,
+                PositionIterations = 2,
+                ContinuousPhysics = false
+            };
+
+            // Act
+            var physicsEngine = new PhysicsEngine(config);
+
+            // Assert
+            Assert.NotNull(physicsEngine.Config);
+            Assert.Equal(150, physicsEngine.Config.Scale);
+            Assert.Equal(6, physicsEngine.Config.VelocityIterations);
+            Assert.Equal(2, physicsEngine.Config.PositionIterations);
+            Assert.False(physicsEngine.Config.ContinuousPhysics);
+        }
+
+        [Fact]
+        public void Constructor_WithConfig_SameInstanceUsed()
+        {
+            // Arrange
+            var config = new PhysicsConfig { Scale = 200 };
+
+            // Act
+            var physicsEngine = new PhysicsEngine(config);
+            physicsEngine.Config.Scale = 250;
+
+            // Assert - config should be the same instance
+            Assert.Equal(250, config.Scale);
+        }
+
+        [Fact]
+        public void Constructor_WithNullConfig_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new PhysicsEngine((PhysicsConfig)null));
+        }
         
         [Fact]
         public void CreateBody_ValidParameters_ReturnsNewBody()

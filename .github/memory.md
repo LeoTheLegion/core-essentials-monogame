@@ -16,12 +16,26 @@ without having to explicitly pass references around.
 The PhysicsEngine supports runtime configuration of solver settings through the `Config` property:
 
 ### Recommended Approach (New)
+
+**Option 1: Configure after construction**
 ```csharp
 var physicsEngine = new PhysicsEngine();
 physicsEngine.Config.Scale = 100;  // Set scale via Config
 physicsEngine.Config.VelocityIterations = 8;
 physicsEngine.Config.PositionIterations = 3;
 physicsEngine.Config.ContinuousPhysics = true;
+```
+
+**Option 2: Pass config object to constructor**
+```csharp
+var config = new PhysicsConfig
+{
+    Scale = 100,
+    VelocityIterations = 4,
+    PositionIterations = 2,
+    ContinuousPhysics = false
+};
+var physicsEngine = new PhysicsEngine(config);
 ```
 
 ### Legacy Approach (Deprecated)
@@ -41,21 +55,27 @@ physicsEngine.Config.Scale = 100;
 
 ### Particle Systems (1000+ bodies) - Performance Optimized
 ```csharp
-var physicsEngine = new PhysicsEngine();
-physicsEngine.Config.Scale = 100;
-physicsEngine.Config.VelocityIterations = 4;      // Lower for speed
-physicsEngine.Config.PositionIterations = 2;       // Lower for speed
-physicsEngine.Config.ContinuousPhysics = false;    // Disable CCD
+var config = new PhysicsConfig
+{
+    Scale = 100,
+    VelocityIterations = 4,      // Lower for speed
+    PositionIterations = 2,       // Lower for speed
+    ContinuousPhysics = false     // Disable CCD
+};
+var physicsEngine = new PhysicsEngine(config);
 // Expected: 40-60% FPS improvement
 ```
 
 ### Precision Stacking - Accuracy Optimized
 ```csharp
-var physicsEngine = new PhysicsEngine();
-physicsEngine.Config.Scale = 100;
-physicsEngine.Config.VelocityIterations = 10;     // Higher for accuracy
-physicsEngine.Config.PositionIterations = 4;      // Higher for accuracy
-physicsEngine.Config.ContinuousPhysics = true;    // Prevent tunneling
+var config = new PhysicsConfig
+{
+    Scale = 100,
+    VelocityIterations = 10,     // Higher for accuracy
+    PositionIterations = 4,      // Higher for accuracy
+    ContinuousPhysics = true     // Prevent tunneling
+};
+var physicsEngine = new PhysicsEngine(config);
 // Result: More stable but slower
 ```
 
