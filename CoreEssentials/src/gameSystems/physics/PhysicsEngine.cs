@@ -24,10 +24,20 @@ namespace CoreEssentials.GameSystems.Physics
         private WorldPool _worldPool;
 
         /// <summary>
+        /// The configuration for the physics solver.
+        /// </summary>
+        private PhysicsConfig _config = new PhysicsConfig();
+
+        /// <summary>
         /// Gets or sets the pixel-to-meter scale factor for the physics world.
         /// This determines how physics units map to rendering units.
         /// </summary>
         public int Scale => _scale;
+
+        /// <summary>
+        /// Gets the physics configuration. Modify properties to tune performance vs accuracy.
+        /// </summary>
+        public PhysicsConfig Config => _config;
 
         /// <summary>
         /// Gets all bodies currently in the physics world.
@@ -81,7 +91,19 @@ namespace CoreEssentials.GameSystems.Physics
 
             var speed = SIM_SPEED * adjust;
 
-            _world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * speed);
+            // Apply user-configured solver iterations
+            var iterations = new nkast.Aether.Physics2D.Dynamics.SolverIterations
+            {
+                VelocityIterations = _config.VelocityIterations,
+                PositionIterations = _config.PositionIterations,
+                TOIVelocityIterations = _config.VelocityIterations,
+                TOIPositionIterations = _config.PositionIterations * 2
+            };
+
+            // Apply CCD setting
+            nkast.Aether.Physics2D.Settings.ContinuousPhysics = _config.ContinuousPhysics;
+
+            _world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * speed, ref iterations);
 
             int bodies = _world.BodyList.Count;
             int activeBodies = bodies - _worldPool.Count;
