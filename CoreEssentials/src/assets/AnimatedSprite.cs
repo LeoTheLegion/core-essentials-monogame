@@ -14,10 +14,10 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class AnimatedSprite : Asset
 {
-    private SpriteSheet _spriteSheet;
-    private AnimatedSpriteMetaData _metaData;
-    private int[] _frames;
-    private float _frameRate;
+    private SpriteSheet? _spriteSheet;
+    private AnimatedSpriteMetaData? _metaData;
+    private int[]? _frames;
+    private float _frameRate = 1f / 10f; // Default: 10 FPS
     
     /// <summary>
     /// Gets the total number of frames in the animation sequence.
@@ -32,7 +32,8 @@ public class AnimatedSprite : Asset
     /// <summary>
     /// Gets the underlying SpriteSheet used by this animated sprite.
     /// </summary>
-    public SpriteSheet SpriteSheet => _spriteSheet;
+    public SpriteSheet? SpriteSheet => _spriteSheet;
+
     
     /// <summary>
     /// Gets the array of frame indices used in this animation.
@@ -226,6 +227,12 @@ public class AnimatedSprite : Asset
         _spriteSheet = (SpriteSheet)AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
     }
 
+    /// <summary>
+    /// Unloads the animated sprite asset and releases associated resources.
+    /// Frees the sprite sheet reference and clears metadata and frames arrays.
+    /// </summary>
+    /// <param name="contentManager">The content manager used to unload assets.</param>
+
     public override void Unload(IContentManager contentManager)
     {
         if (_spriteSheet != null)
@@ -263,37 +270,73 @@ public class AnimatedSprite : Asset
         /// <summary>
         /// Gets or sets the type of source for the sprite (always "spritesheet" for animated sprites).
         /// </summary>
-        public string SourceType { get; set; }
-        
+        public string SourceType { get; set; } = "";
+
         /// <summary>
         /// Gets or sets the source sprite sheet asset name.
         /// </summary>
-        public string Source { get; set; }
-        
+        public string Source { get; set; } = "";
+
         /// <summary>
         /// Gets or sets the size of the sprite.
         /// </summary>
-        public Size Size { get; set; }
+        public Size Size { get; set; } = new();
     }
     
     /// <summary>
-    /// XML serializable class for animated sprite data
+    /// XML serializable class for animated sprite data.
+    /// Contains all information needed to configure an animated sprite from a spritesheet source.
     /// </summary>
     [XmlRoot("AnimatedSpriteData", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
     public class AnimatedSpriteDataXml
     {
-        public string SourceType { get; set; }
-        public string Source { get; set; }
-        
-        public SizeXml Size { get; set; }
-        
-        public string Frames { get; set; }
-        
-        public string FrameRate { get; set; }
-        
+        /// <summary>
+        /// Gets or sets the type of source for the sprite (always "spritesheet" for animated sprites).
+        /// </summary>
+        [XmlElement("SourceType", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+        public string SourceType { get; set; } = "";
+
+        /// <summary>
+        /// Gets or sets the name of the source sprite sheet asset to use.
+        /// </summary>
+        [XmlElement("Source", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+        public string Source { get; set; } = "";
+
+        /// <summary>
+        /// Gets or sets the optional size dimensions of individual frames in pixels.
+        /// </summary>
+        [XmlElement("Size", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+        public SizeXml? Size { get; set; }
+
+        /// <summary>
+        /// Gets or sets a comma-separated list of frame indices to include in the animation sequence.
+        /// If not specified, defaults to using only frame 0.
+        /// </summary>
+        [XmlElement("Frames", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+        public string? Frames { get; set; }
+
+        /// <summary>
+        /// Gets or sets the animation speed in frames per second. If not specified, defaults to 10 FPS.
+        /// </summary>
+        [XmlElement("FrameRate", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
+        public string? FrameRate { get; set; }
+
+        /// <summary>
+        /// Represents the size dimensions of individual frames in pixels.
+        /// </summary>
+        [XmlRoot("Size", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
         public class SizeXml
         {
+            /// <summary>
+            /// Gets or sets the width of each frame in pixels.
+            /// </summary>
+            [XmlElement("Width", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
             public float Width { get; set; }
+
+            /// <summary>
+            /// Gets or sets the height of each frame in pixels.
+            /// </summary>
+            [XmlElement("Height", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
             public float Height { get; set; }
         }
     }
