@@ -190,6 +190,15 @@ public class AnimatedSprite : Asset
         Debug.Primitives.DrawRectangle(spriteBatch, targetRectangle, Color.Red, 1f);
     }
 
+    /// <summary>
+    /// Loads the animated sprite asset from its XML configuration file.
+    /// Deserializes animation metadata including frame sequence and timing information,
+    /// then loads the associated sprite sheet referenced in the metadata.
+    /// </summary>
+    /// <param name="contentManager">The content manager used to load assets.</param>
+    /// <exception cref="ArgumentNullException">Thrown when XML asset data is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when deserialization fails, source type is unsupported, or metadata is incomplete.</exception>
+
     public override void Load(IContentManager contentManager)
     {
         string extension = Path.GetExtension(Name);
