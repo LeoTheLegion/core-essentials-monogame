@@ -34,7 +34,7 @@ public class XMLAsset : Asset
         }
 
         var exePath = AppContext.BaseDirectory;
-        var filePath = System.IO.Path.Combine(exePath,"Content",_assetName);
+        var filePath = System.IO.Path.Combine(exePath, "Content", _assetName);
 
         _xmlContent = System.IO.File.ReadAllText(filePath);
     }
@@ -49,10 +49,8 @@ public class XMLAsset : Asset
         {
             throw new ArgumentNullException(nameof(contentManager), "Content manager cannot be null.");
         }
-        // Reset the XML content to an empty string instead of null to
-        // satisfy the non‑nullable reference type declared for `_xmlContent`.
-        // This prevents a CS8600 warning when the project is compiled with
-        // nullable annotations enabled.
+        // Reset the XML content to an empty string instead of null.
+        // This satisfies the non‑nullable reference type for `_xmlContent`.
         _xmlContent = "";
     }
 }
