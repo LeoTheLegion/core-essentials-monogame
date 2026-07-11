@@ -38,7 +38,7 @@ public class AnimatedSprite : Asset
     /// <summary>
     /// Gets the array of frame indices used in this animation.
     /// </summary>
-    public int[] Frames => _frames;
+    public int[]? Frames => _frames;
 
     /// <summary>
     /// Gets the frame rate (in seconds per frame) defined for this animation.
@@ -70,8 +70,13 @@ public class AnimatedSprite : Asset
             XmlSerializer serializer = new XmlSerializer(typeof(AnimatedSpriteDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
             using (StringReader reader = new StringReader(xml.XMLContent))
             {
-                var xmlData = (AnimatedSpriteDataXml)serializer.Deserialize(reader);
+                var xmlData = serializer.Deserialize(reader) as AnimatedSpriteDataXml;
                 
+                if (xmlData == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize animated sprite data from XML.");
+                }
+
                 // Parse frame indices from comma-separated list
                 List<int> framesList = new List<int>();
                 if (!string.IsNullOrEmpty(xmlData.Frames))
@@ -210,6 +215,11 @@ public class AnimatedSprite : Asset
         else
         {
             throw new InvalidOperationException($"Unsupported animated sprite data format: {extension}. Use .xml format");
+        }
+
+        if (_metaData == null)
+        {
+            throw new InvalidOperationException("Animated sprite metadata is missing after deserialization.");
         }
 
         if (_metaData.SourceType == null)
