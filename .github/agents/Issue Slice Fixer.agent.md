@@ -1,7 +1,7 @@
 ---
 description: "Use when fixing one narrow build error, warning, XML documentation issue, or one closely related same-file issue slice delegated from the repo issue fixer."
 name: "Issue Slice Fixer"
-tools: [read, edit, search, execute, get_errors, runTests]
+tools: [read, edit, search, execute]
 agents: []
 user-invocable: false
 ---
