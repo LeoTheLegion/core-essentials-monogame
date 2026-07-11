@@ -7,7 +7,7 @@ namespace CoreEssentials.Audio;
 
 public class AudioManager
 {
-    private static AudioManager _instance;
+    private static AudioManager? _instance;
 
     private Dictionary<string, AudioClipInstance> _audioClipInstances = new Dictionary<string, AudioClipInstance>();
     private float _masterVolume;

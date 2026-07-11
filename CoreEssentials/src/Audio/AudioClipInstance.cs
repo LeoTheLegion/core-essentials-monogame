@@ -7,7 +7,8 @@ namespace CoreEssentials.Audio;
 public class AudioClipInstance
 {
     private AudioClip audioClip;
-    private ISoundEffectInstance soundEffectInstance;
+    // This field is intentionally nullable until the first Play call.
+    private ISoundEffectInstance? soundEffectInstance;
 
     public AudioClip AudioClip => audioClip;
 

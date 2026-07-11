@@ -6,26 +6,41 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace CoreEssentials.Assets;
 
+/// <summary>
+/// Defines the contract for audio clip assets.
+/// </summary>
 public interface IAudioClip{
+    /// <summary>Gets the underlying sound effect.</summary>
     ISoundEffect SoundEffect { get; }
+    /// <summary>Gets the volume level (0.0 to 1.0).</summary>
     float Volume { get; }
+    /// <summary>Indicates whether the clip should loop.</summary>
     bool Loop { get; set; }
+    /// <summary>The name of the asset.</summary>
     string Name { get; }
 }
 
-// Concrete implementation
+/// <summary>A concrete audio clip asset that loads from XML metadata and wraps a <see cref="SoundEffect"/> instance.</summary>
 public class AudioClip : Asset
 {
-    public ISoundEffect SoundEffect { get; internal set; }
+    /// <summary>Gets the underlying sound effect.</summary>
+    public ISoundEffect SoundEffect { get; internal set; } = null!;
+
+    /// <summary>The volume level (0.0 to 1.0).</summary>
     public float Volume { get; internal set; }
 
+    /// <summary>Indicates whether the clip should loop.</summary>
     public bool Loop { get; set; }
 
+    /// <summary>Initializes a new audio clip with the specified asset name.</summary>
+    /// <param name="name">The name of the asset to load.</param>
     public AudioClip(string name) : base(name)
     {
-        
+        // No additional initialization required.
     }
 
+    /// <summary>Loads audio data from an XML asset.</summary>
+    /// <param name="name">The name of the XML asset to load.</param>
     protected virtual void LoadFromXml(string name)
     {
         var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
@@ -54,6 +69,8 @@ public class AudioClip : Asset
                 
                 // Load the sound effect and wrap it with our adapter
                 var soundEffect = (SoundEffectAsset)AssetManager.LoadAsset<SoundEffectAsset>(xmlData.Source);
+                if (soundEffect == null)
+                    throw new InvalidOperationException($"Could not load sound effect '{xmlData.Source}'.");
                 SoundEffect = new SoundEffectAdapter(soundEffect.SoundEffect);
 
                 Loop = xmlData.Loop?.ToLower() == "true" || xmlData.Loop?.ToLower() == "yes";
@@ -67,6 +84,7 @@ public class AudioClip : Asset
         }
     }
 
+    /// <summary>Loads the asset using the provided content manager.</summary>
     public override void Load(IContentManager contentManager)
     {
         string extension = Path.GetExtension(Name);
@@ -80,6 +98,7 @@ public class AudioClip : Asset
         }
     }
 
+    /// <summary>Unloads the audio asset and frees resources.</summary>
     public override void Unload(IContentManager contentManager)
     {
         if (SoundEffect != null)
