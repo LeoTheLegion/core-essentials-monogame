@@ -7,12 +7,14 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class XMLAsset : Asset
 {
-    private string _xmlContent = "";
+    // Allow the content to be cleared by setting this field to null.
+    private string? _xmlContent;
 
     /// <summary>
     /// Gets the raw XML content of this asset.
     /// </summary>
-    public string XMLContent => _xmlContent;
+    /// <summary>Gets the raw XML content of this asset, or null if unloaded.</summary>
+    public string? XMLContent => _xmlContent;
 
     /// <summary>
     /// Initializes a new instance of the XMLAsset class with the specified name.
@@ -51,6 +53,6 @@ public class XMLAsset : Asset
         }
         // Reset the XML content to an empty string instead of null.
         // This satisfies the non‑nullable reference type for `_xmlContent`.
-        _xmlContent = "";
+        _xmlContent = null;
     }
 }

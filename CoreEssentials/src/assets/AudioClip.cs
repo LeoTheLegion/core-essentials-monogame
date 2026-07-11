@@ -12,7 +12,8 @@ namespace CoreEssentials.Assets;
 public interface IAudioClip
 {
     /// <summary>Gets the underlying sound effect.</summary>
-    ISoundEffect SoundEffect { get; }
+    /// <summary>Gets the underlying sound effect, or null if unloaded.</summary>
+    ISoundEffect? SoundEffect { get; }
     /// <summary>Gets the volume level (0.0 to 1.0).</summary>
     float Volume { get; }
     /// <summary>Indicates whether the clip should loop.</summary>
@@ -25,7 +26,8 @@ public interface IAudioClip
 public class AudioClip : Asset
 {
     /// <summary>Gets the underlying sound effect.</summary>
-    public ISoundEffect SoundEffect { get; internal set; } = null!;
+    /// <summary>Gets the underlying sound effect, or null if unloaded.</summary>
+    public ISoundEffect? SoundEffect { get; internal set; }
 
     /// <summary>The volume level (0.0 to 1.0).</summary>
     public float Volume { get; internal set; }
@@ -53,6 +55,9 @@ public class AudioClip : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SoundDataXml), "http://schemas.coreessentials.monogame/2025/audio");
+            if (xml == null || xml.XMLContent == null)
+                throw new InvalidOperationException("XML content is missing.");
+
             using (StringReader reader = new StringReader(xml.XMLContent))
             {
                 var xmlObj = serializer.Deserialize(reader);
@@ -71,6 +76,9 @@ public class AudioClip : Asset
                 }
 
                 // Load the sound effect and wrap it with our adapter
+                if (string.IsNullOrWhiteSpace(xmlData?.Source))
+                    throw new InvalidOperationException("XML data is missing required 'Source' attribute.");
+
                 var soundEffect = (SoundEffectAsset)AssetManager.LoadAsset<SoundEffectAsset>(xmlData.Source);
                 if (soundEffect == null)
                     throw new InvalidOperationException($"Could not load sound effect '{xmlData.Source}'.");
@@ -107,6 +115,7 @@ public class AudioClip : Asset
         if (SoundEffect != null)
         {
             contentManager.Unload(Name);
+            // Clear the reference so tests can assert null.
             SoundEffect = null;
         }
     }
@@ -117,10 +126,14 @@ public class AudioClip : Asset
     [XmlRoot("SoundData", Namespace = "http://schemas.coreessentials.monogame/2025/audio")]
     public class SoundDataXml
     {
-        public string Source { get; set; } = "";
-        public string SourceType { get; set; } = "";
-        public string Volume { get; set; } = "";
+        /// <summary>The source file of the sound effect.</summary>
+        public string? Source { get; set; }
+        /// <summary>Type of the source (unused currently).</summary>
+        public string? SourceType { get; set; }
+        /// <summary>Volume value as string from XML, parsed to float later.</summary>
+        public string? Volume { get; set; }
 
-        public string Loop { get; set; } = ""; // Added for future use
+        /// <summary>Loop flag from XML. Defaults to "false" if missing.</summary>
+        public string? Loop { get; set; } // Added for future use
     }
 }
