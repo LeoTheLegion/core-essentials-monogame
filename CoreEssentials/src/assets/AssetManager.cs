@@ -82,12 +82,8 @@ namespace CoreEssentials.Assets
                 throw new ArgumentException("Asset type must inherit from Asset.", nameof(T));
             }
              
-            asset = (Asset)Activator.CreateInstance(typeof(T), new object[] { assetName });
-
-            if (asset == null)
-            {
-                throw new InvalidOperationException($"Could not create an instance of asset type {typeof(T).Name} with name '{assetName}'.");
-            }
+            asset = (Asset?)Activator.CreateInstance(typeof(T), new object[] { assetName })
+                ?? throw new InvalidOperationException($"Could not create an instance of asset type {typeof(T).Name} with name '{assetName}'.");
             
             asset.Load(Content);
             

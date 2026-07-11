@@ -15,18 +15,7 @@ namespace CoreEssentials.Tests.GameSystems.Physics
             var physicsEngine = new PhysicsEngine();
             
             // Assert
-            Assert.Equal(0, physicsEngine.Scale);
-        }
-        
-        [Fact]
-        public void Constructor_CustomScale_SetsScaleCorrectly()
-        {
-            // Arrange & Act
-            int expectedScale = 42;
-            var physicsEngine = new PhysicsEngine(expectedScale);
-            
-            // Assert
-            Assert.Equal(expectedScale, physicsEngine.Scale);
+            Assert.Equal(0, physicsEngine.Config.Scale);
         }
         
         [Fact]
@@ -37,18 +26,18 @@ namespace CoreEssentials.Tests.GameSystems.Physics
 
             // Assert
             Assert.NotNull(physicsEngine.Bodies);
-            Assert.Equal(0, physicsEngine.Bodies.Count);
+            Assert.Empty(physicsEngine.Bodies);
         }
 
         [Fact]
         public void Constructor_WithScale_ShouldInitializeWorld()
         {
             // Arrange & Act
-            var physicsEngine = new PhysicsEngine(100);
+            var physicsEngine = new PhysicsEngine();
 
             // Assert
             Assert.NotNull(physicsEngine.Bodies);
-            Assert.Equal(0, physicsEngine.Bodies.Count);
+            Assert.Empty(physicsEngine.Bodies);
         }
 
         [Fact]

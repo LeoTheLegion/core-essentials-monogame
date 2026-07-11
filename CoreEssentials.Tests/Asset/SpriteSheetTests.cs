@@ -94,9 +94,6 @@ namespace CoreEssentials.Tests
             frames[0] = new Rectangle(0, 0, 32, 32);
             frames[1] = new Rectangle(32, 0, 32, 32);
             typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(this, frames);
-            
-            // No need to set up a real texture
-            _isLoaded = true;
         }
         
         public override void Unload(IContentManager contentManager)
@@ -105,8 +102,6 @@ namespace CoreEssentials.Tests
             
             // Clear frames
             typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(this, null);
-            
-            _isLoaded = false;
         }
         
         // Add implementation for GetFrameCount to use in tests
@@ -115,8 +110,6 @@ namespace CoreEssentials.Tests
             var frames = (Rectangle[])typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(this);
             return frames?.Length ?? 0;
         }
-        
-        private bool _isLoaded;
 
         public Texture2DAsset GetTexture()
         {
