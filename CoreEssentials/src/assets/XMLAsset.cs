@@ -39,13 +39,20 @@ public class XMLAsset : Asset
         _xmlContent = System.IO.File.ReadAllText(filePath);
     }
 
+    /// <summary>
+    /// Unloads the XML asset and clears its cached content.
+    /// </summary>
+    /// <param name="contentManager">The content manager used for unloading.</param>
     public override void Unload(IContentManager contentManager)
     {
         if (contentManager == null)
         {
             throw new ArgumentNullException(nameof(contentManager), "Content manager cannot be null.");
         }
-
-        _xmlContent = null;
+        // Reset the XML content to an empty string instead of null to
+        // satisfy the non‑nullable reference type declared for `_xmlContent`.
+        // This prevents a CS8600 warning when the project is compiled with
+        // nullable annotations enabled.
+        _xmlContent = "";
     }
 }
