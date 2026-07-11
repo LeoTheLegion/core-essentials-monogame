@@ -79,10 +79,12 @@ public class AudioClip : Asset
                 if (string.IsNullOrWhiteSpace(xmlData?.Source))
                     throw new InvalidOperationException("XML data is missing required 'Source' attribute.");
 
-                var soundEffect = (SoundEffectAsset)AssetManager.LoadAsset<SoundEffectAsset>(xmlData.Source);
-                if (soundEffect == null)
+                var soundEffectAsset = (SoundEffectAsset)AssetManager.LoadAsset<SoundEffectAsset>(xmlData.Source);
+                if (soundEffectAsset == null)
                     throw new InvalidOperationException($"Could not load sound effect '{xmlData.Source}'.");
-                SoundEffect = new SoundEffectAdapter(soundEffect.SoundEffect);
+                if (soundEffectAsset.SoundEffect == null)
+                    throw new InvalidOperationException($"Sound effect '{xmlData.Source}' is not loaded properly.");
+                SoundEffect = new SoundEffectAdapter(soundEffectAsset.SoundEffect);
 
                 Loop = xmlData.Loop?.ToLower() == "true" || xmlData.Loop?.ToLower() == "yes";
 

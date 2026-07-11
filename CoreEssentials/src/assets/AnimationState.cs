@@ -21,7 +21,7 @@ public class AnimationState
     /// Event raised when an animation completes a full cycle.
     /// Only raised when the animation is not looping.
     /// </summary>
-    public event EventHandler AnimationCompleted;
+    public event EventHandler? AnimationCompleted;
     
     /// <summary>
     /// Gets or sets the playback speed multiplier.

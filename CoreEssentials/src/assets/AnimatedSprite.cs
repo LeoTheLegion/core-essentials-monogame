@@ -68,6 +68,16 @@ public class AnimatedSprite : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(AnimatedSpriteDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
+            if (serializer == null)
+            {
+                throw new InvalidOperationException("Failed to create XML serializer for animated sprite data.");
+            }
+
+            if (string.IsNullOrEmpty(xml.XMLContent))
+            {
+                throw new InvalidOperationException("XML content is empty or null.");
+            }
+            
             using (StringReader reader = new StringReader(xml.XMLContent))
             {
                 var xmlData = serializer.Deserialize(reader) as AnimatedSpriteDataXml;
