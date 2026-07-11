@@ -21,7 +21,6 @@ namespace CoreEssentials.Playground
         private float actualZoomSpeed = 0.1f; // Actual amount to change zoom per input
         private bool followingTarget = false;
 
-        private EventHandler<KeyboardEventArgs> _keyPressHandler; // Keep for potential future non-movement/zoom key presses
         private EventHandler<KeyboardEventArgs> _keyReleaseHandler;
         
         /// <summary>

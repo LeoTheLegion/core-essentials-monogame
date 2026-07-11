@@ -13,19 +13,19 @@ public class SceneManager
     /// <summary>
     /// Reference to the MainGame instance that this SceneManager is associated with.
     /// </summary>
-    MainGame _game;
+    MainGame? _game;
     /// <summary>
     /// The current active scene.
     /// </summary>
-    Scene _currentScene;
+    Scene? _currentScene;
     /// <summary>
     /// The next scene to be loaded.
     /// </summary>
-    Scene _nextScene;
+    Scene? _nextScene;
     /// <summary>
     /// The loading screen scene used during transitions.
     /// </summary>
-    Scene _loadingScene;
+    Scene? _loadingScene;
     /// <summary>
     /// CoroutineOwner for managing scene transition coroutines.
     /// </summary>
@@ -43,19 +43,19 @@ public class SceneManager
     /// Gets the MainGame instance associated with this SceneManager.
     /// </summary>
     /// <returns>The MainGame instance.</returns>
-    public MainGame Game => _game;
+    public MainGame? Game => _game;
 
     /// <summary>
     /// Gets the current active scene.
     /// </summary>
     /// <returns>The current scene.</returns>
-    public Scene CurrentScene => _currentScene;
+    public Scene? CurrentScene => _currentScene;
     
     /// <summary>
     /// Gets the next scene to be loaded.
     /// </summary>
     /// <returns>The next scene.</returns>
-    public Scene NextScene => _nextScene;
+    public Scene? NextScene => _nextScene;
     
     /// <summary>
     /// Gets whether a scene transition is in progress.
@@ -69,11 +69,18 @@ public class SceneManager
     /// </summary>
     public float TransitionProgress => (_nextScene != null && _nextScene.IsLoading) ? _nextScene.LoadingProgress : 0f;
     
+    /// <summary>
+    /// Initializes a new instance of the SceneManager class with the specified MainGame instance.
+    /// </summary>
+    /// <param name="game">The MainGame instance to associate with this SceneManager.</param>
     public SceneManager(MainGame game) : this()
     {
         _game = game;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the SceneManager class.
+    /// </summary>
     public SceneManager()
     {
         _currentScene = null;
@@ -140,6 +147,10 @@ public class SceneManager
         Console.WriteLine("Starting direct scene transition");
         
         // Start loading the new scene
+        if (_nextScene == null)
+        {
+            throw new InvalidOperationException("Next scene is null during direct transition");
+        }
         _nextScene.Load();
         
         // Wait for the scene to finish loading
@@ -181,6 +192,10 @@ public class SceneManager
         
         // Load the loading screen scene first (quickly)
         Console.WriteLine("Loading transition screen");
+        if (_loadingScene == null)
+        {
+            throw new InvalidOperationException("Loading scene is null during transition with loading screen");
+        }
         _loadingScene.Load();
         
         // Wait for the loading screen to finish loading
@@ -194,6 +209,10 @@ public class SceneManager
         Console.WriteLine("Transition screen ready");
         
         // Step 2: Load the target scene in the background
+        if (_nextScene == null)
+        {
+            throw new InvalidOperationException("Next scene is null during transition with loading screen");
+        }
         _nextScene.Load();
         
         // Wait for target scene to finish loading

@@ -28,7 +28,7 @@ namespace CoreEssentials.Assets
         /// <summary>
         /// Content manager reference used to load assets from files.
         /// </summary>
-        static IContentManager Content;
+        static IContentManager? Content;
         
         /// <summary>
         /// Initializes the AssetManager with a ContentManager.
@@ -83,6 +83,12 @@ namespace CoreEssentials.Assets
             }
              
             asset = (Asset)Activator.CreateInstance(typeof(T), new object[] { assetName });
+
+            if (asset == null)
+            {
+                throw new InvalidOperationException($"Could not create an instance of asset type {typeof(T).Name} with name '{assetName}'.");
+            }
+            
             asset.Load(Content);
             
             assetsLoaded.Add(AssetKey, asset);

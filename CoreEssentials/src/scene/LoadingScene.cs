@@ -77,10 +77,14 @@ namespace CoreEssentials.SceneManagement
             _textColor = textColor;
         }
         
+        /// <summary>
+        /// Loads the game systems required for the loading screen. The loading screen doesn't require any game systems, so this method returns an empty array.
+        /// </summary>
+        /// <returns>An array of game systems.</returns>
         protected override GameSystem[] LoadGameSystems()
         {
             // Loading screen doesn't need any game systems
-            return new GameSystem[0];
+            return Array.Empty<GameSystem>();
         }
         
         /// <summary>
@@ -94,6 +98,11 @@ namespace CoreEssentials.SceneManagement
             yield break;
         }
         
+        /// <summary>
+        /// Draws the loading screen, including the loading text and progress bar.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             base.Draw(gameTime, spriteBatch);
@@ -184,9 +193,17 @@ namespace CoreEssentials.SceneManagement
             }
         }
     }
-
+    /// <summary>
+    /// Extension methods for the Color struct.
+    /// </summary>
     public static class ColorExtensions
     {
+        /// <summary>
+        /// Returns a new Color with the specified alpha value.
+        /// </summary>
+        /// <param name="color">The original color.</param>
+        /// <param name="alpha">The alpha value (0.0 to 1.0).</param>
+        /// <returns>A new Color with the specified alpha.</returns>
         public static Color WithAlpha(this Color color, float alpha)
         {
             return new Color(color.R, color.G, color.B, (byte)(255 * alpha));
