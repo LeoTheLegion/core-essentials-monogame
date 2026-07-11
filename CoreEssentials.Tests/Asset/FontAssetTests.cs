@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace CoreEssentials.Tests
 {
@@ -210,7 +211,7 @@ namespace CoreEssentials.Tests
         static MockSpriteFont()
         {
             // Create a SpriteFont without calling the constructor
-            Instance = (SpriteFont)FormatterServices.GetUninitializedObject(typeof(SpriteFont));
+            Instance = (SpriteFont)RuntimeHelpers.GetUninitializedObject(typeof(SpriteFont));
             
             // Use reflection to set up a MeasureString method
             var measureStringMethod = new Func<string, Vector2>(_ => new Vector2(10, 20));

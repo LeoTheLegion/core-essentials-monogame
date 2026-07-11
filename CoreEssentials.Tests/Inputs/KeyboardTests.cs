@@ -125,11 +125,9 @@ namespace CoreEssentials.Tests.Inputs
         [Fact(Skip = "Event testing is unreliable as KeyboardListener uses global XNA state, not the mock provider.")]
         public void KeyPressedEvent_FiresWhenKeyIsPressed_Conceptual()
         {
-            bool eventFired = false;
             Keys eventKey = Keys.None;
             _keyboardWrapper.KeyPressed += (sender, args) =>
             {
-                eventFired = true;
                 eventKey = args.Key;
             };
 
@@ -150,11 +148,9 @@ namespace CoreEssentials.Tests.Inputs
         [Fact(Skip = "Event testing is unreliable as KeyboardListener uses global XNA state, not the mock provider.")]
         public void KeyReleasedEvent_FiresWhenKeyIsReleased_Conceptual()
         {
-            bool eventFired = false;
             Keys eventKey = Keys.None;
             _keyboardWrapper.KeyReleased += (sender, args) =>
             {
-                eventFired = true;
                 eventKey = args.Key;
             };
 

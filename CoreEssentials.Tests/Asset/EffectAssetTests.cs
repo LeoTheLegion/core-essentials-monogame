@@ -2,7 +2,7 @@ using System;
 using CoreEssentials.Assets;
 using Xunit;
 using Microsoft.Xna.Framework.Graphics; // Required for Effect
-using System.Runtime.Serialization; // Required for FormatterServices
+using System.Runtime.CompilerServices; // Required for RuntimeHelpers
 
 namespace CoreEssentials.Tests.Asset
 {
@@ -109,10 +109,10 @@ namespace CoreEssentials.Tests.Asset
 
         static FakeEffect()
         {
-            // Use FormatterServices.GetUninitializedObject to create an Effect without calling its constructor.
+            // Use RuntimeHelpers.GetUninitializedObject to create an Effect without calling its constructor.
             // This is a special case for testing only, not for production code.
-            // Requires System.Runtime.Serialization.
-            Instance = (Effect)FormatterServices.GetUninitializedObject(typeof(Effect));
+            // Requires System.Runtime.CompilerServices.
+            Instance = (Effect)RuntimeHelpers.GetUninitializedObject(typeof(Effect));
         }
     }
 }
