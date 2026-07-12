@@ -18,12 +18,12 @@ namespace CoreEssentials.Debugging
         /// <summary>
         /// UI grid that contains all log entries.
         /// </summary>
-        private Grid _grid;
+        private Grid? _grid;
         
         /// <summary>
         /// Canvas that manages the grid widget.
         /// </summary>
-        private Canvas _canvas;
+        private Canvas? _canvas;
         
         /// <summary>
         /// Dictionary mapping log keys to their label UI elements.
@@ -49,9 +49,9 @@ namespace CoreEssentials.Debugging
         /// <summary>
         /// Event handler that toggles the visibility of the log when the R key is pressed.
         /// </summary>
-        /// <param name="sender">The source of the event.</param>
+        /// <param name="sender">The source of the event, or <see langword="null"/>.</param>
         /// <param name="e">The keyboard event arguments.</param>
-        private void ToggleGUI(object sender, KeyboardEventArgs e)
+        private void ToggleGUI(object? sender, KeyboardEventArgs e)
         {
             if(e.Key == Microsoft.Xna.Framework.Input.Keys.R && _grid != null)
                 this._grid.Visible = !this._grid.Visible;

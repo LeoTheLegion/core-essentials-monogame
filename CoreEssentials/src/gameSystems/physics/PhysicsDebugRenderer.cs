@@ -34,9 +34,9 @@ namespace CoreEssentials.GameSystems.Physics
         /// Handles key press events to toggle debug rendering.
         /// Press 'P' to toggle physics visualization.
         /// </summary>
-        /// <param name="sender">The source of the event.</param>
+        /// <param name="sender">The source of the event. May be <see langword="null" />.</param>
         /// <param name="arg">Event arguments containing key information.</param>
-        private void OnKeyPressed(object sender, KeyboardEventArgs arg)
+        private void OnKeyPressed(object? sender, KeyboardEventArgs arg)
         {
             if(arg.Key == Microsoft.Xna.Framework.Input.Keys.P)
             {
@@ -106,7 +106,7 @@ namespace CoreEssentials.GameSystems.Physics
             var center = position + circleShape.Position;
             var radius = circleShape.Radius;
 
-            float f_scale = 0b0001 << _physicsEngine.Scale;
+            float f_scale = 0b0001 << _physicsEngine.Config.Scale;
 
             center *= f_scale;
             radius *= f_scale;
@@ -140,7 +140,7 @@ namespace CoreEssentials.GameSystems.Physics
                 var p1 = position + v1;
                 var p2 = position + v2;
 
-                float f_scale = 0b0001 << _physicsEngine.Scale;
+                float f_scale = 0b0001 << _physicsEngine.Config.Scale;
 
                 p1 *= f_scale;
                 p2 *= f_scale;
@@ -166,7 +166,7 @@ namespace CoreEssentials.GameSystems.Physics
             v1 += position;
             v2 += position;
 
-            float f_scale = 0b0001 << _physicsEngine.Scale;
+            float f_scale = 0b0001 << _physicsEngine.Config.Scale;
 
             v1 *= f_scale;
             v2 *= f_scale;

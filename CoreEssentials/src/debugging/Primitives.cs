@@ -10,7 +10,7 @@ namespace CoreEssentials.Debugging
     /// </summary>
     public class Primitives
     {
-        private Texture2D _texture;
+        private Texture2D? _texture;
 
         /// <summary>
         /// Gets the texture used for drawing primitives.

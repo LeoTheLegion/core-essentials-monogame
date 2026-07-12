@@ -15,13 +15,13 @@ namespace CoreEssentials.Cameras
         /// <summary>
         /// The main camera used for rendering the scene
         /// </summary>
-        public static Camera MainCamera { get; private set; }
+        public static Camera? MainCamera { get; private set; }
 
         /// <summary>
         /// Sets the specified camera as the main camera
         /// </summary>
         /// <param name="camera">The camera to set as main, or null to clear the main camera.</param>
-        public static void SetMainCamera(Camera camera)
+        public static void SetMainCamera(Camera? camera)
         {
             MainCamera = camera;
         }
@@ -163,7 +163,7 @@ namespace CoreEssentials.Cameras
                     // Dispose managed state (managed objects).
                     if (MainCamera == this)
                     {
-                        SetMainCamera(null);
+                        SetMainCamera(null!);
                     }
                 }
 

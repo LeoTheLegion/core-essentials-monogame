@@ -46,7 +46,7 @@ namespace CoreEssentials.Inputs
         /// </summary>
         /// <param name="stateProvider">The keyboard state provider to use for polling. 
         /// If null, a <see cref="DefaultKeyboardStateProvider"/> will be used.</param>
-        public Keyboard(IKeyboardStateProvider stateProvider = null) 
+        public Keyboard(IKeyboardStateProvider? stateProvider = null) 
         {
             _keyboardListener = new KeyboardListener(); 
             _keyboardStateProvider = stateProvider ?? new DefaultKeyboardStateProvider();

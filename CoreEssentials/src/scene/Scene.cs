@@ -9,14 +9,20 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.SceneManagement;
 
+/// <summary>
+/// Represents a self-contained game scene containing game systems, entities, and scene-specific logic.
+/// </summary>
 public abstract class Scene
 {
     /// <summary>
     /// Reference to the SceneManager that manages this scene.
     /// </summary>
-    private SceneManager _sceneManager;
+    private SceneManager? _sceneManager;
 
-    public SceneManager SceneManager => _sceneManager;
+    /// <summary>
+    /// Gets the <see cref="SceneManager"/> responsible for managing this scene.
+    /// </summary>
+    public SceneManager SceneManager => _sceneManager ?? throw new InvalidOperationException("SceneManager has not been assigned.");
     
     /// <summary>
     /// Collection of all registered game systems mapped by their type.
@@ -26,17 +32,17 @@ public abstract class Scene
     /// <summary>
     /// Array of game systems that implement the IUpdateGameSystem interface.
     /// </summary>
-    private IUpdateGameSystem[] _updateSystems;
+    private IUpdateGameSystem[] _updateSystems = Array.Empty<IUpdateGameSystem>();
 
     /// <summary>
     /// Array of game systems that implement the IDrawGameSystem interface.
     /// </summary>
-    private IDrawGameSystem[] _drawSystems;
+    private IDrawGameSystem[] _drawSystems = Array.Empty<IDrawGameSystem>();
 
     /// <summary>
     /// Array of game systems that implement the IFixedUpdateGameSystem interface.
     /// </summary>
-    private IFixedUpdateGameSystem[] _fixedUpdateSystems;
+    private IFixedUpdateGameSystem[] _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
     
     /// <summary>
     /// Tracks the current loading progress of the scene, from 0.0 to 1.0
@@ -299,9 +305,9 @@ public abstract class Scene
         }
 
         _gameSystems.Clear();
-        _updateSystems = null;
-        _drawSystems = null;
-        _fixedUpdateSystems = null;
+        _updateSystems = Array.Empty<IUpdateGameSystem>();
+        _drawSystems = Array.Empty<IDrawGameSystem>();
+        _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
         
         IsLoaded = false;
         IsLoading = false;

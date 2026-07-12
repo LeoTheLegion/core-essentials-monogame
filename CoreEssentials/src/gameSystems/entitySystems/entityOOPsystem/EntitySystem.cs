@@ -88,7 +88,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <returns>The newly created entity.</returns>
     public T CreateEntity<T>(params object[] args) where T : Entity
     {
-        T entity = (T)Activator.CreateInstance(typeof(T), args);
+        T entity = (T)(Activator.CreateInstance(typeof(T), args) ?? throw new InvalidOperationException($"Failed to create entity of type {typeof(T)}."));
         entity.SetGameSystem(this);
         _entities.Add(entity);
         entity.OnStart();
@@ -127,9 +127,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         }
     }
 
+    /// <summary>
+    /// Releases all resources used by the <see cref="EntitySystem"/>.
+    /// Implements <see cref="IDisposable.Dispose"/>.
+    /// </summary>
     public void Dispose()
     {
         ClearEntities();
-        _entities = null;
+        _entities = null!;
     }
 }

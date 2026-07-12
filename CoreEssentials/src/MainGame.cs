@@ -24,7 +24,11 @@ namespace CoreEssentials
     public class MainGame : Game
     {
         private GraphicsDeviceManager _graphics;
-        protected SpriteBatch _spriteBatch;
+
+        /// <summary>
+        /// The <see cref="SpriteBatch"/> used for drawing 2D sprites and textures.
+        /// </summary>
+        protected SpriteBatch? _spriteBatch;
 
         /// <summary>
         /// The time interval in milliseconds between fixed update calls (set at 50 FPS).
@@ -41,7 +45,9 @@ namespace CoreEssentials
         /// </summary>
         public GraphicsDeviceManager Graphics => _graphics;
 
-
+        /// <summary>
+        /// Gets the <see cref="SceneManagement.SceneManager"/> responsible for managing game scenes.
+        /// </summary>
         public SceneManager SceneManager { get; private set; }
 
         /// <summary>
@@ -138,6 +144,9 @@ namespace CoreEssentials
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            if (_spriteBatch == null)
+                return;
+
             Debug.baseGameDiagnostics.DrawBegin();
             GraphicsDevice.Clear(Color.Black);
 

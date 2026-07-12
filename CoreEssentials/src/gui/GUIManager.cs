@@ -17,12 +17,28 @@ namespace CoreEssentials.GUI
     /// </summary>
     public static class GUIManager
     {
-        static Desktop _desktop;
+        static Desktop? _desktop;
 
-        static Panel Root { get { return (Panel)_desktop.Root; } }
+        static Panel Root
+        {
+            get
+            {
+                if (_desktop == null)
+                    throw new InvalidOperationException("GUIManager has not been initialized. Call Init first.");
 
-        public static int Width { get { return (int)Root.Width; } }
-        public static int Height { get { return (int)Root.Height; } }
+                return (Panel)_desktop.Root;
+            }
+        }
+
+        /// <summary>
+        /// Gets the width of the GUI root panel in pixels.
+        /// </summary>
+        public static int Width { get { return Root.Width ?? 0; } }
+
+        /// <summary>
+        /// Gets the height of the GUI root panel in pixels.
+        /// </summary>
+        public static int Height { get { return Root.Height ?? 0; } }
 
         /// <summary>
         /// Initializes the GUI manager with the specified game instance and window dimensions.
@@ -58,6 +74,10 @@ namespace CoreEssentials.GUI
             Root.Widgets.Remove(widget);
         }
 
+        /// <summary>
+        /// Determines whether any widget in the GUI currently has focus.
+        /// </summary>
+        /// <returns><c>true</c> if any widget is focused; otherwise, <c>false</c>.</returns>
         public static bool IsAnyWidgetFocused()
         {
             for (int i = 0; i < Root.Widgets.Count; i++)
@@ -69,6 +89,11 @@ namespace CoreEssentials.GUI
             return false;
         }
 
+        /// <summary>
+        /// Determines whether the specified widget currently has focus.
+        /// </summary>
+        /// <param name="w">The widget to check.</param>
+        /// <returns><c>true</c> if the widget is focused; otherwise, <c>false</c>.</returns>
         public static bool IsWidgetFocused(Widget w)
         {
             return isWidgetFocused(w);
@@ -104,11 +129,11 @@ namespace CoreEssentials.GUI
                 }
             }
 
-            if (widget is ComboBox)
+            if (widget is ComboView)
             {
-                ComboBox comboBox = (ComboBox)widget;
+                ComboView comboView = (ComboView)widget;
 
-                return comboBox.ListBox.IsMouseInside || comboBox.ListBox.IsTouchInside;
+                return comboView.ListView.IsMouseInside || comboView.ListView.IsTouchInside;
             }
 
             return widget.IsMouseInside || widget.IsTouchInside || widget.IsKeyboardFocused;
@@ -120,6 +145,9 @@ namespace CoreEssentials.GUI
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public static void Draw(GameTime gameTime)
         {
+            if (_desktop == null)
+                return;
+
             _desktop.Render();
         }
     }

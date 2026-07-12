@@ -28,17 +28,6 @@ namespace CoreEssentials.GameSystems.Physics
         private PhysicsConfig _config = new PhysicsConfig();
 
         /// <summary>
-        /// Gets or sets the pixel-to-meter scale factor for the physics world.
-        /// This determines how physics units map to rendering units.
-        /// </summary>
-        [Obsolete("Use Config.Scale instead. This property will be removed in a future version.")]
-        public int Scale
-        {
-            get => _config.Scale;
-            set => _config.Scale = value;
-        }
-
-        /// <summary>
         /// Gets the physics configuration. Modify properties to tune performance vs accuracy.
         /// </summary>
         public PhysicsConfig Config => _config;
@@ -72,26 +61,6 @@ namespace CoreEssentials.GameSystems.Physics
         public PhysicsEngine(PhysicsConfig config) : this()
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PhysicsEngine class with a specified scale.
-        /// </summary>
-        /// <param name="scale">The pixel-to-meter scale factor for the physics world.</param>
-        [Obsolete("Use PhysicsEngine() and set Config.Scale instead. This constructor will be removed in a future version.")]
-        public PhysicsEngine(int scale) : this()
-        {
-            _config.Scale = scale;
-        }
-
-        /// <summary>
-        /// Sets the pixel-to-meter scale factor for the physics world.
-        /// </summary>
-        /// <param name="scale">The new scale factor.</param>
-        [Obsolete("Use Config.Scale = value instead. This method will be removed in a future version.")]
-        public void SetScale(int scale)
-        {
-            _config.Scale = scale;
         }
 
         /// <summary>
