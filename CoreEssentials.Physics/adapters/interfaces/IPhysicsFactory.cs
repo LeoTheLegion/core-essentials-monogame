@@ -52,12 +52,33 @@ public interface IPhysicsFactory : IDisposable
         Vector2 anchorB);
 
     /// <summary>
-    /// Creates a circular spatial shape adapter.
+    /// Creates a circular spatial shape adapter with the specified radius.
     /// </summary>
+    /// <param name="radius">The radius of the circle in world units.</param>
+    /// <returns>The created circular shape adapter, or null if radius is invalid.</returns>
     ISpatialShapeAdapter CreateCircleShape(float radius);
 
     /// <summary>
-    /// Creates a rectangular spatial shape adapter.
+    /// Creates a rectangular spatial shape adapter with the specified dimensions.
     /// </summary>
+    /// <param name="width">The width of the rectangle along the local X axis.</param>
+    /// <param name="height">The height of the rectangle along the local Y axis.</param>
+    /// <returns>The created rectangular shape adapter, or null if dimensions are invalid.</returns>
     ISpatialShapeAdapter CreateRectangleShape(float width, float height);
+
+    /// <summary>
+    /// Creates a polygonal spatial shape adapter defined by vertices.
+    /// The polygon must be convex and vertices should be in counter-clockwise order.
+    /// </summary>
+    /// <param name="vertices">Array of local-space vertices defining the polygon.</param>
+    /// <returns>The created polygon shape adapter, or null if vertex count is invalid.</returns>
+    ISpatialShapeAdapter CreatePolygonShape(Vector2[] vertices);
+
+    /// <summary>
+    /// Creates a convex hull spatial shape from multiple points.
+    /// Automatically computes the smallest enclosing convex polygon.
+    /// </summary>
+    /// <param name="points">Array of points to compute the convex hull for.</param>
+    /// <returns>The created convex hull shape adapter, or null if point count is invalid.</returns>
+    ISpatialShapeAdapter CreateConvexHullShape(IEnumerable<Vector2> points);
 }

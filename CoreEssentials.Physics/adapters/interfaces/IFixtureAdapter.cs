@@ -35,6 +35,12 @@ public interface IFixtureAdapter : IDisposable
     float Friction { get; set; }
 
     /// <summary>
+    /// Gets or sets the mass density of this fixture (mass per unit area).
+    /// A value of 0 indicates infinite mass and is typically used for static objects.
+    /// </summary>
+    float Density { get; set; }
+
+    /// <summary>
     /// Attaches this fixture to a physics body.
     /// </summary>
     /// <param name="body">The body to attach this fixture to.</param>

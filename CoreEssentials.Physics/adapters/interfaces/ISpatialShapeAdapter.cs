@@ -41,6 +41,21 @@ public interface ISpatialShapeAdapter : IDisposable
     ShapeType Type { get; }
 
     /// <summary>
+    /// Gets the center point of the shape in local space.
+    /// For Circle and Polygon shapes, this is typically the geometric center.
+    /// Empty for LineSegment and Unknown types.
+    /// </summary>
+    Vector2 Center { get; }
+
+    /// <summary>
+    /// Gets the radius of the shape.
+    /// Applicable for Circle (exact radius), Rectangle and Polygon (approximate bounding radius).
+    /// For LineSegment, this is half the segment length.
+    /// Returns 0 or negative for Unknown/invalid shapes.
+    /// </summary>
+    float Radius { get; }
+
+    /// <summary>
     /// Checks if a point is inside this shape.
     /// </summary>
     /// <param name="point">The world-space point to check.</param>
@@ -55,7 +70,10 @@ public interface ISpatialShapeAdapter : IDisposable
 
     /// <summary>
     /// Creates a new spatial shape adapter based on the specified type.
-    /// This is used by factory classes to instantiate appropriate shapes.
+    /// This is called internally by factory classes and should not be 
+    /// implemented directly by user code.
     /// </summary>
+    /// <param name="type">The type of shape to create.</param>
+    /// <returns>A new instance of the spatial shape adapter.</returns>
     static abstract ISpatialShapeAdapter Create(ShapeType type);
 }
