@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using nkast.Aether.Physics2D.Dynamics;
 
 namespace CoreEssentials.Physics.Adapters.Interfaces;
 
 /// <summary>
 /// Interface for creating various physics entities.
 /// This factory pattern allows for centralized creation logic and future engine swapping.
+/// INTERNAL USE ONLY - Not exposed to users directly.
 /// </summary>
 public interface IPhysicsFactory : IDisposable
 {

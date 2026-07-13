@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using nkast.Aether.Physics2D.Dynamics;
 
 namespace CoreEssentials.Physics.Adapters.Interfaces;
 
@@ -10,7 +9,7 @@ namespace CoreEssentials.Physics.Adapters.Interfaces;
 /// A fixture defines the collision shape and sensor properties of an object.
 /// This abstracts away the underlying Aether Physics2D Fixture implementation.
 /// </summary>
-public interface IFixtureAdapter
+public interface IFixtureAdapter : IDisposable
 {
     /// <summary>
     /// Gets or sets the restitution (bounciness) value, from 0 to 1.

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using nkast.Aether.Physics2D.Dynamics;
 
 namespace CoreEssentials.Physics.Adapters.Interfaces;
 
@@ -34,7 +33,7 @@ public enum ShapeType
 /// This abstracts away the underlying Aether Physics2D shape implementations,
 /// allowing for future engine swapping without breaking user code.
 /// </summary>
-public interface ISpatialShapeAdapter
+public interface ISpatialShapeAdapter : IDisposable
 {
     /// <summary>
     /// Gets the type of this shape (Circle, Rectangle, Polygon, etc.).

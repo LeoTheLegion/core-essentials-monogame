@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using nkast.Aether.Physics2D.Dynamics;
 
 namespace CoreEssentials.Physics.Adapters.Interfaces;
 
@@ -42,6 +41,7 @@ public class SolverConfig
 /// Interface representing the physics world/simulation environment.
 /// This abstracts away the underlying Aether Physics2D World implementation,
 /// allowing for future engine swapping without breaking user code.
+/// INTERNAL USE ONLY - Not exposed to users directly.
 /// </summary>
 public interface IPhysicsWorldAdapter : IDisposable
 {
@@ -67,7 +67,7 @@ public interface IPhysicsWorldAdapter : IDisposable
     /// <param name="rotation">Initial rotation in radians.</param>
     /// <param name="bodyType">The type of body (static, dynamic, or kinematic).</param>
     /// <returns>The created physics body adapter.</returns>
-    IPhysicsBodyAdapter CreateBody(Vector2 position, float rotation, BodyType bodyType);
+    IPhysicsBodyAdapter CreateBody(Vector2 position, float rotation, BodyTypeEnum bodyType);
 
     /// <summary>
     /// Applies a force to a body at a specific world-space point.

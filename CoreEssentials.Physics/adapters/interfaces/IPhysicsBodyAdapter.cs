@@ -1,16 +1,31 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using nkast.Aether.Physics2D.Dynamics;
 
 namespace CoreEssentials.Physics.Adapters.Interfaces;
+
+/// <summary>
+/// Enum representing the type of physics body.
+/// Mirrors Aether Physics2D BodyType for compatibility.
+/// </summary>
+public enum BodyTypeEnum
+{
+    /// <summary>A static body that never moves and has infinite mass.</summary>
+    Static,
+
+    /// <summary>A dynamic body that responds to forces and collisions.</summary>
+    Dynamic,
+
+    /// <summary>A kinematic body that moves without being affected by physics.</summary>
+    Kinematic
+}
 
 /// <summary>
 /// Interface representing a physics body in the simulation.
 /// This abstracts away the underlying Aether Physics2D Body implementation,
 /// allowing for future engine swapping without breaking user code.
 /// </summary>
-public interface IPhysicsBodyAdapter
+public interface IPhysicsBodyAdapter : IDisposable
 {
     /// <summary>
     /// Gets or sets the position of the body in world space.
@@ -25,7 +40,7 @@ public interface IPhysicsBodyAdapter
     /// <summary>
     /// Gets the type of physics body (static, dynamic, or kinematic).
     /// </summary>
-    BodyType BodyType { get; }
+    BodyTypeEnum BodyType { get; }
 
     /// <summary>
     /// Gets or sets the mass of the body.
