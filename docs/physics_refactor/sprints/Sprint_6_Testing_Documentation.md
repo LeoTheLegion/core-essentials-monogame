@@ -10,21 +10,18 @@
 
 - [ ] **Create Unit Tests for Adapters** - Test each adapter implementation in isolation
   ```csharp
-  // PhysicsBodyAdapterTests.cs - CreateCircle, AddFixture, movement methods
-  // FixtureAdapterTests.cs - Lifecycle management tests
-  // ShapeAdapterTests.cs - PointContains, Translate/Rotate verification
-  // WorldAdapterTests.cs - Step(), body count, gravity configuration
-  // FactoryTests.cs - Creation methods return correct interface types
+  // PhysicsBodyAdapterTests.cs - CreateCircle, AddFixture, movement methods (user-facing ⭐)
+  // FixtureAdapterTests.cs - Lifecycle management tests (internal 🔒)
+  // ShapeAdapterTests.cs - PointContains, Translate/Rotate verification (internal 🔒)
+  // WorldAdapterTests.cs - Step(), body count, gravity configuration (internal 🔒)
   ```
-  Reference: `docs/PhysicsSystemRefactor.md` - Testing Considerations
 
-- [ ] **Create Integration Tests** - Test complete workflow through factory interfaces
+- [ ] **Create Integration Tests** - Test complete workflow through PhysicsEngine
   ```csharp
-  // PhysicsIntegrationTests.cs - Full physics simulation test
-  // ConstraintIntegrationTests.cs - Joint creation and behavior tests
+  // PhysicsIntegrationTests.cs - Full physics simulation via GetGameSystem<PhysicsEngine>()
+  // BodyCreationTests.cs - Verify CreateDynamic/CreateStatic return IPhysicsBody
   // DebugRendererIntegrationTests.cs - Rendering with new adapters
   ```
-  Reference: `docs/PhysicsSystemRefactor.md` - Testing Considerations
 
 - [ ] **Update Existing Test Suite** - Fix any broken tests from migration
   ```csharp

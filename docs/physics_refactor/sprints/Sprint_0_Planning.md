@@ -32,12 +32,13 @@ These interfaces will be the user-facing API throughout the library lifecycle, m
   - Documented usage patterns in repository memory
 
 - [x] **Define adapter interface contracts** ✅
-  - `IPhysicsBodyAdapter.cs` - Body abstraction with pooling support
-  - `IFixtureAdapter.cs` - Fixture abstraction with collision properties  
-  - `ISpatialShapeAdapter.cs` + `ShapeType` enum - Shape type system (6 types)
-  - `IPhysicsWorldAdapter.cs` + `SolverConfig` class - World/simulation interface
-  - `IConstraintAdapter.cs` - Joint/constraint interfaces
-  - `IPhysicsFactory.cs` - Factory pattern for entity creation
+  - `IPhysicsBodyAdapter.cs` - Body abstraction (USER-FACING ⭐)
+  - `IFixtureAdapter.cs` - Fixture abstraction (Internal only 🔒)  
+  - `ISpatialShapeAdapter.cs` + `ShapeType` enum - Shape type system (6 types, Internal 🔒)
+  - `IConstraintAdapter.cs` - Joint/constraint interfaces (Internal 🔒)
+  - `IPhysicsWorldAdapter.cs` + `SolverConfig` class - World/simulation interface (HIDDEN from users! 🔒)
+  
+**Important:** `IPhysicsWorldAdapter` and all other adapters EXCEPT `IPhysicsBodyAdapter` are INTERNAL ONLY. Users NEVER interact with these directly.
 
 - [x] **Plan implementation strategy** ✅
   - Implementation plan documented in: `CoreEssentials.Physics/adapters/implementations/ImplementationPlan.md`

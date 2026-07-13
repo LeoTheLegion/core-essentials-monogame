@@ -8,31 +8,30 @@
 
 ## Tasks
 
-- [ ] **Create PhysicsFactory.cs** - Main factory for creating worlds and bodies
+- [ ] **Create PhysicsEngine (User-Facing)** ⭐
   ```csharp
-  // Methods: CreateDefault(), CreateWithGravity()
-  // Body factories: CreateStatic, CreateDynamic, CreateKinematic
-  // Returns IPhysicsWorld and IPhysicsBody interfaces (never Aether types)
+  // Users get this via GetGameSystem<PhysicsEngine>()
+  // Wraps IPhysicsWorldAdapter internally, manages world automatically
+  // Provides CreateDynamic(), CreateStatic() methods - returns IPhysicsBody
+  // All world operations hidden from users
   ```
-  Reference: `docs/PhysicsSystemRefactor.md` - Phase 3
 
-- [ ] **Create SpatialShapeFactory.cs** - Factory for creating shape instances
+- [ ] **Create SpatialShapeFactory.cs** - Factory for creating shape instances (Internal only 🔒)
   ```csharp
-  // Property: Shapes { get; } returns ISpatialShapeFactory interface
-  // Methods: CreateCircle, CreateRectangle, CreatePolygon, CreateConvexHull
-  // Each method returns ISpatialShape (never Aether types)
+  // Internal factory used by BodyAdapter to create shapes
+  // Methods: CreateCircle, CreateRectangle, CreatePolygon
+  // Returns ISpatialShape (never Aether types)
   ```
-  Reference: `docs/PhysicsSystemRefactor.md` - Phase 3
 
-- [ ] **Create BodyPoolAdapter.cs** - Enhanced wrapper around existing WorldPool
+- [ ] **Create PhysicsEngine.cs** - Main entry point (User-Facing ⭐)
   ```csharp
-  // Wraps CoreEssentials/src/gameSystems/physics/WorldPool.cs
-  // Adds adapter pattern support for body pooling
-  // Maintains backward compatibility with existing code
+  // Gets via GetGameSystem<PhysicsEngine>()
+  // Wraps IPhysicsWorldAdapter internally, manages world automatically  
+  // Provides CreateDynamic(), CreateStatic() methods - returns IPhysicsBody
+  // All world operations hidden from users
   ```
-  Reference: `docs/PhysicsSystemRefactor.md` - Phase 3
 
-- [ ] **Create PhysicsConfig.cs** (if not in IPhysicsWorldAdapter) - Configuration class
+- [ ] **Create SolverConfig.cs** (Internal only 🔒)
   ```csharp
   // Properties: VelocityIterations, PositionIterations, CCD enabled
   // SubSteppingFactor for advanced configuration

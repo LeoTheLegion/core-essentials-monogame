@@ -51,10 +51,27 @@
 ## Acceptance Criteria
 
 - 4 interface files created in `CoreEssentials.Physics/adapters/interfaces/` folder (excluding IPhysicsWorldAdapter)
-- Zero Aether type references in any file
+- ✅ **Zero Aether type references** - Interfaces must have NO Aether imports or types
 - XML documentation on all public methods and properties
 - ShapeType enum defined with all required values
 - SolverConfig class properly structured as nested or separate class
+
+---
+
+## Where Aether Lives (Internal Only 🔒)
+
+**Aether should ONLY appear in `implementations/` folder:**
+```
+CoreEssentials.Physics/adapters/implementations/
+├── PhysicsEngineAdapter.cs  ← Wraps: new Aether.World()
+├── BodyAdapter.cs           ← Wraps: new Aether.Body()  
+└── ShapeAdapters/           ← Wraps: new Aether.CircleShape(), etc.
+
+CoreEssentials.Physics/adapters/interfaces/  ← NO AETHER HERE ✓
+└── IPhysicsBodyAdapter.cs   ← No Aether references, pure clean API
+```
+
+**Rule:** Users should NEVER see Aether type names anywhere in the public API. All Aether types are wrapped and hidden behind adapter interfaces 🔒.
 
 ---
 
