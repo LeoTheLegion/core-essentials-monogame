@@ -21,17 +21,17 @@ These interfaces will be the user-facing API throughout the library lifecycle, m
 
 ## Tasks
 
-- [x] **Create CoreEssentials.Physics project** ✅
+- [ ] **Create CoreEssentials.Physics project** ✅
   - Project file: `CoreEssentials.Physics/CoreEssentials.Physics.csproj`
   - Package ID: `CoreEssentials.Physics`, Version: `0.15.0`
   - References: Aether.Physics2D.MG, MonoGame.Framework.DesktopGL, CoreEssentials
 
-- [x] **Analyze existing codebase** ✅
+- [ ] **Analyze existing codebase** ✅
   - Reviewed PhysicsEngine.cs, WorldPool.cs for Aether dependencies
   - Identified types used: Body, Fixture, World, Vector2, BodyType, SolverIterations
   - Documented usage patterns in repository memory
 
-- [x] **Define adapter interface contracts** ✅
+- [ ] **Define adapter interface contracts** ✅
   - `IPhysicsBodyAdapter.cs` - Body abstraction (USER-FACING ⭐)
   - `IFixtureAdapter.cs` - Fixture abstraction (Internal only 🔒)  
   - `ISpatialShapeAdapter.cs` + `ShapeType` enum - Shape type system (6 types, Internal 🔒)
@@ -40,7 +40,7 @@ These interfaces will be the user-facing API throughout the library lifecycle, m
   
 **Important:** `IPhysicsWorldAdapter` and all other adapters EXCEPT `IPhysicsBodyAdapter` are INTERNAL ONLY. Users NEVER interact with these directly.
 
-- [x] **Plan implementation strategy** ✅
+- [ ] **Plan implementation strategy** ✅
   - Implementation plan documented in: `CoreEssentials.Physics/adapters/implementations/ImplementationPlan.md`
   - Maps each interface to Aether implementations
   - Defines Sprint 1-4 execution order
@@ -60,16 +60,16 @@ These interfaces will be the user-facing API throughout the library lifecycle, m
 
 ## Acceptance Criteria
 
-- [x] CoreEssentials.Physics project created in `CoreEssentials.Physics/` folder
-- [x] Project builds successfully with no errors (`dotnet build`) ✅ **Verified**
-- [x] NuGet package metadata configured correctly (PackageId, Version 0.15.0)
-- [x] Zero `nkast.Aether.*` references in interface files (uses `Microsoft.Xna.Framework` for Vector2/BodyType)
-- [x] Implementation plan documented for Phase 2 (adapter implementations) - See `CoreEssentials.Physics/adapters/implementations/ImplementationPlan.md`
-- [x] File structure created: 
+- [ ] CoreEssentials.Physics project created in `CoreEssentials.Physics/` folder
+- [ ] Project builds successfully with no errors (`dotnet build`) ✅ **Verified**
+- [ ] NuGet package metadata configured correctly (PackageId, Version 0.15.0)
+- [ ] Zero `nkast.Aether.*` references in interface files (uses `Microsoft.Xna.Framework` for Vector2/BodyType)
+- [ ] Implementation plan documented for Phase 2 (adapter implementations) - See `CoreEssentials.Physics/adapters/implementations/ImplementationPlan.md`
+- [ ] File structure created: 
   - ✅ `CoreEssentials.Physics/adapters/interfaces/` (6 interface files)
   - ✅ `CoreEssentials.Physics/adapters/implementations/ShapeAdapters/` (empty, ready for shapes)
   - ✅ `CoreEssentials.Physics/factory/` (empty, ready for factory implementations)
-- [x] Sprint 1 tasks ready to execute (interfaces in correct folders with proper XML docs)
+- [ ] Sprint 1 tasks ready to execute (interfaces in correct folders with proper XML docs)
 
 ---
 
