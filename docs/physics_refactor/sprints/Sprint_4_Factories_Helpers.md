@@ -49,7 +49,7 @@
 
 ## Acceptance Criteria
 
-- All factory classes return interface types only (no Aether leaks)
+- All factory classes return interface types only (no Aether leaks) in `CoreEssentials.Physics/` project structure
 - SpatialShapeFactory properly delegates to shape adapter implementations
 - BodyPoolAdapter maintains backward compatibility while adding new features
 - Configuration class allows all necessary tuning options

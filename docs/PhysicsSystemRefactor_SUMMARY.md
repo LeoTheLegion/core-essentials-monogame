@@ -14,29 +14,32 @@ After discussing with you, I realize the physics library needs to be **BOTH**:
 
 ```
 CoreEssentials.Physics/
-├── adapters/                            ← Pure interface abstractions (NO Aether refs)
-│   ├── IPhysicsBodyAdapter.cs          ← Users interact with this, not Body
-│   ├── IFixtureAdapter.cs              ← Abstracts fixture lifecycle
-│   ├── ISpatialShapeAdapter.cs         ← Unified shape interface
-│   ├── IPhysicsWorldAdapter.cs         ← World management
-│   ├── IConstraintAdapter.cs           ← Joint/constraint abstractions
-│   └── IPhysicsFactory.cs              ← Factory for creating physics objects
+├── adapters/interfaces/                 ← Pure interface abstractions (NO Aether refs)
+│   ├── IPhysicsBodyAdapter.cs          ← ONLY user-facing physics object interface ⭐
+│   │                                     ← Users interact with this DIRECTLY
+│   ├── IFixtureAdapter.cs              ← Internal use only by BodyAdapter 🔒
+│   ├── ISpatialShapeAdapter.cs         ← Internal use only by BodyAdapter/Factory 🔒
+│   ├── IConstraintAdapter.cs           ← Internal use only by Factory 🔒
+│   └── IPhysicsWorldAdapter.cs         ← Internal use ONLY (completely hidden!) 🔒
 │
-├── implementations/                     ← Aether wrapper implementations
-│   ├── PhysicsEngineAdapter.cs         ← Wraps Aether.World + implements IFixedUpdateGameSystem ⭐
+├── adapters/implementations/            ← Aether wrapper implementations
+│   ├── PhysicsEngineAdapter.cs         ← Wraps world + implements IFixedUpdateGameSystem ⭐
+│   │                                     ← Users get this via GetGameSystem<PhysicsEngine>()
 │   ├── BodyAdapter.cs                  ← Implements IPhysicsBody, wraps Aether.Body
-│   ├── FixtureAdapter.cs               ← Implements IFixture, manages lifecycle
-│   └── ShapeAdapters/
+│   ├── FixtureAdapter.cs               ← Implements IFixture (internal only) 🔒
+│   └── ShapeAdapters/                  ← Internal use only (Circle, Rectangle, Polygon) 🔒
 │       ├── CircleShapeAdapter.cs
 │       ├── RectangleShapeAdapter.cs
 │       └── PolygonShapeAdapter.cs
 │
-├── factory/                             ← Factory classes for direct API access
-│   ├── PhysicsFactory.cs               ← Creates worlds/bodies via interfaces
-│   └── SpatialShapeFactory.cs          ← Shape creation factory (returns ISpatialShape)
+├── factory/                             ← Factory classes for creating physics objects
+│   ├── PhysicsFactory.cs               ← Creates bodies via interfaces (internal only) 🔒
+│   └── SpatialShapeFactory.cs          ← Shape creation factory (returns ISpatialShape, internal) 🔒
 │
 └── CoreEssentials.Physics.csproj        ← References: nkast.Aether.Physics2D.MG + CoreEssentials.dll
 ```
+
+**Key Design Decision:** Users interact ONLY through `IPhysicsBodyAdapter` and the PhysicsEngine GameSystem. The world adapter (`IPhysicsWorldAdapter`) is **COMPLETELY HIDDEN** from users - it's managed internally by PhysicsEngine with no public API exposure. All other adapters (Fixture, Shape, Constraint) are also internal-only 🔒.
 
 ---
 

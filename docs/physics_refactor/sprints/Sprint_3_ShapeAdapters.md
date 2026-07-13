@@ -50,7 +50,7 @@
 
 ## Acceptance Criteria
 
-- All shape adapters implement ISpatialShape interface consistently
+- All shape adapters implement ISpatialShape interface consistently in `CoreEssentials.Physics/adapters/implementations/ShapeAdapters/`
 - Translate/Rotate work identically across all shape types
 - PointContains method available on all shapes
 - GetVertices returns appropriate vertex array for each type

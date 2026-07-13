@@ -2,6 +2,28 @@
 
 This folder contains sprint plans for the physics system refactoring project using an agile/Scrum approach. Each file represents one sprint with tasks estimated in story points (1, 2, or 5 points).
 
+## Project Structure
+
+⚠️ **Important:** The physics system will live in a **separate NuGet-published project** (`CoreEssentials.Physics`) within the solution:
+
+```
+core-essentials-monogame.sln
+├── CoreEssentials/              # Main game systems library (existing)
+├── CoreEssentials.Playground/   # Integration examples (existing)
+├── CoreEssentials.Tests/        # Tests for main library (existing)
+├── CoreEssentials.Physics/      # NEW: Physics engine package (created in Sprint 0!)
+│   ├── adapters/interfaces/     # Interface definitions
+│   └── adapters/implementations/# Adapter classes wrapping Aether
+│       └── ShapeAdapters/       # Shape adapter implementations
+├── docs/physics_refactor/sprints/    # These sprint files
+```
+
+**Sprint 0 creates and validates the project:** The `CoreEssentials.Physics` folder and `.csproj` file are created in Sprint 0, then built to ensure everything compiles before moving forward. This ensures we have a working foundation for subsequent sprints.
+
+This structure allows users to install `CoreEssentials-MonoGame` NuGet package and get physics engine automatically integrated as a GameSystem.
+
+---
+
 ## Sprint Structure
 
 Each sprint is designed to be approximately **5 total points** worth of work, following standard Scrum principles:
@@ -15,7 +37,7 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
-| 📋 [0](Sprint_0_Planning.md) | Planning & Interface Definition | 2 | In Progress | Define all adapter interfaces without Aether references |
+| 📋 [0](Sprint_0_Planning.md) | Create Project + Interfaces | 2 | In Progress | Create CoreEssentials.Physics project, define adapter interfaces, build successfully |
 | 🔧 [1](Sprint_1_CoreInterfaces.md) | Core Interface Definitions | 1 | Not Started | Create IPhysicsBody, IFixture, ISpatialShape, etc. |
 | ⚙️ [2](Sprint_2_AdapterImplementations.md) | Adapter Implementations - Core Classes | 1 | Not Started | Implement PhysicsBodyAdapter, FixtureAdapter, WorldAdapter |
 | 📐 [3](Sprint_3_ShapeAdapters.md) | Spatial Shape Adapters | 1 | Not Started | CircleShape, RectangleShape, PolygonShape adapters |
@@ -31,6 +53,16 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 - **Total Points:** 9 points across 8 sprints
 - **Average Per Sprint:** ~1.1 points (conservative estimation)
 - **Timeline Estimate:** 8 weeks (one sprint per week)
+
+---
+
+## Key Workflow
+
+1. **Sprint 0 (2 pts)** - Creates `CoreEssentials.Physics` project and makes it buildable ✓
+2. **Sprints 1-4 (1 pt each)** - Build core physics engine with adapter pattern
+3. **Sprint 5 (1 pt)** - Migrate existing code to use new adapters in CoreEssentials.Physics
+4. **Sprint 6 (1 pt)** - Testing and documentation  
+5. **Sprint 7 (1 pt)** - Final review and NuGet release
 
 ---
 

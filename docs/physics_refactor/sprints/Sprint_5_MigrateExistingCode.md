@@ -8,7 +8,7 @@
 
 ## Tasks
 
-- [ ] **Update PhysicsEngine.cs** - Migrate from direct Aether usage to adapters
+- [ ] **Update CoreEssentials.Physics/PhysicsEngine.cs** - Migrate from direct Aether usage to adapters
   ```csharp
   // Remove: Direct exposure of _world as Aether.World
   // Add: Internal IPhysicsWorldAdapter implementation
@@ -17,7 +17,7 @@
   ```
   Reference: `docs/PhysicsSystemRefactor.md` - Phase 4
 
-- [ ] **Update WorldPool.cs** - Add adapter pattern support or replace with BodyPoolAdapter
+- [ ] **Update CoreEssentials.Physics/WorldPool.cs** or use BodyPoolAdapter from new project
   ```csharp
   // Option A: Wrap existing code with adapters (backward compatible)
   // Option B: Replace entirely with new BodyPoolAdapter implementation
@@ -25,7 +25,7 @@
   ```
   Reference: `docs/PhysicsSystemRefactor.md` - Phase 4
 
-- [ ] **Update PhysicsDebugRenderer.cs** - Accept shape interfaces instead of Aether types
+- [ ] **Update CoreEssentials.Physics/PhysicsDebugRenderer.cs** - Accept shape interfaces instead of Aether types
   ```csharp
   // Change: DrawShape(ISpatialShape) instead of DrawShape(Aether.Shape)
   // Update fixture rendering to use adapter's Shape property
@@ -44,7 +44,7 @@
 
 ## Acceptance Criteria
 
-- PhysicsEngine returns adapter interfaces in all public methods
+- PhysicsEngine in CoreEssentials.Physics returns adapter interfaces in all public methods
 - WorldPool updated or replaced with adapter-based implementation
 - PhysicsDebugRenderer accepts ISpatialShape interface
 - Zero Aether types exposed through public API

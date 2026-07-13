@@ -8,22 +8,43 @@
 
 ## Sprint Overview
 
-This sprint establishes the foundation for the entire physics refactoring project by defining clean, high-level interfaces that abstract away all `nkast.Aether.Physics2D` dependencies. These interfaces will be the user-facing API throughout the library lifecycle, making it easy to swap physics engines in the future without breaking user code.
+This sprint establishes the foundation for the entire physics refactoring project by:
+1. **Creating the `CoreEssentials.Physics` NuGet package project** - The new standalone project that will house all physics code
+2. **Defining clean, high-level interfaces** that abstract away all `nkast.Aether.Physics2D` dependencies
+
+These interfaces will be the user-facing API throughout the library lifecycle, making it easy to swap physics engines in the future without breaking user code.
+
+**Critical:** The project must be buildable after Sprint 0 before moving forward with adapter implementations.
 
 ---
 
 ## Tasks
 
+- [ ] **Create CoreEssentials.Physics project** - Set up NuGet-published package project
+  ```xml
+  <!-- CoreEssentials.Physics/CoreEssentials.Physics.csproj -->
+  <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+      <TargetFramework>net8.0</TargetFramework>
+      <PackageId>CoreEssentials-MonoGame</PackageId>
+      <Version>0.15.0</Version>
+      <Authors>LeoTheLegion</Authors>
+      <Description>Physics engine with adapter pattern integration for CoreEssentials</Description>
+    </PropertyGroup>
+    <!-- References to Aether and CoreEssentials dll -->
+  </Project>
+  ```
+
 - [ ] **Analyze existing codebase** - Review PhysicsEngine.cs, WorldPool.cs to understand current Aether dependencies
   - Reference: `docs/PhysicsSystemRefactor.md`
   
 - [ ] **Define adapter interface contracts** - Create all public interfaces without exposing Aether types
-  - IPhysicsBodyAdapter.cs
-  - IFixtureAdapter.cs
-  - ISpatialShapeAdapter.cs (with ShapeType enum)
-  - IPhysicsWorldAdapter.cs (with SolverConfig class)
-  - IConstraintAdapter.cs
-  - IPhysicsFactory.cs
+  - IPhysicsBodyAdapter.cs in `adapters/interfaces/`
+  - IFixtureAdapter.cs in `adapters/interfaces/`
+  - ISpatialShapeAdapter.cs (with ShapeType enum) in `adapters/interfaces/`
+  - IPhysicsWorldAdapter.cs (with SolverConfig class) in `adapters/interfaces/`
+  - IConstraintAdapter.cs in `adapters/interfaces/`
+  - IPhysicsFactory.cs in `adapters/interfaces/`
   
 - [ ] **Plan implementation strategy** - Map each interface to corresponding Aether implementation
   - Document internal wrapping approach for PhysicsEngineAdapter, BodyAdapter, etc.
@@ -32,21 +53,27 @@ This sprint establishes the foundation for the entire physics refactoring projec
 
 ## Sprint Goals
 
-1. Zero Aether type references in any interface file
-2. All interfaces have proper XML documentation
-3. Implementation plan documented for next sprints
-4. ShapeType enum defined with all required values (Circle, Rectangle, Polygon, ConvexHull, LineSegment, Unknown)
-5. SolverConfig class properly structured for world configuration
+1. ✅ CoreEssentials.Physics project created and buildable
+2. Zero Aether type references in any interface file
+3. All interfaces have proper XML documentation
+4. Implementation plan documented for next sprints
+5. ShapeType enum defined with all required values (Circle, Rectangle, Polygon, ConvexHull, LineSegment, Unknown)
+6. SolverConfig class properly structured for world configuration
 
 ---
 
 ## Acceptance Criteria
 
-- [x] All interfaces reviewed and approved by team
+- [x] CoreEssentials.Physics project created in `CoreEssentials.Physics/` folder
+- [ ] Project builds successfully with no errors (dotnet build)
+- [ ] NuGet package metadata configured correctly
 - [ ] Zero `nkast.Aether.*` references in interface files
 - [ ] Implementation plan documented for Phase 2 (adapter implementations)
-- [ ] File structure planned: `CoreEssentials/src/gameSystems/physics/adapters/`
-- [ ] Sprint 1 tasks ready to execute
+- [ ] File structure created: 
+  - `CoreEssentials.Physics/adapters/interfaces/`
+  - `CoreEssentials.Physics/adapters/implementations/ShapeAdapters/`
+  - `CoreEssentials.Physics/factory/`
+- [ ] Sprint 1 tasks ready to execute (interfaces in correct folders)
 
 ---
 
