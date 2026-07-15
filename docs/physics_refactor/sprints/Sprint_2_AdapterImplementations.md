@@ -1,14 +1,14 @@
 # Sprint 2: Adapter Implementations - Core Classes
 
 **Points:** 1  
-**Status:** Not Started  
+**Status:** In Progress  
 **Description:** Implement the core adapter classes that wrap Aether internally while exposing clean interfaces.
 
 ---
 
 ## Tasks
 
-- [ ] **Implement PhysicsBodyAdapter.cs** - Wraps Aether.Body, implements IPhysicsBody (user-facing)
+- [x] **Implement PhysicsBodyAdapter.cs** - Wraps Aether.Body, implements IPhysicsBody (user-facing) ✅ DONE
   ```csharp
   // Internally manages: _body (Aether.Body), _fixtures list
   // Exposes: CreateCircle, AddFixture, movement methods via interface
@@ -17,7 +17,7 @@
   ```
   Reference: `docs/PhysicsSystemRefactor.md` - Phase 2
 
-- [ ] **Implement FixtureAdapter.cs** - Wraps Aether.Fixture, implements IFixture (internal only)
+- [x] **Implement FixtureAdapter.cs** - Wraps Aether.Fixture, implements IFixture (internal only) ✅ DONE
   ```csharp
   // Internally manages: _fixture (Aether.Fixture), _shape reference
   // Exposes: Activate, Deactivate via interface methods
@@ -26,7 +26,7 @@
   ```
   Reference: `docs/PhysicsSystemRefactor.md` - Phase 2
 
-- [ ] **Implement ISpatialShapeAdapters** - Circle, Rectangle, Polygon (internal only)
+- [x] **Implement ISpatialShapeAdapters** - Circle, Rectangle, Polygon (internal only) ✅ DONE
   ```csharp
   // These wrap Aether shapes and are used internally by BodyAdapter
   // Users never see or interact with these directly
