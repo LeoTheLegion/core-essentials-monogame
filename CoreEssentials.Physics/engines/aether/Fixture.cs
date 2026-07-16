@@ -55,10 +55,9 @@ public class Fixture : IFixture
 
     /// <summary>
     /// Gets whether this fixture is currently active (enabled) in the simulation.
-    /// A fixture is considered active if its owner body is enabled and dynamic/kinematic,
-    /// or if it's a static body with proxies created.
+    /// A fixture is considered active if it has proxies registered on the broad-phase.
     /// </summary>
-    public bool IsActive => _aetherFixture.Body?.Enabled == true;
+    public bool IsActive => _aetherFixture.ProxyCount > 0;
 
     /// <summary>
     /// Gets the body that owns this fixture.
@@ -102,6 +101,7 @@ public class Fixture : IFixture
     /// <summary>
     /// Deactivates this fixture so it no longer participates in collision detection.
     /// Destroys proxies from the broad-phase using reflection to access internal Aether method.
+    /// Note: Only affects this specific fixture, not the owner body or sibling fixtures.
     /// </summary>
     public void Deactivate()
     {
@@ -121,8 +121,5 @@ public class Fixture : IFixture
                 // If reflection fails, proxies may already be destroyed.
             }
         }
-
-        // Disable the body to prevent further collision processing for this fixture's owner.
-        _aetherFixture.Body.Enabled = false;
     }
 }

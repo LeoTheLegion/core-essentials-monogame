@@ -140,6 +140,9 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IDisposable
         }
 
         _physicsBodies.Remove(aetherBody);
+        
+        // Null out the body reference so it becomes unusable (consistent with Dispose behavior)
+        pb._body = null;
     }
 
     #endregion
