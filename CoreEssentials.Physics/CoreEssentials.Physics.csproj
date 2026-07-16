@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>CoreEssentials.Physics</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <OutputPath>bin\$(Configuration)</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CoreEssentials\CoreEssentials.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aether.Physics2D.MG" Version="2.1.1" />
+  </ItemGroup>
+
+</Project>

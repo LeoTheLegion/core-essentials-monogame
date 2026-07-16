@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Tests", "Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Playground", "CoreEssentials.Playground\CoreEssentials.Playground.csproj", "{86883A88-935E-471C-94CC-A75BF8047D43}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Physics", "CoreEssentials.Physics\CoreEssentials.Physics.csproj", "{4DD3E56F-44EF-4F23-A905-4027131D1DE8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{86883A88-935E-471C-94CC-A75BF8047D43}.Release|x64.Build.0 = Release|Any CPU
 		{86883A88-935E-471C-94CC-A75BF8047D43}.Release|x86.ActiveCfg = Release|Any CPU
 		{86883A88-935E-471C-94CC-A75BF8047D43}.Release|x86.Build.0 = Release|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Debug|x64.Build.0 = Debug|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Debug|x86.Build.0 = Debug|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Release|x64.ActiveCfg = Release|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Release|x64.Build.0 = Release|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Release|x86.ActiveCfg = Release|Any CPU
+		{4DD3E56F-44EF-4F23-A905-4027131D1DE8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
