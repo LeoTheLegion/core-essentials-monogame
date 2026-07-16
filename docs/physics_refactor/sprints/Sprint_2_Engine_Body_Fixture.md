@@ -8,7 +8,7 @@
 
 ## Tasks
 
-- [ ] **T1: Implement `PhysicsBody.cs` (2 pts)** ⭐
+- [x] **T1: Implement `PhysicsBody.cs` (2 pts)** ⭐
   - Wraps a single `Aether.Physics2D.Dynamics.Body` instance
   - Implements all properties/methods from `IPhysicsBody`:
     - Position/rotation: delegate to Aether Body's `Position`, `Angle`
@@ -19,12 +19,12 @@
     - Velocity control: wrap `Body.LinearVelocity`, `Body.AngularVelocity`
   - Implement `Dispose()` — signal world to remove body
 
-- [ ] **T2: Implement `Fixture.cs` (1 pt)** 🔒
+- [x] **T2: Implement `Fixture.cs` (1 pt)** 🔒
   - Wraps `Aether.Physics2D.Dynamics.Fixture`
   - Implements `IFixture`: expose `Shape`, `IsActive`, `OwnerBody`
   - `Activate()`/`Deactivate()` → delegate to Aether Fixture
 
-- [ ] **T3: Implement `PhysicsEngine.cs` (2 pts)** ⭐ GameSystem
+- [x] **T3: Implement `PhysicsEngine.cs` (2 pts)** ⭐ GameSystem
   - Inherit from `CoreEssentials.GameSystems.GameSystem` + implement `IFixedUpdateGameSystem`
   - Internally manages an `Aether.World` instance (users never see it)
   - Public methods:
@@ -38,7 +38,11 @@
 
 - [ ] **T4: Verify build + basic sanity (0.5 pt)**
   - Project builds cleanly
-  - Manual test in Playground: create a dynamic body via new API, verify it appears in world
+  - Create positive and negatives tests in a new project called CoreEssentials.Physics.Tests
+    - Test for gamesystem creation
+    - Test for body creation
+    - Test for fixture creation
+    - Test for destruction for either class object
 
 ---
 

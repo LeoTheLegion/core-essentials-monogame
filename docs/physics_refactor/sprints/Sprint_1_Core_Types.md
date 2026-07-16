@@ -8,7 +8,7 @@
 
 ## Tasks
 
-- [ ] **T1: Create `IPhysicsBody.cs` (2 pts)** ⭐ User-facing
+- [x] **T1: Create `IPhysicsBody.cs` (2 pts)** ⭐ User-facing
   - Position and rotation: `WorldPosition { get; }`, `Rotation { get; set; }`
   - Type management: `Type { get; set; }`, `IsStatic`, `IsDynamic`, `IsKinematic`
   - Shape creation: `CreateCircle()`, `CreateRectangle()`, `CreatePolygon()`, `CreateConvexHull()`
@@ -18,31 +18,31 @@
   - Velocity control: `LinearVelocity { get; }`, `AngularVelocity { get; }`, setters, `StopAll()`
   - Body state: `IsAwake { get; }`, `IsActive { get; }`
 
-- [ ] **T2: Create `IFixture.cs` (0.5 pt)** 🔒 Internal only
+- [x] **T2: Create `IFixture.cs` (0.5 pt)** 🔒 Internal only
   - Properties: `Shape { get; }`, `IsActive { get; }`, `OwnerBody { get; }`
   - Lifecycle: `Activate()`, `Deactivate()`
   - Mark interface with `[Obsolete("Internal use only")]`
 
-- [ ] **T3: Create `IShape.cs` (0.5 pt)** 🔒 Internal only
+- [x] **T3: Create `IShape.cs` (0.5 pt)** 🔒 Internal only
   - Properties: `Center { get; }`, `Radius { get; }`, `Vertices { get; }`
   - Transform operations: `Translate()`, `Rotate()`
   - Query methods: `PointContains()`
   - Type identification: `GetType() → ShapeType enum`
   - Define `ShapeType` enum (Circle, Rectangle, Polygon, ConvexHull, LineSegment, Unknown)
 
-- [ ] **T4: Create `IPhysicsWorld.cs` + `SolverConfig.cs` (0.5 pt)** 🔒 Internal only
+- [x] **T4: Create `IPhysicsWorld.cs` + `SolverConfig.cs` (0.5 pt)** 🔒 Internal only
   - Properties: `Gravity { get; set; }`
   - Body management: `AddBody()`, `RemoveBody()`, `ClearAllBodies()`
   - Simulation: `Step(deltaTime, solverOptions)`
   - `SolverConfig`: `VelocityIterations`, `PositionIterations`, `ContinuousCollisionDetection`
 
-- [ ] **T5: Create `IConstraint.cs` + Joint interfaces (0.5 pt)** 🔒 Internal only
+- [x] **T5: Create `IConstraint.cs` + Joint interfaces (0.5 pt)** 🔒 Internal only
   - Base `IConstraint`: `BodyA { get; }`, `BodyB { get; }`, `IsActive { get; }`, `Apply()`, `Remove()`
   - `IRevoluteJoint : IConstraint`: `LocalAnchorA/B`, `LimitAngle` (hinge joint)
   - `IWeldJoint : IConstraint`: `CollideConnected` (fixed/weld joint)
   - `IDistanceJoint : IConstraint`: `Length`, `MaxForce`
 
-- [ ] **T6: Create `IPhysicsFactory.cs` + `PhysicsConfig.cs` (0.5 pt)** 🔒 Internal only
+- [x] **T6: Create `IPhysicsFactory.cs` + `PhysicsConfig.cs` (0.5 pt)** 🔒 Internal only
   - Factory methods: `CreateDefault()`, `CreateWithGravity()`, `CreateWithConfig()`
   - Body creation: `CreateStatic()`, `CreateDynamic()`, `CreateKinematic()`
   - Shape factory accessor: `Shapes { get; }`
