@@ -46,18 +46,16 @@ Constraint joint = new RevoluteJoint(bodyA, bodyB, anchorPoint);
 
 ## Classes That Need Abstraction 🔧
 
-**Core Principle:** Users interact ONLY through the clean API. All adapters are **completely hidden** from users:
-1. `IPhysicsBodyAdapter` - The ONLY user-facing interface (users get bodies via `physicsEngine.CreateDynamic()`)
-2. Everything else (`IFixture`, `ISpatialShape`, `IConstraint`, `IPhysicsWorld`) is **internal-only 🔒**
+**Core Principle:** Users interact ONLY through the clean API. All internal types are **completely hidden** from users:
+1. `IPhysicsBody` - The ONLY user-facing interface (users get bodies via `physicsEngine.CreateDynamic()`)
+2. Everything else (`IFixture`, `IShape`, `IConstraint`, `IPhysicsWorld`) is **internal-only 🔒**
 3. World operations are managed internally by PhysicsEngine - users never call Step(), AddBody(), etc.
 
-### Priority 1: Core Body/Fixture/Shape Adapters ⭐
+### Priority 1: Core Body/Fixture/Shape Types ⭐
 
-### Priority 1: Core Body/Fixture/Shape Adapters ⭐
+#### **1. PhysicsBody (User-Facing)** ⭐
 
-#### **1. PhysicsBody Adapter (User-Facing)** ⭐
-
-This is the ONLY adapter interface exposed to users. Users interact with this directly through `IPhysicsBody`.
+This is the ONLY type interface exposed to users. Users interact with this directly through `IPhysicsBody`.
 
 **Current State:** `Aether.Physics2D.Dynamics.Body` is exposed directly to users ❌
 
@@ -84,7 +82,7 @@ public interface IPhysicsBody : IDisposable
     void CreateConvexHull(Vector2[] points);
     
     // Fixture management - unified API ✓
-    IFixture AddFixture(ISpatialShape shape, float density = 1f, 
+    IFixture AddFixture(IShape shape, float density = 1f, 
                        CollisionFilterMask mask = default,
                        BodyType typeOverride = BodyType.Dynamic);
     void RemoveFixture(IFixture fixture);
@@ -117,9 +115,9 @@ public class PhysicsBody : IPhysicsBody { ... }
 
 **How Users Get Bodies:** Via `physicsEngine.CreateDynamic(position)`, NOT through any factory pattern. The engine manages the world internally.
 
-#### **2. Fixture Adapter (Internal Only)** 🔒
+#### **2. Fixture (Internal Only)** 🔒
 
-**Purpose:** Internal fixture lifecycle management, used ONLY by PhysicsBodyAdapter.
+**Purpose:** Internal fixture lifecycle management, used ONLY by PhysicsBody.
 
 **Current State:** Fixtures are returned directly from Aether and must be managed manually ❌
 
@@ -131,11 +129,11 @@ public class PhysicsBody : IPhysicsBody { ... }
 public interface IFixture : IDisposable
 {
     // Shape access (internal)
-    ISpatialShape Shape { get; }
+    IShape Shape { get; }
     
     // State (internal)
     bool IsActive { get; }
-    Body OwnerBody { get; }
+    IPhysicsBody OwnerBody { get; }
     
     // Lifecycle management - abstracted from Aether's Add/Remove patterns 🔒
     void Activate();
@@ -144,7 +142,7 @@ public interface IFixture : IDisposable
 
 // INTERNAL FACTORY ONLY 🔒
 [Obsolete("Internal use only")]
-internal interface ISpatialShapeFactory
+internal interface IShapeFactory
 {
     IShape CreateCircle(float radius);
     IShape CreateRectangle(Vector2 size);
@@ -153,60 +151,40 @@ internal interface ISpatialShapeFactory
 }
 
 // INTERNAL IMPLEMENTATIONS 🔒
-public class CircleShape : ISpatialShape { ... } // Internal only
-public class RectangleShape : ISpatialShape { ... } // Internal only
+public class CircleShape : IShape { ... } // Internal only
+public class RectangleShape : IShape { ... } // Internal only
 ```
 
-#### **3. Spatial Shape Adapters (Internal Only)** 🔒
+#### **3. Shapes (Internal Only)** 🔒
 
-**Purpose:** Unified shape interface used internally by BodyAdapter and Factory - users never see these.
+**Purpose:** Unified shape interface used internally by PhysicsBody and Factory - users never see these.
 
 **Current State:** `fixture.Shape` returns Aether types directly (`CircleShape`, `PolygonShape`, etc.) ❌
 
-**Solution:** Internal spatial shape abstraction:
-
-```csharp
-// INTERNAL INTERFACE ONLY 🔒
-[Obsolete("Internal use only")]
-public interface ISpatialShape : IDisposable
-{
-    // Common properties for all shape types (internal)
-    Vector2 Center { get; }
-    float Radius => GetBoundingRadius(); // Unified API for different shapes
-    
-    // Transform operations (internal)
-    void Translate(Vector2 offset);
-    void Rotate(float angle);
-}
-
-// INTERNAL IMPLEMENTATIONS 🔒
-public class CircleShapeAdapter : ISpatialShape { ... } // Internal only
-public class RectangleShapeAdapter : ISpatialShape { ... } // Internal only
-public class PolygonShapeAdapter : ISpatialShape { ... } // Internal only
-```
+**Solution:** Internal shape abstraction via `IShape` interface (see Proposed Interface Structure below).
 
 ---
 
 ### Priority 2: Internal World & Constraint Infrastructure 🔒
 
-**Design Philosophy:** The physics world (`IPhysicsWorldAdapter`) and constraints are **COMPLETELY HIDDEN** from users. They access physics through:
+**Design Philosophy:** The physics world (`IPhysicsWorld`) and constraints are **COMPLETELY HIDDEN** from users. They access physics through:
 1. `GetGameSystem<PhysicsEngine>()` - Gets the engine that manages everything
 2. `physicsEngine.CreateDynamic(position)` - Creates bodies without knowing about the world
 
-#### **4. World Adapter (Internal Only)** 🔒
+#### **4. PhysicsWorld (Internal Only)** 🔒
 
 **Purpose:** Manages Aether.World internally, completely hidden from users. Users NEVER interact with this interface.
 
 ```csharp
 // INTERNAL INTERFACE ONLY - COMPLETELY HIDDEN FROM USERS 🔒
 [Obsolete("Internal use only")]
-public interface IPhysicsWorldAdapter : IDisposable
+public interface IPhysicsWorld : IDisposable
 {
     Vector2 Gravity { get; set; }
     
     // Body management (used only by PhysicsEngine internally)
     void AddBody(IPhysicsBody body);
-    void RemoveBody(IBody body);
+    void RemoveBody(IPhysicsBody body);
     
     // Simulation control (called automatically via IFixedUpdateGameSystem) 🔒
     void Step(float deltaTime, SolverConfig solverOptions);
@@ -217,21 +195,21 @@ public interface IPhysicsWorldAdapter : IDisposable
 [Obsolete("Internal use only")]
 internal class PhysicsWorldFactory 
 {
-    IPhysicsWorldAdapter CreateDefault() { ... }
+    IPhysicsWorld CreateDefault() { ... }
     
     [Obsolete("Users get physics engine automatically via GameSystem")]
-    public IPhysicsWorldAdapter CreateWithGravity(Vector2 gravity) { ... }
+    public IPhysicsWorld CreateWithGravity(Vector2 gravity) { ... }
 }
 ```
 
-#### **5. Constraints Adapter (Internal Only)** 🔒
+#### **5. Constraints (Internal Only)** 🔒
 
 **Purpose:** Joint/constraint infrastructure used internally by PhysicsEngine and Factory - users never see these interfaces directly.
 
 ```csharp
 // INTERNAL INTERFACE ONLY - marked [Obsolete] for external use 🔒
 [Obsolete("Internal use only")]
-public interface IConstraintAdapter : IDisposable
+public interface IConstraint : IDisposable
 {
     void Apply();
     void Remove();
@@ -239,11 +217,11 @@ public interface IConstraintAdapter : IDisposable
 
 // Joint types (internal only) 🔒
 [Obsolete("Internal use only")]
-public interface IPivotJointAdapter : IConstraintAdapter { ... }
+public interface IRevoluteJoint : IConstraint { ... } // Hinge joint
 [Obsolete("Internal use only")]
-public interface IFixedJointAdapter : IConstraintAdapter { ... }
+public interface IWeldJoint : IConstraint { ... }     // Fixed/weld joint
 [Obsolete("Internal use only")]
-public interface IDistanceJointAdapter : IConstraintAdapter { ... }
+public interface IDistanceJoint : IConstraint { ... }
 ```
 
 #### **6. Solver Configuration (Internal Use)** 🔒
@@ -251,7 +229,7 @@ public interface IDistanceJointAdapter : IConstraintAdapter { ... }
 **Purpose:** World configuration managed internally by PhysicsEngine. Users tune physics through `PhysicsEngine` properties, not directly.
 
 ```csharp
-// INTERNAL CLASS - used only within PhysicsWorldAdapter and PhysicsEngine 🔒
+// INTERNAL CLASS - used only within PhysicsWorld and PhysicsEngine 🔒
 [Obsolete("Internal use only")]
 public class SolverConfig
 {
@@ -263,7 +241,7 @@ public class SolverConfig
 // INTERNAL USAGE EXAMPLE 🔒
 internal class PhysicsEngine : IFixedUpdateGameSystem 
 {
-    private readonly IPhysicsWorldAdapter _world; // ← World hidden from users
+    private readonly IPhysicsWorld _world; // ← World hidden from users
     
     public void Update(float deltaTime)
     {
@@ -285,77 +263,75 @@ engine.GravityY = -9.81f; // Tune through engine properties
 
 ## Proposed Interface Structure 📋
 
-### Adapter Layer Abstraction Files
+### Type Definition Files
 
-#### **IPhysicsBodyAdapter.cs** - Core Body Interface (User-Facing) ⭐
+#### **IPhysicsBody.cs** - Core Body Interface (User-Facing) ⭐
 ```csharp
-namespace CoreEssentials.Physics.Adapters
+namespace CoreEssentials.Physics.Types
 {
-    public interface IFixture : IDisposable
+    public interface IPhysicsBody : IDisposable
     {
-        // Shape access
-        ISpatialShape Shape { get; }
+        // Position and rotation
+        Vector2 WorldPosition { get; }
+        float Rotation { get; set; }
         
-        // State
+        // Type management
+        BodyType Type { get; set; }
+        bool IsStatic => Type == BodyType.Static;
+        bool IsDynamic => Type == BodyType.Dynamic;
+        bool IsKinematic => Type == BodyType.Kinematic;
+        
+        // Shape creation - users never see engine types ✓
+        void CreateCircle(float radius, Vector2? localCenter = null);
+        void CreateRectangle(Vector2 size, Vector2? localCenter = null);
+        void CreatePolygon(Vector2[] vertices, Vector2? localCenter = null);
+        void CreateConvexHull(Vector2[] points);
+        
+        // Fixture management - unified API ✓
+        IFixture AddFixture(IShape shape, float density = 1f, 
+                           CollisionFilterMask mask = default,
+                           BodyType typeOverride = BodyType.Dynamic);
+        void RemoveFixture(IFixture fixture);
+        
+        // Material properties
+        float Mass { get; set; }
+        float Inertia { get; set; }
+        float Friction { get; set; }
+        float Restitution { get; set; }
+        bool FixedRotation { get; set; }
+        
+        // Movement and forces
+        void ApplyForce(Vector2 force, Vector2? relativePoint = null);
+        void ApplyTorque(float torque);
+        void ApplyImpulse(Vector2 impulse, Vector2? relativePoint = null);
+        
+        // Velocity control
+        Vector2 LinearVelocity { get; }
+        float AngularVelocity { get; }
+        void SetLinearVelocity(Vector2 velocity);
+        void SetAngularVelocity(float angularVelocity);
+        void StopAll();
+        
+        // Body state
+        bool IsAwake { get; }
         bool IsActive { get; }
-        Body OwnerBody { get; }
-        
-        // Lifecycle management
-        void Activate();
-        void Deactivate();
-        void DisableSleep();
-        void EnableSleep();
     }
 }
 ```
 
-#### **ISpatialShapeAdapter.cs** - Shape Interface
+#### **IFixture.cs** - Fixture Interface (Internal Only) 🔒
 ```csharp
-namespace CoreEssentials.Physics.Adapters
-{
-    public interface ISpatialShape : IDisposable
-    {
-        // Common properties for all shape types
-        Vector2 Center { get; }
-        float Radius => GetBoundingRadius(); // Unified API
-        
-        // Transform operations
-        void Translate(Vector2 offset);
-        void Rotate(float angle);
-        
-        // Shape-specific query methods (polymorphic)
-        bool PointContains(Vector2 point, bool localSpace = true);
-        Vector2[] Vertices { get; } // Returns array based on shape type
-        
-        // Type identification for casting if needed
-        ShapeType GetType(); 
-    }
-
-    public enum ShapeType
-    {
-        Circle,
-        Rectangle,
-        Polygon,
-        ConvexHull,
-        LineSegment,
-        Unknown
-    }
-}
-```
-
-#### **IFixtureAdapter.cs** - Fixture Interface (Internal Only) 🔒
-```csharp
-namespace CoreEssentials.Physics.Adapters
+namespace CoreEssentials.Physics.Types
 {
     [Obsolete("Internal use only")]
     public interface IFixture : IDisposable
     {
         // Shape access (internal)
-        ISpatialShape Shape { get; }
+        IShape Shape { get; }
         
         // State (internal)
         bool IsActive { get; }
-        Body OwnerBody { get; }
+        IPhysicsBody OwnerBody { get; }
         
         // Lifecycle management (internal)
         void Activate();
@@ -364,12 +340,12 @@ namespace CoreEssentials.Physics.Adapters
 }
 ```
 
-#### **ISpatialShapeAdapter.cs** - Shape Interface (Internal Only) 🔒
+#### **IShape.cs** - Shape Interface (Internal Only) 🔒
 ```csharp
-namespace CoreEssentials.Physics.Adapters
+namespace CoreEssentials.Physics.Types
 {
     [Obsolete("Internal use only")]
-    public interface ISpatialShape : IDisposable
+    public interface IShape : IDisposable
     {
         // Common properties for all shape types (internal)
         Vector2 Center { get; }
@@ -400,9 +376,9 @@ namespace CoreEssentials.Physics.Adapters
 }
 ```
 
-#### **IPhysicsWorldAdapter.cs** - World Interface (Internal Only) 🔒
+#### **IPhysicsWorld.cs** - World Interface (Internal Only) 🔒
 ```csharp
-namespace CoreEssentials.Physics.Adapters
+namespace CoreEssentials.Physics.Types
 {
     [Obsolete("Internal use only")]
     public interface IPhysicsWorld : IDisposable
@@ -416,7 +392,7 @@ namespace CoreEssentials.Physics.Adapters
         
         // Body management (internal - used by PhysicsEngine)
         void AddBody(IPhysicsBody body);
-        void RemoveBody(IBody body);
+        void RemoveBody(IPhysicsBody body);
         void ClearAllBodies();
         
         // Simulation stepping (internal - called via IFixedUpdateGameSystem)
@@ -433,15 +409,15 @@ namespace CoreEssentials.Physics.Adapters
 }
 ```
 
-#### **IConstraintAdapter.cs** - Constraint Interface (Internal Only) 🔒
+#### **IConstraint.cs** - Constraint Interface (Internal Only) 🔒
 ```csharp
-namespace CoreEssentials.Physics.Adapters
+namespace CoreEssentials.Physics.Types
 {
     public interface IConstraint : IDisposable
     {
         // Joint body references
-        Body BodyA { get; }
-        Body BodyB { get; }
+        IPhysicsBody BodyA { get; }
+        IPhysicsBody BodyB { get; }
         
         // State management
         bool IsActive { get; }
@@ -449,14 +425,14 @@ namespace CoreEssentials.Physics.Adapters
         void Remove();
     }
 
-    public interface IPivotJoint : IConstraint
+    public interface IRevoluteJoint : IConstraint  // Standard name for hinge joints
     {
         Vector2 LocalAnchorA { get; set; }
         Vector2 LocalAnchorB { get; set; }
         float LimitAngle { get; set; } // Radians
     }
 
-    public interface IFixedJoint : IConstraint
+    public interface IWeldJoint : IConstraint  // Fixed/weld joint
     {
         bool CollideConnected { get; set; }
     }
@@ -474,7 +450,7 @@ namespace CoreEssentials.Physics.Adapters
 **Purpose:** Internal factory for creating worlds and bodies - users never call this directly. They get PhysicsEngine via `GetGameSystem<PhysicsEngine>()`.
 
 ```csharp
-namespace CoreEssentials.Physics.Adapters
+namespace CoreEssentials.Physics.Factory
 {
     [Obsolete("Internal use only")]
     public interface IPhysicsFactory : IDisposable
@@ -484,7 +460,7 @@ namespace CoreEssentials.Physics.Adapters
         IPhysicsWorld CreateWithGravity(Vector2 gravity);
         IPhysicsWorld CreateWithConfig(PhysicsConfig config);
         
-        // Body type factory methods (returns adapters, internal)
+        // Body type factory methods (returns types, internal)
         [Obsolete("Users get bodies via physicsEngine.CreateDynamic()")]
         IPhysicsBody CreateStatic(Vector2 position, float rotation = 0f);
         [Obsolete("Users get bodies via physicsEngine.CreateDynamic()")]
@@ -493,7 +469,7 @@ namespace CoreEssentials.Physics.Adapters
         IPhysicsBody CreateKinematic(Vector2 position, float rotation = 0f);
         
         // Shape factory (internal)
-        ISpatialShapeFactory Shapes { get; }
+        IShapeFactory Shapes { get; }
     }
 
     [Obsolete("Internal use only")]
@@ -517,52 +493,48 @@ namespace CoreEssentials.Physics.Adapters
 - ✅ `IPhysicsBody` - User-facing interface (users interact with this directly via `physicsEngine.CreateDynamic()`)
 - 🔒 Everything else marked `[Obsolete]` or internal-only - users should NEVER see these
 
-### Phase 1: Create New Project & Interfaces
-
 ### Phase 1: Core Interface Definitions
 
 **Files to create:**
-
-**Files to create:**
-- `CoreEssentials/src/gameSystems/physics/adapters/IPhysicsBodyAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/IFixtureAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/ISpatialShapeAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/IPhysicsWorldAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/IConstraintAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/IPhysicsFactory.cs`
+- `CoreEssentials.Physics/types/IPhysicsBody.cs`
+- `CoreEssentials.Physics/types/IFixture.cs`
+- `CoreEssentials.Physics/types/IShape.cs`
+- `CoreEssentials.Physics/types/IPhysicsWorld.cs`
+- `CoreEssentials.Physics/types/IConstraint.cs`
+- `CoreEssentials.Physics/factory/IPhysicsFactory.cs`
 
 **Goal:** Define all public interfaces that users will interact with. No Aether references here.
 
-### Phase 2: Adapter Implementations
+### Phase 2: Engine Implementations
 
 **Files to create:**
-- `CoreEssentials/src/gameSystems/physics/adapters/PhysicsBodyAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/FixtureAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/CircleShapeAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/RectangleShapeAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/PolygonShapeAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/PhysicsWorldAdapter.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/ConstraintAdapters/*.cs`
+- `CoreEssentials.Physics/engines/aether/PhysicsBody.cs`
+- `CoreEssentials.Physics/engines/aether/Fixture.cs`
+- `CoreEssentials.Physics/engines/aether/CircleShape.cs`
+- `CoreEssentials.Physics/engines/aether/RectangleShape.cs`
+- `CoreEssentials.Physics/engines/aether/PolygonShape.cs`
+- `CoreEssentials.Physics/engines/aether/PhysicsWorld.cs`
+- `CoreEssentials.Physics/engines/aether/Joints/*.cs`
 
 **Goal:** Implement all interfaces, wrapping Aether classes internally. Users never see Aether types.
 
 ### Phase 3: Factory & Helper Classes
 
 **Files to create:**
-- `CoreEssentials/src/gameSystems/physics/adapters/PhysicsFactory.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/SpatialShapeFactory.cs`
-- `CoreEssentials/src/gameSystems/physics/adapters/BodyPoolAdapter.cs` (wraps existing WorldPool)
+- `CoreEssentials.Physics/factory/PhysicsFactory.cs`
+- `CoreEssentials.Physics/factory/ShapeFactory.cs`
+- `CoreEssentials.Physics/factory/BodyPool.cs` (wraps existing WorldPool)
 
 **Goal:** Provide convenient factory methods and helper utilities.
 
 ### Phase 4: Updated Existing Classes
 
 **Files to modify:**
-- `CoreEssentials/src/gameSystems/physics/PhysicsEngine.cs` - Update to use adapters internally
-- `CoreEssentials/src/gameSystems/physics/WorldPool.cs` - Add adapter support or replace with BodyPoolAdapter
-- `CoreEssentials/src/gameSystems/physics/PhysicsDebugRenderer.cs` - Accept shape interfaces instead of Aether types
+- `CoreEssentials/src/gameSystems/physics/PhysicsEngine.cs` - Update to use new type interfaces internally
+- `CoreEssentials.Physics/factory/BodyPool.cs` - Replace WorldPool with new pooling implementation
+- `CoreEssentials/src/gameSystems/physics/PhysicsDebugRenderer.cs` - Accept IShape interfaces instead of Aether types
 
-**Goal:** Migrate existing code to use the new adapter pattern.
+**Goal:** Migrate existing code to use the new type abstraction.
 
 ### Phase 5: Playground Migration Examples
 
@@ -606,7 +578,7 @@ body.CreateCircle(radius); // Clean API, no Aether exposed ✓
 var fixture = body.AddFixture(shape); // Returns IFixture, never Aether.Fixture ✓
 
 // Constraints work through clean methods on bodies/physics engine ✓
-IPivotJoint joint = physicsEngine.CreatePivotJoint(bodyA, bodyB, anchorPoint);
+IRevoluteJoint joint = physicsEngine.CreateRevoluteJoint(bodyA, bodyB, anchorPoint);
 
 // World operations are completely hidden - users don't need them! ✓
 ```
@@ -621,7 +593,7 @@ IPivotJoint joint = physicsEngine.CreatePivotJoint(bodyA, bodyB, anchorPoint);
 
 1. **Remove Aether type usage** - Stop casting/using Body, Fixture, CircleShape directly
 2. **Use PhysicsEngine.CreateDynamic/CreateStatic/CreateKinematic()** instead of factory pattern
-3. **Body methods handle constraints** - Use `physicsEngine.CreatePivotJoint()` not direct Constraint creation  
+3. **Body methods handle constraints** - Use `physicsEngine.CreateRevoluteJoint()` not direct Constraint creation  
 4. **World is automatic** - No need to call Step(), AddBody(), or manage world configuration
 
 ---
@@ -640,7 +612,7 @@ IPivotJoint joint = physicsEngine.CreatePivotJoint(bodyA, bodyB, anchorPoint);
 
 ### 3. Enhanced Abstraction
 - Fixture lifecycle management is abstracted (no more manual Add/Remove)
-- Shape types are unified under ISpatialShape interface
+- Shape types are unified under IShape interface
 - World configuration is centralized and easier to tune
 
 ### 4. Future-Proof Design
@@ -661,8 +633,8 @@ IPivotJoint joint = physicsEngine.CreatePivotJoint(bodyA, bodyB, anchorPoint);
 ### Example Test Structure
 
 ```csharp
-// Test PhysicsBodyAdapter
-public class PhysicsBodyAdapterTests
+// Test PhysicsBody implementation
+public class PhysicsBodyTests
 {
     [Fact]
     public void CreateCircle_ShouldReturnActiveFixture()
@@ -717,24 +689,24 @@ public class PhysicsBodyAdapterTests
 
 ### Phase 1: Interfaces
 
-- [ ] Create all interface definitions
+- [ ] Create all interface definitions in `types/` folder
 - [ ] Define ShapeType enum and SolverConfig class
 - [ ] Review interfaces for completeness
 
 ### Phase 2: Implementations
 
-- [ ] PhysicsBodyAdapter implementation
-- [ ] FixtureAdapter implementation  
-- [ ] SpatialShape adapters (Circle, Rectangle, Polygon)
-- [ ] PhysicsWorldAdapter implementation
-- [ ] Constraint adapter implementations
+- [ ] PhysicsBody implementation (engines/aether/)
+- [ ] Fixture implementation
+- [ ] Shape implementations (Circle, Rectangle, Polygon)
+- [ ] PhysicsWorld implementation
+- [ ] Joint implementations (Revolute, Weld, Distance)
 
 ### Phase 3: Factories & Helpers
 
 - [ ] PhysicsFactory implementation
-- [ ] SpatialShapeFactory implementation
-- [ ] BodyPoolAdapter (wraps WorldPool)
-- [ ] Update existing classes to use adapters
+- [ ] ShapeFactory implementation
+- [ ] BodyPool (wraps WorldPool)
+- [ ] Update existing classes to use new types
 
 ### Phase 4: Testing
 
@@ -755,9 +727,9 @@ public class PhysicsBodyAdapterTests
 ## Related Files Summary
 
 ### Core Implementation Files (Need Conversion)
-- `CoreEssentials/src/gameSystems/physics/PhysicsEngine.cs` - Main entry point, uses Aether.World
-- `CoreEssentials/src/gameSystems/physics/WorldPool.cs` - Body pooling with internal Aether types
-- `CoreEssentials/src/gameSystems/physics/PhysicsDebugRenderer.cs` - Debug rendering using Aether shapes
+- `CoreEssentials.Physics/engines/aether/PhysicsWorld.cs` - Wraps Aether.World
+- `CoreEssentials.Physics/factory/BodyPool.cs` - Body pooling with internal Aether types
+- `CoreEssentials/src/gameSystems/physics/PhysicsDebugRenderer.cs` - Debug rendering using shape interfaces
 
 ### Test Files (Will Need Updates)
 - `CoreEssentials.Tests/GameSystems/Physics/PhysicsEngineTests.cs`

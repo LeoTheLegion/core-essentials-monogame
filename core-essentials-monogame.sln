@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Tests", "Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Playground", "CoreEssentials.Playground\CoreEssentials.Playground.csproj", "{86883A88-935E-471C-94CC-A75BF8047D43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreEssentials.Physics", "CoreEssentials.Physics\CoreEssentials.Physics.csproj", "{19889646-5C86-4EDD-83D5-25E164F3617F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,18 +55,6 @@ Global
 		{86883A88-935E-471C-94CC-A75BF8047D43}.Release|x64.Build.0 = Release|Any CPU
 		{86883A88-935E-471C-94CC-A75BF8047D43}.Release|x86.ActiveCfg = Release|Any CPU
 		{86883A88-935E-471C-94CC-A75BF8047D43}.Release|x86.Build.0 = Release|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Debug|x64.Build.0 = Debug|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Debug|x86.Build.0 = Debug|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Release|x64.ActiveCfg = Release|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Release|x64.Build.0 = Release|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Release|x86.ActiveCfg = Release|Any CPU
-		{19889646-5C86-4EDD-83D5-25E164F3617F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

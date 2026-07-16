@@ -3,7 +3,7 @@
 ## Key Learning: Plug-and-Play GameSystem Integration ⚙️
 
 After discussing with you, I realize the physics library needs to be **BOTH**:
-1. A standalone adapter pattern implementation (for advanced users)
+1. A standalone abstraction layer (for advanced users wanting engine independence)
 2. A drop-in GameSystem that integrates automatically (for quick setup)
 
 ---
@@ -14,32 +14,32 @@ After discussing with you, I realize the physics library needs to be **BOTH**:
 
 ```
 CoreEssentials.Physics/
-├── adapters/interfaces/                 ← Pure interface abstractions (NO Aether refs)
-│   ├── IPhysicsBodyAdapter.cs          ← ONLY user-facing physics object interface ⭐
+├── types/                               ← Pure interface abstractions (NO Aether refs)
+│   ├── IPhysicsBody.cs                 ← ONLY user-facing physics object interface ⭐
 │   │                                     ← Users interact with this DIRECTLY
-│   ├── IFixtureAdapter.cs              ← Internal use only by BodyAdapter 🔒
-│   ├── ISpatialShapeAdapter.cs         ← Internal use only by BodyAdapter/Factory 🔒
-│   ├── IConstraintAdapter.cs           ← Internal use only by Factory 🔒
-│   └── IPhysicsWorldAdapter.cs         ← Internal use ONLY (completely hidden!) 🔒
+│   ├── IFixture.cs                     ← Internal use only by PhysicsBody 🔒
+│   ├── IShape.cs                       ← Internal use only by PhysicsBody/Factory 🔒
+│   ├── IConstraint.cs                  ← Internal use only by Factory 🔒
+│   └── IPhysicsWorld.cs                ← Internal use ONLY (completely hidden!) 🔒
 │
-├── adapters/implementations/            ← Aether wrapper implementations
-│   ├── PhysicsEngineAdapter.cs         ← Wraps world + implements IFixedUpdateGameSystem ⭐
+├── engines/aether/                      ← Aether engine implementations
+│   ├── PhysicsEngine.cs                ← Wraps world + implements IFixedUpdateGameSystem ⭐
 │   │                                     ← Users get this via GetGameSystem<PhysicsEngine>()
-│   ├── BodyAdapter.cs                  ← Implements IPhysicsBody, wraps Aether.Body
-│   ├── FixtureAdapter.cs               ← Implements IFixture (internal only) 🔒
-│   └── ShapeAdapters/                  ← Internal use only (Circle, Rectangle, Polygon) 🔒
-│       ├── CircleShapeAdapter.cs
-│       ├── RectangleShapeAdapter.cs
-│       └── PolygonShapeAdapter.cs
+│   ├── PhysicsBody.cs                  ← Implements IPhysicsBody, wraps Aether.Body
+│   ├── Fixture.cs                      ← Implements IFixture (internal only) 🔒
+│   └── Shapes/                         ← Internal use only (Circle, Rectangle, Polygon) 🔒
+│       ├── CircleShape.cs
+│       ├── RectangleShape.cs
+│       └── PolygonShape.cs
 │
 ├── factory/                             ← Factory classes for creating physics objects
 │   ├── PhysicsFactory.cs               ← Creates bodies via interfaces (internal only) 🔒
-│   └── SpatialShapeFactory.cs          ← Shape creation factory (returns ISpatialShape, internal) 🔒
+│   └── SpatialShapeFactory.cs          ← Shape creation factory (returns IShape, internal) 🔒
 │
 └── CoreEssentials.Physics.csproj        ← References: nkast.Aether.Physics2D.MG + CoreEssentials.dll
 ```
 
-**Key Design Decision:** Users interact ONLY through `IPhysicsBodyAdapter` and the PhysicsEngine GameSystem. The world adapter (`IPhysicsWorldAdapter`) is **COMPLETELY HIDDEN** from users - it's managed internally by PhysicsEngine with no public API exposure. All other adapters (Fixture, Shape, Constraint) are also internal-only 🔒.
+**Key Design Decision:** Users interact ONLY through `IPhysicsBody` and the PhysicsEngine GameSystem. The world type (`IPhysicsWorld`) is **COMPLETELY HIDDEN** from users - it's managed internally by PhysicsEngine with no public API exposure. All other types (Fixture, Shape, Constraint) are also internal-only 🔒.
 
 ---
 
@@ -56,7 +56,7 @@ CoreEssentials.Physics/
 
 **What's included:**
 - CoreEssentials library (game systems, UI, etc.)
-- Physics engine with adapter pattern integrated as a GameSystem
+- Physics engine with abstraction layer integrated as a GameSystem
 - All GameSystem integrations ready to use automatically
 
 **Why this works:**
@@ -68,26 +68,26 @@ CoreEssentials.Physics/
 
 ## Implementation Phases
 
-### Phase 1: Create New Project & Interfaces ✅ (Current Task)
-- `CoreEssentials.Physics/adapters/*.cs` - All interface definitions
+### Phase 1: Create New Project & Types ✅ (Current Task)
+- `CoreEssentials.Physics/types/*.cs` - All interface definitions
 - Ensure NO references to Aether types in interfaces
 
-### Phase 2: Implement Adapters 🛠️ (Next Task)
-- PhysicsEngineAdapter.cs with GameSystem + IFixedUpdateGameSystem inheritance
-- BodyAdapter, FixtureAdapter implementations
-- ShapeAdapters (CircleShape, RectangleShape, PolygonShape wrappers)
+### Phase 2: Implement Engine Wrappers 🛠️ (Next Task)
+- PhysicsEngine.cs with GameSystem + IFixedUpdateGameSystem inheritance
+- PhysicsBody, Fixture implementations
+- Shapes (CircleShape, RectangleShape, PolygonShape wrappers)
 
 ### Phase 3: Factory Classes ⚙️
 - PhysicsFactory for creating worlds/bodies via interfaces
-- SpatialShapeFactory returning ISpatialShape abstractions
+- SpatialShapeFactory returning IShape abstractions
 
 ### Phase 4: Update Existing Code 🔄
-- Migrate old PhysicsEngine.cs to use new adapters internally
-- Update WorldPool to support adapter pattern
-- Modify PhysicsDebugRenderer to accept ISpatialShape instead of Aether types
+- Migrate old PhysicsEngine.cs to use new types internally
+- Update WorldPool to support abstraction layer
+- Modify PhysicsDebugRenderer to accept IShape instead of Aether types
 
 ### Phase 5: Testing & Documentation 📚
-- Unit tests for all adapter implementations
+- Unit tests for all engine implementations
 - Integration tests verifying GameSystem + Factory patterns work together
 - Migration guide showing old API → new API examples
 
