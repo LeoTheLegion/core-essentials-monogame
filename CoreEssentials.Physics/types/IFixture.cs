@@ -1,9 +1,34 @@
+using Microsoft.Xna.Framework;
+
 namespace CoreEssentials.Physics.Types;
 
 /// <summary>
-/// 🔒 Internal use only by PhysicsBody.
+/// 🔒 Internal use only by PhysicsBody. Not exposed to end users.
 /// </summary>
-public interface IFixture
+public interface IFixture : IDisposable
 {
-    // TODO: Define methods for this interface in Sprint 1
+    /// <summary>
+    /// Gets the shape associated with this fixture.
+    /// </summary>
+    IShape Shape { get; }
+
+    /// <summary>
+    /// Gets whether this fixture is currently active in the simulation.
+    /// </summary>
+    bool IsActive { get; }
+
+    /// <summary>
+    /// Gets the body that owns this fixture.
+    /// </summary>
+    IPhysicsBody OwnerBody { get; }
+
+    /// <summary>
+    /// Activates this fixture so it participates in collision detection.
+    /// </summary>
+    void Activate();
+
+    /// <summary>
+    /// Deactivates this fixture so it no longer participates in collision detection.
+    /// </summary>
+    void Deactivate();
 }

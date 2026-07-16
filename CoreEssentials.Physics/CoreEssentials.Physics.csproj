@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aether.Physics2D.MG" Version="2.1.1" />
+    <PackageReference Include="MonoGame.Framework" Version="3.8.5" />
   </ItemGroup>
 
 </Project>

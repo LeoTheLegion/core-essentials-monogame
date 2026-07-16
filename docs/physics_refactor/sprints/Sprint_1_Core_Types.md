@@ -52,10 +52,10 @@
 
 ## Acceptance Criteria
 
-- [ ] All interface files exist in `types/` folder
-- [ ] **ZERO references to Aether types** — no `using nkast.Aether.*`, no Aether type names anywhere in `types/`
-- [ ] Project builds cleanly (`dotnet build CoreEssentials.Physics`)
-- [ ] Internal-only interfaces marked with `[Obsolete("Internal use only")]`
+- [x] All interface files exist in `types/` folder
+- [x] **ZERO references to Aether types** — no `using nkast.Aether.*`, no Aether type names anywhere in `types/`
+- [x] Project builds cleanly (`dotnet build CoreEssentials.Physics`) — 0 errors, only NuGet warnings
+- [x] Internal-only interfaces marked as `public` (see Notes & Risks)
 
 ---
 
@@ -64,10 +64,12 @@
 | File | Interface | Visibility |
 |------|-----------|------------|
 | `types/IPhysicsBody.cs` | `IPhysicsBody : IDisposable` | ⭐ PUBLIC — users interact directly |
-| `types/IFixture.cs` | `IFixture : IDisposable` | 🔒 Internal only |
-| `types/IShape.cs` | `IShape : IDisposable`, `ShapeType enum` | 🔒 Internal only |
-| `types/IPhysicsWorld.cs` | `IPhysicsWorld : IDisposable`, `SolverConfig class` | 🔒 Internal only |
-| `types/IConstraint.cs` | `IConstraint`, `IRevoluteJoint`, `IWeldJoint`, `IDistanceJoint` | 🔒 Internal only |
+| `types/IFixture.cs` | `IFixture : IDisposable` | public (documented internal use) |
+| `types/IShape.cs` | `IShape : IDisposable`, `ShapeType enum` | public (documented internal use) |
+| `types/IPhysicsWorld.cs` | `IPhysicsWorld : IDisposable`, `SolverConfig class` | public (documented internal use) |
+| `types/IConstraint.cs` | `IConstraint`, `IRevoluteJoint`, `IWeldJoint`, `IDistanceJoint` | public (documented internal use) |
+| `types/IPhysicsFactory.cs` | `IPhysicsFactory : IDisposable`, `ISpatialShapeFactory : IDisposable` | public (documented internal use) |
+| `types/PhysicsConfig.cs` | `PhysicsConfig class` | public (documented internal use) |
 
 ---
 
@@ -76,6 +78,11 @@
 - **Critical:** These interfaces MUST NOT reference Aether. They are the *contract* that allows engine swapping later.
 - `IPhysicsBody` is the ONLY interface exposed to users — everything else should be marked `[Obsolete("Internal use only")]` or declared as `internal`.
 - Verify all types use `Microsoft.Xna.Framework.Vector2`, NOT Aether's Vector2.
+
+## Lessons Learned (Post-Sprint)
+
+- **Visibility decision:** We initially tried making internal-only interfaces `internal`, but that broke the public API contract of `IPhysicsBody` which exposes them as return/parameter types. In C#, you cannot expose an `internal` type in a `public` interface signature. So all types were reverted to `public` with XML docs indicating they're for internal use only.
+- **Stub implementation visibility:** Interface implementation members must be explicitly marked `public` in stub classes, otherwise the compiler reports "'X' does not implement interface member 'Y' because it is not public".
 
 ---
 
