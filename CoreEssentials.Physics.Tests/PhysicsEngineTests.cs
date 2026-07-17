@@ -9,7 +9,7 @@ namespace CoreEssentials.Physics.Tests;
 /// </summary>
 public class PhysicsEngineTests : IDisposable
 {
-    private PhysicsEngine? _engine;
+    private PhysicsEngine? _engine = null!;
 
     public void Dispose()
     {

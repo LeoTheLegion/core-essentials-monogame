@@ -23,7 +23,7 @@
   - Implements `IShape`: expose provided vertices array, compute bounding radius and center
   - Support `CreateConvexHull()` — delegate to Aether's convex hull utility
 
-- [ ] **T4: Implement Joint interfaces (0.5 pt)** 🔒
+- [x] **T4: Implement Joint interfaces (0.5 pt)** 🔒
   - `RevoluteJoint.cs` → wraps `Aether.Joints.RevoluteJoint`, implements `IRevoluteJoint`
   - `WeldJoint.cs` → wraps `Aether.Joints.WeldJoint`, implements `IWeldJoint`
   - `DistanceJoint.cs` → wraps `Aether.Joints.DistanceJoint`, implements `IDistanceJoint`
@@ -32,10 +32,10 @@
 
 ## Acceptance Criteria
 
-- [ ] All three shape classes implement `IShape` correctly
-- [ ] Creating a body then calling `.CreateCircle(radius)` produces a valid fixture with correct collision geometry
-- [ ] Joint implementations wrap corresponding Aether joints and expose clean properties
-- [ ] Project builds cleanly
+- [x] All three shape classes implement `IShape` correctly
+- [x] Creating a body then calling `.CreateCircle(radius)` produces a valid fixture with correct collision geometry
+- [x] Joint implementations wrap corresponding Aether joints and expose clean properties
+- [x] Project builds cleanly
 
 ---
 
