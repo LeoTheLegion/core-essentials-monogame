@@ -8,17 +8,17 @@
 
 ## Tasks
 
-- [ ] **T1: Implement `CircleShape.cs` (0.5 pt)** 🔒
+- [x] **T1: Implement `CircleShape.cs` (0.5 pt)** 🔒
   - Wraps `Aether.Collision.Shapes.CircleShape`
   - Implements `IShape`: expose `Center`, `Radius`, `Vertices` (single point for circle)
   - `Translate()`, `Rotate()` → modify underlying Aether shape's offset/transform
 
-- [ ] **T2: Implement `RectangleShape.cs` (0.5 pt)** 🔒
+- [x] **T2: Implement `RectangleShape.cs` (0.5 pt)** 🔒
   - Wraps `Aether.Collision.Shapes.PolygonShape` (constructed from size)
   - Implements `IShape`: expose computed vertices, bounding radius, center
   - Support vertex offset via constructor
 
-- [ ] **T3: Implement `PolygonShape.cs` (0.5 pt)** 🔒
+- [x] **T3: Implement `PolygonShape.cs` (0.5 pt)** 🔒
   - Wraps `Aether.Collision.Shapes.PolygonShape` with explicit vertices
   - Implements `IShape`: expose provided vertices array, compute bounding radius and center
   - Support `CreateConvexHull()` — delegate to Aether's convex hull utility

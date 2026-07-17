@@ -117,16 +117,16 @@ public class FixtureTests : IDisposable
 
     #endregion
 
-    #region Shape Tests (NotImplemented)
+    #region Shape Tests
 
     [Fact]
-    public void Shape_ThrowsNotImplemented()
+    public void Shape_ReturnsNull_ForFixtureWithoutShape()
     {
         // Arrange
         var fixture = CreateTestFixture(BodyType.Dynamic, Vector2.Zero);
 
-        // Act & Assert - Shape is not implemented yet (Sprint 3)
-        Assert.Throws<NotImplementedException>(() => _ = fixture.Shape);
+        // Act & Assert - New fixtures without shape return null
+        Assert.Null(fixture.Shape);
     }
 
     #endregion

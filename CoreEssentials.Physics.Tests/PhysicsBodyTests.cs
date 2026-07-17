@@ -400,46 +400,122 @@ public class PhysicsBodyTests : IDisposable
 
     #endregion
 
-    #region Shape Creation Tests (NotImplemented)
+    #region Shape Creation Tests
 
     [Fact]
-    public void CreateCircle_ThrowsNotImplemented()
+    public void CreateCircle_ReturnsValidFixture()
     {
         // Arrange
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
-        // Act & Assert
-        Assert.Throws<NotImplementedException>(() => body.CreateCircle(1f));
+        // Act
+        var fixture = body.CreateCircle(1f);
+
+        // Assert
+        Assert.NotNull(fixture);
+        Assert.NotNull(fixture.Shape);
     }
 
     [Fact]
-    public void CreateRectangle_ThrowsNotImplemented()
+    public void CreateCircle_WithOffset_SetsPosition()
     {
         // Arrange
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
-        // Act & Assert
-        Assert.Throws<NotImplementedException>(() => body.CreateRectangle(new Vector2(1, 1)));
+        // Act
+        var fixture = body.CreateCircle(1f, new Vector2(5, 0));
+
+        // Assert
+        Assert.NotNull(fixture);
+        Assert.NotNull(fixture.Shape);
     }
 
     [Fact]
-    public void CreatePolygon_ThrowsNotImplemented()
+    public void CreateRectangle_ReturnsValidFixture()
     {
         // Arrange
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
-        // Act & Assert
-        Assert.Throws<NotImplementedException>(() => body.CreatePolygon(Vector2.Zero));
+        // Act
+        var fixture = body.CreateRectangle(new Vector2(2, 1));
+
+        // Assert
+        Assert.NotNull(fixture);
+        Assert.NotNull(fixture.Shape);
     }
 
     [Fact]
-    public void CreateConvexHull_ThrowsNotImplemented()
+    public void CreatePolygon_ReturnsValidFixture()
+    {
+        // Arrange
+        var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
+        var vertices = new[]
+        {
+            new Vector2(0, 0),
+            new Vector2(1, 0),
+            new Vector2(0.5f, 1)
+        };
+
+        // Act
+        var fixture = body.CreatePolygon(vertices);
+
+        // Assert
+        Assert.NotNull(fixture);
+        Assert.NotNull(fixture.Shape);
+    }
+
+    [Fact]
+    public void CreateConvexHull_ReturnsValidFixture()
+    {
+        // Arrange
+        var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
+        var points = new[]
+        {
+            new Vector2(0, 0),
+            new Vector2(1, 0),
+            new Vector2(1, 1),
+            new Vector2(0, 1)
+        };
+
+        // Act
+        var fixture = body.CreateConvexHull(points);
+
+        // Assert
+        Assert.NotNull(fixture);
+        Assert.NotNull(fixture.Shape);
+    }
+
+    [Fact]
+    public void CreatePolygon_ThrowsOnInsufficientVertices()
     {
         // Arrange
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act & Assert
-        Assert.Throws<NotImplementedException>(() => body.CreateConvexHull(Vector2.Zero));
+        var ex = Assert.Throws<ArgumentException>(() => body.CreatePolygon(Vector2.Zero));
+        Assert.Contains("vertices", ex.Message.ToLower());
+    }
+
+    [Fact]
+    public void CreateConvexHull_ThrowsOnInsufficientPoints()
+    {
+        // Arrange
+        var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
+
+        // Act & Assert
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => body.CreateConvexHull(Vector2.Zero));
+        Assert.Contains("points", ex.Message.ToLower());
+    }
+
+    [Fact]
+    public void CreateCircle_ThrowsOnDisposedBody()
+    {
+        // Arrange
+        var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
+        body.Dispose();
+
+        // Act & Assert
+        Assert.Throws<ObjectDisposedException>(() => body.CreateCircle(1f));
     }
 
     #endregion

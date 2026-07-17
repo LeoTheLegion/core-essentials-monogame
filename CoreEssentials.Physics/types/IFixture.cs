@@ -10,7 +10,7 @@ public interface IFixture : IDisposable
     /// <summary>
     /// Gets the shape associated with this fixture.
     /// </summary>
-    IShape Shape { get; }
+    IShape? Shape { get; }
 
     /// <summary>
     /// Gets whether this fixture is currently active in the simulation.

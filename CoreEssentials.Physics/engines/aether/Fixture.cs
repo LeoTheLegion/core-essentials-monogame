@@ -15,6 +15,7 @@ public class Fixture : IFixture
     private readonly World _world;
     internal readonly nkast.Aether.Physics2D.Dynamics.Fixture _aetherFixture;
     private readonly PhysicsBody _ownerBody;
+    private readonly IShape? _shape;
     private bool _disposed;
 
     // Cached reflection info for internal Aether methods (called only when needed).
@@ -30,10 +31,21 @@ public class Fixture : IFixture
     /// <param name="aetherFixture">The underlying Aether fixture.</param>
     /// <param name="ownerBody">The PhysicsBody that owns this fixture.</param>
     public Fixture(World world, nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture, PhysicsBody ownerBody)
+        : this(world, aetherFixture, ownerBody, shape: null) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Fixture"/> class with an associated IShape wrapper.
+    /// </summary>
+    /// <param name="world">The physics world this fixture belongs to.</param>
+    /// <param name="aetherFixture">The underlying Aether fixture.</param>
+    /// <param name="ownerBody">The PhysicsBody that owns this fixture.</param>
+    /// <param name="shape">The IShape wrapper associated with this fixture, if available.</param>
+    internal Fixture(World world, nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture, PhysicsBody ownerBody, IShape? shape)
     {
         _world = world;
         _aetherFixture = aetherFixture ?? throw new ArgumentNullException(nameof(aetherFixture));
         _ownerBody = ownerBody ?? throw new ArgumentNullException(nameof(ownerBody));
+        _shape = shape;
     }
 
     #region IDisposable
@@ -48,10 +60,9 @@ public class Fixture : IFixture
     #endregion
 
     /// <summary>
-    /// Gets the shape associated with this fixture.
-    /// Returns a stub since Shape implementations are in Sprint 3.
+    /// Gets the shape associated with this fixture, or null if not available.
     /// </summary>
-    public IShape Shape => throw new NotImplementedException();
+    public IShape? Shape => _shape;
 
     /// <summary>
     /// Gets whether this fixture is currently active (enabled) in the simulation.

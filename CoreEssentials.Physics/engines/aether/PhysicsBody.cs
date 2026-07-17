@@ -1,3 +1,4 @@
+using CoreEssentials.Physics.Engines.Aether.Shapes;
 using CoreEssentials.Physics.Types;
 using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Collision.Shapes;
@@ -77,22 +78,70 @@ public class PhysicsBody : IPhysicsBody
     /// <summary>
     /// Creates and adds a circle shape fixture to this body.
     /// </summary>
-    public IFixture CreateCircle(float radius, Vector2? offset = null) => throw new NotImplementedException();
+    /// <param name="radius">The radius of the circle.</param>
+    /// <param name="offset">Optional local offset for the circle's center from the body's origin.</param>
+    /// <returns>An IFixture representing the created shape fixture.</returns>
+    public IFixture CreateCircle(float radius, Vector2? offset = null)
+    {
+        if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
+
+        var circle = new CoreEssentials.Physics.Engines.Aether.Shapes.CircleShape(radius, density: 1f);
+        if (offset.HasValue)
+            circle.Translate(offset.Value);
+
+        var aetherFixture = _body.CreateFixture(circle._aetherShape);
+        return new Fixture(_world, aetherFixture, this, circle);
+    }
 
     /// <summary>
     /// Creates and adds a rectangle shape fixture to this body.
     /// </summary>
-    public IFixture CreateRectangle(Vector2 size, Vector2? offset = null) => throw new NotImplementedException();
+    /// <param name="size">The width and height of the rectangle.</param>
+    /// <param name="offset">Optional local offset for the rectangle's center from the body's origin.</param>
+    /// <returns>An IFixture representing the created shape fixture.</returns>
+    public IFixture CreateRectangle(Vector2 size, Vector2? offset = null)
+    {
+        if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
+
+        var rectangle = new CoreEssentials.Physics.Engines.Aether.Shapes.RectangleShape(size.X, size.Y);
+        if (offset.HasValue)
+            rectangle.Translate(offset.Value);
+
+        var aetherFixture = _body.CreateFixture(rectangle._aetherShape);
+        return new Fixture(_world, aetherFixture, this, rectangle);
+    }
 
     /// <summary>
     /// Creates and adds a polygon shape fixture to this body.
     /// </summary>
-    public IFixture CreatePolygon(params Vector2[] vertices) => throw new NotImplementedException();
+    /// <param name="vertices">The vertices defining the polygon in local space.</param>
+    /// <returns>An IFixture representing the created shape fixture.</returns>
+    public IFixture CreatePolygon(params Vector2[] vertices)
+    {
+        if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
+        if (vertices == null || vertices.Length < 3)
+            throw new ArgumentException("At least 3 vertices are required.", nameof(vertices));
+
+        var polygon = new CoreEssentials.Physics.Engines.Aether.Shapes.PolygonShape(vertices);
+
+        var aetherFixture = _body.CreateFixture(polygon._aetherShape);
+        return new Fixture(_world, aetherFixture, this, polygon);
+    }
 
     /// <summary>
     /// Creates and adds a convex hull shape from the given points.
     /// </summary>
-    public IFixture CreateConvexHull(params Vector2[] points) => throw new NotImplementedException();
+    /// <param name="points">The points to compute the convex hull from.</param>
+    /// <returns>An IFixture representing the created shape fixture.</returns>
+    public IFixture CreateConvexHull(params Vector2[] points)
+    {
+        if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
+
+        var polygon = CoreEssentials.Physics.Engines.Aether.Shapes.PolygonShape.CreateConvexHull((IEnumerable<Vector2>)points);
+
+        var aetherFixture = _body.CreateFixture(polygon._aetherShape);
+        return new Fixture(_world, aetherFixture, this, polygon);
+    }
 
     #endregion
 
