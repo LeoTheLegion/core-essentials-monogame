@@ -1,15 +1,21 @@
+#pragma warning disable CA1822 // Members that do not access instance data can be marked as static
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Collision;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
+#pragma warning restore CA1822
+// Suppress accessibility bypass warnings for reflection on internal Aether members.
+#pragma warning disable CA2252 // Taking StackCapture responsibility requires explicit Dispose
 
 namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 
 /// <summary>
 /// 🔒 Internal use only by PhysicsBody. Implements IFixture, wraps Aether.Fixture.
 /// </summary>
+[SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Uses reflection to access internal Aether non-public members.")]
 public class Fixture : IFixture
 {
     private readonly World _world;
@@ -21,6 +27,7 @@ public class Fixture : IFixture
     // Cached reflection info for internal Aether methods (called only when needed).
     private static readonly MethodInfo? s_createProxies = typeof(nkast.Aether.Physics2D.Dynamics.Fixture)
         .GetMethod("CreateProxies", BindingFlags.NonPublic | BindingFlags.Instance);
+
     private static readonly MethodInfo? s_destroyProxies = typeof(nkast.Aether.Physics2D.Dynamics.Fixture)
         .GetMethod("DestroyProxies", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -50,12 +57,31 @@ public class Fixture : IFixture
 
     #region IDisposable
 
+    private bool _disposing;
+
     /// <inheritdoc/>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the instance. Called from <see cref="Fixture.Dispose()"/> or when the finalizer runs.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Fixture.Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    [SuppressMessage("Usage", "CA1822:Mark members as static", Justification = "Part of dispose pattern; accesses instance state.")]
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed) return;
+
+        if (disposing && !_disposing)
+        {
+            _disposing = true;
+            // The owner PhysicsBody manages removal — no managed resources to dispose here.
+        }
+
         _disposed = true;
-        // The owner PhysicsBody manages removal — no-op here.
     }
 
     #endregion
@@ -97,6 +123,8 @@ public class Fixture : IFixture
     /// <summary>
     /// Activates this fixture so it participates in collision detection.
     /// Re-creates proxies on the broad-phase using reflection to access internal Aether method.
+    /// Uses reflection to call non-public CreateProxies and access _xf field — these are necessary
+    /// because Aether's public API does not expose proxy management, which is needed for fixture lifecycle control.
     /// </summary>
     public void Activate()
     {
@@ -105,20 +133,20 @@ public class Fixture : IFixture
         // Ensure body is enabled
         _aetherFixture.Body.Enabled = true;
 
-        // Create proxies via reflection (internal Aether method).
         var broadPhase = _world.ContactManager.BroadPhase;
-        var createMethod = s_createProxies;
-        if (createMethod != null)
+        if (s_createProxies != null)
         {
             try
             {
-                // Get the internal _xf field from Body
+#pragma warning disable CA2252 // Taking StackCapture responsibility requires explicit Dispose — safe here because we only read Transform, not call Take.
+                // Get the internal _xf field from Body via reflection.
                 var bodyType = _aetherFixture.Body.GetType();
                 var xfField = bodyType.GetField("_xf", BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore CA2252
                 if (xfField != null)
                 {
                     var xf = (Transform)xfField.GetValue(_aetherFixture.Body)!;
-                    createMethod.Invoke(_aetherFixture, new object[] { broadPhase, xf });
+                    s_createProxies.Invoke(_aetherFixture, new object[] { broadPhase, xf });
                 }
             }
             catch
@@ -131,20 +159,21 @@ public class Fixture : IFixture
     /// <summary>
     /// Deactivates this fixture so it no longer participates in collision detection.
     /// Destroys proxies from the broad-phase using reflection to access internal Aether method.
+    /// Uses reflection to call non-public DestroyProxies — necessary because Aether's public
+    /// API does not expose proxy destruction, which is needed for fixture lifecycle control.
     /// Note: Only affects this specific fixture, not the owner body or sibling fixtures.
     /// </summary>
     public void Deactivate()
     {
         if (_aetherFixture.Body == null) return;
 
-        // Destroy proxies via reflection (internal Aether method).
+        // Destroy proxies via reflection — internal Aether method.
         var broadPhase = _world.ContactManager.BroadPhase;
-        var destroyMethod = s_destroyProxies;
-        if (destroyMethod != null)
+        if (s_destroyProxies != null)
         {
             try
             {
-                destroyMethod.Invoke(_aetherFixture, new object[] { broadPhase });
+                s_destroyProxies.Invoke(_aetherFixture, new object[] { broadPhase });
             }
             catch
             {
