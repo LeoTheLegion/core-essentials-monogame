@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CoreEssentials.GameSystems;
 using CoreEssentials.Physics.Types;
 using Microsoft.Xna.Framework;
+using nkast.Aether.Physics2D.Collision.Shapes;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
 
@@ -13,6 +14,7 @@ namespace CoreEssentials.Physics.Engines.Aether;
 /// <summary>
 /// ⭐ Main entry point for the physics system. Wraps Aether.World and implements IFixedUpdateGameSystem.
 /// Users interact through this GameSystem to create bodies, set gravity, and step the simulation.
+/// Bodies are automatically pooled on destroy (recycled instead of GC'd) to reduce allocation pressure.
 /// </summary>
 public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IDisposable
 {
@@ -34,6 +36,9 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IDisposable
 
     // Cache of PhysicsBody wrappers keyed by Aether Body — prevents duplicate wrappers.
     private readonly Dictionary<Body, PhysicsBody> _physicsBodies = new();
+
+    // Pool of recycled bodies to reduce GC pressure on frequent create/destroy cycles.
+    private readonly Queue<Body> _bodyPool = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PhysicsEngine"/> class with default gravity (0, -9.81).
@@ -107,8 +112,34 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IDisposable
         if (_world.IsLocked)
             throw new InvalidOperationException("Cannot create bodies while the world is stepping.");
 
-        var aetherBody = _world.CreateBody(position, rotation: 0f, bodyType);
-        var wrapper = new PhysicsBody(_world, aetherBody);
+        // Try pool first before allocating a new body.
+        var aetherBody = _bodyPool.Count > 0
+            ? _bodyPool.Dequeue()
+            : null;
+
+        PhysicsBody wrapper;
+        if (aetherBody != null)
+        {
+            // Recycle: reset position, type, and clear dynamics.
+            aetherBody.Enabled = true;
+            aetherBody.Position = position;
+            aetherBody.BodyType = bodyType;
+            aetherBody.Rotation = 0f;
+            aetherBody.ResetDynamics();
+
+            // Remove all old fixtures (they'll be re-added by the user).
+            foreach (var fixture in aetherBody.FixtureList.ToArray())
+                aetherBody.Remove(fixture);
+
+            wrapper = new PhysicsBody(_world, aetherBody);
+        }
+        else
+        {
+            // Allocate fresh.
+            aetherBody = _world.CreateBody(position, rotation: 0f, bodyType);
+            wrapper = new PhysicsBody(_world, aetherBody);
+        }
+
         _physicsBodies[aetherBody] = wrapper;
         return wrapper;
     }
@@ -118,9 +149,10 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IDisposable
     #region Body Removal
 
     /// <summary>
-    /// Destroys and removes the given body from the simulation. All fixtures and joints attached to it are also destroyed.
+    /// Destroys the given body by removing it from the simulation and recycling it into the pool for reuse.
+    /// All fixtures attached to it are also removed. The Aether Body stays in the world (disabled) so it can be re-enabled on next create.
     /// </summary>
-    /// <param name="body">The physics body to remove.</param>
+    /// <param name="body">The physics body to recycle.</param>
     public void Destroy(IPhysicsBody body)
     {
         if (body is null) return;
@@ -129,20 +161,18 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IDisposable
         var aetherBody = pb?._body;
         if (aetherBody == null) return;
 
-        if (_world.IsLocked)
-        {
-            // Use async removal when world is locked.
-            _world.RemoveAsync(aetherBody);
-        }
-        else
-        {
-            _world.Remove(aetherBody);
-        }
+        // Remove all fixtures.
+        foreach (var fixture in aetherBody.FixtureList.ToArray())
+            aetherBody.Remove(fixture);
 
         _physicsBodies.Remove(aetherBody);
 
-        // Null out the body reference so it becomes unusable (consistent with Dispose behavior)
-        // Note: pb cannot be null here because aetherBody was non-null, and aetherBody comes from pb._body.
+        // Disable and reset — keep body in world so it can be re-enabled from the pool.
+        // This is the same pattern as the old WorldPool.cs: disabled bodies are not simulated.
+        aetherBody.Enabled = false;
+        aetherBody.ResetDynamics();
+        _bodyPool.Enqueue(aetherBody);
+
         pb!._body = null;
     }
 

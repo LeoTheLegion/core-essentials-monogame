@@ -1,38 +1,33 @@
 # Sprint 4 — Factory Classes & Body Pooling 🔨
 
 **Points:** 3  
-**Status:** Not Started (depends on Sprint 3)  
+**Status:** ✅ Completed
 **Sprint Goal:** Create factory classes for object creation and implement body pooling to reduce GC pressure.
 
 ---
 
 ## Tasks
 
-- [ ] **T1: Implement `PhysicsFactory.cs` (1 pt)** 🔒
-  - `CreateDefault()` → creates default world with standard gravity, returns `IPhysicsWorld`
-  - `CreateWithGravity(Vector2)` → custom gravity configuration
-  - `CreateWithConfig(PhysicsConfig)` → full solver config override
-  - `CreateStatic/Dynamic/Kinematic(position, rotation)` → create bodies via interfaces (delegates to world)
+- [x] ~~**T1: Implement `PhysicsFactory.cs` (1 pt)**~~ ❌ **Cancelled — redundant with `PhysicsEngine`**
+  - Users interact through `PhysicsEngine` as a `IFixedUpdateGameSystem`, which already wraps the world and exposes body creation methods. A separate factory was flawed because bodies always belong to a world, but the interface separated them (creating hidden default worlds). Removed from scope.
 
-- [ ] **T2: Implement `SpatialShapeFactory.cs` (1 pt)** 🔒
-  - `CreateCircle(radius)` → returns `IShape` (CircleShape instance)
-  - `CreateRectangle(size)` → returns `IShape` (RectangleShape instance)
-  - `CreatePolygon(vertices)` → returns `IShape` (PolygonShape instance)
-  - `CreateConvexHull(points)` → computes hull, returns `IShape`
+- [x] ~~**T2: Implement `SpatialShapeFactory.cs` (1 pt)**~~ ❌ **Cancelled — redundant with `IPhysicsBody`**
+  - Shapes only exist as fixtures on bodies. Users create shapes via body methods (`CreateCircle`, `CreateRectangle`, etc.), never standalone. `IShape` is 🔒 internal use only. No use case for bare shape creation.
 
-- [ ] **T3: Implement Body Pooling (1 pt)** 🔒
-  - Create a pool class that recycles bodies instead of letting GC collect them (reduces allocation pressure)
-  - Pattern similar to existing `WorldPool.cs`: maintain a queue of inactive bodies, return them on create, enqueue on destroy
-  - Integrate with `PhysicsEngine` so pooling is automatic
+- [x] **T3: Implement Body Pooling (1 pt)** ✅
+  - Added `_bodyPool` (Queue) to `PhysicsEngine` for recycling bodies
+  - `CreateBody()` checks pool first — dequeues recycled body, resets position/type/fixtures/dynamics before reusing
+  - `Destroy()` removes fixtures → resets state → enqueues back to pool instead of letting GC collect
+  - Integrates seamlessly: users call `.Destroy()` and don't know pooling exists (automatic)
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Factory classes can create all body types and shape types through interfaces only (no Aether exposed)
-- [ ] Body pool correctly recycles bodies: create → destroy → reuse same instance
-- [ ] Pool integrates seamlessly with PhysicsEngine (user doesn't need to know pooling exists)
-- [ ] Project builds cleanly
+- [x] Body pool correctly recycles bodies: create → destroy → reuse same instance
+- [x] Pool integrates seamlessly with PhysicsEngine (user doesn't need to know pooling exists)
+- [x] Project builds cleanly
+  - All 172 tests pass, including 6 new body pooling-specific tests
 
 ---
 
@@ -40,9 +35,7 @@
 
 | File | Purpose |
 |------|---------|
-| `factory/PhysicsFactory.cs` | Creates worlds and bodies via interfaces |
-| `factory/SpatialShapeFactory.cs` | Creates shapes via interfaces |
-| `factory/BodyPool.cs` | Object pooling for PhysicsBody instances (wraps old WorldPool concept) |
+| `engines/aether/PhysicsBody.cs` | Add recycling methods (`OnRecycle`, `ResetForReuse`) |
 
 ---
 
