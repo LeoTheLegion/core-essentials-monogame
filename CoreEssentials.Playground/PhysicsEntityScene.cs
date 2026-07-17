@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.GameSystems.Physics;
+using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.Inputs;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Coroutines;
@@ -62,7 +62,7 @@ public class PhysicsEntityScene : Scene
 
             Ball ball = entitySystem.CreateEntity<Ball>(new Vector2(i, y));
             // add Random force to the ball
-            ball.Body.ApplyLinearImpulse(new Vector2(
+            ball.Body.ApplyImpulse(new Vector2(
                 (float)(random.NextDouble() * 10 - 5), 
                 (float)(random.NextDouble() * 10 - 5)
             ));

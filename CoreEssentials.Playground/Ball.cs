@@ -4,17 +4,17 @@ using CoreEssentials.Assets;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.GameSystems.Physics;
+using CoreEssentials.GameSystems.Physics.Engines.Aether;
+using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using nkast.Aether.Physics2D.Dynamics;
 
 namespace CoreEssentials.Playground;
 
 public class Ball : Entity
 {    private Sprite _sprite;
-    private Body _body;
-    private Fixture _collisionFixture;
+    private IPhysicsBody _body;
+    private IFixture _collisionFixture;
     private float _radius;
     private float _scale = 1.0f; // Add a scale field
 
@@ -22,7 +22,7 @@ public class Ball : Entity
 
     private CoroutineOwner _coroutineOwner;
 
-    public Body Body => _body;    
+    public IPhysicsBody Body => _body;    
 
     // Add a Scale property
     public float Scale
@@ -66,12 +66,13 @@ public class Ball : Entity
 
     private void CreatePhysicsBody(PhysicsEngine physicsEngine)
     {
-        this._body = physicsEngine.CreateBody(Position, 0, BodyType.Dynamic);
+        this._body = physicsEngine.CreateDynamic(Position);
         this._body.FixedRotation = false; // Allow rotation
         this._body.Mass = 1f * _scale * _scale; // Scale the mass proportionally to the area (scale squared)
 
         // Create a circle fixture with the scaled radius
-        _collisionFixture = this._body.CreateCircle(_radius * _scale, 1);
+        Vector2 offset = new Vector2(0, 1); // Note: API takes offset as second param for CreateCircle
+        _collisionFixture = this._body.CreateCircle(_radius * _scale, offset);
         _collisionFixture.Restitution = 1f; // Bounciness
     }
 
@@ -79,11 +80,12 @@ public class Ball : Entity
     {
         if (_body != null && _collisionFixture != null)
         {
-            // Remove the old fixture
-            _body.Remove(_collisionFixture);
+            // Remove the old fixture and create new one with updated scale
+            _body.RemoveFixture(_collisionFixture);
             
             // Create a new fixture with the updated scale
-            _collisionFixture = _body.CreateCircle(_radius * _scale, 1);
+            Vector2 offset = new Vector2(0, 1);
+            _collisionFixture = _body.CreateCircle(_radius * _scale, offset);
             _collisionFixture.Restitution = 1f;
             
             // Update mass based on scale
@@ -95,7 +97,7 @@ public class Ball : Entity
     {
         if (_body != null)
         {
-            Position = _body.Position;
+            Position = _body.WorldPosition;
             Rotation = _body.Rotation;
         }
     }
@@ -108,9 +110,9 @@ public class Ball : Entity
             float randomX = (float)(_random.NextDouble() * 2 - 1); // Random value between -1 and 1
             float randomY = (float)(_random.NextDouble() * 2 - 1); // Random value between -1 and 1
 
-            // Apply the random force to the body
-            var forceStr = 500000f;
-            _body.ApplyLinearImpulse(new Vector2(randomX, randomY) * forceStr); // Scale the force
+            // Apply the random impulse to the body (center of mass)
+            var impulseStrength = 500000f;
+            _body.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
 
             // Wait for a short duration before applying the next force
             yield return new WaitForSeconds(_random.Next(1, 5)); // Random wait time between 1 and 5 seconds
