@@ -16,6 +16,7 @@ namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 /// 🔒 Internal use only by PhysicsBody. Implements ICollider, wraps Aether.Fixture.
 /// </summary>
 [SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Uses reflection to access internal Aether non-public members.")]
+[SuppressMessage("Security", "CA2253:Protect against suspicious accessibility bypasses", Justification = "Reflection targets internal Aether physics engine members that are intentionally private. No user data is exposed via these reflections.")]
 public class Collider : ICollider
 {
     private readonly World _world;
@@ -25,11 +26,16 @@ public class Collider : ICollider
     private bool _disposed;
 
     // Cached reflection info for internal Aether methods (called only when needed).
+#pragma warning disable S3011 // Accessibility bypass via reflection on internal Aether members.
     private static readonly MethodInfo? s_createProxies = typeof(nkast.Aether.Physics2D.Dynamics.Fixture)
         .GetMethod("CreateProxies", BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011
 
+    // Cached reflection info for DestroyProxies (internal Aether method).
+#pragma warning disable S3011 // Accessibility bypass via reflection on internal Aether members.
     private static readonly MethodInfo? s_destroyProxies = typeof(nkast.Aether.Physics2D.Dynamics.Fixture)
         .GetMethod("DestroyProxies", BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Collider"/> class.
@@ -139,9 +145,11 @@ public class Collider : ICollider
             try
             {
 #pragma warning disable CA2252 // Taking StackCapture responsibility requires explicit Dispose — safe here because we only read Transform, not call Take.
+#pragma warning disable S3011 // Accessibility bypass via reflection on internal Aether members.                
                 // Get the internal _xf field from Body via reflection.
                 var bodyType = _aetherFixture.Body.GetType();
                 var xfField = bodyType.GetField("_xf", BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011
 #pragma warning restore CA2252
                 if (xfField != null)
                 {

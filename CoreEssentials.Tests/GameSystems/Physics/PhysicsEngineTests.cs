@@ -5,6 +5,7 @@ using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Common;
+#nullable enable
 using Xunit;
 
 namespace CoreEssentials.GameSystems.Physics.Tests;
@@ -14,11 +15,23 @@ namespace CoreEssentials.GameSystems.Physics.Tests;
 /// </summary>
 public class PhysicsEngineTests : IDisposable
 {
-    private PhysicsEngine? _engine = null!;
+    private readonly PhysicsEngine _engine = null!;
+    private bool _disposed;
 
     public void Dispose()
     {
-        _engine?.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            _engine?.Dispose();
+        }
+        _disposed = true;
     }
 
     #region Engine Creation Tests
@@ -411,6 +424,7 @@ public class PhysicsEngineTests : IDisposable
         var ex = Record.Exception(() => engine.CreateDynamic(Vector2.Zero));
         // After disposal, the world is cleared but not null, so body creation may still work
         // The important thing is no unhandled exceptions during disposal
+        Assert.NotNull(ex);
     }
 
     [Fact]

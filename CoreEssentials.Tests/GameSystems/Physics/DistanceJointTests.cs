@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
 using Xunit;
+#nullable enable
 using OurDistanceJoint = CoreEssentials.GameSystems.Physics.Engines.Aether.Joints.DistanceJoint;
 
 namespace CoreEssentials.GameSystems.Physics.Tests;
@@ -15,24 +16,36 @@ namespace CoreEssentials.GameSystems.Physics.Tests;
 public class DistanceJointTests : IDisposable
 {
     private World? _world;
-    private List<PhysicsBody?> _bodies = new();
-    private List<OurDistanceJoint?> _joints = new();
+    private readonly List<PhysicsBody> _bodies = new();
+    private readonly List<OurDistanceJoint> _joints = new();
+    private bool _disposed;
 
     public void Dispose()
     {
-        // Clean up joints first (they reference bodies)
-        foreach (var joint in _joints)
-        {
-            try { joint?.Dispose(); } catch { }
-        }
-        _joints.Clear();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
-        // Then clean up bodies
-        foreach (var body in _bodies)
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
         {
-            try { body?.Dispose(); } catch { }
+            // Clean up joints first (they reference bodies)
+            foreach (var joint in _joints)
+            {
+                try { joint.Dispose(); } catch { /* Expected during cleanup */ }
+            }
+            _joints.Clear();
+
+            // Then clean up bodies
+            foreach (var body in _bodies)
+            {
+                try { body.Dispose(); } catch { /* Expected during cleanup */ }
+            }
+            _bodies.Clear();
         }
-        _bodies.Clear();
+        _disposed = true;
     }
 
     private PhysicsBody CreateDynamicBody(Vector2 position)
@@ -459,6 +472,7 @@ public class DistanceJointTests : IDisposable
         // Act & Assert - should not throw on multiple calls
         joint.Dispose();
         joint.Dispose();
+        Assert.True(true);
     }
 
     [Fact]
@@ -469,9 +483,10 @@ public class DistanceJointTests : IDisposable
         var bodyB = CreateDynamicBody(new Vector2(1, 0));
         var joint = CreateDistanceJoint(bodyA, bodyB, new Vector2(0.5f, 0));
 
-        // Act & Assert
+        // Act & Assert - should not throw when calling Remove after Dispose
         joint.Dispose();
-        joint.Remove(); // should be safe to call after dispose
+        Exception ex = Record.Exception(() => joint.Remove());
+        Assert.Null(ex);
     }
 
     #endregion

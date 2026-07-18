@@ -103,11 +103,22 @@ public class CircleShape : IShape
 
     #region IDisposable
 
+    /// <summary>Releases resources used by this instance.</summary>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the instance. Called from <see cref="Dispose()"/> or when the finalizer runs.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed) return;
+        // No managed resources to dispose (Aether's CircleShape doesn't implement IDisposable).
         _disposed = true;
-        // Aether's CircleShape does not implement IDisposable — no cleanup needed.
     }
 
     #endregion

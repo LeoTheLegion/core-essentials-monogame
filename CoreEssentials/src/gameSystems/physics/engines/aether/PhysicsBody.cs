@@ -14,7 +14,6 @@ public class PhysicsBody : IPhysicsBody
 {
     private readonly World _world;
     internal Body? _body; // Internal so PhysicsEngine can access it for removal
-    private readonly string? _type;
     private readonly List<ICollider> _colliders = new();
     private bool _disposed;
 
@@ -28,7 +27,7 @@ public class PhysicsBody : IPhysicsBody
     {
         _world = world;
         _body = body;
-        _type = type;
+        Type = type;
     }
 
     #region IDisposable
@@ -36,10 +35,25 @@ public class PhysicsBody : IPhysicsBody
     /// <inheritdoc/>
     public void Dispose()
     {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the instance. Called from <see cref="Dispose()"/> or when the finalizer runs.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed) return;
+
+        if (disposing)
+        {
+            // Signal the world to remove this body — do not dispose here, let PhysicsEngine manage removal.
+            _body = null;
+        }
+
         _disposed = true;
-        // Signal the world to remove this body — do not dispose here, let PhysicsEngine manage removal.
-        _body = null;
     }
 
     #endregion
@@ -66,11 +80,7 @@ public class PhysicsBody : IPhysicsBody
     #region Type & Category
 
     /// <inheritdoc/>
-    public string? Type
-    {
-        get => _type;
-        set { /* type is set at creation, stored but not mutated on body */ }
-    }
+    public string? Type { get; set; } // Stored internally for filtering; does not affect Aether body.
 
     /// <inheritdoc/>
     public bool IsStatic => _body?.BodyType == BodyType.Static;

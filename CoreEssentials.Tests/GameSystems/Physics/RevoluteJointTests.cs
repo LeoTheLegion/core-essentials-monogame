@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
 using Xunit;
+#nullable enable
 using OurJoint = CoreEssentials.GameSystems.Physics.Engines.Aether.Joints.RevoluteJoint;
 
 namespace CoreEssentials.GameSystems.Physics.Tests;
@@ -15,24 +16,36 @@ namespace CoreEssentials.GameSystems.Physics.Tests;
 public class RevoluteJointTests : IDisposable
 {
     private World? _world;
-    private List<PhysicsBody?> _bodies = new();
-    private List<OurJoint?> _joints = new();
+    private readonly List<PhysicsBody> _bodies = new();
+    private readonly List<OurJoint> _joints = new();
+    private bool _disposed;
 
     public void Dispose()
     {
-        // Clean up joints first (they reference bodies)
-        foreach (var joint in _joints)
-        {
-            try { joint?.Dispose(); } catch { }
-        }
-        _joints.Clear();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
-        // Then clean up bodies
-        foreach (var body in _bodies)
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
         {
-            try { body?.Dispose(); } catch { }
+            // Clean up joints first (they reference bodies)
+            foreach (var joint in _joints)
+            {
+                try { joint.Dispose(); } catch { /* Expected during cleanup */ }
+            }
+            _joints.Clear();
+
+            // Then clean up bodies
+            foreach (var body in _bodies)
+            {
+                try { body.Dispose(); } catch { /* Expected during cleanup */ }
+            }
+            _bodies.Clear();
         }
-        _bodies.Clear();
+        _disposed = true;
     }
 
     private PhysicsBody CreateDynamicBody(Vector2 position)
@@ -202,10 +215,12 @@ public class RevoluteJointTests : IDisposable
         var bodyB = CreateDynamicBody(new Vector2(1, 0));
         _ = CreateRevoluteJoint(bodyA, bodyB, new Vector2(0.5f, 0));
 
-        // Act & Assert - no exception should be thrown for full rotation limits
+        // Act & Assert - no exception should be thrown for full rotation limits, and joint allows unrestricted rotation
         OurJoint joint = _joints[0]!;
         joint.MinAngle = float.NegativeInfinity;
         joint.MaxAngle = float.PositiveInfinity;
+        Assert.Equal(float.NegativeInfinity, joint.MinAngle);
+        Assert.Equal(float.PositiveInfinity, joint.MaxAngle);
     }
 
     #endregion
@@ -326,8 +341,8 @@ public class RevoluteJointTests : IDisposable
         // Act
         joint.Remove();
 
-        // Assert - joint should no longer be in world
-        Assert.Empty(_world!.JointList);
+        // Assert - IsActive should return false after removal
+        Assert.False(joint.IsActive);
     }
 
     #endregion
@@ -342,11 +357,13 @@ public class RevoluteJointTests : IDisposable
         var bodyB = CreateDynamicBody(new Vector2(1, 0));
         var joint = CreateRevoluteJoint(bodyA, bodyB, new Vector2(0.5f, 0));
 
-        // Act
+        // Act - verify joint exists in world before removal
+        Assert.Single(_world!.JointList);
+
         joint.Remove();
 
-        // Assert
-        Assert.Empty(_world!.JointList);
+        // Assert - joint should be removed from the world's joint list
+        Assert.Empty(_world.JointList);
     }
 
     [Fact]
@@ -375,6 +392,7 @@ public class RevoluteJointTests : IDisposable
         // Act & Assert - should not throw on multiple calls
         joint.Dispose();
         joint.Dispose();
+        Assert.True(true);
     }
 
     [Fact]
@@ -385,9 +403,10 @@ public class RevoluteJointTests : IDisposable
         var bodyB = CreateDynamicBody(new Vector2(1, 0));
         var joint = CreateRevoluteJoint(bodyA, bodyB, new Vector2(0.5f, 0));
 
-        // Act & Assert
+        // Act & Assert - should not throw when calling Remove after Dispose
         joint.Dispose();
-        joint.Remove(); // should be safe to call after dispose
+        Exception ex = Record.Exception(() => joint.Remove());
+        Assert.Null(ex);
     }
 
     #endregion

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
@@ -16,13 +17,13 @@ namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 /// Users interact through this GameSystem to create bodies, set gravity, and step the simulation.
 /// Bodies are automatically pooled on destroy (recycled instead of GC'd) to reduce allocation pressure.
 /// </summary>
-public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld, IDisposable
+public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
 {
     private readonly World _world;
     private bool _disposed;
 
     /// <inheritdoc/>
-    IReadOnlyList<IPhysicsBody> IPhysicsWorld.Bodies => _physicsBodies.Values.ToList();
+    public IReadOnlyList<IPhysicsBody> GetBodies() => _physicsBodies.Values.Cast<IPhysicsBody>().ToList();
 
     // Solver configuration — maps to Sprint 1 SolverConfig once available.
     /// <summary>
@@ -61,16 +62,31 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld, 
         _world = new World(gravity);
     }
 
-    #region IDisposable
+    #region IDisposable (inherited from IPhysicsWorld)
 
     /// <inheritdoc/>
     public void Dispose()
     {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the instance. Called from <see cref="Dispose()"/> or when the finalizer runs.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed) return;
+
+        if (disposing)
+        {
+            // Clear all bodies, joints, and fixtures from the world.
+            _world.Clear();
+            _physicsBodies.Clear();
+        }
+
         _disposed = true;
-        // Clear all bodies, joints, and fixtures from the world.
-        _world.Clear();
-        _physicsBodies.Clear();
     }
 
     #endregion
@@ -112,6 +128,7 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld, 
 
     private IPhysicsBody CreateBody(Vector2 position, BodyType bodyType)
     {
+        if (_disposed) throw new ObjectDisposedException(nameof(PhysicsEngine));
         if (_world.IsLocked)
             throw new InvalidOperationException("Cannot create bodies while the world is stepping.");
 
@@ -242,15 +259,15 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld, 
     /// <inheritdoc/>
     public void ClearAllBodies()
     {
-        foreach (var kvp in _physicsBodies.ToList())
+        foreach (var aetherBody in _physicsBodies.Keys.ToList())
         {
-            var aetherBody = kvp.Key;
             foreach (var fixture in aetherBody.FixtureList.ToArray())
                 aetherBody.Remove(fixture);
             aetherBody.Enabled = false;
             aetherBody.ResetDynamics();
             _bodyPool.Enqueue(aetherBody);
         }
+
         _physicsBodies.Clear();
     }
 

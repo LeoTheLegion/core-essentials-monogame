@@ -5,6 +5,7 @@ using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
+#nullable enable
 using Xunit;
 using OurFixture = CoreEssentials.GameSystems.Physics.Engines.Aether.Collider;
 
@@ -16,16 +17,28 @@ namespace CoreEssentials.GameSystems.Physics.Tests;
 public class FixtureTests : IDisposable
 {
     private World? _world;
-    private List<PhysicsBody?> _bodies = new();
+    private readonly List<PhysicsBody> _bodies = new();
+    private bool _disposed;
 
     public void Dispose()
     {
-        // Clean up all bodies first (which contain fixtures)
-        foreach (var body in _bodies)
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
         {
-            try { body?.Dispose(); } catch { }
+            // Clean up all bodies first (which contain fixtures)
+            foreach (var body in _bodies)
+            {
+                try { body.Dispose(); } catch { /* Expected during cleanup */ }
+            }
+            _bodies.Clear();
         }
-        _bodies.Clear();
+        _disposed = true;
 
         // Note: Aether's World doesn't implement IDisposable, so we don't dispose it
     }
@@ -38,7 +51,7 @@ public class FixtureTests : IDisposable
         var aetherBody = _world.CreateBody(position, rotation: 0f, type);
 
         // Aether.Body.CreateRectangle(radiusX, radiusY, density, offset) - uses rectangle shape with rounded corners
-        var aetherFixture = aetherBody.CreateCircle(1.0f, 1.0f, Vector2.Zero);
+        aetherBody.CreateCircle(1.0f, 1.0f, Vector2.Zero);
 
         var wrapper = new PhysicsBody(_world, aetherBody);
         _bodies.Add(wrapper);
@@ -235,8 +248,8 @@ public class FixtureTests : IDisposable
         aetherBody.CreateCircle(2.0f, 2.0f, Vector2.Zero);
 
         // Create two fixtures on the same body
-        var fixture1 = new OurFixture(_world, aetherBody.FixtureList.First(), new PhysicsBody(_world, aetherBody));
-        var fixture2 = new OurFixture(_world, aetherBody.FixtureList.Last(), new PhysicsBody(_world, aetherBody));
+        var fixture1 = new OurFixture(_world, aetherBody.FixtureList[0], new PhysicsBody(_world, aetherBody));
+        var fixture2 = new OurFixture(_world, aetherBody.FixtureList[^1], new PhysicsBody(_world, aetherBody));
 
         // Act & Assert - verify no exception is thrown when disposing both
         Exception ex = Record.Exception(() =>

@@ -4,6 +4,7 @@ using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
+#nullable enable
 using Xunit;
 
 namespace CoreEssentials.GameSystems.Physics.Tests;
@@ -14,16 +15,28 @@ namespace CoreEssentials.GameSystems.Physics.Tests;
 public class PhysicsBodyTests : IDisposable
 {
     private World? _world;
-    private List<PhysicsBody?> _bodies = new();
+    private readonly List<PhysicsBody> _bodies = new();
+    private bool _disposed;
 
     public void Dispose()
     {
-        // Clean up all bodies first
-        foreach (var body in _bodies)
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
         {
-            try { body?.Dispose(); } catch { }
+            // Clean up all bodies first
+            foreach (var body in _bodies)
+            {
+                try { body.Dispose(); } catch { /* Expected during cleanup */ }
+            }
+            _bodies.Clear();
         }
-        _bodies.Clear();
+        _disposed = true;
 
         // Note: Aether's World doesn't implement IDisposable, so we don't dispose it
     }

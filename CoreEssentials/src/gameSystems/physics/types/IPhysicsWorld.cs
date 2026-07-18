@@ -45,5 +45,5 @@ public interface IPhysicsWorld : IDisposable
     /// <summary>
     /// Gets all bodies currently in this world.
     /// </summary>
-    IReadOnlyList<IPhysicsBody> Bodies { get; }
+    IReadOnlyList<IPhysicsBody> GetBodies();
 }

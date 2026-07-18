@@ -10,7 +10,11 @@ namespace CoreEssentials.GameSystems.Physics.Engines.Aether.Shapes;
 public class PolygonShape : IShape
 {
     internal readonly AEPolygon _aetherShape;
+
+    /// <summary>The local space offset applied to this shape's position.</summary>
     protected Vector2 _localOffset = Vector2.Zero;
+
+    /// <summary>The local space rotation (in radians) applied to this shape.</summary>
     protected float _localRotation = 0f;
     private bool _disposed;
 
@@ -142,9 +146,19 @@ public class PolygonShape : IShape
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the instance. Called from <see cref="Dispose()"/> or when the finalizer runs.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed) return;
+        // No managed resources to dispose (Aether's PolygonShape doesn't implement IDisposable).
         _disposed = true;
-        // Aether's PolygonShape does not implement IDisposable — no cleanup needed.
     }
 
     #endregion
@@ -227,8 +241,6 @@ public class PolygonShape : IShape
     {
         // Aether's TestPoint expects world-space or body-transform coordinates.
         // Since our shape has no body transform, we use the identity transform manually.
-        var nx = point.X;
-        var ny = point.Y;
 
         for (int i = 0; i < _aetherShape.Vertices.Count; i++)
         {

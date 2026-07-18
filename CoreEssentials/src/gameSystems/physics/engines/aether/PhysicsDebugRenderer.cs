@@ -9,10 +9,9 @@ namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 /// Debug renderer for physics bodies that visualizes physics shapes and colliders.
 /// Provides visual representation of the physics entities in the game world using our abstraction layer.
 /// </summary>
-public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposable
+public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
 {
     private readonly IPhysicsWorld _world;
-    private bool _drawDebug = false;
 
     /// <summary>
     /// Initializes a new instance of the PhysicsDebugRenderer class.
@@ -25,23 +24,35 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
 
     private bool _disposed;
 
-    #region IDisposable
+    #region IDisposable (inherited from IPhysicsDebugRenderer)
 
     /// <inheritdoc />
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the instance. Called from <see cref="Dispose()"/> or when the finalizer runs.
+    /// </summary>
+    /// <param name="disposing">True if called from <see cref="Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed) return;
+
+        if (disposing)
+        {
+            // No managed resources to dispose.
+        }
+
         _disposed = true;
     }
 
     #endregion
 
     /// <inheritdoc />
-    public bool IsEnabled 
-    { 
-        get => _drawDebug; 
-        set => _drawDebug = value; 
-    }
+    public bool IsEnabled { get; set; }
 
     /// <summary>
     /// Draws debug visualizations for all physics bodies.
@@ -49,12 +60,12 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
     /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
     public void Draw(SpriteBatch spriteBatch)
     {
-        if (!_drawDebug)
+        if (!IsEnabled)
             return;
 
         spriteBatch.Begin();
 
-        foreach (var body in _world.Bodies)
+        foreach (var body in _world.GetBodies())
         {
             var position = body.WorldPosition;
             var rotation = body.Rotation;
@@ -74,7 +85,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
     /// <summary>
     /// Draws a physics fixture based on its shape type.
     /// </summary>
-    private void DrawFixture(SpriteBatch spriteBatch, ICollider fixture, Vector2 position, float rotation)
+    private static void DrawFixture(SpriteBatch spriteBatch, ICollider fixture, Vector2 position, float rotation)
     {
         var shape = fixture.Shape;
         if (shape == null)
@@ -95,7 +106,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
     /// <summary>
     /// Draws a circular physics shape.
     /// </summary>
-    private void DrawCircle(SpriteBatch spriteBatch, IShape shape, Vector2 bodyPosition, float rotation)
+    private static void DrawCircle(SpriteBatch spriteBatch, IShape shape, Vector2 bodyPosition, float rotation)
     {
         var center = bodyPosition + RotateVector(shape.Center, rotation);
         var radius = shape.Radius;
@@ -111,7 +122,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
     /// <summary>
     /// Draws a polygon or rectangle physics shape.
     /// </summary>
-    private void DrawPolygon(SpriteBatch spriteBatch, IShape shape, Vector2 bodyPosition, float rotation)
+    private static void DrawPolygon(SpriteBatch spriteBatch, IShape shape, Vector2 bodyPosition, float rotation)
     {
         var vertices = shape.Vertices;
 

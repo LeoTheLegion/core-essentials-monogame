@@ -58,10 +58,16 @@ public interface IShape : IDisposable
 /// </summary>
 public enum ShapeType
 {
+    /// <summary>Unknown or unspecified shape type.</summary>
     Unknown,
+    /// <summary>A circular shape defined by a center point and radius.</summary>
     Circle,
+    /// <summary>A rectangular shape defined by width and height.</summary>
     Rectangle,
+    /// <summary>A polygonal shape defined by multiple vertices.</summary>
     Polygon,
+    /// <summary>A convex hull computed from a set of points.</summary>
     ConvexHull,
+    /// <summary>A line segment between two points.</summary>
     LineSegment
 }
