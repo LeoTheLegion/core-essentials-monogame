@@ -14,7 +14,7 @@ namespace CoreEssentials.Playground;
 public class Ball : Entity
 {    private Sprite _sprite;
     private IPhysicsBody _body;
-    private IFixture _collisionFixture;
+    private ICollider _collisionFixture;
     private float _radius;
     private float _scale = 1.0f; // Add a scale field
 
@@ -72,7 +72,7 @@ public class Ball : Entity
 
         // Create a circle fixture with the scaled radius
         Vector2 offset = new Vector2(0, 1); // Note: API takes offset as second param for CreateCircle
-        _collisionFixture = this._body.CreateCircle(_radius * _scale, offset);
+        _collisionFixture = this._body.CreateCircleCollider(_radius * _scale, offset);
         _collisionFixture.Restitution = 1f; // Bounciness
     }
 
@@ -81,11 +81,11 @@ public class Ball : Entity
         if (_body != null && _collisionFixture != null)
         {
             // Remove the old fixture and create new one with updated scale
-            _body.RemoveFixture(_collisionFixture);
+            _body.RemoveCollider(_collisionFixture);
             
             // Create a new fixture with the updated scale
             Vector2 offset = new Vector2(0, 1);
-            _collisionFixture = _body.CreateCircle(_radius * _scale, offset);
+            _collisionFixture = _body.CreateCircleCollider(_radius * _scale, offset);
             _collisionFixture.Restitution = 1f;
             
             // Update mass based on scale

@@ -209,7 +209,7 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld, 
     /// </summary>
     /// <param name="point">Point in world coordinates.</param>
     /// <returns>The first fixture containing the point, or null if none found.</returns>
-    public IFixture? TestPoint(Vector2 point)
+    public ICollider? TestPoint(Vector2 point)
     {
         var aetherFixture = _world.TestPoint(point);
         return aetherFixture != null ? GetWrapperFor(aetherFixture) : null;
@@ -269,10 +269,10 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld, 
     /// <summary>
     /// Retrieves or creates the IFixture wrapper for an Aether fixture.
     /// </summary>
-    private IFixture? GetWrapperFor(nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture)
+    private ICollider? GetWrapperFor(nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture)
     {
         if (aetherFixture.Body != null && _physicsBodies.TryGetValue(aetherFixture.Body, out var owner))
-            return new Fixture(_world, aetherFixture, owner);
+            return new Collider(_world, aetherFixture, owner);
         return null;
     }
 }

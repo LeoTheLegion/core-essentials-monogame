@@ -59,7 +59,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
             var position = body.WorldPosition;
             var rotation = body.Rotation;
 
-            foreach (var fixture in body.Fixtures)
+            foreach (var fixture in body.Colliders)
             {
                 if (!fixture.IsActive)
                     continue;
@@ -74,7 +74,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer, IDisposab
     /// <summary>
     /// Draws a physics fixture based on its shape type.
     /// </summary>
-    private void DrawFixture(SpriteBatch spriteBatch, IFixture fixture, Vector2 position, float rotation)
+    private void DrawFixture(SpriteBatch spriteBatch, ICollider fixture, Vector2 position, float rotation)
     {
         var shape = fixture.Shape;
         if (shape == null)

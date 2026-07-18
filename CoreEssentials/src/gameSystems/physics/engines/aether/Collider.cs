@@ -13,10 +13,10 @@ using nkast.Aether.Physics2D.Dynamics;
 namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 
 /// <summary>
-/// 🔒 Internal use only by PhysicsBody. Implements IFixture, wraps Aether.Fixture.
+/// 🔒 Internal use only by PhysicsBody. Implements ICollider, wraps Aether.Fixture.
 /// </summary>
 [SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Uses reflection to access internal Aether non-public members.")]
-public class Fixture : IFixture
+public class Collider : ICollider
 {
     private readonly World _world;
     internal readonly nkast.Aether.Physics2D.Dynamics.Fixture _aetherFixture;
@@ -32,22 +32,22 @@ public class Fixture : IFixture
         .GetMethod("DestroyProxies", BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Fixture"/> class.
+    /// Initializes a new instance of the <see cref="Collider"/> class.
     /// </summary>
     /// <param name="world">The physics world this fixture belongs to.</param>
     /// <param name="aetherFixture">The underlying Aether fixture.</param>
     /// <param name="ownerBody">The PhysicsBody that owns this fixture.</param>
-    public Fixture(World world, nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture, PhysicsBody ownerBody)
+    public Collider(World world, nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture, PhysicsBody ownerBody)
         : this(world, aetherFixture, ownerBody, shape: null) { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Fixture"/> class with an associated IShape wrapper.
+    /// Initializes a new instance of the <see cref="Collider"/> class with an associated IShape wrapper.
     /// </summary>
     /// <param name="world">The physics world this fixture belongs to.</param>
     /// <param name="aetherFixture">The underlying Aether fixture.</param>
     /// <param name="ownerBody">The PhysicsBody that owns this fixture.</param>
     /// <param name="shape">The IShape wrapper associated with this fixture, if available.</param>
-    internal Fixture(World world, nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture, PhysicsBody ownerBody, IShape? shape)
+    internal Collider(World world, nkast.Aether.Physics2D.Dynamics.Fixture aetherFixture, PhysicsBody ownerBody, IShape? shape)
     {
         _world = world;
         _aetherFixture = aetherFixture ?? throw new ArgumentNullException(nameof(aetherFixture));
@@ -67,9 +67,9 @@ public class Fixture : IFixture
     }
 
     /// <summary>
-    /// Disposes the instance. Called from <see cref="Fixture.Dispose()"/> or when the finalizer runs.
+    /// Disposes the instance. Called from <see cref="Collider.Dispose()"/> or when the finalizer runs.
     /// </summary>
-    /// <param name="disposing">True if called from <see cref="Fixture.Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
+    /// <param name="disposing">True if called from <see cref="Collider.Dispose()"/> (managed resources can be released); false if called from the finalizer.</param>
     [SuppressMessage("Usage", "CA1822:Mark members as static", Justification = "Part of dispose pattern; accesses instance state.")]
     protected virtual void Dispose(bool disposing)
     {
@@ -87,13 +87,13 @@ public class Fixture : IFixture
     #endregion
 
     /// <summary>
-    /// Gets the shape associated with this fixture, or null if not available.
+    /// Gets the shape associated with this collider, or null if not available.
     /// </summary>
     public IShape? Shape => _shape;
 
     /// <summary>
-    /// Gets whether this fixture is currently active (enabled) in the simulation.
-    /// A fixture is considered active if it has proxies registered on the broad-phase.
+    /// Gets whether this collider is currently active (enabled) in the simulation.
+    /// A collider is considered active if it has proxies registered on the broad-phase.
     /// </summary>
     public bool IsActive => _aetherFixture.ProxyCount > 0;
 
@@ -121,7 +121,7 @@ public class Fixture : IFixture
     }
 
     /// <summary>
-    /// Activates this fixture so it participates in collision detection.
+    /// Activates this Collider so it participates in collision detection.
     /// Re-creates proxies on the broad-phase using reflection to access internal Aether method.
     /// Uses reflection to call non-public CreateProxies and access _xf field — these are necessary
     /// because Aether's public API does not expose proxy management, which is needed for fixture lifecycle control.
@@ -157,7 +157,7 @@ public class Fixture : IFixture
     }
 
     /// <summary>
-    /// Deactivates this fixture so it no longer participates in collision detection.
+    /// Deactivates this collider so it no longer participates in collision detection.
     /// Destroys proxies from the broad-phase using reflection to access internal Aether method.
     /// Uses reflection to call non-public DestroyProxies — necessary because Aether's public
     /// API does not expose proxy destruction, which is needed for fixture lifecycle control.

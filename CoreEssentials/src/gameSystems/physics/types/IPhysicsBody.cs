@@ -50,7 +50,7 @@ public interface IPhysicsBody : IDisposable
     /// <param name="radius">Radius of the circle.</param>
     /// <param name="offset">Local offset from the body's center.</param>
     /// <returns>The created fixture (internal use only).</returns>
-    IFixture CreateCircle(float radius, Vector2? offset = null);
+    ICollider CreateCircleCollider(float radius, Vector2? offset = null);
 
     /// <summary>
     /// Creates and adds a rectangle shape fixture to this body.
@@ -58,21 +58,21 @@ public interface IPhysicsBody : IDisposable
     /// <param name="size">Width and height of the rectangle.</param>
     /// <param name="offset">Local offset from the body's center.</param>
     /// <returns>The created fixture (internal use only).</returns>
-    IFixture CreateRectangle(Vector2 size, Vector2? offset = null);
+    ICollider CreateRectangleCollider(Vector2 size, Vector2? offset = null);
 
     /// <summary>
     /// Creates and adds a polygon shape fixture to this body.
     /// </summary>
     /// <param name="vertices">Array of vertices in local space (counter-clockwise order).</param>
     /// <returns>The created fixture (internal use only).</returns>
-    IFixture CreatePolygon(params Vector2[] vertices);
+    ICollider CreatePolygonCollider(params Vector2[] vertices);
 
     /// <summary>
     /// Creates and adds a convex hull shape from the given points.
     /// </summary>
     /// <param name="points">Points to compute the convex hull from.</param>
     /// <returns>The created fixture (internal use only).</returns>
-    IFixture CreateConvexHull(params Vector2[] points);
+    ICollider CreateConvexHullCollider(params Vector2[] points);
 
     // ─── Fixture Access ─────────────────────────────────────────────────
 
@@ -80,19 +80,19 @@ public interface IPhysicsBody : IDisposable
     /// Gets all fixtures attached to this body.
     /// Primarily used for debugging/visualization purposes.
     /// </summary>
-    IReadOnlyList<IFixture> Fixtures { get; }
+    IReadOnlyList<ICollider> Colliders { get; }
 
     // ─── Fixture Management ─────────────────────────────────────────────
 
     /// <summary>
-    /// Adds a fixture to this body.
+    /// Adds a collider to this body.
     /// </summary>
-    void AddFixture(IFixture fixture);
+    void AddCollider(ICollider fixture);
 
     /// <summary>
-    /// Removes a fixture from this body.
+    /// Removes a collider from this body.
     /// </summary>
-    void RemoveFixture(IFixture fixture);
+    void RemoveCollider(ICollider fixture);
 
     // ─── Material Properties ────────────────────────────────────────────
 

@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
 using Xunit;
-using OurFixture = CoreEssentials.GameSystems.Physics.Engines.Aether.Fixture;
+using OurFixture = CoreEssentials.GameSystems.Physics.Engines.Aether.Collider;
 
 namespace CoreEssentials.GameSystems.Physics.Tests;
 

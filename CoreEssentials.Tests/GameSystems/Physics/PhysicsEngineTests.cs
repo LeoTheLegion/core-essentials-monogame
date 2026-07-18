@@ -492,7 +492,7 @@ public class PhysicsEngineTests : IDisposable
         var body1 = engine.CreateDynamic(new Vector2(10, 20));
 
         // Use fixture count to confirm initial state.
-        body1.CreateCircle(radius: 1f);
+        body1.CreateCircleCollider(radius: 1f);
         Assert.True(body1.Mass > 0); // Has a fixture with mass
 
         // Act — destroy and create again.
@@ -562,8 +562,8 @@ public class PhysicsEngineTests : IDisposable
         // Arrange — create a body with fixtures.
         var engine = new PhysicsEngine(Vector2.Zero);
         var body = engine.CreateDynamic(new Vector2(0, 0));
-        _ = body.CreateCircle(radius: 1f);
-        _ = body.CreateRectangle(new Vector2(2, 2));
+        _ = body.CreateCircleCollider(radius: 1f);
+        _ = body.CreateRectangleCollider(new Vector2(2, 2));
 
         // Act — destroy the body.
         engine.Destroy(body);

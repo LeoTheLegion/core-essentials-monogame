@@ -413,7 +413,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act
-        var fixture = body.CreateCircle(1f);
+        var fixture = body.CreateCircleCollider(1f);
 
         // Assert
         Assert.NotNull(fixture);
@@ -427,7 +427,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act
-        var fixture = body.CreateCircle(1f, new Vector2(5, 0));
+        var fixture = body.CreateCircleCollider(1f, new Vector2(5, 0));
 
         // Assert
         Assert.NotNull(fixture);
@@ -441,7 +441,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act
-        var fixture = body.CreateRectangle(new Vector2(2, 1));
+        var fixture = body.CreateRectangleCollider(new Vector2(2, 1));
 
         // Assert
         Assert.NotNull(fixture);
@@ -461,7 +461,7 @@ public class PhysicsBodyTests : IDisposable
         };
 
         // Act
-        var fixture = body.CreatePolygon(vertices);
+        var fixture = body.CreatePolygonCollider(vertices);
 
         // Assert
         Assert.NotNull(fixture);
@@ -482,7 +482,7 @@ public class PhysicsBodyTests : IDisposable
         };
 
         // Act
-        var fixture = body.CreateConvexHull(points);
+        var fixture = body.CreateConvexHullCollider(points);
 
         // Assert
         Assert.NotNull(fixture);
@@ -496,7 +496,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act & Assert
-        var ex = Assert.Throws<ArgumentException>(() => body.CreatePolygon(Vector2.Zero));
+        var ex = Assert.Throws<ArgumentException>(() => body.CreatePolygonCollider(Vector2.Zero));
         Assert.Contains("vertices", ex.Message.ToLower());
     }
 
@@ -507,7 +507,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act & Assert
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => body.CreateConvexHull(Vector2.Zero));
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => body.CreateConvexHullCollider(Vector2.Zero));
         Assert.Contains("points", ex.Message.ToLower());
     }
 
@@ -519,7 +519,7 @@ public class PhysicsBodyTests : IDisposable
         body.Dispose();
 
         // Act & Assert
-        Assert.Throws<ObjectDisposedException>(() => body.CreateCircle(1f));
+        Assert.Throws<ObjectDisposedException>(() => body.CreateCircleCollider(1f));
     }
 
     #endregion
@@ -533,7 +533,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act & Assert - verify no exception is thrown (currently a no-op)
-        Exception ex = Record.Exception(() => body.AddFixture(null!));
+        Exception ex = Record.Exception(() => body.AddCollider(null!));
         Assert.Null(ex);
     }
 
@@ -544,7 +544,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
 
         // Act & Assert - verify no exception is thrown (currently a no-op)
-        Exception ex = Record.Exception(() => body.RemoveFixture(null!));
+        Exception ex = Record.Exception(() => body.RemoveCollider(null!));
         Assert.Null(ex);
     }
 

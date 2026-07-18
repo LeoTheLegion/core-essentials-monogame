@@ -15,7 +15,7 @@ public class PhysicsBody : IPhysicsBody
     private readonly World _world;
     internal Body? _body; // Internal so PhysicsEngine can access it for removal
     private readonly string? _type;
-    private readonly List<IFixture> _fixtures = new();
+    private readonly List<ICollider> _colliders = new();
     private bool _disposed;
 
     /// <summary>
@@ -33,6 +33,7 @@ public class PhysicsBody : IPhysicsBody
 
     #region IDisposable
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (_disposed) return;
@@ -45,8 +46,10 @@ public class PhysicsBody : IPhysicsBody
 
     #region Position & Rotation
 
+    /// <inheritdoc/>
     public Vector2 WorldPosition => _body?.Position ?? default;
 
+    /// <inheritdoc/>
     public float Rotation
     {
         get => _body?.Rotation ?? 0f;
@@ -62,14 +65,18 @@ public class PhysicsBody : IPhysicsBody
 
     #region Type & Category
 
+    /// <inheritdoc/>
     public string? Type
     {
         get => _type;
         set { /* type is set at creation, stored but not mutated on body */ }
     }
 
+    /// <inheritdoc/>
     public bool IsStatic => _body?.BodyType == BodyType.Static;
+    /// <inheritdoc/>
     public bool IsDynamic => _body?.BodyType == BodyType.Dynamic;
+    /// <inheritdoc/>
     public bool IsKinematic => _body?.BodyType == BodyType.Kinematic;
 
     #endregion
@@ -77,12 +84,12 @@ public class PhysicsBody : IPhysicsBody
     #region Shape Creation
 
     /// <summary>
-    /// Creates and adds a circle shape fixture to this body.
+    /// Creates and adds a circle shape collider to this body.
     /// </summary>
     /// <param name="radius">The radius of the circle.</param>
     /// <param name="offset">Optional local offset for the circle's center from the body's origin.</param>
-    /// <returns>An IFixture representing the created shape fixture.</returns>
-    public IFixture CreateCircle(float radius, Vector2? offset = null)
+    /// <returns>An ICollider representing the created shape collider.</returns>
+    public ICollider CreateCircleCollider(float radius, Vector2? offset = null)
     {
         if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
 
@@ -91,8 +98,8 @@ public class PhysicsBody : IPhysicsBody
             circle.Translate(offset.Value);
 
         var aetherFixture = _body.CreateFixture(circle._aetherShape);
-        var fixture = new Fixture(_world, aetherFixture, this, circle);
-        _fixtures.Add(fixture);
+        var fixture = new Collider(_world, aetherFixture, this, circle);
+        _colliders.Add(fixture);
         return fixture;
     }
 
@@ -101,8 +108,8 @@ public class PhysicsBody : IPhysicsBody
     /// </summary>
     /// <param name="size">The width and height of the rectangle.</param>
     /// <param name="offset">Optional local offset for the rectangle's center from the body's origin.</param>
-    /// <returns>An IFixture representing the created shape fixture.</returns>
-    public IFixture CreateRectangle(Vector2 size, Vector2? offset = null)
+    /// <returns>An ICollider representing the created shape collider.</returns>
+    public ICollider CreateRectangleCollider(Vector2 size, Vector2? offset = null)
     {
         if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
 
@@ -111,8 +118,8 @@ public class PhysicsBody : IPhysicsBody
             rectangle.Translate(offset.Value);
 
         var aetherFixture = _body.CreateFixture(rectangle._aetherShape);
-        var fixture = new Fixture(_world, aetherFixture, this, rectangle);
-        _fixtures.Add(fixture);
+        var fixture = new Collider(_world, aetherFixture, this, rectangle);
+        _colliders.Add(fixture);
         return fixture;
     }
 
@@ -120,8 +127,8 @@ public class PhysicsBody : IPhysicsBody
     /// Creates and adds a polygon shape fixture to this body.
     /// </summary>
     /// <param name="vertices">The vertices defining the polygon in local space.</param>
-    /// <returns>An IFixture representing the created shape fixture.</returns>
-    public IFixture CreatePolygon(params Vector2[] vertices)
+    /// <returns>An ICollider representing the created shape fixture.</returns>
+    public ICollider CreatePolygonCollider(params Vector2[] vertices)
     {
         if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
         if (vertices == null || vertices.Length < 3)
@@ -130,8 +137,8 @@ public class PhysicsBody : IPhysicsBody
         var polygon = new CoreEssentials.GameSystems.Physics.Engines.Aether.Shapes.PolygonShape(vertices);
 
         var aetherFixture = _body.CreateFixture(polygon._aetherShape);
-        var fixture = new Fixture(_world, aetherFixture, this, polygon);
-        _fixtures.Add(fixture);
+        var fixture = new Collider(_world, aetherFixture, this, polygon);
+        _colliders.Add(fixture);
         return fixture;
     }
 
@@ -139,16 +146,16 @@ public class PhysicsBody : IPhysicsBody
     /// Creates and adds a convex hull shape from the given points.
     /// </summary>
     /// <param name="points">The points to compute the convex hull from.</param>
-    /// <returns>An IFixture representing the created shape fixture.</returns>
-    public IFixture CreateConvexHull(params Vector2[] points)
+    /// <returns>An ICollider representing the created shape fixture.</returns>
+    public ICollider CreateConvexHullCollider(params Vector2[] points)
     {
         if (_body == null) throw new ObjectDisposedException(nameof(PhysicsBody));
 
         var polygon = CoreEssentials.GameSystems.Physics.Engines.Aether.Shapes.PolygonShape.CreateConvexHull((IEnumerable<Vector2>)points);
 
         var aetherFixture = _body.CreateFixture(polygon._aetherShape);
-        var fixture = new Fixture(_world, aetherFixture, this, polygon);
-        _fixtures.Add(fixture);
+        var fixture = new Collider(_world, aetherFixture, this, polygon);
+        _colliders.Add(fixture);
         return fixture;
     }
 
@@ -156,20 +163,24 @@ public class PhysicsBody : IPhysicsBody
 
     #region Fixture Access
 
-    public IReadOnlyList<IFixture> Fixtures => _fixtures;
+    /// <inheritdoc/>
+    public IReadOnlyList<ICollider> Colliders => _colliders;
 
     #endregion
 
     #region Fixture Management
 
-    public void AddFixture(IFixture fixture) => _fixtures.Add(fixture);
+    /// <inheritdoc/>
+    public void AddCollider(ICollider fixture) => _colliders.Add(fixture);
 
-    public void RemoveFixture(IFixture fixture) => _fixtures.Remove(fixture);
+    /// <inheritdoc/>
+    public void RemoveCollider(ICollider fixture) => _colliders.Remove(fixture);
 
     #endregion
 
     #region Material Properties
 
+    /// <inheritdoc/>
     public float Mass
     {
         get => _body?.Mass ?? 0f;
@@ -180,8 +191,10 @@ public class PhysicsBody : IPhysicsBody
         }
     }
 
+    /// <inheritdoc/>
     public float Inertia => _body?.Inertia ?? 0f;
 
+    /// <inheritdoc/>
     public float Friction
     {
         get => _body?.FixtureList.FirstOrDefault()?.Friction ?? 0.5f;
@@ -193,6 +206,7 @@ public class PhysicsBody : IPhysicsBody
         }
     }
 
+    /// <inheritdoc/>
     public float Restitution
     {
         get => _body?.FixtureList.FirstOrDefault()?.Restitution ?? 0f;
@@ -204,6 +218,7 @@ public class PhysicsBody : IPhysicsBody
         }
     }
 
+    /// <inheritdoc/>
     public bool FixedRotation
     {
         get => _body?.FixedRotation ?? false;
@@ -220,6 +235,7 @@ public class PhysicsBody : IPhysicsBody
     /// </summary>
     public void ApplyForce(Vector2 force) => _body?.ApplyForce(ref force);
 
+    /// <inheritdoc/>
     public void ApplyTorque(float torque) => _body?.ApplyTorque(torque);
 
     /// <summary>
@@ -232,14 +248,17 @@ public class PhysicsBody : IPhysicsBody
 
     #region Velocity Control
 
+    /// <inheritdoc/>
     public Vector2 LinearVelocity => _body?.LinearVelocity ?? default;
 
+    /// <inheritdoc/>
     public void SetLinearVelocity(Vector2 linearVelocity)
     {
         if (_body == null || !IsDynamic) return;
         _body.LinearVelocity = linearVelocity;
     }
 
+    /// <inheritdoc/>
     public float AngularVelocity
     {
         get => _body?.AngularVelocity ?? 0f;
@@ -254,6 +273,7 @@ public class PhysicsBody : IPhysicsBody
 
     #region Body State
 
+    /// <inheritdoc/>
     public void StopAll()
     {
         if (_body == null) return;
@@ -266,6 +286,7 @@ public class PhysicsBody : IPhysicsBody
     /// </summary>
     public bool IsAwake => _body?.Awake == true;
 
+    /// <inheritdoc/>
     public bool IsActive
     {
         get => _body?.Enabled ?? false;

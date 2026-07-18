@@ -32,18 +32,18 @@ public class WorldBorder : Entity
 
         // Create the left border
         _borderBodies[0] = physicsEngine.CreateStatic(new Vector2(Position.X, Position.Y + _size.Y / 2));
-        _borderBodies[0].CreateRectangle(new Vector2(1, _size.Y), Vector2.Zero);
+        _borderBodies[0].CreateRectangleCollider(new Vector2(1, _size.Y), Vector2.Zero);
 
         // Create the right border
         _borderBodies[1] = physicsEngine.CreateStatic(new Vector2(Position.X + _size.X, Position.Y + _size.Y / 2));
-        _borderBodies[1].CreateRectangle(new Vector2(1, _size.Y), Vector2.Zero);
+        _borderBodies[1].CreateRectangleCollider(new Vector2(1, _size.Y), Vector2.Zero);
 
         // Create the top border
         _borderBodies[2] = physicsEngine.CreateStatic(new Vector2(Position.X + _size.X / 2, Position.Y));
-        _borderBodies[2].CreateRectangle(new Vector2(_size.X, 1), Vector2.Zero);
+        _borderBodies[2].CreateRectangleCollider(new Vector2(_size.X, 1), Vector2.Zero);
 
         // Create the bottom border
         _borderBodies[3] = physicsEngine.CreateStatic(new Vector2(Position.X + _size.X / 2, Position.Y + _size.Y));
-        _borderBodies[3].CreateRectangle(new Vector2(_size.X, 1), Vector2.Zero);
+        _borderBodies[3].CreateRectangleCollider(new Vector2(_size.X, 1), Vector2.Zero);
     }
 }

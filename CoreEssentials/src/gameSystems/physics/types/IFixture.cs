@@ -5,7 +5,7 @@ namespace CoreEssentials.GameSystems.Physics.Types;
 /// <summary>
 /// 🔒 Internal use only by PhysicsBody. Not exposed to end users.
 /// </summary>
-public interface IFixture : IDisposable
+public interface ICollider : IDisposable
 {
     /// <summary>
     /// Gets the shape associated with this fixture.
