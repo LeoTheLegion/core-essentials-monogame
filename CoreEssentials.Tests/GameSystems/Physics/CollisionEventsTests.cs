@@ -39,10 +39,10 @@ public class CollisionEventsTests : IDisposable
     private static (IPhysicsBody bodyA, IPhysicsBody bodyB) CreateOverlappingBodies(PhysicsEngine engine, Vector2 posA, Vector2 posB)
     {
         var bodyA = engine.CreateDynamic(posA);
-        var circleA = bodyA.CreateCircleCollider(radius: 1f); // radius 1 = diameter 2
+        _ = bodyA.CreateCircleCollider(radius: 1f); // radius 1 = diameter 2
 
         var bodyB = engine.CreateDynamic(posB);
-        var circleB = bodyB.CreateCircleCollider(radius: 1f);
+        _ = bodyB.CreateCircleCollider(radius: 1f);
 
         return (bodyA, bodyB);
     }
