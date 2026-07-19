@@ -209,17 +209,22 @@ body.OnSeparation += (bodyA, bodyB) => {
 ### After (Current)
 
 ```csharp
-// Collision categories are controlled via the IPhysicsBody.Type property for filtering.
-// The underlying Aether collision categories are NOT currently exposed through the abstraction layer.
+// Per-body collision events via IPhysicsBody:
+body.OnCollision += args =>
+{
+    IPhysicsBody other = args.BodyB == body ? args.BodyA : args.BodyB;
+    Console.WriteLine($"Collided with {other.Type}");
+    return true; // Return false to reject the collision
+};
 
-// Point query instead of collision events:
-ICollider? hitCollider = physicsEngine.TestPoint(worldSpacePoint);
-if (hitCollider != null) {
-    Console.WriteLine($"Hit body: {hitCollider.OwnerBody.Type}");
-}
+body.OnSeparation += args =>
+{
+    IPhysicsBody other = args.BodyB == body ? args.BodyA : args.BodyB;
+    Console.WriteLine($"Separated from {other.Type}");
+};
+
+// Collision categories can be filtered via the IPhysicsBody.Type property.
 ```
-
-> **Note:** Collision event handlers (`OnCollision` / `OnSeparation`) are NOT part of the current abstraction layer. If you need collision callbacks, consider contributing a PR to add them.
 
 ---
 

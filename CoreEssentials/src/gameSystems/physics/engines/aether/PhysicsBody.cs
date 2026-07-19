@@ -304,4 +304,53 @@ public class PhysicsBody : IPhysicsBody
     }
 
     #endregion
+
+    // ─── Collision Events ───────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public event Func<BodyCollisionEventArgs, bool>? OnCollision;
+
+    /// <inheritdoc/>
+    public event Action<BodySeparationEventArgs>? OnSeparation;
+
+    /// <summary>
+    /// Raises the <see cref="OnCollision"/> event for this body colliding with another.
+    /// Called internally by <see cref="PhysicsEngine"/> from ContactManager callbacks.
+    /// </summary>
+    /// <param name="other">The other body involved in the collision.</param>
+    /// <returns>True if the collision should be rejected; false to allow it (or if no handlers exist).</returns>
+    internal bool RaiseOnCollision(IPhysicsBody other)
+    {
+        var args = new BodyCollisionEventArgs(this, other);
+        Func<BodyCollisionEventArgs, bool>? handler = OnCollision;
+        if (handler == null)
+            return false;
+
+        // Invoke all handlers — any returning true rejects the collision.
+        foreach (var invoke in handler.GetInvocationList().Cast<Func<BodyCollisionEventArgs, bool>>())
+        {
+            try
+            {
+                if (invoke(args))
+                    return true;
+            }
+            catch
+            {
+                // Ignore exceptions from user handlers to avoid breaking the physics simulation.
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Raises the <see cref="OnSeparation"/> event for this body separating from another.
+    /// Called internally by <see cref="PhysicsEngine"/> from ContactManager callbacks.
+    /// </summary>
+    /// <param name="other">The other body that separated.</param>
+    internal void RaiseOnSeparation(IPhysicsBody other)
+    {
+        OnSeparation?.Invoke(new BodySeparationEventArgs(this, other));
+    }
+
 }

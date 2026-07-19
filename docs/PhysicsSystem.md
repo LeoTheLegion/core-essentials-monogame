@@ -325,6 +325,42 @@ public class Ball : Entity
 
 ---
 
+## Collision Events 🔔
+
+Per-body collision and separation events let you react when bodies make or break contact:
+
+```csharp
+IPhysicsBody player = physics.CreateDynamic(new Vector2(100, 50));
+player.CreateCircleCollider(radius: 16f);
+
+// OnCollision fires once per new contact; return true to allow, false to reject.
+player.OnCollision += args =>
+{
+    // args.BodyA and args.BodyB are the two colliding bodies.
+    IPhysicsBody other = args.BodyB == player ? args.BodyA : args.BodyB;
+
+    if (other.Type == "enemy")
+        DebugLog("Hit an enemy!");
+
+    return true; // Allow collision (return false to reject)
+};
+
+// OnSeparation fires once when the last contact between two bodies ends.
+player.OnSeparation += args =>
+{
+    IPhysicsBody other = args.BodyB == player ? args.BodyA : args.BodyB;
+    DebugLog($"Lost contact with {other.Type}");
+};
+```
+
+**Key behaviors:**
+- Events fire on the game thread (via `FixedUpdate`), no threading concerns.
+- Returning `false` from an `OnCollision` handler disables the contact, rejecting the collision.
+- If a body has multiple colliders touching another body, `OnSeparation` fires only after **all** contacts break.
+- Events are safe to subscribe/unsubscribe at any time; disposing a body while contacts are active will not throw.
+
+---
+
 ## Best Practices
 
 1. **Use interfaces** — Depend on `IPhysicsBody`, not concrete implementations.

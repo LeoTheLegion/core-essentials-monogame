@@ -176,4 +176,19 @@ public interface IPhysicsBody : IDisposable
     /// Inactive bodies do not participate in physics.
     /// </summary>
     bool IsActive { get; set; }
+
+    // ─── Collision Events ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Fired when this body starts colliding with another body.
+    /// Return true from the handler to allow the collision; return false to reject it.
+    /// </summary>
+    event Func<BodyCollisionEventArgs, bool>? OnCollision;
+
+    /// <summary>
+    /// Fired when this body stops colliding with another body.
+    /// Fires once per separated body pair (not per-collider).
+    /// If a body has multiple colliders in contact, this fires only after the last pair separates.
+    /// </summary>
+    event Action<BodySeparationEventArgs>? OnSeparation;
 }

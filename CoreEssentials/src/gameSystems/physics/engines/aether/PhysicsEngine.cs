@@ -4,9 +4,11 @@ using System.Linq;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
+using nkast.Aether.Physics2D.Collision;
 using nkast.Aether.Physics2D.Collision.Shapes;
 using nkast.Aether.Physics2D.Common;
 using nkast.Aether.Physics2D.Dynamics;
+using nkast.Aether.Physics2D.Dynamics.Contacts;
 
 // Re-export Settings for external use if needed.
 
@@ -51,6 +53,7 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
     public PhysicsEngine()
     {
         _world = new World();
+        WireContactManager();
     }
 
     /// <summary>
@@ -60,6 +63,13 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
     public PhysicsEngine(Vector2 gravity)
     {
         _world = new World(gravity);
+        WireContactManager();
+    }
+
+    private void WireContactManager()
+    {
+        _world.ContactManager.BeginContact += OnWorldBeginContact;
+        _world.ContactManager.EndContact += OnWorldEndContact;
     }
 
     #region IDisposable (inherited from IPhysicsWorld)
@@ -81,12 +91,72 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
 
         if (disposing)
         {
+            // Unsubscribe from Aether world events to prevent memory leaks.
+            _world.ContactManager.BeginContact -= OnWorldBeginContact;
+            _world.ContactManager.EndContact -= OnWorldEndContact;
+
             // Clear all bodies, joints, and fixtures from the world.
             _world.Clear();
             _physicsBodies.Clear();
         }
 
         _disposed = true;
+    }
+
+    #endregion
+
+    #region ContactManager Routing
+
+    private bool OnWorldBeginContact(Contact contact)
+    {
+        if (_disposed)
+            return true;
+
+        var fixtureA = contact.FixtureA;
+        var fixtureB = contact.FixtureB;
+
+        // Resolve owner bodies for each fixture.
+        if (!_physicsBodies.TryGetValue(fixtureA.Body, out var bodyA))
+            return true;
+        if (!_physicsBodies.TryGetValue(fixtureB.Body, out var bodyB))
+            return true;
+
+        // Both wrappers must still be alive (body not disposed).
+        if (bodyA is not PhysicsBody pbA || bodyB is not PhysicsBody pbB)
+            return true;
+        if (pbA._body == null || pbB._body == null)
+            return true;
+
+        // Notify both bodies of the collision and collect rejection results.
+        bool rejectA = pbA.RaiseOnCollision(bodyB);
+        bool rejectB = pbB.RaiseOnCollision(bodyA);
+
+        // If any handler returned false, disable the contact to reject it.
+        if (rejectA || rejectB)
+            contact.Enabled = false;
+
+        // Return true to keep the contact (Aether will destroy it ourselves if rejected).
+        return true;
+    }
+
+    private void OnWorldEndContact(Contact contact)
+    {
+        if (_disposed) return;
+
+        var fixtureA = contact.FixtureA;
+        var fixtureB = contact.FixtureB;
+
+        // Resolve owner bodies for each fixture.
+        if (!_physicsBodies.TryGetValue(fixtureA.Body, out var bodyA)) return;
+        if (!_physicsBodies.TryGetValue(fixtureB.Body, out var bodyB)) return;
+
+        // Both wrappers must still be alive.
+        if (bodyA is not PhysicsBody pbA || bodyB is not PhysicsBody pbB) return;
+        if (pbA._body == null || pbB._body == null) return;
+
+        // Notify both bodies of the separation.
+        pbA.RaiseOnSeparation(bodyB);
+        pbB.RaiseOnSeparation(bodyA);
     }
 
     #endregion

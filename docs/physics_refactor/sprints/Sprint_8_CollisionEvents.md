@@ -1,7 +1,7 @@
 # Sprint 8 — Per-Body Collision Events (OnCollision / OnSeparation) 🔔
 
 **Points:** 3  
-**Status:** Not Started (depends on Sprint 7)  
+**Status:** ✅ Complete — all tasks done, 6/6 tests pass, zero CS1591 warnings.  
 **Sprint Goal:** Wire Aether's `ContactManager` at the engine level and expose per-body collision/separation events via `IPhysicsBody`.
 
 ---
