@@ -62,6 +62,7 @@ namespace YourGame
 - [Scene Management](./SceneManagement.md)
 - [Entity System](./EntitySystem.md)
 - [Physics System](./PhysicsSystem.md)
+  - [Migration Guide: Legacy → New Physics API](./Migration_Guide_Physics.md)
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)
 - [Audio System](./AudioSystem.md)
