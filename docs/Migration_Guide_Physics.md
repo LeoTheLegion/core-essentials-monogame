@@ -196,7 +196,7 @@ body.AngularVelocity = 2f; // Angular velocity is still a property
 body.CollisionCategories = Category.Cat1;
 body.CollidesWith        = Category.Cat2 | Category.Cat3;
 
-// Add event handlers
+// Add event handlers — only body-level callbacks available
 body.OnCollision += (bodyA, bodyB, contact) => {
     Console.WriteLine("Hit!");
     return true;
@@ -206,7 +206,7 @@ body.OnSeparation += (bodyA, bodyB) => {
 };
 ```
 
-### After (Current)
+### After (Current) — Per-Body Events
 
 ```csharp
 // Per-body collision events via IPhysicsBody:
@@ -221,6 +221,36 @@ body.OnSeparation += args =>
 {
     IPhysicsBody other = args.BodyB == body ? args.BodyA : args.BodyB;
     Console.WriteLine($"Separated from {other.Type}");
+};
+
+// Collision categories can be filtered via the IPhysicsBody.Type property.
+```
+
+### After (Current) — Per-Collider Events (Granular Shape Detection)
+
+When a body has multiple colliders, use per-collider events for shape-specific logic:
+
+```csharp
+IPhysicsBody player = physics.CreateDynamic(new Vector2(100, 50));
+
+// Head collider at local offset (top of body)
+ICollider headCollider = player.CreateCircleCollider(radius: 8f, offset: new Vector2(0f, 32f));
+// Body collider for the torso
+ICollider bodyCollider = player.CreateRectangleCollider(new Vector2(32f, 48f), offset: Vector2.Zero);
+
+headCollider.OnCollision += args =>
+{
+    // Only fires when THIS specific collider is in contact
+    ICollider other = args.ColliderB.OwnerBody == enemy ? args.ColliderB : args.ColliderA;
+    if (other.OwnerBody.Type == "Enemy")
+        DebugLog("HEADSHOT! Special damage!");
+
+    return true; // Return false to reject the collision
+};
+
+bodyCollider.OnSeparation += args => {
+    // Fires independently per-collider when this collider pair separates
+    if (!IsGrounded()) HandleLanding();
 };
 
 // Collision categories can be filtered via the IPhysicsBody.Type property.

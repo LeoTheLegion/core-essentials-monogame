@@ -41,4 +41,16 @@ public interface ICollider : IDisposable
     /// Deactivates this fixture so it no longer participates in collision detection.
     /// </summary>
     void Deactivate();
+
+    /// <summary>
+    /// Fired when this collider starts colliding with another collider.
+    /// Return true from the handler to allow the collision; return false to reject it.
+    /// </summary>
+    event Func<ColliderCollisionEventArgs, bool>? OnCollision;
+
+    /// <summary>
+    /// Fired when this collider stops colliding with another collider.
+    /// Fires once per separated collider pair (independent of body-level OnSeparation).
+    /// </summary>
+    event Action<ColliderSeparationEventArgs>? OnSeparation;
 }

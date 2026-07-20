@@ -127,12 +127,30 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         if (pbA._body == null || pbB._body == null)
             return true;
 
-        // Notify both bodies of the collision and collect rejection results.
-        bool rejectA = pbA.RaiseOnCollision(bodyB);
-        bool rejectB = pbB.RaiseOnCollision(bodyA);
+        // Resolve fixtures to colliders.
+        var colliderA = GetColliderFor(pbA, fixtureA);
+        var colliderB = GetColliderFor(pbB, fixtureB);
 
-        // If any handler returned false, disable the contact to reject it.
-        if (rejectA || rejectB)
+        // Notify both bodies of the collision and collect rejection results.
+        bool rejectBodyA = pbA.RaiseOnCollision(bodyB);
+        bool rejectBodyB = pbB.RaiseOnCollision(bodyA);
+
+        // Notify colliders if we could resolve them (both must exist for collider events).
+        bool rejectCollider = false;
+        if (colliderA != null && colliderB != null)
+        {
+            var concreteA = colliderA as Collider;
+            var concreteB = colliderB as Collider;
+            if (concreteA != null && concreteB != null)
+            {
+                bool rejectA = concreteA.RaiseOnCollision(concreteB);
+                bool rejectB = concreteB.RaiseOnCollision(concreteA);
+                rejectCollider = rejectA || rejectB;
+            }
+        }
+
+        // If any handler (body or collider) returned false, disable the contact to reject it.
+        if (rejectBodyA || rejectBodyB || rejectCollider)
             contact.Enabled = false;
 
         // Return true to keep the contact (Aether will destroy it ourselves if rejected).
@@ -157,6 +175,30 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         // Notify both bodies of the separation.
         pbA.RaiseOnSeparation(bodyB);
         pbB.RaiseOnSeparation(bodyA);
+
+        // Resolve fixtures to colliders and notify per-collider events.
+        var concreteColliderA = GetColliderFor(pbA, fixtureA) as Collider;
+        var concreteColliderB = GetColliderFor(pbB, fixtureB) as Collider;
+        if (concreteColliderA != null && concreteColliderB != null)
+        {
+            concreteColliderA.RaiseOnSeparation(concreteColliderB);
+            concreteColliderB.RaiseOnSeparation(concreteColliderA);
+        }
+    }
+
+    /// <summary>
+    /// Finds the Collider wrapper for a given Aether fixture on a body.
+    /// </summary>
+    private static ICollider? GetColliderFor(PhysicsBody body, nkast.Aether.Physics2D.Dynamics.Fixture fixture)
+    {
+        // Iterate through the body's colliders to find the one wrapping this fixture.
+        foreach (var collider in body.Colliders)
+        {
+            var concrete = collider as Collider;
+            if (concrete != null && concrete._aetherFixture == fixture)
+                return collider;
+        }
+        return null;
     }
 
     #endregion

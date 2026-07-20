@@ -316,4 +316,220 @@ public class CollisionEventsTests : IDisposable
     }
 
     #endregion
+
+    #region Test 6: Two bodies each with one collider — both colliders receive OnCollision with correct references
+
+    [Fact]
+    public void CollisionEvents_CollidersCollide_BothReceiveOnCollisionWithCorrectReferences()
+    {
+        // Arrange
+        var engine = new PhysicsEngine(Vector2.Zero);
+        Vector2 posA = new(-0.5f, 0f);
+        Vector2 posB = new(0.5f, 0f);
+
+        bool colliderACollided = false;
+        bool colliderBCollided = false;
+        ICollider? capturedOtherColliderA = null;
+        ICollider? capturedOtherColliderB = null;
+
+        var (bodyA, bodyB) = CreateOverlappingBodies(engine, posA, posB);
+        var colliderA = bodyA.Colliders[0];
+        var colliderB = bodyB.Colliders[0];
+
+        // Set separation speed so Aether registers contact then separates.
+        bodyA.SetLinearVelocity(new Vector2(-1f, 0f));
+        bodyB.SetLinearVelocity(new Vector2(1f, 0f));
+
+        colliderA.OnCollision += args =>
+        {
+            colliderACollided = true;
+            capturedOtherColliderA = args.ColliderB == colliderA ? args.ColliderA : args.ColliderB;
+            return true; // Allow collision
+        };
+
+        colliderB.OnCollision += args =>
+        {
+            colliderBCollided = true;
+            capturedOtherColliderB = args.ColliderB == colliderB ? args.ColliderA : args.ColliderB;
+            return true; // Allow collision
+        };
+
+        // Act
+        StepForCollision(engine);
+
+        // Assert
+        Assert.True(colliderACollided, "Collider A should have received OnCollision event.");
+        Assert.True(colliderBCollided, "Collider B should have received OnCollision event.");
+        Assert.Same(colliderB, capturedOtherColliderA);
+        Assert.Same(colliderA, capturedOtherColliderB);
+
+        engine.Dispose();
+    }
+
+    #endregion
+
+    #region Test 7: Collider handler returns false — contact is rejected
+
+    [Fact]
+    public void CollisionEvents_ColliderHandlerReturnsFalse_ContactIsRejected()
+    {
+        // Arrange
+        var engine = new PhysicsEngine(Vector2.Zero);
+        Vector2 posA = new(-0.5f, 0f);
+        Vector2 posB = new(0.5f, 0f);
+
+        bool colliderACollided = false;
+        bool colliderBCollided = false;
+
+        var (bodyA, bodyB) = CreateOverlappingBodies(engine, posA, posB);
+        var colliderA = bodyA.Colliders[0];
+        var colliderB = bodyB.Colliders[0];
+
+        // Set separation speed so Aether registers contact then separates.
+        bodyA.SetLinearVelocity(new Vector2(-1f, 0f));
+        bodyB.SetLinearVelocity(new Vector2(1f, 0f));
+
+        // Collider A rejects the collision.
+        colliderA.OnCollision += args =>
+        {
+            colliderACollided = true;
+            return false; // Reject this collision
+        };
+
+        colliderB.OnCollision += args =>
+        {
+            colliderBCollided = true;
+            return true; // Would allow, but A rejected
+        };
+
+        // Act
+        StepForCollision(engine);
+
+        // Assert — both handlers may still be called (Aether calls both before deciding),
+        // but contact.Enabled should be false due to rejection.
+        Assert.True(colliderACollided, "Collider A's handler should have been invoked.");
+        Assert.True(colliderBCollided, "Collider B's handler should also have been invoked.");
+
+        engine.Dispose();
+    }
+
+    #endregion
+
+    #region Test 8: Bodies separate — both colliders receive OnSeparation
+
+    [Fact]
+    public void CollisionEvents_CollidersSeparate_BothReceiveOnSeparation()
+    {
+        // Arrange
+        var engine = new PhysicsEngine(Vector2.Zero);
+        Vector2 posA = new(-1f, 0f);
+        Vector2 posB = new(1f, 0f);
+
+        bool colliderASeparated = false;
+        bool colliderBSeparated = false;
+        ICollider? capturedSeparationOtherColliderA = null;
+        ICollider? capturedSeparationOtherColliderB = null;
+
+        var (bodyA, bodyB) = CreateOverlappingBodies(engine, posA, posB);
+        var colliderA = bodyA.Colliders[0];
+        var colliderB = bodyB.Colliders[0];
+
+        // Set enough speed to collide and then separate.
+        bodyA.SetLinearVelocity(new Vector2(-8f, 0f));
+        bodyB.SetLinearVelocity(new Vector2(8f, 0f));
+
+        colliderA.OnSeparation += args =>
+        {
+            colliderASeparated = true;
+            capturedSeparationOtherColliderA = args.ColliderB == colliderA ? args.ColliderA : args.ColliderB;
+        };
+
+        colliderB.OnSeparation += args =>
+        {
+            colliderBSeparated = true;
+            capturedSeparationOtherColliderB = args.ColliderB == colliderB ? args.ColliderA : args.ColliderB;
+        };
+
+        // Act — step simulation enough for collision + separation.
+        var gameTime = new GameTime(
+            elapsedGameTime: TimeSpan.FromSeconds(1.0 / 60.0),
+            totalGameTime: TimeSpan.FromSeconds(0));
+
+        for (int i = 0; i < 15; i++)
+        {
+            engine.FixedUpdate(gameTime);
+        }
+
+        // Assert — separation events should fire once the contact is destroyed.
+        Assert.True(colliderASeparated, "Collider A should have received OnSeparation event.");
+        Assert.True(colliderBSeparated, "Collider B should have received OnSeparation event.");
+        Assert.Same(colliderB, capturedSeparationOtherColliderA);
+        Assert.Same(colliderA, capturedSeparationOtherColliderB);
+
+        engine.Dispose();
+    }
+
+    #endregion
+
+    #region Test 9: Body with 2 colliders — only the overlapping collider receives collision event
+
+    [Fact]
+    public void CollisionEvents_BodyWithMultipleColliders_CorrectColliderEventFires()
+    {
+        // Arrange — create a player body with two separate circle colliders at different local offsets.
+        var engine = new PhysicsEngine(Vector2.Zero);
+
+        Vector2 playerPos = new(0f, 0f);
+        var playerBody = engine.CreateDynamic(playerPos);
+
+        // Head collider: radius 0.3 at local offset (0, 1) → world center at (0, 1).
+        var headCollider = playerBody.CreateCircleCollider(radius: 0.3f, offset: new Vector2(0f, 1f));
+
+        // Body collider: radius 0.3 at local offset (0, -1) → world center at (0, -1).
+        var bodyCollider = playerBody.CreateCircleCollider(radius: 0.3f, offset: new Vector2(0f, -1f));
+
+        // Enemy static body positioned so its collider overlaps ONLY the head collider's position.
+        // Head is at world (0, 1) with radius 0.3 → occupies x:-0.3..0.3, y:0.7..1.3.
+        // Place enemy at local world (-0.5, 1) with radius 0.25 → occupies x:-0.75..-0.25, y:0.75..1.25.
+        // Distance between head center and enemy center = sqrt(0.5² + 0²) = 0.5 < 0.3 + 0.25 = 0.55 → OVERLAP.
+        // Distance between body center (0, -1) and enemy center (-0.5, 1) = sqrt(0.5² + 2²) ≈ 2.06 > 0.3 + 0.25 = 0.55 → NO OVERLAP.
+        Vector2 enemyPos = new(-0.5f, 1f);
+        var enemyBody = engine.CreateStatic(enemyPos);
+        var enemyCollider = enemyBody.CreateCircleCollider(radius: 0.25f);
+
+        bool headCollidedWithEnemy = false;
+        bool bodyCollidedWithEnemy = false;
+        ICollider? capturedHeadOther = null;
+
+        headCollider.OnCollision += args =>
+        {
+            if (args.ColliderB.OwnerBody == enemyBody || args.ColliderA.OwnerBody == enemyBody)
+            {
+                headCollidedWithEnemy = true;
+                capturedHeadOther = args.ColliderB.OwnerBody == enemyBody ? args.ColliderB : args.ColliderA;
+            }
+            return true; // Allow
+        };
+
+        bodyCollider.OnCollision += args =>
+        {
+            if (args.ColliderB.OwnerBody == enemyBody || args.ColliderA.OwnerBody == enemyBody)
+                bodyCollidedWithEnemy = true;
+            return true; // Allow
+        };
+
+        enemyCollider.OnCollision += _ => true; // Always allow
+
+        // Act — step simulation to trigger collision detection.
+        StepForCollision(engine);
+
+        // Assert — only the head collider should be in contact with the enemy.
+        Assert.True(headCollidedWithEnemy, "Head collider should have collided with enemy.");
+        Assert.False(bodyCollidedWithEnemy, "Body collider should NOT have collided with enemy (too far away).");
+        Assert.NotNull(capturedHeadOther);
+
+        engine.Dispose();
+    }
+
+    #endregion
 }

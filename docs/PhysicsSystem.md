@@ -327,7 +327,9 @@ public class Ball : Entity
 
 ## Collision Events 🔔
 
-Per-body collision and separation events let you react when bodies make or break contact:
+Per-body AND per-collider collision and separation events let you react when bodies or individual shapes make or break contact:
+
+### Per-Body Events
 
 ```csharp
 IPhysicsBody player = physics.CreateDynamic(new Vector2(100, 50));
@@ -353,10 +355,50 @@ player.OnSeparation += args =>
 };
 ```
 
+### Per-Collider Events (Granular Shape Detection)
+
+When a body has multiple colliders, per-collider events let you distinguish **which** shape was hit:
+
+```csharp
+IPhysicsBody player = physics.CreateDynamic(new Vector2(100, 50));
+
+// Head collider — small circle at the top of the body
+ICollider headCollider = player.CreateCircleCollider(radius: 8f, offset: new Vector2(0f, 32f));
+// Body collider — larger rectangle for the torso
+ICollider bodyCollider = player.CreateRectangleCollider(new Vector2(32f, 48f), offset: Vector2.Zero);
+
+IPhysicsBody enemy = physics.CreateStatic(new Vector2(150, 50));
+enemy.CreateCircleCollider(radius: 16f);
+
+// Headshot detection — only fires when the head collider touches the enemy
+headCollider.OnCollision += args =>
+{
+    ICollider other = args.ColliderB.OwnerBody == enemy ? args.ColliderB : args.ColliderA;
+    if (other.OwnerBody.Type == "Enemy")
+        DebugLog("HEADSHOT! Special damage!");
+
+    return true; // Allow collision (return false to reject)
+};
+
+// Body collision — fires when the body collider touches something
+bodyCollider.OnCollision += args =>
+{
+    ICollider other = args.ColliderB.OwnerBody == enemy ? args.ColliderB : args.ColliderA;
+    DebugLog("Hit enemy with body");
+
+    return true; // Allow collision
+};
+
+// Separation events work the same way per-collider
+bodyCollider.OnSeparation += args => {
+    if (!IsGrounded()) HandleLanding();
+};
+```
+
 **Key behaviors:**
 - Events fire on the game thread (via `FixedUpdate`), no threading concerns.
-- Returning `false` from an `OnCollision` handler disables the contact, rejecting the collision.
-- If a body has multiple colliders touching another body, `OnSeparation` fires only after **all** contacts break.
+- Returning `false` from an `OnCollision` handler (at either body or collider level) disables the contact, rejecting the collision.
+- If a body has multiple colliders touching another body, body-level `OnSeparation` fires only after **all** contacts break; each collider pair fires its own per-collider `OnSeparation`.
 - Events are safe to subscribe/unsubscribe at any time; disposing a body while contacts are active will not throw.
 
 ---

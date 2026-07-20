@@ -189,4 +189,54 @@ public class Collider : ICollider
             }
         }
     }
+
+    #region Collision Events
+
+    /// <inheritdoc/>
+    public event Func<ColliderCollisionEventArgs, bool>? OnCollision;
+
+    /// <inheritdoc/>
+    public event Action<ColliderSeparationEventArgs>? OnSeparation;
+
+    /// <summary>
+    /// Raises the <see cref="OnCollision"/> event for this collider colliding with another.
+    /// Called internally by <see cref="PhysicsEngine"/> from ContactManager callbacks.
+    /// </summary>
+    /// <param name="otherCollider">The other collider involved in the collision.</param>
+    /// <returns>True if the collision should be rejected; false to allow it (or if no handlers exist).</returns>
+    internal bool RaiseOnCollision(ICollider otherCollider)
+    {
+        var args = new ColliderCollisionEventArgs(this, otherCollider);
+        Func<ColliderCollisionEventArgs, bool>? handler = OnCollision;
+        if (handler == null)
+            return false;
+
+        // Invoke all handlers — any returning true rejects the collision.
+        foreach (var invoke in handler.GetInvocationList().Cast<Func<ColliderCollisionEventArgs, bool>>())
+        {
+            try
+            {
+                if (invoke(args))
+                    return true;
+            }
+            catch
+            {
+                // Ignore exceptions from user handlers to avoid breaking the physics simulation.
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Raises the <see cref="OnSeparation"/> event for this collider separating from another.
+    /// Called internally by <see cref="PhysicsEngine"/> from ContactManager callbacks.
+    /// </summary>
+    /// <param name="otherCollider">The other collider that separated.</param>
+    internal void RaiseOnSeparation(ICollider otherCollider)
+    {
+        OnSeparation?.Invoke(new ColliderSeparationEventArgs(this, otherCollider));
+    }
+
+    #endregion
 }
