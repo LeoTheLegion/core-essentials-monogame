@@ -13,7 +13,8 @@
   - Implements `IWidget`: delegates all properties/methods to underlying Myra widget
     - `Width { get; set; }` → `_myraWidget.Width = value`
     - `Visible { get; set; }` → `_myraWidget.Visible = value`
-    - `Left`, `Top`, `Margin`, `HorizontalAlignment`, etc. — all pass-through
+    - `Position { get; set; }` → delegates to underlying Myra widget's X/Y via Vector2
+    - `Margin`, `HorizontalAlignment`, etc. — all pass-through
   - Constructor: `protected WidgetBase(Myra.Graphics2D.UI.Widget myraWidget)`
   - Protected accessor: `MyraWidget { get; }` for derived classes
 

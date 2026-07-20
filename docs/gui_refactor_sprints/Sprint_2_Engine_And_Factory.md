@@ -38,10 +38,10 @@
 - [ ] **T4: Create `CanvasImpl.cs` (1 pt)** ⭐ User-facing
   - Implements `ICanvas`
   - Wraps a single `Myra.Graphics2D.UI.Panel` as the root container
-  - Properties: `Position { get; set; }`, `IsScreenSpace { get; }`
+
   - Methods:
     - Constructor: `CanvasImpl(bool isScreenSpace = true)` — creates Panel, registers with GuiManagerImpl via `AddWidget()`
-    - `SetPosition(Vector2 position)` — updates internal Position and delegates to underlying Myra Panel's Left/Top
+    - `SetPosition(Vector2 position)` — updates internal Position and delegates to underlying Myra Panel's screen coordinates
     - `AddWidget(IWidget widget)`, `RemoveWidget(IWidget widget)` — delegate to internal Panel's Widgets collection
     - `Update(GameTime gameTime)` — if world space, converts canvas Position via `Camera.MainCamera.WorldToScreen()` (migrate existing logic from current Canvas.cs); then updates Myra Panel position
     - `CleanUp()` — clears children, removes from GuiManagerImpl's widget list
@@ -71,7 +71,7 @@
   - Focus-checking logic migrated from existing GUIManager.cs (recursive tree walk)
 - [ ] `CanvasImpl` correctly handles both screen space and world space positioning ✅
   - World space: uses `Camera.MainCamera.WorldToScreen()` to convert position
-  - Screen space: sets Left/Top directly on underlying Panel
+  - Screen space: sets Position via Vector2 on underlying Panel
 - [ ] `WidgetFactory` methods return interfaces, not concrete types ✅
 - [ ] `CanvasFactory` creates canvases in both space modes ✅
 - [ ] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors
@@ -95,6 +95,8 @@
 
 - **Focus-checking logic migration:** The existing `GUIManager.isWidgetFocused()` method does a recursive tree walk checking `IsMouseInside`, `IsTouchInside`, `IsKeyboardFocused`. This needs to be ported exactly — it handles nested containers, ContentControls (like buttons), and ComboViews.
 - **MainGame.cs change:** Remove direct `MyraEnvironment.Game = this;` call. Instead, the engine's `Init()` method will handle Myra setup internally, or MainGame calls `EngineResolver.GetEngine().Init(this, width, height)`.
+- **Position via Vector2:** All widget positioning uses `Vector2 Position` (not separate X/Y/Left/Top). CanvasImpl delegates position updates to the underlying Myra Panel's screen coordinates.
+
 - **World-to-screen conversion:** `CanvasImpl.Update()` needs access to `Camera.MainCamera`. Ensure Camera system is initialized before GUI, or add a null-guard.
 
 ---
