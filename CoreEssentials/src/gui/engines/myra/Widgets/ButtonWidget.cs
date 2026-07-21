@@ -1,17 +1,18 @@
-using Myra.Graphics2D.UI;
 using CoreEssentials.GUI.Types;
+using MyraButton = Myra.Graphics2D.UI.Button;
+using MyraLabel = Myra.Graphics2D.UI.Label;
 
-namespace CoreEssentials.Engines.Myra.Widgets;
+namespace CoreEssentials.GUI.Engines.Myra.Widgets;
 
 /// <summary>
-/// Wrapper for a Myra Button (or TextButton), implementing IButton with event support and static factory.
+/// Wrapper for a Myra Button, implementing IButton with event support and static factory.
 /// </summary>
 public class ButtonWidget : WidgetBase, IButton
 {
     /// <summary>
     /// Gets the underlying Myra Button instance (typed).
     /// </summary>
-    protected Button Button => (Button)MyraWidget;
+    protected new MyraButton Button => (MyraButton)base.MyraWidget;
 
     /// <inheritdoc />
     public string? Text
@@ -21,8 +22,8 @@ public class ButtonWidget : WidgetBase, IButton
         {
             _textContent = value;
             if (Button.Content == null && value != null)
-                Button.Content = new Label { Text = value };
-            else if (Button.Content is Label label)
+                Button.Content = new MyraLabel { Text = value };
+            else if (Button.Content is MyraLabel label)
                 label.Text = value;
         }
     }
@@ -32,21 +33,20 @@ public class ButtonWidget : WidgetBase, IButton
 
     private string? _textContent;
 
-    protected ButtonWidget(Button button) : base(button)
+    protected ButtonWidget(MyraButton button) : base(button)
     {
         // Wire up Myra's click delegate to our C# event
         Button.Click += (sender, e) => Clicked?.Invoke(this);
     }
 
     /// <summary>
-    /// Creates a TextButton wrapped in a ButtonWidget with the given text.
+    /// Creates a Button with a text label as its content, wrapped in a ButtonWidget.
     /// Replaces Myra's Button.CreateTextButton().
     /// </summary>
     public static IButton CreateTextButton(string text)
     {
-        var button = new TextButton();
-        var wrapper = new ButtonWidget(button);
-        wrapper.Text = text;
-        return wrapper;
+        var button = new MyraButton();
+        button.Content = new MyraLabel { Text = text };
+        return new ButtonWidget(button);
     }
 }

@@ -62,13 +62,13 @@
 
 ## Acceptance Criteria
 
-- [ ] All wrapper classes exist in `engines/myra/Widgets/` and `engines/myra/Brushes/`
-- [ ] Each wrapper correctly implements its corresponding interface from Sprint 0
-- [ ] **All properties/methods delegate to the underlying Myra widget** — no custom logic, just pass-through
-- [ ] `ButtonWidget.CreateTextButton()` works as a static factory method returning `IButton`
-- [ ] `LabelWidget(string text)` and `GridWidget()` have convenient constructors
-- [ ] Static grid helpers (`SetRow`, etc.) correctly unwrap IWidgets and call Myra Grid methods
-- [ ] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors
+- [x] All wrapper classes exist in `engines/myra/Widgets/` and `engines/myra/Brushes/`
+- [x] Each wrapper correctly implements its corresponding interface from Sprint 0
+- [x] **All properties/methods delegate to the underlying Myra widget** — no custom logic, just pass-through
+- [x] `ButtonWidget.CreateTextButton()` works as a static factory method returning `IButton`
+- [x] `LabelWidget(string text)` and `GridWidget()` have convenient constructors
+- [x] Static grid helpers (`SetRow`, etc.) correctly unwrap IWidgets and call Myra Grid methods
+- [x] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors
 
 ---
 
@@ -84,14 +84,13 @@
 | `engines/myra/Brushes/BrushBase.cs` | `IBrush` (abstract base) | `Myra.Graphics2D.Brushes.Brush` | 🔒 Internal |
 | `engines/myra/Brushes/SolidColorBrush.cs` | `IBrush` | `Myra.SolidBrush` | 🔒 Internal |
 
----
+## Lessons Learned (from implementation) 📝
 
-## Notes & Risks
-
-- **Thin wrappers only** — these classes should have almost zero logic. They exist solely to bridge the interface-to-Myra gap. If you find yourself writing complex conversion logic, reconsider whether it belongs in an adapter layer instead.
-- **Unwrapping IWidgets:** When `AddChild(IWidget widget)` receives a user-created widget, that widget is already one of our wrapper types (e.g., `ButtonWidget`). We need to access its underlying Myra instance — use a protected property or cast pattern.
-- **Event handling on Button:** Myra uses `(sender, EventArgs) => {}` delegates for click events. Wrap this in a C# event (`Action<IButton, EventArgs> Click`) that users can subscribe to cleanly.
-- Verify all types still use `Microsoft.Xna.Framework.Vector2`, not any external type.
+- **Namespace Ambiguities:** Myra and CoreEssentials both define types like `IBrush`, `Thickness`, `HorizontalAlignment`, and `VerticalAlignment`. Always use explicit namespace qualifiers (e.g., `CoreEssentials.GUI.Types.HorizontalAlignment`) or global aliases in the wrapper files to avoid build errors.
+- **Global Namespace for Myra:** When referencing Myra types nested in the CoreEssentials namespace (like `CoreEssentials.GUI.Engines.Myra`), common types like `Myra.Graphics2D.Thickness` can conflict with local sub-namespaces. Use `global::Myra.Graphics2D.Thickness` to ensure the compiler reaches the external library.
+- **Widget Registry:** The `WidgetWrapper` now serves as a central registry. When Myra returns a raw `Widget` (e.g., from a collection), use `WidgetWrapper.TryGetFromMyra(widget)` to find our existing wrapper instead of creating a new one.
+- **Unwrapping for Containers:** Methods like `AddChild(IWidget)` need the raw Myra widget. Use the `internal static Widget Unwrap(IWidget)` helper in `WidgetWrapper` to safely downcast and retrieve the underlying instance.
+- **Font Casting:** Myra's `Label.Font` is an `object`. When wrapping it, cast specifically to `FontStashSharp.SpriteFontBase?` to match the expected runtime type while keeping the interface property as `object`.
 
 ---
 

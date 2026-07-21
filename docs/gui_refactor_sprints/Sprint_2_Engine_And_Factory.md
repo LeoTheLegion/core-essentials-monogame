@@ -95,9 +95,8 @@
 
 - **Focus-checking logic migration:** The existing `GUIManager.isWidgetFocused()` method does a recursive tree walk checking `IsMouseInside`, `IsTouchInside`, `IsKeyboardFocused`. This needs to be ported exactly — it handles nested containers, ContentControls (like buttons), and ComboViews.
 - **MainGame.cs change:** Remove direct `MyraEnvironment.Game = this;` call. Instead, the engine's `Init()` method will handle Myra setup internally, or MainGame calls `EngineResolver.GetEngine().Init(this, width, height)`.
-- **Position via Vector2:** All widget positioning uses `Vector2 Position` (not separate X/Y/Left/Top). CanvasImpl delegates position updates to the underlying Myra Panel's screen coordinates.
-
-- **World-to-screen conversion:** `CanvasImpl.Update()` needs access to `Camera.MainCamera`. Ensure Camera system is initialized before GUI, or add a null-guard.
+- **Namespace Safety:** When implementing `GuiManagerImpl` and `CanvasImpl`, watch out for `Thickness` and `IBrush` ambiguity. Prefer `global::Myra.Graphics2D` prefixes for internal Myra calls.
+- **Factory Delegation:** `WidgetFactory` should always return the interface (e.g., `IPanel`) and use `WidgetWrapper.TryWrap` if wrapping an existing Myra instance.
 
 ---
 

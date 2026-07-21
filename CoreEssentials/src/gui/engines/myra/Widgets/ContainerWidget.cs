@@ -1,13 +1,16 @@
 using System.Collections.Generic;
+using Myra.Graphics2D;
 using Myra.Graphics2D.UI;
 using CoreEssentials.GUI.Types;
+using MyraSolidBrush = Myra.Graphics2D.Brushes.SolidBrush;
+using MyraIBrush = Myra.Graphics2D.IBrush;
 
-namespace CoreEssentials.Engines.Myra.Widgets;
+namespace CoreEssentials.GUI.Engines.Myra.Widgets;
 
 /// <summary>
 /// Wrapper for a Myra Panel, implementing IContainer and IPanel interfaces.
 /// </summary>
-public class ContainerWidget : WidgetBase, IContainer, IPanel
+public class ContainerWidget : WidgetBase, IPanel
 {
     /// <summary>
     /// Gets the underlying Myra Panel instance (typed).
@@ -22,7 +25,7 @@ public class ContainerWidget : WidgetBase, IContainer, IPanel
             var result = new List<IWidget>();
             foreach (var w in Panel.Widgets)
             {
-                if (w is WidgetBase wrapper)
+                if (w is global::Myra.Graphics2D.UI.Widget myra && WidgetWrapper.TryGetFromMyra(myra) is IWidget wrapper)
                     result.Add(wrapper);
             }
             return result;
@@ -35,14 +38,14 @@ public class ContainerWidget : WidgetBase, IContainer, IPanel
     /// <inheritdoc />
     public void AddChild(IWidget widget)
     {
-        var myra = Unwrap(widget);
+        var myra = WidgetWrapper.Unwrap(widget);
         Panel.Widgets.Add(myra);
     }
 
     /// <inheritdoc />
     public void RemoveChild(IWidget widget)
     {
-        var myra = Unwrap(widget);
+        var myra = WidgetWrapper.Unwrap(widget);
         Panel.Widgets.Remove(myra);
     }
 
@@ -50,32 +53,39 @@ public class ContainerWidget : WidgetBase, IContainer, IPanel
     public void ClearChildren() => Panel.Widgets.Clear();
 
     /// <inheritdoc />
-    public IBrush? Background
+    public CoreEssentials.GUI.Types.IBrush? Background
     {
-        get => Panel.Background;
-        set => Panel.Background = value;
+        get => Panel.Background is MyraIBrush myraBrush ? ConvertToCoreEssentialsBrush(myraBrush) : null;
+        set => Panel.Background = ConvertToMyraBrush(value);
     }
 
     /// <inheritdoc />
-    public Thickness BorderThickness
+    public CoreEssentials.GUI.Types.Thickness BorderThickness
     {
         get => new(Panel.BorderThickness.Left, Panel.BorderThickness.Top, Panel.BorderThickness.Right, Panel.BorderThickness.Bottom);
-        set => Panel.BorderThickness = value;
+        set => Panel.BorderThickness = new global::Myra.Graphics2D.Thickness((int)value.Left, (int)value.Top, (int)value.Right, (int)value.Bottom);
     }
 
     protected ContainerWidget(Panel panel) : base(panel)
     {
     }
 
-    /// <summary>
-    /// Unwraps a user-facing IWidget to its underlying Myra Widget.
-    /// </summary>
-    internal static Widget Unwrap(IWidget widget)
+    private static MyraIBrush? ConvertToMyraBrush(CoreEssentials.GUI.Types.IBrush? brush)
     {
-        return widget switch
+        if (brush == null) return null;
+        return brush switch
         {
-            WidgetBase wrapper => wrapper.MyraWidget,
-            _ => throw new System.ArgumentException("Widget is not a CoreEssentials wrapper", nameof(widget))
+            Brushes.SolidColorBrush solid => solid.MyraBrush,
+            _ => throw new System.ArgumentException("Unsupported brush type", nameof(brush))
+        };
+    }
+
+    private static CoreEssentials.GUI.Types.IBrush? ConvertToCoreEssentialsBrush(MyraIBrush myraBrush)
+    {
+        return myraBrush switch
+        {
+            MyraSolidBrush solid => new Brushes.SolidColorBrush(solid.Color),
+            _ => null
         };
     }
 
