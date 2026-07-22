@@ -1,14 +1,14 @@
 # Sprint 2 — GuiManagerImpl, CanvasImpl & Factory Layer ⚙️
 
 **Points:** 5  
-**Status:** Not Started (depends on Sprints 0–1)  
+**Status:** Completed ✅ (Sprints 0–2 complete)  
 **Sprint Goal:** Implement the engine-level `GuiManagerImpl` and `CanvasImpl`, create the factory layer (`WidgetFactory`, `CanvasFactory`), and build the `EngineResolver` for future custom engine support.
 
 ---
 
 ## Tasks
 
-- [ ] **T1: Create `EngineResolver.cs` (0.5 pt)** 🔒 Internal
+- [x] **T1: Create `EngineResolver.cs` (0.5 pt)** 🔒 Internal
   - Static class that holds a reference to the active `IGuiManager` implementation
   - Methods:
     - `SetEngine(IGuiManager engine)` — sets which engine backend to use (default: Myra)
@@ -16,14 +16,14 @@
   - Default at startup: points to `GuiManagerImpl` (Myra version)
   - **Purpose:** Enables `EngineResolver.SetEngine(new CustomGuiEngine())` for future custom engines — zero user code changes needed
 
-- [ ] **T2: Create `ColorAdapter.cs` (0.5 pt)** 🔒 Internal
+- [x] **T2: Create `ColorAdapter.cs` (0.5 pt)** 🔒 Internal
   - Static helper class that converts between MonoGame `Color` and Myra brush types
   - Methods:
     - `ToMyraBrush(Color color)` → returns `Myra.Graphics2D.Brushes.SolidBrush`
     - `WithAlpha(this Color color, byte alpha)` → extension method for convenient alpha adjustment (used in StickyLog)
   - **Purpose:** Users pass `Color`, never Myra brush types — conversion happens internally
 
-- [ ] **T3: Create `GuiManagerImpl.cs` (2 pts)** ⭐ User-facing via GameSystem
+- [x] **T3: Create `GuiManagerImpl.cs` (2 pts)** ⭐ User-facing via GameSystem
   - Implements `IGuiManager`
   - Wraps a single `Myra.Graphics2D.UI.Desktop` instance
   - Static properties for root panel access: `Width { get; }`, `Height { get; }`
@@ -35,7 +35,7 @@
     - `IsAnyWidgetFocused()`, `IsWidgetFocused(IWidget widget)` — recursive focus check across widget tree (migrate existing logic from current GUIManager.cs)
   - **Key change:** Removes direct Myra dependency from user-facing code. MainGame.cs will call `EngineResolver.GetEngine().Init(...)` instead of setting `MyraEnvironment.Game` directly.
 
-- [ ] **T4: Create `CanvasImpl.cs` (1 pt)** ⭐ User-facing
+- [x] **T4: Create `CanvasImpl.cs` (1 pt)** ⭐ User-facing
   - Implements `ICanvas`
   - Wraps a single `Myra.Graphics2D.UI.Panel` as the root container
 
@@ -46,7 +46,7 @@
     - `Update(GameTime gameTime)` — if world space, converts canvas Position via `Camera.MainCamera.WorldToScreen()` (migrate existing logic from current Canvas.cs); then updates Myra Panel position
     - `CleanUp()` — clears children, removes from GuiManagerImpl's widget list
 
-- [ ] **T5: Create `WidgetFactory.cs` (1 pt)** ⭐ User-facing
+- [x] **T5: Create `WidgetFactory.cs` (1 pt)** ⭐ User-facing
   - Static factory class that creates widgets via interfaces using the active engine
   - Methods:
     - `CreatePanel()` → returns `IPanel` — delegates to CanvasImpl or ContainerWidget constructor
@@ -54,7 +54,7 @@
     - `CreateTextButton(string text)` → returns `IButton` — delegates to ButtonWidget.CreateTextButton()
   - **Purpose:** Users call `WidgetFactory.CreateTextButton("Play")` and get back an interface. They never see `new ButtonWidget()` or Myra types.
 
-- [ ] **T6: Create `CanvasFactory.cs` (0.5 pt)** ⭐ User-facing
+- [x] **T6: Create `CanvasFactory.cs` (0.5 pt)** ⭐ User-facing
   - Static factory class for canvas creation
   - Methods:
     - `CreateScreenSpace()` → returns `ICanvas` — delegates to CanvasImpl(true)
@@ -64,17 +64,17 @@
 
 ## Acceptance Criteria
 
-- [ ] `EngineResolver` correctly manages the active engine instance and defaults to Myra ✅
-- [ ] `ColorAdapter` converts MonoGame Color to Myra brushes seamlessly ✅
-- [ ] `GuiManagerImpl` implements all `IGuiManager` members and handles initialization internally ✅
+- [x] `EngineResolver` correctly manages the active engine instance and defaults to Myra ✅
+- [x] `ColorAdapter` converts MonoGame Color to Myra brushes seamlessly ✅
+- [x] `GuiManagerImpl` implements all `IGuiManager` members and handles initialization internally ✅
   - `MyraEnvironment.Game` is set inside `Init()`, not in MainGame.cs anymore
   - Focus-checking logic migrated from existing GUIManager.cs (recursive tree walk)
-- [ ] `CanvasImpl` correctly handles both screen space and world space positioning ✅
+- [x] `CanvasImpl` correctly handles both screen space and world space positioning ✅
   - World space: uses `Camera.MainCamera.WorldToScreen()` to convert position
   - Screen space: sets Position via Vector2 on underlying Panel
-- [ ] `WidgetFactory` methods return interfaces, not concrete types ✅
-- [ ] `CanvasFactory` creates canvases in both space modes ✅
-- [ ] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors
+- [x] `WidgetFactory` methods return interfaces, not concrete types ✅
+- [x] `CanvasFactory` creates canvases in both space modes ✅
+- [x] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors ✅
 
 ---
 

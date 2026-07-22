@@ -66,7 +66,7 @@ public class ContainerWidget : WidgetBase, IPanel
         set => Panel.BorderThickness = new global::Myra.Graphics2D.Thickness((int)value.Left, (int)value.Top, (int)value.Right, (int)value.Bottom);
     }
 
-    protected ContainerWidget(Panel panel) : base(panel)
+    public ContainerWidget(Panel panel) : base(panel)
     {
     }
 
