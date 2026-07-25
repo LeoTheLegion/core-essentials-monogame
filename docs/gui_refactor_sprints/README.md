@@ -91,13 +91,14 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 | 🔄 [3](Sprint_3_Migrate_StickyLog.md) | Migrate StickyLog & Existing Code | 3 | Not Started | Refactor `StickyLog.cs` to use interfaces; update `MainGame.cs` GUI initialization; remove direct Myra usage from all existing code |
 | ✅ [4](Sprint_4_Update_Tests.md) | Update Tests & Playground | 5 | Not Started | Rewrite GUI tests to use factories/interfaces; update Playground examples (`SoundButtonEntity`, `VolumeButtonEntity`); remove all `using Myra.*` from user files |
 | 📚 [5](Sprint_5_Documentation.md) | Documentation Updates | 2 | Not Started | Rewrite `docs/GUISystem.md`; document engine-swapping; add migration guide (old API → new API); update README and CONTRIBUTING |
+| 📄 [6](Sprint_6_XML_Layout_Support.md) | XML Layout Support | 7 | Not Started | Re-add Myra XML layout loading via pass-through `XmlLayout` wrapper — full widget support, ID lookups, asset manager bridge |
 
 ---
 
 ## Sprint Point Summary
 
-- **Total Points:** 25 points across 6 sprints
-- **Average Per Sprint:** ~4.2 points
+- **Total Points:** 32 points across 7 sprints
+- **Average Per Sprint:** ~4.6 points
 - **Timeline Estimate:** 6 weeks (one sprint per week) or compressed to 3–4 weeks with parallel work on lower-risk sprints
 
 ---
