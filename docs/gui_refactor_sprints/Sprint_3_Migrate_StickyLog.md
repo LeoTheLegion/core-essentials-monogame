@@ -8,14 +8,26 @@
 
 ## Tasks
 
-- [ ] **T1: Identify ALL direct Myra usages (0.5 pt)**
-  - Search workspace for all `using Myra.*` statements
-  - Current known locations:
-    - `CoreEssentials/src/debugging/StickyLog.cs` — uses `Grid`, `Label`, `SolidBrush`, `Proportion` from Myra
-    - `CoreEssentials/src/gui/GUIManager.cs` — uses `Desktop`, `Panel`, `Widget`, `ContentControl`, `ComboView` from Myra (to be replaced by `GuiManagerImpl`)
-    - `CoreEssentials/src/gui/Canvas.cs` — uses `Panel` from Myra (to be replaced by `CanvasImpl`)
-    - `CoreEssentials/src/MainGame.cs` — sets `MyraEnvironment.Game = this;` directly
-  - Verify no other files use Myra types in production code
+- [x] **T1: Identify ALL direct Myra usages (0.5 pt)** ✅ DONE
+  - Search workspace for all `using Myra.*` statements — completed via grep
+  - Production code files with direct Myra imports (`CoreEssentials/src/` only):
+
+    | File | Direct Myra Imports | Notes |
+    |------|---------------------|-------|
+    | `src/debugging/StickyLog.cs` | `Myra.Graphics2D.Brushes`, `Myra.Graphics2D.UI` | Uses `Grid`, `Label`, `SolidBrush`; needs interface migration (T2) |
+    | `src/gui/GUIManager.cs` | `Myra.Graphics2D.UI` | Uses `Desktop`, `Panel`, `Widget`, etc.; to be replaced by `GuiManagerImpl` (T3) |
+    | `src/gui/Canvas.cs` | `Myra.Graphics2D`, `Myra.Graphics2D.UI` | Uses `Vector2`, `Panel`; to be replaced by `CanvasImpl` (T4) |
+    | `src/MainGame.cs` | `using Myra;` (full namespace) | Sets `MyraEnvironment.Game = this;` directly; needs removal (T5) |
+
+  - Internal engine files (NOT in scope for Sprint 3 — these ARE the Myra engine implementation):
+    - `src/gui/engines/myra/Widgets/ContainerWidget.cs`
+    - `src/gui/engines/myra/Widgets/GridWidget.cs`
+    - `src/gui/engines/myra/Widgets/WidgetWrapper.cs`
+  - Test & Playground files (NOT in scope — these are Sprint 4):
+    - `CoreEssentials.Playground/SoundButtonEntity.cs`, `VolumeButtonEntity.cs`
+    - `CoreEssentials.Tests/Debugging/StickyLogTests.cs`, `GUI/*.cs`
+
+  - Verified: No other production code files use Myra types directly. Confirmed count of **4 files** to refactor in Sprint 3.
 
 - [ ] **T2: Refactor `StickyLog.cs` (1 pt)** ⭐
   - Replace all direct Myra imports with CoreEssentials.GUI interfaces
