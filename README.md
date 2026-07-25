@@ -16,7 +16,7 @@ A comprehensive framework built on top of MonoGame that provides essential build
 - **🛠️ Debugging Tools**: In-game console, logging, and visual debugging aids
 - **🧩 Game System Architecture**: Modular, extensible game systems
 - **💪 Physics Integration**: Built-in physics using Aether.Physics2D
-- **🖼️ GUI System**: User interface components powered by Myra
+- **🖼️ GUI System**: Clean, engine-agnostic UI abstraction layer with factories and interfaces
 - **🎨 Asset Management**: Simplified asset loading, caching and management
 - **📚 IntelliSense Support**: Full XML documentation for improved developer experience
 - **📷 Orthographic Camera**: Flexible camera system with zoom, pan and coordinate transformation
@@ -110,20 +110,22 @@ dotnet run --project CoreEssentials.Playground
 ### Creating a UI with Canvas
 
 ```csharp
-// Create a new canvas for UI elements
-Canvas hudCanvas = new Canvas();
-hudCanvas.SetPosition(new Vector2(20, 20));
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
 
-// Add widgets to the canvas
-var healthLabel = new Label { Text = "Health: 100" };
-hudCanvas.AddWidget(healthLabel);
+// Create a screen-space canvas for HUD elements
+ICanvas hudCanvas = CanvasFactory.CreateScreenSpace();
+hudCanvas.SetPosition(new Vector2(20f, 20f));
 
-var inventoryButton = new Button();
-inventoryButton.Content = "Inventory";
-inventoryButton.Top = 30;
-hudCanvas.AddWidget(inventoryButton);
+// Add widgets using the factory (returns interface types)
+ILabel healthLabel = WidgetFactory.CreateLabel("Health: 100");
+hudCanvas.AddChild(healthLabel);
 
-// Update the canvas position in your game loop
+IButton inventoryButton = WidgetFactory.CreateTextButton("Inventory");
+inventoryButton.Clicked += (btn) => { /* navigate to inventory */ };
+hudCanvas.AddChild(inventoryButton);
+
+// Update canvas each frame for camera transforms
 hudCanvas.Update(gameTime);
 
 // Clean up when done

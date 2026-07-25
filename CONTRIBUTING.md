@@ -170,10 +170,20 @@ bash ./scripts/publish.sh
 - Keep methods focused and concise
 - Follow existing patterns in the codebase
 
+### GUI Abstraction Layer Pattern ⚠️
+
+When working with GUI-related code, follow these rules:
+
+- **Never expose Myra types** (`Panel`, `Label`, `Button`, etc.) in public APIs or documentation examples
+- All widgets must be created through `WidgetFactory` and returned as interface types (`IWidget`, `IButton`, `ILabel`, etc.)
+- Canvas creation uses `CanvasFactory.CreateScreenSpace()` / `CreateWorldSpace()` — not direct instantiation
+- Documentation code snippets must compile without any `using Myra.*` statements
+- Internal engine implementations live in `CoreEssentials/src/gui/engines/myra/` and are intentionally separated from the abstraction layer
+
 ## Documentation
 
 - Update `docs/` files when adding new features
-- Keep code examples up to date
+- Keep code examples up to date — **all GUI-related snippets must use the interface-based API, never raw Myra types**
 - Add inline comments for complex logic only
 
 ## Questions or Issues?

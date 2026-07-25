@@ -1,28 +1,207 @@
 # GUI System
 
-CoreEssentials-MonoGame includes a GUI system built on top of Myra, a UI library for MonoGame. This system allows you to create interactive user interfaces with buttons, panels, labels, and more.
+CoreEssentials-MonoGame provides an abstraction layer over the Myra UI framework, giving you a clean, engine-agnostic API for building user interfaces. All widgets are created through factories and interact via interfaces — concrete implementation types are never exposed to your code.
 
 ## Key Components
 
-### GUIManager
+### WidgetFactory ⭐
 
-The `GUIManager` class manages the UI rendering and interaction:
+All UI elements are created through `WidgetFactory`, which returns interface types (`IButton`, `ILabel`, `IPanel`, etc.). This ensures complete decoupling from the underlying rendering engine.
 
 ```csharp
-// Get the GUIManager from a scene
-GUIManager guiManager = GetGameSystem<GUIManager>();
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using Microsoft.Xna.Framework;
 
-// Create and show a desktop
-Desktop desktop = new Desktop();
-guiManager.SetDesktop(desktop);
+// Create a panel
+IPanel panel = WidgetFactory.CreatePanel();
+panel.Width = 200f;
+panel.Height = 150f;
+panel.Background = new SolidColorBrush(Color.DarkBlue);
+
+// Create a label and add it to the panel
+ILabel label = WidgetFactory.CreateLabel("Score: 0");
+panel.AddChild(label);
+
+// Create a button with an event handler
+IButton button = WidgetFactory.CreateTextButton("Click Me");
+button.Clicked += (btn) => 
+{
+    label.Text = "Button clicked!";
+};
+panel.AddChild(button);
+
+// Add the panel to the GUI root hierarchy
+GUIManager.AddWidget(panel);
 ```
 
-### Creating UI Elements
+### Canvas 🖼️
 
-You can create UI elements using Myra's component system:
+The `Canvas` class provides a convenient way to manage groups of UI components that can be positioned together. Canvases support both **screen space** (HUDs, menus) and **world space** (floating labels above entities).
 
 ```csharp
-// Create a panel
+// Screen-space canvas (default) — position in absolute screen coordinates
+ICanvas hudCanvas = new Canvas();
+hudCanvas.SetPosition(new Vector2(100f, 50f));
+
+// Or explicitly specify screen space via factory
+ICanvas explicitScreenCanvas = CanvasFactory.CreateScreenSpace();
+
+// World-space canvas — position in game world coordinates (auto-converted via camera)
+ICanvas worldCanvas = new Canvas(false); // or: CanvasFactory.CreateWorldSpace()
+worldCanvas.SetPosition(new Vector2(500f, 300f)); // World position
+
+// Add widgets to the canvas
+ILabel scoreLabel = WidgetFactory.CreateLabel("Score: 10");
+hudCanvas.AddWidget(scoreLabel);
+
+IButton menuButton = WidgetFactory.CreateTextButton("Menu");
+worldCanvas.AddWidget(menuButton);
+```
+
+#### Canvas Lifecycle
+
+```csharp
+// Add children (widgets) to the canvas
+canvas.AddChild(WidgetFactory.CreateLabel("Hello World"));
+
+// Remove a specific widget from the canvas
+canvas.RemoveChild(label);
+
+// Update canvas state each frame (required for world-space camera transforms)
+canvas.Update(gameTime);
+
+// Clean up and release resources when done
+canvas.CleanUp();
+```
+
+### GUIManager — Lifecycle Management
+
+`GUIManager` is a static class that manages initialization, rendering, and the root widget hierarchy. It delegates all operations to the active engine backend (default: Myra-based `GuiManagerImpl`).
+
+```csharp
+// Initialize the GUI system once in your game's LoadContent or Initialize
+GUIManager.Init(this, 1280, 720); // width=1280, height=720
+
+// Add widgets to the root hierarchy (visible globally)
+GUIManager.AddWidget(panel);
+GUIManager.RemoveWidget(panel);
+
+// Check focus state
+bool anyFocused = GUIManager.IsAnyWidgetFocused();
+bool focused = GUIManager.IsWidgetFocused(button);
+
+// Draw all GUI elements each frame in your game's Draw method
+GUIManager.Draw(gameTime);
+```
+
+## API Reference
+
+| Interface / Class | Namespace | Purpose |
+|-------------------|-----------|---------|
+| `IGuiManager` | `CoreEssentials.GUI.Types` | Lifecycle, widget management, rendering (engine-level) |
+| `ICanvas` | `CoreEssentials.GUI.Types` | Positioned container for widgets in screen/world space |
+| `IWidget` | `CoreEssentials.GUI.Types` | Base abstraction for all UI elements |
+| `IContainer` | `CoreEssentials.GUI.Types` | Widget containers with child management (`AddChild`, `RemoveChild`) |
+| `IPanel` | `CoreEssentials.GUI.Types` | Container with styling (`Background`, `BorderThickness`) |
+| `ILabel` | `CoreEssentials.GUI.Types` | Text display (`Text`, `Font`, `TextColor`) |
+| `IButton` | `CoreEssentials.GUI.Types` | Clickable element (`Text`, `Clicked` event) |
+| `IGrid` | `CoreEssentials.GUI.Types` | Tabular layout with rows/columns, spacing, proportions |
+| `IBrush` | `CoreEssentials.GUI.Types` | Background/styling abstraction (`Color`, `Opacity`) |
+| `WidgetFactory` | `CoreEssentials.GUI.Factory` | Static factory methods returning interface instances |
+| `CanvasFactory` | `CoreEssentials.GUI.Factory` | Creates screen-space or world-space canvases |
+| `GUIManager` | `CoreEssentials.GUI` | Static facade for GUI lifecycle and root widget management |
+
+## Complete Example — HUD Layout
+
+```csharp
+using CoreEssentials;
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using Microsoft.Xna.Framework;
+using SceneManagement;
+
+public class GameHudScene : Scene
+{
+    private ICanvas _hudCanvas;
+    private ILabel _scoreLabel;
+
+    public override void LoadContent()
+    {
+        base.LoadContent();
+
+        // Initialize GUI system if not already done
+        GUIManager.Init(this.Game, 1280, 720);
+
+        // Create HUD canvas in screen space
+        _hudCanvas = CanvasFactory.CreateScreenSpace();
+        _hudCanvas.SetPosition(new Vector2(20f, 20f));
+        _hudCanvas.Background = new SolidColorBrush(new Color(50, 50, 50, 150));
+
+        // Create score label
+        _scoreLabel = WidgetFactory.CreateLabel("Score: 0");
+        _scoreLabel.TextColor = Color.White;
+        _hudCanvas.AddChild(_scoreLabel);
+
+        // Create a grid for settings row
+        IGrid settingsGrid = WidgetFactory.CreateGrid();
+        settingsGrid.RowSpacing = 5f;
+        settingsGrid.ColumnSpacing = 10f;
+
+        ILabel healthLabel = WidgetFactory.CreateLabel("Health:");
+        ILabel ammoLabel = WidgetFactory.CreateLabel("Ammo:");
+        
+        settingsGrid.AddChild(healthLabel);
+        settingsGrid.SetColumn(healthLabel, 0);
+        settingsGrid.AddChild(ammoLabel);
+        settingsGrid.SetColumn(ammoLabel, 1);
+
+        _hudCanvas.AddChild(settingsGrid);
+
+        // Add canvas to the GUI root hierarchy
+        GUIManager.AddWidget(_hudCanvas);
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+        base.Update(gameTime);
+
+        // Update canvas for any camera transforms (screen-space is a no-op)
+        _hudCanvas?.Update(gameTime);
+    }
+
+    // Example: update score from game logic
+    public void OnScoreChanged(int newScore)
+    {
+        if (_scoreLabel != null)
+            _scoreLabel.Text = $"Score: {newScore}";
+    }
+
+    public override void UnloadContent()
+    {
+        base.UnloadContent();
+        
+        // Clean up canvas resources
+        _hudCanvas?.CleanUp();
+    }
+}
+```
+
+## Advanced: Swapping GUI Engines 🔮
+
+The GUI system is designed to be engine-swappable. By default, `EngineResolver` returns the Myra-based `GuiManagerImpl`, but you can register a custom implementation at runtime:
+
+```csharp
+using CoreEssentials.GUI.Internal;
+
+// Register a custom GUI engine (e.g., your own rendering backend)
+EngineResolver.SetEngine(new CustomGuiEngine());
+
+// Or restore the default Myra engine
+EngineResolver.SetEngine(new GuiManagerImpl());
+```
+
+> **Note:** XML-based UI layouts from Myra (`Project.LoadFromXml()`) are intentionally not exposed through our abstraction layer — they are too engine-specific. If you need this feature, consider accessing the raw backend via an optional future `IEngineBackend` interface.
 var panel = new Panel
 {
     Width = 200,
