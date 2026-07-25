@@ -70,28 +70,23 @@
   - World-space camera conversion preserved via `CanvasImpl.Update()` calling `Camera.MainCamera.WorldToScreen()`
   - Removed all `using Myra.*` imports ✅
 
-- [ ] **T5: Update MainGame.cs (0.5 pt)**
-  - Remove direct `MyraEnvironment.Game = this;` call
-  - GUI initialization should now go through the engine resolver or static wrapper:
-    ```csharp
-    // Before: MyraEnvironment.Game = this;
-    //         GUIManager.Init(this, width, height);
-
-    // After (option A): EngineResolver.GetEngine().Init(this, width, height);
-    // After (option B - if wrapper kept): GUIManager.Init(this, width, height); // internally calls engine
-    ```
-  - Remove `using Myra;` from MainGame.cs if no longer needed
+- [x] **T5: Update MainGame.cs (0.5 pt)** ✅ DONE
+  - Removed `using Myra;` import — no other Myra types were used in this file
+  - Removed direct `MyraEnvironment.Game = this;` call — the new `GuiManagerImpl.Init()` sets `MyraEnvironment.Game` internally via `EngineResolver`
+  - GUI initialization still uses `GUIManager.Init(this, width, height)` which now delegates to `GuiManagerImpl` (backward-compatible)
+  - Draw pipeline unchanged: `GUIManager.Draw(gameTime)` still called in `MainGame.Draw()` — delegates correctly
+  - Zero `using Myra.*` statements ✅
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] **Zero `using Myra.*` statements in production code** (excluding test/playground files — those are Sprint 4)
-- [ ] `StickyLog` works end-to-end: creates grid, adds labels, updates log entries, toggles visibility with R key
-- [ ] `StickyLog` uses only `CoreEssentials.GUI` interfaces and factory methods
-- [ ] Old `GUIManager.cs` and `Canvas.cs` are either replaced or wrapped to delegate to new implementations
-- [ ] `MainGame.cs` no longer directly accesses Myra types — initialization goes through engine resolver or wrapper
-- [ ] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors
+- [x] **Zero `using Myra.*` statements in production code** (excluding test/playground files — those are Sprint 4)
+- [x] `StickyLog` works end-to-end: creates grid, adds labels, updates log entries, toggles visibility with R key
+- [x] `StickyLog` uses only `CoreEssentials.GUI` interfaces and factory methods
+- [x] Old `GUIManager.cs` and `Canvas.cs` are either replaced or wrapped to delegate to new implementations
+- [x] `MainGame.cs` no longer directly accesses Myra types — initialization goes through engine resolver or wrapper
+- [x] Project builds cleanly (`dotnet build CoreEssentials`) — 0 errors (8 pre-existing warnings only)
 
 ---
 
@@ -108,9 +103,14 @@
 
 ## Notes & Risks
 
-- **Backward compatibility decision:** If any external users already depend on `GUIManager.Init()` or `new Canvas()`, keep thin static wrappers that delegate to the new implementation. This minimizes breaking changes while still achieving the goal of hiding Myra types internally.
-- **StickyLog focus check:** The existing StickyLog uses `Grid` properties like `_grid.Visible`. Ensure `IGrid` exposes a `Visible` property (it should inherit from `IWidget` which has it).
-- **MainGame.cs other Myra usage:** Verify that MainGame doesn't use any other Myra types beyond `MyraEnvironment.Game`. If it does, those need to be handled too.
+- ✅ **Backward compatibility decision:** Thin static wrappers were kept for both `GUIManager` and `Canvas` — existing test/playground code works unchanged.
+- ✅ **StickyLog focus check:** `IGrid` inherits from `IContainer` → `IWidget`, so `_grid.Visible` works correctly via the base interface.
+- ✅ **MainGame.cs other Myra usage:** Verified no additional Myra types beyond `MyraEnvironment.Game`. Only `using Myra;` was present.
+
+## Bonus Work
+
+- **Extended `IGrid` interface** — added missing `IBrush? Background { get; set; }` property and implemented in `GridWidget.cs` with brush conversion helpers (`ConvertToCoreEssentialsBrush`, `ConvertToMyraBrush`). This enables StickyLog to set semi-transparent backgrounds on grid widgets.
+- **`Canvas` wrapper fully implements `ICanvas`** — delegates all 20+ interface members (Width, Height, Position, Margin, Alignment, Visible, Enabled, Container methods, Panel styling) to the underlying `CanvasImpl`. No Myra types leak into the public API.
 
 ---
 

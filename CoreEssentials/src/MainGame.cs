@@ -12,7 +12,6 @@ using System;
 using CoreEssentials.SceneManagement;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
-using Myra;
 using CoreEssentials.Timing;
 
 namespace CoreEssentials
@@ -90,8 +89,6 @@ namespace CoreEssentials
         {
 
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            MyraEnvironment.Game = this;
 
             IContentManager contentManagerWrapper = new ContentManagerWrapper(Content);
 
