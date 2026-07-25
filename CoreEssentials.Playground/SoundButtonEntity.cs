@@ -1,8 +1,8 @@
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GUI;
 using CoreEssentials.Audio;
+using CoreEssentials.GUI.Factory;
 using Microsoft.Xna.Framework;
-using Myra.Graphics2D.UI;
 using System;
 
 namespace CoreEssentials.Playground;
@@ -15,20 +15,21 @@ public class SoundButtonEntity : Entity
     private Canvas _canvas;
     private string _soundAssetName;
     private string _buttonText;
-      public SoundButtonEntity(Vector2 position, string soundAssetName, string buttonText)
+    
+    public SoundButtonEntity(Vector2 position, string soundAssetName, string buttonText)
     {
         _position = position;
         _soundAssetName = soundAssetName;
         _buttonText = buttonText;
         
-        // Create canvas for Myra UI components
+        // Create canvas for UI components
         _canvas = new Canvas();
         
-          // Create a button for playing the sound
-        var button = Button.CreateTextButton(_buttonText);
+        // Create a button for playing the sound via factory (returns IButton interface)
+        var button = WidgetFactory.CreateTextButton(_buttonText);
         
         // Add button click handler
-        button.Click += (s, a) => 
+        button.Clicked += (b) => 
         {
             // Play the sound effect when button is clicked
             var id = AudioManager.Instance.PlayOneShotSound(_soundAssetName);
