@@ -44,23 +44,31 @@
 
   **Bonus: Extended IGrid interface** — added missing `IBrush? Background { get; set; }` property to `IGrid.cs` and implemented it in `GridWidget.cs` (with brush conversion helpers) so StickyLog can set grid backgrounds.
 
-- [ ] **T3: Replace GUIManager.cs with GuiManagerImpl (0.5 pt)**
-  - Delete or deprecate old `GUIManager.cs` in favor of new `GuiManagerImpl` from Sprint 2
-  - If keeping backward compatibility, add a thin static wrapper:
-    ```csharp
-    // Old API still works but delegates to new implementation
-    public static class GUIManager {
-        private static IGuiManager Impl => EngineResolver.GetEngine();
-        public static void Init(Game game, int width, int height) => Impl.Init(game, width, height);
-        // ... proxy remaining methods
-    }
-    ```
-  - Or break the API — decide based on whether external users depend on `GUIManager`
+- [x] **T3: Replace GUIManager.cs with GuiManagerImpl (0.5 pt)** ✅ DONE
+  - Replaced old Myra-dependent `GUIManager` with a thin backward-compatible static wrapper
+  - All methods delegate to `EngineResolver.GetEngine().<method>()` (which resolves to `GuiManagerImpl`):
+    - `Width`, `Height` → `Engine.Width`, `Engine.Height`
+    - `Init(game, width, height)` → `Engine.Init(...)`
+    - `AddWidget(IWidget widget)` → `Engine.AddWidget(...)` — signature updated from Myra `Widget` to interface `IWidget`
+    - `RemoveWidget(IWidget widget)` → `Engine.RemoveWidget(...)`
+    - `IsAnyWidgetFocused()` → `Engine.IsAnyWidgetFocused()`
+    - `IsWidgetFocused(IWidget? widget)` → `Engine.IsWidgetFocused(...)` — signature updated from Myra `Widget` to interface
+    - `Draw(GameTime gameTime)` → `Engine.Draw(...)`
+  - Removed all `using Myra.*` imports ✅
+  - Old API surface preserved for backward compatibility with tests and playground code
 
-- [ ] **T4: Replace Canvas.cs with CanvasImpl (0.5 pt)**
-  - Delete or deprecate old `Canvas.cs` in favor of new `CanvasImpl` from Sprint 2
-  - If keeping backward compatibility, add a thin static wrapper similar to T3 above
-  - Ensure world-space camera conversion still works via `Camera.MainCamera.WorldToScreen()`
+- [x] **T4: Replace Canvas.cs with CanvasImpl (0.5 pt)** ✅ DONE
+  - Replaced old Myra-dependent `Canvas` class with a wrapper around `CanvasImpl`
+  - New `Canvas` implements `ICanvas` directly, delegating all members to `_impl` (`CanvasImpl`) instance
+  - Preserves backward-compatible constructor signatures: `Canvas()` (screen space) and `Canvas(bool isScreenSpace)`
+  - All interface members exposed via delegation:
+    - Layout: `Width`, `Height`, `Position`, `Margin`, `HorizontalAlignment`, `VerticalAlignment`
+    - State: `Visible`, `Enabled`, `IsMouseInside`, `IsKeyboardFocused`
+    - Container: `Children`, `Widgets`, `AddChild()`, `RemoveChild()`, `ClearChildren()`
+    - Panel styling: `Background`, `BorderThickness`
+    - Canvas-specific: `IsScreenSpace`, `SetPosition()`, `AddWidget()`, `RemoveWidget()`, `CleanUp()`, `Update()`
+  - World-space camera conversion preserved via `CanvasImpl.Update()` calling `Camera.MainCamera.WorldToScreen()`
+  - Removed all `using Myra.*` imports ✅
 
 - [ ] **T5: Update MainGame.cs (0.5 pt)**
   - Remove direct `MyraEnvironment.Game = this;` call
