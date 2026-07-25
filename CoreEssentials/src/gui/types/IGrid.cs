@@ -8,6 +8,11 @@ namespace CoreEssentials.GUI.Types;
 public interface IGrid : IContainer
 {
     /// <summary>
+    /// Gets or sets the background brush for this grid.
+    /// </summary>
+    IBrush? Background { get; set; }
+
+    /// <summary>
     /// Gets the collection of row proportion values for this grid.
     /// Values represent relative sizing weights (e.g., 1, 2, 1 means middle row is twice as tall).
     /// </summary>

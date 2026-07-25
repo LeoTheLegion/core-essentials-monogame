@@ -1,8 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
+using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI;
+using CoreEssentials.GUI.Engines.Myra.Brushes;
 using CoreEssentials.GUI.Types;
 using MyraGrid = Myra.Graphics2D.UI.Grid;
+using MyraIBrush = Myra.Graphics2D.IBrush;
 
 namespace CoreEssentials.GUI.Engines.Myra.Widgets;
 
@@ -29,6 +33,28 @@ public class GridWidget : WidgetBase, IGrid
     {
         get => (float)Grid.ColumnSpacing;
         set => Grid.ColumnSpacing = (int)value;
+    }
+
+    /// <inheritdoc />
+    public IBrush? Background
+    {
+        get => ConvertToCoreEssentialsBrush(Grid.Background);
+        set => Grid.Background = ConvertToMyraBrush(value);
+    }
+
+    private static IBrush? ConvertToCoreEssentialsBrush(MyraIBrush? brush)
+    {
+        return brush switch
+        {
+            SolidBrush solid => new SolidColorBrush(solid.Color),
+            null => null,
+            _ => null  // Unsupported brush type — fall back to no background
+        };
+    }
+
+    private static MyraIBrush? ConvertToMyraBrush(IBrush? brush)
+    {
+        return brush is SolidColorBrush solid ? solid.MyraBrush : null;
     }
 
     private readonly List<float> _rowProxies;

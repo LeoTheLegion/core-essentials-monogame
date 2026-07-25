@@ -29,18 +29,20 @@
 
   - Verified: No other production code files use Myra types directly. Confirmed count of **4 files** to refactor in Sprint 3.
 
-- [ ] **T2: Refactor `StickyLog.cs` (1 pt)** ⭐
-  - Replace all direct Myra imports with CoreEssentials.GUI interfaces
-  - Changes needed:
-    - `_grid` field type: `Myra.Graphics2D.UI.Grid?` → `IGrid?`
-    - `log` dictionary: `Dictionary<string, Label>` → `Dictionary<string, ILabel>`
-    - `LoadGUI()`: Replace Myra Grid creation with `WidgetFactory.CreatePanel()` or direct factory calls
-      - `_grid = new Grid { RowSpacing = 8, ColumnSpacing = 8 }` → use factory to create grid widget
-      - `_grid.Background = new SolidBrush(c)` → `_grid.Background = new SolidColorBrush(c)` (via ColorAdapter)
-    - `CreateNewLabel()`: Replace Myra Label creation with `ILabel keyLabel = WidgetFactory.CreateLabel(key);`
-      - Use static helpers: `GridWidget.SetRow(keyLabel, logCount)`, `GridWidget.SetColumn(keyLabel, 0)`
-    - `Log()`, `Remove()`, `Clear()` — update to use interface members (no Myra-specific API changes expected)
-  - Remove all `using Myra.*` from file
+- [x] **T2: Refactor `StickyLog.cs` (1 pt)** ⭐ DONE ✅
+  - Replaced all direct Myra imports with CoreEssentials.GUI interfaces — **zero `using Myra.*` remaining**
+  - `_grid` field type: `Grid?` → `IGrid?`
+  - `log` dictionary: `Dictionary<string, Label>` → `Dictionary<string, ILabel>`
+  - `LoadGUI()`: Uses `CanvasFactory.CreateScreenSpace()` instead of `new Canvas()`, `WidgetFactory.CreateGrid()` instead of `new Grid { ... }`, and `c.AsBrush()` via `ColorAdapter` instead of `new SolidBrush(c)`
+    - Replaced Myra property syntax (`RowSpacing = 8`) with direct interface setters
+    - Added child widgets via `_grid.AddChild(label)` / `_canvas.AddChild(_grid)` (IContainer API)
+  - `CreateNewLabel()`: Uses `WidgetFactory.CreateLabel()` instead of `new Label { Text = ... }`
+    - Grid positioning uses `_grid.SetColumn()` / `_grid.SetRow()` (interface methods) instead of static `Grid.SetColumn()`
+  - `Remove()`: Updated to use `ILabel`, `IWidget`, `_grid.GetRow()`, `_grid.RemoveChild()` — all interface members
+  - `Clear()`: Uses `_grid.ClearChildren()` instead of `_grid.Widgets.Clear()`
+  - Removed all `using Myra.*` from file ✅
+
+  **Bonus: Extended IGrid interface** — added missing `IBrush? Background { get; set; }` property to `IGrid.cs` and implemented it in `GridWidget.cs` (with brush conversion helpers) so StickyLog can set grid backgrounds.
 
 - [ ] **T3: Replace GUIManager.cs with GuiManagerImpl (0.5 pt)**
   - Delete or deprecate old `GUIManager.cs` in favor of new `GuiManagerImpl` from Sprint 2

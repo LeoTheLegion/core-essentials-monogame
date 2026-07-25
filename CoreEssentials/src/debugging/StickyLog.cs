@@ -1,9 +1,10 @@
 ﻿using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Internal;
+using CoreEssentials.GUI.Types;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended.Input.InputListeners;
-using Myra.Graphics2D.Brushes;
-using Myra.Graphics2D.UI;
 using System.Collections.Generic;
 
 namespace CoreEssentials.Debugging
@@ -18,17 +19,17 @@ namespace CoreEssentials.Debugging
         /// <summary>
         /// UI grid that contains all log entries.
         /// </summary>
-        private Grid? _grid;
+        private IGrid? _grid;
         
         /// <summary>
         /// Canvas that manages the grid widget.
         /// </summary>
-        private Canvas? _canvas;
+        private ICanvas? _canvas;
         
         /// <summary>
         /// Dictionary mapping log keys to their label UI elements.
         /// </summary>
-        private Dictionary<string, Label> log = new Dictionary<string, Label>();
+        private Dictionary<string, ILabel> log = new Dictionary<string, ILabel>();
 
         /// <summary>
         /// Initializes a new instance of the StickyLog class and registers the toggle key handler.
@@ -71,28 +72,27 @@ namespace CoreEssentials.Debugging
         /// </summary>
         public void LoadGUI()
         {
-            // Initialize the Canvas
-            _canvas = new Canvas();
+            // Initialize the Canvas via factory (returns ICanvas interface)
+            _canvas = CanvasFactory.CreateScreenSpace();
             _canvas.SetPosition(new Vector2(10, 10)); // Default position, top-left with small margin
             
-            // Create the grid for the log entries
-            _grid = new Grid
-            {
-                RowSpacing = 8,
-                ColumnSpacing = 8,
-            };
+            // Create the grid for the log entries via factory (returns IGrid interface)
+            _grid = WidgetFactory.CreateGrid();
+            _grid.RowSpacing = 8;
+            _grid.ColumnSpacing = 8;
 
             Color c = Color.Black;
             c.A = 100;
 
-            _grid.Background = new SolidBrush(c);
+            // Use ColorAdapter to create an IBrush from MonoGame Color
+            _grid.Background = c.AsBrush();
             _grid.Width = 200;
             _grid.Height = 100;
 
             this._grid.Visible = true;
 
-            // Add the grid to the canvas instead of directly to GUIManager
-            _canvas.AddWidget(_grid);
+            // Add the grid as a child of the canvas
+            _canvas.AddChild(_grid);
         }
         
         /// <summary>
@@ -133,24 +133,19 @@ namespace CoreEssentials.Debugging
 
             int logCount = log.Count;
 
-            _grid.ColumnsProportions.Add(new Proportion(ProportionType.Auto));
-            _grid.RowsProportions.Add(new Proportion(ProportionType.Auto));
+            // Add proportion entries for the new row and columns
+            _grid.ColumnProportions.Add(1f);
+            _grid.RowProportions.Add(1f);
 
-            var keyLabel = new Label
-            {
-                Text = key
-            };
-            Grid.SetColumn(keyLabel, 0);
-            Grid.SetRow(keyLabel, logCount);
-            _grid.Widgets.Add(keyLabel);
+            var keyLabel = WidgetFactory.CreateLabel(key);
+            _grid.SetColumn(keyLabel, 0);
+            _grid.SetRow(keyLabel, logCount);
+            _grid.AddChild(keyLabel);
 
-            var valueLabel = new Label
-            {
-                Text = value
-            };
-            Grid.SetColumn(valueLabel, 1);
-            Grid.SetRow(valueLabel, logCount);
-            _grid.Widgets.Add(valueLabel);
+            var valueLabel = WidgetFactory.CreateLabel(value);
+            _grid.SetColumn(valueLabel, 1);
+            _grid.SetRow(valueLabel, logCount);
+            _grid.AddChild(valueLabel);
 
 
             log[key] = valueLabel;
@@ -180,9 +175,9 @@ namespace CoreEssentials.Debugging
                 int rowToRemove = -1;
                 foreach (var widget in _grid.Widgets)
                 {
-                    if (widget is Label label && label == log[key])
+                    if (widget is ILabel label && label == log[key])
                     {
-                        rowToRemove = Grid.GetRow(label);
+                        rowToRemove = _grid.GetRow(widget);
                         break;
                     }
                 }
@@ -190,10 +185,10 @@ namespace CoreEssentials.Debugging
                 if (rowToRemove >= 0)
                 {
                     // Remove the widgets for this entry
-                    List<Widget> widgetsToRemove = new List<Widget>();
+                    List<IWidget> widgetsToRemove = new List<IWidget>();
                     foreach (var widget in _grid.Widgets)
                     {
-                        if (Grid.GetRow(widget) == rowToRemove)
+                        if (_grid.GetRow(widget) == rowToRemove)
                         {
                             widgetsToRemove.Add(widget);
                         }
@@ -201,16 +196,16 @@ namespace CoreEssentials.Debugging
 
                     foreach (var widget in widgetsToRemove)
                     {
-                        _grid.Widgets.Remove(widget);
+                        _grid.RemoveChild(widget);
                     }
 
                     // Shift up the rows for widgets below the removed row
                     foreach (var widget in _grid.Widgets)
                     {
-                        int row = Grid.GetRow(widget);
+                        int row = _grid.GetRow(widget);
                         if (row > rowToRemove)
                         {
-                            Grid.SetRow(widget, row - 1);
+                            _grid.SetRow(widget, row - 1);
                         }
                     }
 
@@ -227,7 +222,7 @@ namespace CoreEssentials.Debugging
         {
             if (_grid != null)
             {
-                _grid.Widgets.Clear();
+                _grid.ClearChildren();
                 log.Clear();
             }
         }
