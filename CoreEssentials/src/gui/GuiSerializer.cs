@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Reflection;
 using System.Xml.Linq;
 using System.Globalization;
 using Microsoft.Xna.Framework;
@@ -148,6 +150,20 @@ public static class GuiSerializer
             throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
             
         return LoadGridFromXml(asset.XMLContent, contentManager);
+    }
+
+    /// <summary>
+    /// Loads a grid widget from an embedded resource by its logical name.
+    /// </summary>
+    public static IGrid LoadGridFromXmlEmbedded(string resourceName)
+    {
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+        if (stream == null)
+            throw new FileNotFoundException($"Embedded resource '{resourceName}' not found.");
+
+        using var reader = new StreamReader(stream);
+        var xmlData = reader.ReadToEnd();
+        return LoadGridFromXml(xmlData);
     }
 
     /// <summary>

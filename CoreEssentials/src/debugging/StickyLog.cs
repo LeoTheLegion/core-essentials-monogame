@@ -69,6 +69,8 @@ namespace CoreEssentials.Debugging
 
         /// <summary>
         /// Creates and initializes the UI grid for displaying log entries.
+        /// The static grid structure is loaded from an embedded XML layout resource,
+        /// while runtime concerns (position, background brush) are set imperatively.
         /// </summary>
         public void LoadGUI()
         {
@@ -76,20 +78,13 @@ namespace CoreEssentials.Debugging
             _canvas = CanvasFactory.CreateScreenSpace();
             _canvas.SetPosition(new Vector2(10, 10)); // Default position, top-left with small margin
             
-            // Create the grid for the log entries via factory (returns IGrid interface)
-            _grid = WidgetFactory.CreateGrid();
-            _grid.RowSpacing = 8;
-            _grid.ColumnSpacing = 8;
+            // Load grid from embedded XML layout resource (~3 lines vs ~15 before)
+            _grid = GuiSerializer.LoadGridFromXmlEmbedded("CoreEssentials.Content.StickyLogLayout.xml");
 
+            // Set background imperatively (IBrush not expressible in XML)
             Color c = Color.Black;
             c.A = 100;
-
-            // Use ColorAdapter to create an IBrush from MonoGame Color
             _grid.Background = c.AsBrush();
-            _grid.Width = 300;
-            _grid.Height = 100;
-
-            this._grid.Visible = true;
 
             // Add the grid as a child of the canvas
             _canvas.AddChild(_grid);
