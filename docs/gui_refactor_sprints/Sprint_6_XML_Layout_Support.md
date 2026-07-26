@@ -67,6 +67,7 @@ canvas.AddWidget(panel);
   - Map XML attributes → interface properties.
   - Handle optional `Id` attribute.
   - **Tests included:** Unit tests in `CoreEssentials.Tests/GUI/GuiSerializerTests.cs` using `FakeWidgetFactory` to avoid `GraphicsDevice` requirements.
+  - **Infrastructure:** Added `FakePanel` and `FakeGrid` to test suite to support wider GUI testing without graphics dependencies.
 
 - [ ] **T2: Container widget loaders + recursion (1 pt)** ⭐ — *depends on T1*
   - Add to `GuiSerializer.cs`:
