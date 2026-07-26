@@ -15,11 +15,6 @@ namespace CoreEssentials.Playground;
 /// </summary>
 public class XmlLayoutScene : Scene
 {
-    private IContentManager _contentWrapper;
-    private IPanel _mainPanel;
-    private IButton _exampleButton;
-    private ILabel _statusLabel;
-
     protected override GameSystem[] LoadGameSystems()
     {
         return Array.Empty<GameSystem>();
@@ -27,7 +22,7 @@ public class XmlLayoutScene : Scene
 
     protected override IEnumerator OnStartCoroutine()
     {
-        _contentWrapper = new ContentManagerWrapper(SceneManager.Game.Content);
+        var contentWrapper = new ContentManagerWrapper(SceneManager.Game.Content);
         UpdateLoadingProgress(0.1f, "Initializing XML Layout scene...");
         yield return null;
 
@@ -38,23 +33,22 @@ public class XmlLayoutScene : Scene
             <Button Text=""Click Me!"" Width=""150"" Height=""40"" X=""125"" Y=""200"" />
         </Panel>";
 
-        _mainPanel = GuiSerializer.LoadPanelFromXml(inlineXml, _contentWrapper);
+        var mainPanel = GuiSerializer.LoadPanelFromXml(inlineXml, contentWrapper);
         
-        _exampleButton = _mainPanel.Children.OfType<IButton>().FirstOrDefault();
-        if (_exampleButton != null)
+        var exampleButton = mainPanel.Children.OfType<IButton>().FirstOrDefault();
+        if (exampleButton != null)
         {
-            _exampleButton.Clicked += (btn) => 
+            exampleButton.Clicked += (btn) => 
             {
                 Console.WriteLine("XML Button Clicked!");
-                if (_statusLabel != null) _statusLabel.Text = "Button was clicked!";
             };
         }
 
         try 
         {
             var asset = new XMLAsset("layout/main.xml");
-            asset.Load(_contentWrapper);
-            var assetPanel = GuiSerializer.LoadPanelFromXml(asset, _contentWrapper);
+            asset.Load(contentWrapper);
+            var assetPanel = GuiSerializer.LoadPanelFromXml(asset, contentWrapper);
             assetPanel.Position = new Vector2(600, 100);
             
             var assetButton = assetPanel.Children.OfType<IButton>().FirstOrDefault();
@@ -63,7 +57,6 @@ public class XmlLayoutScene : Scene
                 assetButton.Clicked += (btn) => 
                 {
                     Console.WriteLine("Asset XML Button Clicked!");
-                    if (_statusLabel != null) _statusLabel.Text = "Asset button was clicked!";
                 };
             }
 
@@ -75,17 +68,8 @@ public class XmlLayoutScene : Scene
         }
 
         // Add the main inline panel to the canvas
-        GUIManager.AddWidget(_mainPanel);
+        GUIManager.AddWidget(mainPanel);
 
         UpdateLoadingProgress(1.0f, "XML Layout scene ready!");
-    }
-
-    public void OnExit()
-    {
-        // Cleanup widgets from the manager
-        if (_mainPanel != null)
-        {
-            GUIManager.RemoveWidget(_mainPanel);
-        }
     }
 }

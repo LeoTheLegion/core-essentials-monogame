@@ -61,7 +61,7 @@ namespace CoreEssentials.Tests.Debugging
             stickyLog.Log("TestKey", "TestValue");
             
             // Assert - access the interface-typed dictionary via reflection
-            var logField = typeof(StickyLog).GetField("log", 
+            var logField = typeof(StickyLog).GetField("_log", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var logDict = (System.Collections.Generic.Dictionary<string, CoreEssentials.GUI.Types.ILabel>)logField!.GetValue(stickyLog)!;
             
@@ -81,7 +81,7 @@ namespace CoreEssentials.Tests.Debugging
             stickyLog.Log("TestKey", "UpdatedValue");
             
             // Assert
-            var logField = typeof(StickyLog).GetField("log", 
+            var logField = typeof(StickyLog).GetField("_log", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var logDict = (System.Collections.Generic.Dictionary<string, CoreEssentials.GUI.Types.ILabel>)logField!.GetValue(stickyLog)!;
             
@@ -155,7 +155,7 @@ namespace CoreEssentials.Tests.Debugging
             stickyLog.Remove("Key1");
             
             // Assert
-            var logField = typeof(StickyLog).GetField("log", 
+            var logField = typeof(StickyLog).GetField("_log", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var logDict = (System.Collections.Generic.Dictionary<string, CoreEssentials.GUI.Types.ILabel>)logField!.GetValue(stickyLog)!;
             
@@ -176,7 +176,7 @@ namespace CoreEssentials.Tests.Debugging
             stickyLog.Clear();
             
             // Assert
-            var logField = typeof(StickyLog).GetField("log", 
+            var logField = typeof(StickyLog).GetField("_log", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var logDict = (System.Collections.Generic.Dictionary<string, CoreEssentials.GUI.Types.ILabel>)logField!.GetValue(stickyLog)!;
             

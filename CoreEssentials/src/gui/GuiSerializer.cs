@@ -16,6 +16,7 @@ namespace CoreEssentials.GUI;
 /// </summary>
 public static class GuiSerializer
 {
+    private const string NullAssetContentMessage = "XMLAsset content is null. Ensure the asset is loaded.";
     /// <summary>
     /// Loads a label widget from an XML string.
     /// </summary>
@@ -52,7 +53,7 @@ public static class GuiSerializer
     public static ILabel LoadLabelFromXml(XMLAsset asset, IContentManager? contentManager = null)
     {
         if (asset?.XMLContent == null)
-            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            throw new ArgumentException(NullAssetContentMessage);
             
         return LoadLabelFromXml(asset.XMLContent, contentManager);
     }
@@ -78,7 +79,7 @@ public static class GuiSerializer
     public static IButton LoadButtonFromXml(XMLAsset asset, IContentManager? contentManager = null)
     {
         if (asset?.XMLContent == null)
-            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            throw new ArgumentException(NullAssetContentMessage);
             
         return LoadButtonFromXml(asset.XMLContent, contentManager);
     }
@@ -112,7 +113,7 @@ public static class GuiSerializer
     public static IPanel LoadPanelFromXml(XMLAsset asset, IContentManager? contentManager = null)
     {
         if (asset?.XMLContent == null)
-            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            throw new ArgumentException(NullAssetContentMessage);
             
         return LoadPanelFromXml(asset.XMLContent, contentManager);
     }
@@ -147,7 +148,7 @@ public static class GuiSerializer
     public static IGrid LoadGridFromXml(XMLAsset asset, IContentManager? contentManager = null)
     {
         if (asset?.XMLContent == null)
-            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            throw new ArgumentException(NullAssetContentMessage);
             
         return LoadGridFromXml(asset.XMLContent, contentManager);
     }
@@ -202,7 +203,7 @@ public static class GuiSerializer
     public static IWidget LoadFromXml(XMLAsset asset, IContentManager? contentManager = null)
     {
         if (asset?.XMLContent == null)
-            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            throw new ArgumentException(NullAssetContentMessage);
             
         return LoadFromXml(asset.XMLContent, contentManager);
     }
@@ -269,13 +270,11 @@ public static class GuiSerializer
         // Position
         var posX = element.Attribute("X")?.Value;
         var posY = element.Attribute("Y")?.Value;
-        if (posX != null && posY != null)
+        if (posX != null && posY != null &&
+            float.TryParse(posX, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+            float.TryParse(posY, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
         {
-            if (float.TryParse(posX, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-                float.TryParse(posY, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-            {
-                widget.Position = new Vector2(x, y);
-            }
+            widget.Position = new Vector2(x, y);
         }
 
         // Margin
@@ -289,21 +288,21 @@ public static class GuiSerializer
     private static Thickness ParseThickness(string value)
     {
         var parts = value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1)
+        if (parts.Length == 1 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float v))
         {
-            if (float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float v))
-                return new Thickness(v);
+            return new Thickness(v);
         }
-        else if (parts.Length == 4)
+
+        if (parts.Length == 4 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float l) &&
+            float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float t) &&
+            float.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out float r) &&
+            float.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out float b))
         {
-            if (float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float l) &&
-                float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float t) &&
-                float.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out float r) &&
-                float.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out float b))
-            {
-                return new Thickness(l, t, r, b);
-            }
+            return new Thickness(l, t, r, b);
         }
+
         return Thickness.Zero;
     }
 
@@ -359,19 +358,19 @@ public static class GuiSerializer
 
     private static Color ParseHexRGB(string hex)
     {
-        byte r = Convert.ToByte(hex.Substring(0, 2), 16);
-        byte g = Convert.ToByte(hex.Substring(2, 2), 16);
-        byte b = Convert.ToByte(hex.Substring(4, 2), 16);
-        return new Color((byte)r, (byte)g, (byte)b, (byte)255); // fully opaque
+        int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        return new Color(r, g, b, 255); // fully opaque
     }
 
     private static Color ParseHexARGB(string hex)
     {
-        byte a = Convert.ToByte(hex.Substring(0, 2), 16);
-        byte r = Convert.ToByte(hex.Substring(2, 2), 16);
-        byte g = Convert.ToByte(hex.Substring(4, 2), 16);
-        byte b = Convert.ToByte(hex.Substring(6, 2), 16);
-        return new Color((byte)r, (byte)g, (byte)b, (byte)a);
+        int a = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int r = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(4, 2), 16);
+        int b = Convert.ToInt32(hex.Substring(6, 2), 16);
+        return new Color(r, g, b, a);
     }
 
     #endregion

@@ -9,6 +9,7 @@ namespace CoreEssentials.GUI.Factory;
 /// </summary>
 public static class WidgetFactory
 {
+    /// <summary>Gets or sets the singleton factory instance.</summary>
     public static IWidgetFactory Instance { get; set; } = new DefaultWidgetFactory();
 
     /// <summary>

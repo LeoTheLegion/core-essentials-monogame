@@ -29,7 +29,7 @@ namespace CoreEssentials.Debugging
         /// <summary>
         /// Dictionary mapping log keys to their label UI elements.
         /// </summary>
-        private Dictionary<string, ILabel> log = new Dictionary<string, ILabel>();
+        private readonly Dictionary<string, ILabel> _log = new();
 
         /// <summary>
         /// Initializes a new instance of the StickyLog class and registers the toggle key handler.
@@ -102,9 +102,9 @@ namespace CoreEssentials.Debugging
         /// <param name="value">The value to display.</param>
         public void Log(string key, string value)
         {
-            if (log.ContainsKey(key))
+            if (_log.ContainsKey(key))
             {
-                log[key].Text = value;
+                _log[key].Text = value;
             }
             else
             {
@@ -121,7 +121,7 @@ namespace CoreEssentials.Debugging
         {
             if (_grid == null) return;
 
-            int logCount = log.Count;
+            int logCount = _log.Count;
 
             var keyLabel = WidgetFactory.CreateLabel(key);
             _grid.SetColumn(keyLabel, 0);
@@ -134,7 +134,7 @@ namespace CoreEssentials.Debugging
             _grid.AddChild(valueLabel);
 
 
-            log[key] = valueLabel;
+            _log[key] = valueLabel;
         }
 
         /// <summary>
@@ -155,48 +155,35 @@ namespace CoreEssentials.Debugging
         /// <param name="key">The key of the log entry to remove.</param>
         public void Remove(string key)
         {
-            if (_grid != null && log.ContainsKey(key))
+            if (_grid != null && _log.ContainsKey(key))
             {
                 // Find the row of the entry to remove
+                var logEntry = _log[key];
                 int rowToRemove = -1;
-                foreach (var widget in _grid.Widgets)
+
+                foreach (var widget in _grid.Widgets.Where(w => w is ILabel label && label == logEntry))
                 {
-                    if (widget is ILabel label && label == log[key])
-                    {
-                        rowToRemove = _grid.GetRow(widget);
-                        break;
-                    }
+                    rowToRemove = _grid.GetRow(widget);
+                    break;
                 }
 
                 if (rowToRemove >= 0)
                 {
                     // Remove the widgets for this entry
-                    List<IWidget> widgetsToRemove = new List<IWidget>();
-                    foreach (var widget in _grid.Widgets)
-                    {
-                        if (_grid.GetRow(widget) == rowToRemove)
-                        {
-                            widgetsToRemove.Add(widget);
-                        }
-                    }
-
+                    var widgetsToRemove = _grid.Widgets.Where(w => _grid.GetRow(w) == rowToRemove).ToList();
                     foreach (var widget in widgetsToRemove)
                     {
                         _grid.RemoveChild(widget);
                     }
 
                     // Shift up the rows for widgets below the removed row
-                    foreach (var widget in _grid.Widgets)
+                    foreach (var widget in _grid.Widgets.Where(w => _grid.GetRow(w) > rowToRemove))
                     {
-                        int row = _grid.GetRow(widget);
-                        if (row > rowToRemove)
-                        {
-                            _grid.SetRow(widget, row - 1);
-                        }
+                        _grid.SetRow(widget, _grid.GetRow(widget) - 1);
                     }
 
                     // Remove from dictionary
-                    log.Remove(key);
+                    _log.Remove(key);
                 }
             }
         }
@@ -209,7 +196,7 @@ namespace CoreEssentials.Debugging
             if (_grid != null)
             {
                 _grid.ClearChildren();
-                log.Clear();
+                _log.Clear();
             }
         }
     }

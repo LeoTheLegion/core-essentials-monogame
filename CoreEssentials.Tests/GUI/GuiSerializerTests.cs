@@ -1,3 +1,8 @@
+#pragma warning disable CS8618 // Non-nullable field must contain null-free value
+#pragma warning disable CS8614 // Nullable reference type has directionality
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -105,9 +110,29 @@ public class FakeWidgetFactory : IWidgetFactory
 
 public class GuiSerializerTests : IDisposable
 {
+    private bool _disposed;
+
     public GuiSerializerTests()
     {
         WidgetFactory.Instance = new FakeWidgetFactory();
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                WidgetFactory.Instance = new DefaultWidgetFactory();
+            }
+            _disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     [Fact]
@@ -330,10 +355,5 @@ public class GuiSerializerTests : IDisposable
 
         // Assert
         Assert.Null(grid.Background);
-    }
-
-    public void Dispose()
-    {
-        WidgetFactory.Instance = new DefaultWidgetFactory();
     }
 }
