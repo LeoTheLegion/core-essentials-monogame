@@ -66,6 +66,10 @@ public class ContainerWidget : WidgetBase, IPanel
         set => Panel.BorderThickness = new global::Myra.Graphics2D.Thickness((int)value.Left, (int)value.Top, (int)value.Right, (int)value.Bottom);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ContainerWidget"/> class.
+    /// </summary>
+    /// <param name="panel">The underlying Myra Panel widget.</param>
     public ContainerWidget(Panel panel) : base(panel)
     {
     }

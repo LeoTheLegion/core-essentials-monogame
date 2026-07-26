@@ -60,7 +60,10 @@ public class GridWidget : WidgetBase, IGrid
     private readonly List<float> _rowProxies;
     private readonly List<float> _colProxies;
 
-    protected new MyraGrid Grid => (MyraGrid)base.MyraWidget;
+    /// <summary>
+    /// Gets the underlying Myra Grid instance (typed).
+    /// </summary>
+    protected MyraGrid Grid => (MyraGrid)base.MyraWidget;
 
     /// <inheritdoc />
     public IList<IWidget> Children

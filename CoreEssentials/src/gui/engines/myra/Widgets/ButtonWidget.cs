@@ -12,7 +12,10 @@ public class ButtonWidget : WidgetBase, IButton
     /// <summary>
     /// Gets the underlying Myra Button instance (typed).
     /// </summary>
-    protected new MyraButton Button => (MyraButton)base.MyraWidget;
+    /// <summary>
+    /// Gets the underlying Myra Button instance (typed).
+    /// </summary>
+    protected MyraButton Button => (MyraButton)base.MyraWidget;
 
     /// <inheritdoc />
     public string? Text
@@ -33,6 +36,10 @@ public class ButtonWidget : WidgetBase, IButton
 
     private string? _textContent;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ButtonWidget"/> class.
+    /// </summary>
+    /// <param name="button">The underlying Myra Button widget.</param>
     protected ButtonWidget(MyraButton button) : base(button)
     {
         // Wire up Myra's click delegate to our C# event

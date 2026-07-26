@@ -24,6 +24,10 @@ public abstract class WidgetWrapper : IWidget
         // Clean up registry entries when widgets are removed from containers (best-effort)
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WidgetWrapper"/> class.
+    /// </summary>
+    /// <param name="myraWidget">The underlying Myra widget.</param>
     protected WidgetWrapper(Widget myraWidget)
     {
         MyraWidget = myraWidget;

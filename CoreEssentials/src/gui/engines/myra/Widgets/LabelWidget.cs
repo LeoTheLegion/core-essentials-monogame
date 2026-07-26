@@ -12,7 +12,10 @@ public class LabelWidget : WidgetBase, ILabel
     /// <summary>
     /// Gets the underlying Myra Label instance (typed).
     /// </summary>
-    protected new MyraLabel Label => (MyraLabel)base.MyraWidget;
+    /// <summary>
+    /// Gets the underlying Myra Label instance (typed).
+    /// </summary>
+    protected MyraLabel Label => (MyraLabel)base.MyraWidget;
 
     /// <inheritdoc />
     public string? Text
