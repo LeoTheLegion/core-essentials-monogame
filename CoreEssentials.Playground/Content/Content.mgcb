@@ -89,6 +89,9 @@
 /processorParam:Quality=Best
 /build:Goblins_Den_(Regular).wav
 
+#begin layout/main.xml
+/copy:layout/main.xml
+
 #begin song1_sound.xml
 /copy:song1_sound.xml
 

@@ -86,7 +86,7 @@ namespace CoreEssentials.Debugging
 
             // Use ColorAdapter to create an IBrush from MonoGame Color
             _grid.Background = c.AsBrush();
-            _grid.Width = 200;
+            _grid.Width = 300;
             _grid.Height = 100;
 
             this._grid.Visible = true;
@@ -132,10 +132,6 @@ namespace CoreEssentials.Debugging
             if (_grid == null) return;
 
             int logCount = log.Count;
-
-            // Add proportion entries for the new row and columns
-            _grid.ColumnProportions.Add(1f);
-            _grid.RowProportions.Add(1f);
 
             var keyLabel = WidgetFactory.CreateLabel(key);
             _grid.SetColumn(keyLabel, 0);

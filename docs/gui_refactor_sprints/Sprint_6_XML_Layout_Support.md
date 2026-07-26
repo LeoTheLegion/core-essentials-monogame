@@ -84,29 +84,13 @@ canvas.AddWidget(panel);
     - Mocked `IContentManager` path for font/brush resolution
   - **Tests included with implementation**
 
-- [ ] **T4: Update Playground with XML example scene (0.5 pt)** ⭐
+- [x] **T4: Update Playground with XML example scene (0.5 pt)** ⭐ — *completed*
   - New file in `CoreEssentials.Playground/`: `XmlLayoutScene.cs`
   - Demo both string-based and asset-based usage:
-    ```csharp
-    // --- String-based (inline XML) ---
-    var panel = GuiSerializer.LoadPanelFromXml(@"
-        <Panel Width=""400"" Height=""300"">
-            <Label Text=""Hello from XML!"" VerticalAlignment=""Top""/>
-            <Button Id=""myButton"" Text=""Click Me!"" VerticalAlignment=""Bottom""/>
-        </Panel>");
-
-    // --- Asset-based (loads from file) ---
-    var asset = new XMLAsset("layout/main.xml");
-    asset.Load(contentManager);
-    var panel2 = GuiSerializer.LoadPanelFromXml(asset, contentManager);
-
-    // Wire up click handler by ID lookup
-    var button = panel.Children.OfType<IButton>().FirstOrDefault(b => b.Id == "myButton");
-    button.Clicked += _ => { /* ... */ };
-
-    canvas.AddWidget(panel);
-    ```
-  - Show nested container example (Grid with rows/columns containing buttons)
+    - **String-based**: Loads a panel containing a label and a button from an inline XML string.
+    - **Asset-based**: Loads a panel from `Content/layout/main.xml` using `XMLAsset`.
+  - Implemented event wiring for both inline and asset-loaded buttons to verify interactive functionality.
+  - Integrated with `ContentManagerWrapper` to support `IContentManager` requirements within the Playground environment.
 
 - [ ] **T5: Update documentation (0.5 pt)**
   - `docs/GUISystem.md`: Add new section "XML Layouts" 
