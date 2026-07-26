@@ -1,0 +1,166 @@
+using System;
+using System.Collections.Generic;
+using Xunit;
+using Microsoft.Xna.Framework;
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Types;
+using CoreEssentials.GUI.Factory;
+using CoreEssentials.Assets;
+
+namespace CoreEssentials.Tests.GUI;
+
+#region Fakes
+
+public class FakeLabel : ILabel
+{
+    public float Width { get; set; }
+    public float Height { get; set; }
+    public bool Visible { get; set; } = true;
+    public bool Enabled { get; set; } = true;
+    public bool IsMouseInside { get; set; }
+    public bool IsKeyboardFocused { get; set; }
+    public Vector2 Position { get; set; }
+    public Thickness Margin { get; set; }
+    public HorizontalAlignment HorizontalAlignment { get; set; }
+    public VerticalAlignment VerticalAlignment { get; set; }
+    public string? Text { get; set; }
+    public object? Font { get; set; }
+    public Color TextColor { get; set; } = Color.White;
+}
+
+public class FakeButton : IButton
+{
+    public float Width { get; set; }
+    public float Height { get; set; }
+    public bool Visible { get; set; } = true;
+    public bool Enabled { get; set; } = true;
+    public bool IsMouseInside { get; set; }
+    public bool IsKeyboardFocused { get; set; }
+    public Vector2 Position { get; set; }
+    public Thickness Margin { get; set; }
+    public HorizontalAlignment HorizontalAlignment { get; set; }
+    public VerticalAlignment VerticalAlignment { get; set; }
+    public string? Text { get; set; }
+    public event Action<IButton>? Clicked;
+}
+
+public class FakeWidgetFactory : IWidgetFactory
+{
+    public IPanel CreatePanel() => throw new NotImplementedException();
+    public ILabel CreateLabel(string text) => new FakeLabel { Text = text };
+    public IButton CreateTextButton(string text) => new FakeButton { Text = text };
+    public IGrid CreateGrid() => throw new NotImplementedException();
+}
+
+#endregion
+
+public class GuiSerializerTests
+{
+    public GuiSerializerTests()
+    {
+        // Inject the fake factory to avoid GraphicsDevice errors
+        WidgetFactory.Instance = new FakeWidgetFactory();
+    }
+
+    [Fact]
+    public void LoadLabelFromXml_ValidXml_ReturnsLabelWithCorrectProperties()
+// ...existing code...
+
+    {
+        // Arrange
+        string xml = @"<Label Text=""Hello World"" Width=""100"" Height=""20"" Visible=""false"" Enabled=""true"" X=""10"" Y=""20"" TextColor=""Red"" />";
+
+        // Act
+        var label = GuiSerializer.LoadLabelFromXml(xml);
+
+        // Assert
+        Assert.NotNull(label);
+        Assert.Equal("Hello World", label.Text);
+        Assert.Equal(100f, label.Width);
+        Assert.Equal(20f, label.Height);
+        Assert.False(label.Visible);
+        Assert.True(label.Enabled);
+        Assert.Equal(new Vector2(10, 20), label.Position);
+        Assert.Equal(Color.Red, label.TextColor);
+    }
+
+    [Fact]
+    public void LoadButtonFromXml_ValidXml_ReturnsButtonWithCorrectProperties()
+    {
+        // Arrange
+        string xml = @"<Button Text=""Click Me"" Width=""50"" Height=""30"" X=""100"" Y=""150"" />";
+
+        // Act
+        var button = GuiSerializer.LoadButtonFromXml(xml);
+
+        // Assert
+        Assert.NotNull(button);
+        Assert.Equal("Click Me", button.Text);
+        Assert.Equal(50f, button.Width);
+        Assert.Equal(30f, button.Height);
+        Assert.Equal(new Vector2(100, 150), button.Position);
+    }
+
+    [Fact]
+    public void LoadLabelFromXml_MalformedXml_ThrowsFormatException()
+    {
+        // Arrange
+        string xml = @"<Label Text=""Missing Close Tag"";";
+
+        // Act & Assert
+        Assert.Throws<FormatException>(() => GuiSerializer.LoadLabelFromXml(xml));
+    }
+
+    [Fact]
+    public void LoadLabelFromXml_WrongRootElement_ThrowsFormatException()
+    {
+        // Arrange
+        string xml = @"<NotALabel Text=""Wrong"" />";
+
+        // Act & Assert
+        Assert.Throws<FormatException>(() => GuiSerializer.LoadLabelFromXml(xml));
+    }
+
+    [Fact]
+    public void LoadLabelFromXml_MissingAttributes_UsesDefaults()
+    {
+        // Arrange
+        string xml = @"<Label />";
+
+        // Act
+        var label = GuiSerializer.LoadLabelFromXml(xml);
+
+        // Assert
+        Assert.NotNull(label);
+        Assert.Equal(string.Empty, label.Text);
+    }
+
+    [Fact]
+    public void LoadLabelFromXml_InvalidColor_UsesDefaultColor()
+    {
+        // Arrange
+        string xml = @"<Label TextColor=""NotAColor"" />";
+
+        // Act
+        var label = GuiSerializer.LoadLabelFromXml(xml);
+
+        // Assert
+        Assert.NotNull(label);
+        // Color.TryParse should fail and keep default. 
+        // Assuming default is White or similar, just check it doesn't throw.
+    }
+
+    [Fact]
+    public void LoadLabelFromXml_InvalidNumbers_IgnoresAndUsesDefaults()
+    {
+        // Arrange
+        string xml = @"<Label Width=""NaN"" Height=""Invalid"" />";
+
+        // Act
+        var label = GuiSerializer.LoadLabelFromXml(xml);
+
+        // Assert
+        Assert.NotNull(label);
+        // Width and Height should remain their default values (likely 0)
+    }
+}

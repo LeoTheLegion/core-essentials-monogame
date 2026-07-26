@@ -60,23 +60,13 @@ canvas.AddWidget(panel);
 
 ## Tasks
 
-- [ ] **T1: Simple widget loaders (non-container types) + tests (2 pt)** ⭐
+- [x] **T1: Simple widget loaders (non-container types) + tests (2 pt)** ⭐
   - New file: `CoreEssentials/src/gui/GuiSerializer.cs`
-  - Implement string-based and asset-based overloads for leaf widgets only:
-    ```csharp
-    // String-based
-    public static ILabel LoadLabelFromXml(string xmlData, IContentManager? contentManager = null);
-    public static IButton LoadButtonFromXml(string xmlData, IContentManager? contentManager = null);
-
-    // Asset-based (reads XMLAsset.XMLContent)
-    public static ILabel LoadLabelFromXml(XMLAsset asset, IContentManager? contentManager = null);
-    public static IButton LoadButtonFromXml(XMLAsset asset, IContentManager? contentManager = null);
-    ```
-  - Map XML attributes → interface properties (hand-written switch preferred over reflection)
-  - Handle optional `Id` attribute
-  - **Tests included:** Unit tests for these loaders in `CoreEssentials.Tests/GUI/GuiSerializerTests.cs`
-    - Non-null return, correct property mapping (`Text`, `Width`, etc.)
-    - Error handling: malformed XML, unsupported element names
+  - Implemented string-based and asset-based overloads for leaf widgets.
+  - Introduced `IWidgetFactory` and `DefaultWidgetFactory` to support mocking in tests.
+  - Map XML attributes → interface properties.
+  - Handle optional `Id` attribute.
+  - **Tests included:** Unit tests in `CoreEssentials.Tests/GUI/GuiSerializerTests.cs` using `FakeWidgetFactory` to avoid `GraphicsDevice` requirements.
 
 - [ ] **T2: Container widget loaders + recursion (1 pt)** ⭐ — *depends on T1*
   - Add to `GuiSerializer.cs`:
