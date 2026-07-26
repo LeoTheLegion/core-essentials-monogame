@@ -69,17 +69,11 @@ canvas.AddWidget(panel);
   - **Tests included:** Unit tests in `CoreEssentials.Tests/GUI/GuiSerializerTests.cs` using `FakeWidgetFactory` to avoid `GraphicsDevice` requirements.
   - **Infrastructure:** Added `FakePanel` and `FakeGrid` to test suite to support wider GUI testing without graphics dependencies.
 
-- [ ] **T2: Container widget loaders + recursion (1 pt)** ⭐ — *depends on T1*
-  - Add to `GuiSerializer.cs`:
-    ```csharp
-    public static IPanel LoadPanelFromXml(string xmlData, IContentManager? contentManager = null);
-    public static IGrid LoadGridFromXml(string xmlData, IContentManager? contentManager = null);
-    // ... plus XMLAsset overloads for each
-    ```
-  - **Recursive logic:** Iterate child XML elements and call `LoadFromXml()` for each — handles arbitrary nesting depth
-  - Handle container-specific properties (`Background`, `BorderThickness` on panels; `RowProportions`, `ColumnProportions` on grids)
-  - **Tests included:** Unit tests in `GuiSerializerTests.cs` for container parsing and basic recursion
-    - `<Panel><Label>...</Label></Panel>` → correct parent-child hierarchy
+- [x] **T2: Container widget loaders + recursion (1 pt)** ⭐ — *completed*
+  - Added `LoadPanelFromXml` and `LoadGridFromXml` to `GuiSerializer.cs`.
+  - Implemented recursive logic via `LoadChildren` to handle nested UI hierarchies.
+  - Mapped container-specific properties (`BorderThickness` for panels, `RowSpacing`/`ColumnSpacing` for grids).
+  - **Tests included:** Unit tests verifying complex nested structures and container properties in `GuiSerializerTests.cs`.
 
 - [ ] **T3: Convenience overloads + integration tests (1 pt)** ⭐
   - Add generic/flexible methods to `GuiSerializer.cs`:

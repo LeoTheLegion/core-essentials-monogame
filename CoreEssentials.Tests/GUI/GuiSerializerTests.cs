@@ -110,11 +110,6 @@ public class GuiSerializerTests : IDisposable
         WidgetFactory.Instance = new FakeWidgetFactory();
     }
 
-    public void Dispose()
-    {
-        WidgetFactory.Instance = new DefaultWidgetFactory();
-    }
-
     [Fact]
     public void LoadLabelFromXml_ValidXml_ReturnsLabelWithCorrectProperties()
 
@@ -214,5 +209,59 @@ public class GuiSerializerTests : IDisposable
         // Assert
         Assert.NotNull(label);
         // Width and Height should remain their default values (likely 0)
+    }
+
+    [Fact]
+    public void LoadPanelFromXml_Recursive_ReturnsPanelWithChildren()
+    {
+        // Arrange
+        string xml = @"
+        <Panel Width=""400"" Height=""300"">
+            <Label Text=""Child Label"" Width=""50"" />
+            <Button Text=""Child Button"" Height=""20"" />
+            <Panel Width=""100"" Height=""100"">
+                <Label Text=""Nested Label"" />
+            </Panel>
+        </Panel>";
+
+        // Act
+        var panel = GuiSerializer.LoadPanelFromXml(xml);
+
+        // Assert
+        Assert.NotNull(panel);
+        Assert.Equal(400f, panel.Width);
+        Assert.Equal(3, panel.Children.Count);
+        
+        var label = Assert.IsType<FakeLabel>(panel.Children[0]);
+        Assert.Equal("Child Label", label.Text);
+        
+        var button = Assert.IsType<FakeButton>(panel.Children[1]);
+        Assert.Equal("Child Button", button.Text);
+        
+        var nestedPanel = Assert.IsType<FakePanel>(panel.Children[2]);
+        Assert.Single(nestedPanel.Children);
+        var nestedLabel = Assert.IsType<FakeLabel>(nestedPanel.Children[0]);
+        Assert.Equal("Nested Label", nestedLabel.Text);
+    }
+
+    [Fact]
+    public void LoadGridFromXml_ValidXml_ReturnsGridWithProperties()
+    {
+        // Arrange
+        string xml = @"<Grid RowSpacing=""10"" ColumnSpacing=""5"" Width=""200"" />";
+
+        // Act
+        var grid = GuiSerializer.LoadGridFromXml(xml);
+
+        // Assert
+        Assert.NotNull(grid);
+        Assert.Equal(10f, grid.RowSpacing);
+        Assert.Equal(5f, grid.ColumnSpacing);
+        Assert.Equal(200f, grid.Width);
+    }
+
+    public void Dispose()
+    {
+        WidgetFactory.Instance = new DefaultWidgetFactory();
     }
 }

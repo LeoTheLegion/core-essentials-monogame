@@ -80,6 +80,99 @@ public static class GuiSerializer
         return LoadButtonFromXml(asset.XMLContent, contentManager);
     }
 
+    /// <summary>
+    /// Loads a panel widget from an XML string.
+    /// </summary>
+    public static IPanel LoadPanelFromXml(string xmlData, IContentManager? contentManager = null)
+    {
+        var element = ParseRootElement(xmlData, "Panel");
+        var panel = WidgetFactory.CreatePanel();
+        
+        ApplyBaseProperties(panel, element);
+        
+        if (element.Attribute("BorderThickness") != null)
+        {
+            panel.BorderThickness = ParseThickness(element.Attribute("BorderThickness")!.Value);
+        }
+
+        // Handle background color (simplified for now similar to TextColor)
+        if (element.Attribute("Background") != null)
+        {
+            // In a real scenario, we'd map this to an IBrush. 
+            // For now, we leave it as a placeholder or a simple color check if the engine supports it.
+        }
+
+        LoadChildren(panel, element, contentManager);
+
+        return panel;
+    }
+
+    /// <summary>
+    /// Loads a panel widget from an XMLAsset.
+    /// </summary>
+    public static IPanel LoadPanelFromXml(XMLAsset asset, IContentManager? contentManager = null)
+    {
+        if (asset?.XMLContent == null)
+            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            
+        return LoadPanelFromXml(asset.XMLContent, contentManager);
+    }
+
+    /// <summary>
+    /// Loads a grid widget from an XML string.
+    /// </summary>
+    public static IGrid LoadGridFromXml(string xmlData, IContentManager? contentManager = null)
+    {
+        var element = ParseRootElement(xmlData, "Grid");
+        var grid = WidgetFactory.CreateGrid();
+        
+        ApplyBaseProperties(grid, element);
+        
+        if (float.TryParse(element.Attribute("RowSpacing")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rs))
+            grid.RowSpacing = rs;
+            
+        if (float.TryParse(element.Attribute("ColumnSpacing")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float cs))
+            grid.ColumnSpacing = cs;
+
+        LoadChildren(grid, element, contentManager);
+
+        return grid;
+    }
+
+    /// <summary>
+    /// Loads a grid widget from an XMLAsset.
+    /// </summary>
+    public static IGrid LoadGridFromXml(XMLAsset asset, IContentManager? contentManager = null)
+    {
+        if (asset?.XMLContent == null)
+            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            
+        return LoadGridFromXml(asset.XMLContent, contentManager);
+    }
+
+    private static void LoadChildren(IContainer container, XElement parentElement, IContentManager? contentManager)
+    {
+        foreach (var childElement in parentElement.Elements())
+        {
+            IWidget? childWidget = null;
+            string name = childElement.Name.LocalName;
+
+            if (string.Equals(name, "Label", StringComparison.OrdinalIgnoreCase))
+                childWidget = (IWidget)LoadLabelFromXml(childElement.ToString(), contentManager);
+            else if (string.Equals(name, "Button", StringComparison.OrdinalIgnoreCase))
+                childWidget = (IWidget)LoadButtonFromXml(childElement.ToString(), contentManager);
+            else if (string.Equals(name, "Panel", StringComparison.OrdinalIgnoreCase))
+                childWidget = (IWidget)LoadPanelFromXml(childElement.ToString(), contentManager);
+            else if (string.Equals(name, "Grid", StringComparison.OrdinalIgnoreCase))
+                childWidget = (IWidget)LoadGridFromXml(childElement.ToString(), contentManager);
+
+            if (childWidget != null)
+            {
+                container.AddChild(childWidget);
+            }
+        }
+    }
+
     private static XElement ParseRootElement(string xmlData, string expectedName)
     {
         try
