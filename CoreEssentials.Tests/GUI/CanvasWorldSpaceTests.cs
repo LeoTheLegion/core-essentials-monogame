@@ -1,3 +1,4 @@
+#nullable enable
 using Xunit;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Internal;
@@ -14,7 +15,8 @@ namespace CoreEssentials.Tests.GUI
     public class CanvasWorldSpaceTests : IDisposable
     {
         private readonly Game _mockGame;
-        private Camera _testCamera;
+        private readonly Camera _testCamera;
+        private bool _disposed = false;
 
         public CanvasWorldSpaceTests()
         {
@@ -29,22 +31,35 @@ namespace CoreEssentials.Tests.GUI
             Camera.SetMainCamera(_testCamera);
         }
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
-            _mockGame?.Dispose();
-            
-            // Shutdown the engine
-            var engine = EngineResolver.GetEngine();
-            engine.Shutdown();
-            
-            // Reset the main camera
-            Camera.SetMainCamera(null);
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _mockGame?.Dispose();
+                    
+                    // Shutdown the engine
+                    var engine = EngineResolver.GetEngine();
+                    engine.Shutdown();
+                    
+                    // Reset the main camera
+                    Camera.SetMainCamera(null);
+                }
+                _disposed = true;
+            }
         }
         
         /// <summary>
         /// Helper to get CanvasImpl instance via reflection on Canvas wrapper's _impl field.
         /// </summary>
-        private object GetCanvasImpl(Canvas canvas)
+        private static object GetCanvasImpl(Canvas canvas)
         {
             var implField = typeof(Canvas).GetField("_impl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             return implField!.GetValue(canvas)!;
@@ -53,9 +68,7 @@ namespace CoreEssentials.Tests.GUI
         /// <summary>
         /// Helper to get a field or property value from an object via reflection.
         /// </summary>
-#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context
-        private object? GetMemberValue(object obj, string name, Type type)
-#pragma warning restore CS8632
+        private static object? GetMemberValue(object obj, string name, Type type)
         {
             var field = type.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (field != null) return field.GetValue(obj);
@@ -67,7 +80,7 @@ namespace CoreEssentials.Tests.GUI
         /// <summary>
         /// Helper to get the underlying Myra Panel from CanvasImpl via reflection.
         /// </summary>
-        private object? GetMyraPanel(object impl)
+        private static object? GetMyraPanel(object impl)
         {
             var myraProp = impl.GetType().GetProperty("MyraPanel", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (myraProp != null) return myraProp.GetValue(impl);

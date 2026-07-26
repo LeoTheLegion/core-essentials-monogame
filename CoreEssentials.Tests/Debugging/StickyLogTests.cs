@@ -1,14 +1,17 @@
+#nullable enable
 using Xunit;
 using CoreEssentials.Debugging;
 using CoreEssentials.GUI.Internal;
 using Microsoft.Xna.Framework;
 using System;
+using System.Reflection;
 
 namespace CoreEssentials.Tests.Debugging
 {
     public class StickyLogTests : IDisposable
     {
         private readonly Game _mockGame;
+        private bool _disposed = false;
 
         public StickyLogTests()
         {
@@ -19,13 +22,26 @@ namespace CoreEssentials.Tests.Debugging
             CoreEssentials.GUI.GUIManager.Init(_mockGame, 800, 600);
         }
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
-            _mockGame?.Dispose();
-            
-            // Shutdown the engine to clean up internal state
-            var engine = EngineResolver.GetEngine();
-            engine.Shutdown();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _mockGame?.Dispose();
+                    
+                    // Shutdown the engine to clean up internal state
+                    var engine = EngineResolver.GetEngine();
+                    engine.Shutdown();
+                }
+                _disposed = true;
+            }
         }
         
         [Fact]
@@ -140,6 +156,14 @@ namespace CoreEssentials.Tests.Debugging
             
             // Update should apply the position
             stickyLog.Update(new GameTime());
+            
+            // Assert - verify position was updated via reflection on internal canvas
+            var posProp = typeof(CoreEssentials.GUI.Types.ICanvas).GetProperty("Position");
+            if (posProp != null)
+            {
+                var actualPos = (Vector2)posProp.GetValue(canvas)!;
+                Assert.Equal(newPosition, actualPos);
+            }
         }
         
         [Fact]

@@ -161,10 +161,10 @@ namespace CoreEssentials.Debugging
                 var logEntry = _log[key];
                 int rowToRemove = -1;
 
-                foreach (var widget in _grid.Widgets.Where(w => w is ILabel label && label == logEntry))
+                var foundWidget = _grid.Widgets.FirstOrDefault(w => w is ILabel label && label == logEntry);
+                if (foundWidget != null)
                 {
-                    rowToRemove = _grid.GetRow(widget);
-                    break;
+                    rowToRemove = _grid.GetRow(foundWidget);
                 }
 
                 if (rowToRemove >= 0)

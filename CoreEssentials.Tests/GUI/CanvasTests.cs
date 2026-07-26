@@ -1,3 +1,4 @@
+#nullable enable
 using Xunit;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Factory;
@@ -17,6 +18,7 @@ namespace CoreEssentials.Tests.GUI
     public class CanvasTests : IDisposable
     {
         private readonly Game _mockGame;
+        private bool _disposed = false;
 
         public CanvasTests()
         {
@@ -27,19 +29,32 @@ namespace CoreEssentials.Tests.GUI
             GUIManager.Init(_mockGame, 800, 600);
         }
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
-            _mockGame?.Dispose();
-            
-            // Shutdown the engine to clean up internal state
-            var engine = EngineResolver.GetEngine();
-            engine.Shutdown();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _mockGame?.Dispose();
+                    
+                    // Shutdown the engine to clean up internal state
+                    var engine = EngineResolver.GetEngine();
+                    engine.Shutdown();
+                }
+                _disposed = true;
+            }
         }
         
         /// <summary>
         /// Helper to get CanvasImpl instance via reflection on Canvas wrapper's _impl field.
         /// </summary>
-        private object GetCanvasImpl(Canvas canvas)
+        private static object GetCanvasImpl(Canvas canvas)
         {
             var implField = typeof(Canvas).GetField("_impl", BindingFlags.NonPublic | BindingFlags.Instance);
             return implField!.GetValue(canvas)!;
@@ -48,9 +63,7 @@ namespace CoreEssentials.Tests.GUI
         /// <summary>
         /// Helper to get a field or property value from an object via reflection.
         /// </summary>
-#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context
-        private object? GetMemberValue(object obj, string name, Type type)
-#pragma warning restore CS8632
+        private static object? GetMemberValue(object obj, string name, Type type)
         {
             var field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
             if (field != null) return field.GetValue(obj);
@@ -62,7 +75,7 @@ namespace CoreEssentials.Tests.GUI
         /// <summary>
         /// Helper to get the underlying Myra Panel from CanvasImpl via reflection.
         /// </summary>
-        private object? GetMyraPanel(object impl)
+        private static object? GetMyraPanel(object impl)
         {
             // CanvasImpl has internal property MyraPanel that returns the Myra Panel
             var myraProp = impl.GetType().GetProperty("MyraPanel", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -83,7 +96,7 @@ namespace CoreEssentials.Tests.GUI
 
             // Assert - verify internal state via reflection on _impl
             var impl = GetCanvasImpl(canvas);
-            var positionVal = GetMemberValue(impl, "_position", impl.GetType());
+            _ = GetMemberValue(impl, "_position", impl.GetType());
             
             // Canvas should be initialized with default screen space and zero position
             Assert.True(canvas.IsScreenSpace, "Default canvas should be in screen space");

@@ -12,8 +12,12 @@ public abstract class WidgetBase : WidgetWrapper
     /// <summary>
     /// Gets the underlying Myra widget instance (typed).
     /// </summary>
-    protected new MyraWidget MyraWidget => (MyraWidget)base.MyraWidget;
+    protected new MyraWidget MyraWidget => base.MyraWidget;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WidgetBase"/> class.
+    /// </summary>
+    /// <param name="myraWidget">The underlying Myra widget.</param>
     protected WidgetBase(MyraWidget myraWidget) : base(myraWidget)
     {
     }
