@@ -32,7 +32,14 @@
   </ItemGroup>  <ItemGroup>
     <Folder Include="src\Coroutines\" />
   </ItemGroup>
-  
+
+  <!-- Embedded resources shipped inside the NuGet DLL -->
+  <ItemGroup>
+    <EmbeddedResource Include="Content\StickyLogLayout.xml">
+      <LogicalName>CoreEssentials.Content.StickyLogLayout.xml</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>

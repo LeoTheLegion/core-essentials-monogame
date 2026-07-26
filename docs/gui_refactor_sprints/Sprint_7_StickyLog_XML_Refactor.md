@@ -1,7 +1,7 @@
 # Sprint 7 — StickyLog XML Layout Refactor 🧹
 
 **Points:** 3  
-**Status:** Not Started (depends on Sprints 0–6)  
+**Status:** In Progress (T1 complete, T2–T4 pending)  
 **Sprint Goal:** Replace `StickyLog.LoadGUI()`'s imperative factory calls with a single `GuiSerializer` call using an XML layout file, reducing ~25 lines of boilerplate to one declarative line.
 
 ---
@@ -37,16 +37,15 @@ _canvas.AddChild(_grid);
 
 ## Tasks
 
-- [ ] **T1: Add embedded layout XML + bundle to lib (0.5 pt)** ⭐
-  - New file: `CoreEssentials/Content/StickyLogLayout.xml`
-  - Define the grid structure with proper attributes:
+- [x] **T1: Add embedded layout XML + bundle to lib (0.5 pt)** ⭐ ✅ Done
+  - Created `CoreEssentials/Content/StickyLogLayout.xml` with grid attributes matching actual StickyLog values:
     ```xml
-    <Grid Width="200" Height="100" RowSpacing="8" ColumnSpacing="8" Visible="true">
+    <Grid Width="300" Height="100" RowSpacing="8" ColumnSpacing="8" Visible="true">
         <!-- Grid is empty — labels added dynamically at runtime -->
-        <!-- Background brush set via ColorAdapter or handled imperatively -->
+        <!-- Background brush set imperatively after loading (IBrush not expressible in XML) -->
     </Grid>
     ```
-  - **Bundle as embedded resource** in `CoreEssentials.csproj`:
+  - Added `<EmbeddedResource>` to `CoreEssentials.csproj`:
     ```xml
     <ItemGroup>
       <EmbeddedResource Include="Content\StickyLogLayout.xml">
@@ -54,9 +53,9 @@ _canvas.AddChild(_grid);
       </EmbeddedResource>
     </ItemGroup>
     ```
-  - This ships the XML **inside the DLL** — consumers just NuGet install, no loose files to manage
-  - `GuiSerializer` reads embedded resources via `Assembly.GetManifestResourceStream()` instead of disk I/O
-  - Note: `IBrush` background may not be expressible as a simple XML attribute (it's a composite object). Consider setting it imperatively after loading.
+  - Ships the XML **inside the DLL** — consumers just NuGet install, no loose files to manage
+  - `GuiSerializer` can read embedded resources via `Assembly.GetManifestResourceStream()` (pending T2 implementation)
+  - Note: `IBrush` background must be set imperatively after loading (composite type not expressible as XML attribute)
 
 - [ ] **T2: Refactor StickyLog.LoadGUI() to use GuiSerializer (1 pt)** ⭐
   - File: `CoreEssentials/src/debugging/StickyLog.cs`

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    StickyLog grid layout — embedded resource for GuiSerializer.
+
+    The Grid is intentionally empty here; individual key-value label pairs
+    are added dynamically at runtime via StickyLog.CreateNewLabel().
+
+    NOTE: IBrush Background cannot be expressed as a simple XML attribute,
+    so it must be set imperatively after loading in StickyLog.LoadGUI():
+        _grid.Background = Color.Black.WithAlpha(100).AsBrush();
+-->
+<Grid Width="300" Height="100" RowSpacing="8" ColumnSpacing="8" Visible="true">
+    <!-- No child widgets — labels added dynamically at runtime -->
+</Grid>
