@@ -78,13 +78,8 @@ namespace CoreEssentials.Debugging
             _canvas = CanvasFactory.CreateScreenSpace();
             _canvas.SetPosition(new Vector2(10, 10)); // Default position, top-left with small margin
             
-            // Load grid from embedded XML layout resource (~3 lines vs ~15 before)
+            // Load grid from embedded XML layout resource (background set declaratively in XML)
             _grid = GuiSerializer.LoadGridFromXmlEmbedded("CoreEssentials.Content.StickyLogLayout.xml");
-
-            // Set background imperatively (IBrush not expressible in XML)
-            Color c = Color.Black;
-            c.A = 100;
-            _grid.Background = c.AsBrush();
 
             // Add the grid as a child of the canvas
             _canvas.AddChild(_grid);

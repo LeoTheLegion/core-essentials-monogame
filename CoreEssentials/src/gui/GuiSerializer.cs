@@ -6,6 +6,7 @@ using System.Globalization;
 using Microsoft.Xna.Framework;
 using CoreEssentials.GUI.Types;
 using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Internal;
 using CoreEssentials.Assets;
 
 namespace CoreEssentials.GUI;
@@ -97,12 +98,8 @@ public static class GuiSerializer
             panel.BorderThickness = ParseThickness(element.Attribute("BorderThickness")!.Value);
         }
 
-        // Handle background color (simplified for now similar to TextColor)
-        if (element.Attribute("Background") != null)
-        {
-            // In a real scenario, we'd map this to an IBrush. 
-            // For now, we leave it as a placeholder or a simple color check if the engine supports it.
-        }
+        var panelBackground = ParseBackgroundAttribute(element);
+        if (panelBackground != null) panel.Background = panelBackground;
 
         LoadChildren(panel, element, contentManager);
 
@@ -135,6 +132,9 @@ public static class GuiSerializer
             
         if (float.TryParse(element.Attribute("ColumnSpacing")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float cs))
             grid.ColumnSpacing = cs;
+
+        var gridBackground = ParseBackgroundAttribute(element);
+        if (gridBackground != null) grid.Background = gridBackground;
 
         LoadChildren(grid, element, contentManager);
 
@@ -306,4 +306,73 @@ public static class GuiSerializer
         }
         return Thickness.Zero;
     }
+
+    #region Background Brush Parsing
+
+    /// <summary>
+    /// Parses the <c>Background</c> and optional <c>Opacity</c> attributes from an XML element,
+    /// returning a fully configured <see cref="IBrush"/> or <c>null</c>.
+    /// </summary>
+    private static IBrush? ParseBackgroundAttribute(XElement element)
+    {
+        var bgAttr = element.Attribute("Background")?.Value;
+        if (string.IsNullOrEmpty(bgAttr)) return null;
+
+        Color color = ParseColorString(bgAttr);
+        float opacity = 1.0f;
+
+        if (element.Attribute("Opacity") != null &&
+            float.TryParse(element.Attribute("Opacity")!.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float op))
+        {
+            opacity = op;
+        }
+
+        var brush = color.AsBrush();
+        brush.Opacity = opacity;
+        return brush;
+    }
+
+    private static Color ParseColorString(string value)
+    {
+        // 1. Try hex ARGB: #AARRGGBB or #RRGGBB
+        if (value.StartsWith("#", StringComparison.OrdinalIgnoreCase))
+        {
+            var hex = value.Substring(1);
+            if (hex.Length == 6) return ParseHexRGB(hex);   // RGB → opaque
+            if (hex.Length == 8) return ParseHexARGB(hex);  // ARGB with alpha
+        }
+
+        // 2. Try named colors
+        var named = value.Trim();
+        return named.ToUpperInvariant() switch
+        {
+            "BLACK"   => Color.Black,
+            "WHITE"   => Color.White,
+            "RED"     => new Color(255, 0, 0),
+            "GREEN"   => new Color(0, 128, 0),
+            "BLUE"    => new Color(0, 0, 255),
+            "YELLOW"  => new Color(255, 255, 0),
+            "GRAY"    => new Color(128, 128, 128),
+            _         => throw new FormatException($"Unknown color: '{value}'"),
+        };
+    }
+
+    private static Color ParseHexRGB(string hex)
+    {
+        byte r = Convert.ToByte(hex.Substring(0, 2), 16);
+        byte g = Convert.ToByte(hex.Substring(2, 2), 16);
+        byte b = Convert.ToByte(hex.Substring(4, 2), 16);
+        return new Color((byte)r, (byte)g, (byte)b, (byte)255); // fully opaque
+    }
+
+    private static Color ParseHexARGB(string hex)
+    {
+        byte a = Convert.ToByte(hex.Substring(0, 2), 16);
+        byte r = Convert.ToByte(hex.Substring(2, 2), 16);
+        byte g = Convert.ToByte(hex.Substring(4, 2), 16);
+        byte b = Convert.ToByte(hex.Substring(6, 2), 16);
+        return new Color((byte)r, (byte)g, (byte)b, (byte)a);
+    }
+
+    #endregion
 }

@@ -5,10 +5,9 @@
     The Grid is intentionally empty here; individual key-value label pairs
     are added dynamically at runtime via StickyLog.CreateNewLabel().
 
-    NOTE: IBrush Background cannot be expressed as a simple XML attribute,
-    so it must be set imperatively after loading in StickyLog.LoadGUI():
-        _grid.Background = Color.Black.WithAlpha(100).AsBrush();
+    Background is set declaratively using a hex ARGB color:
+      #64 = 100/255 ≈ 39% opacity, 000000 = black.
 -->
-<Grid Width="300" Height="100" RowSpacing="8" ColumnSpacing="8" Visible="true">
+<Grid Width="300" Height="100" RowSpacing="8" ColumnSpacing="8" Visible="true" Background="#64000000">
     <!-- No child widgets — labels added dynamically at runtime -->
 </Grid>

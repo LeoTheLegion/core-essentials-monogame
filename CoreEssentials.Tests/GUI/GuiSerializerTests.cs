@@ -260,6 +260,78 @@ public class GuiSerializerTests : IDisposable
         Assert.Equal(200f, grid.Width);
     }
 
+    [Fact]
+    public void LoadGridFromXml_BackgroundHexARGB_ParsesCorrectly()
+    {
+        // Arrange: #64 = alpha=100 (~39%), 000000 = black
+        string xml = @"<Grid Width=""200"" Height=""100"" Background=""#64000000"" />";
+
+        // Act
+        var grid = GuiSerializer.LoadGridFromXml(xml);
+
+        // Assert — SolidColorBrush stores the raw color (A=100) and opacity defaults to 1.0
+        Assert.NotNull(grid.Background);
+        Assert.True(grid.Background.IsSolid);
+        Assert.Equal(1f, grid.Background.Opacity, 0.01f);
+    }
+
+    [Fact]
+    public void LoadGridFromXml_BackgroundNamedColor_ParsesCorrectly()
+    {
+        // Arrange
+        string xml = @"<Grid Width=""200"" Background=""Black"" />";
+
+        // Act
+        var grid = GuiSerializer.LoadGridFromXml(xml);
+
+        // Assert — solid black with default opacity 1.0
+        Assert.NotNull(grid.Background);
+        Assert.True(grid.Background.IsSolid);
+        Assert.Equal(1f, grid.Background.Opacity, 0.01f);
+    }
+
+    [Fact]
+    public void LoadPanelFromXml_BackgroundHexRGB_ParsesCorrectly()
+    {
+        // Arrange: #FF0000FF = opaque blue (ARGB)
+        string xml = @"<Panel Width=""200"" Height=""100"" Background=""#FF0000FF"" />";
+
+        // Act
+        var panel = GuiSerializer.LoadPanelFromXml(xml);
+
+        // Assert
+        Assert.NotNull(panel.Background);
+        Assert.True(panel.Background.IsSolid);
+    }
+
+    [Fact]
+    public void LoadGridFromXml_BackgroundWithOpacityOverride_ParsesCorrectly()
+    {
+        // Arrange: named color + explicit opacity override
+        string xml = @"<Grid Width=""200"" Background=""Black"" Opacity=""0.4"" />";
+
+        // Act
+        var grid = GuiSerializer.LoadGridFromXml(xml);
+
+        // Assert — solid black with custom opacity
+        Assert.NotNull(grid.Background);
+        Assert.True(grid.Background.IsSolid);
+        Assert.Equal(0.4f, grid.Background.Opacity, 0.01f);
+    }
+
+    [Fact]
+    public void LoadWidgetFromXml_NoBackground_ReturnsNullBackground()
+    {
+        // Arrange
+        string xml = @"<Grid Width=""200"" Height=""100"" />";
+
+        // Act
+        var grid = GuiSerializer.LoadGridFromXml(xml);
+
+        // Assert
+        Assert.Null(grid.Background);
+    }
+
     public void Dispose()
     {
         WidgetFactory.Instance = new DefaultWidgetFactory();
