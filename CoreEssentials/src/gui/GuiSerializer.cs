@@ -150,6 +150,47 @@ public static class GuiSerializer
         return LoadGridFromXml(asset.XMLContent, contentManager);
     }
 
+    /// <summary>
+    /// Loads a widget of any supported type from an XML string.
+    /// </summary>
+    public static IWidget LoadFromXml(string xmlData, IContentManager? contentManager = null)
+    {
+        try
+        {
+            var doc = XDocument.Parse(xmlData);
+            var root = doc.Root;
+            if (root == null) throw new FormatException("XML document is empty.");
+
+            string name = root.Name.LocalName;
+
+            if (string.Equals(name, "Label", StringComparison.OrdinalIgnoreCase))
+                return LoadLabelFromXml(xmlData, contentManager);
+            if (string.Equals(name, "Button", StringComparison.OrdinalIgnoreCase))
+                return LoadButtonFromXml(xmlData, contentManager);
+            if (string.Equals(name, "Panel", StringComparison.OrdinalIgnoreCase))
+                return LoadPanelFromXml(xmlData, contentManager);
+            if (string.Equals(name, "Grid", StringComparison.OrdinalIgnoreCase))
+                return LoadGridFromXml(xmlData, contentManager);
+
+            throw new FormatException($"Unsupported root element <{name}>.");
+        }
+        catch (Exception ex) when (ex is System.Xml.XmlException || ex is FormatException)
+        {
+            throw new FormatException($"Error loading widget from XML: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Loads a widget of any supported type from an XMLAsset.
+    /// </summary>
+    public static IWidget LoadFromXml(XMLAsset asset, IContentManager? contentManager = null)
+    {
+        if (asset?.XMLContent == null)
+            throw new ArgumentException("XMLAsset content is null. Ensure the asset is loaded.");
+            
+        return LoadFromXml(asset.XMLContent, contentManager);
+    }
+
     private static void LoadChildren(IContainer container, XElement parentElement, IContentManager? contentManager)
     {
         foreach (var childElement in parentElement.Elements())

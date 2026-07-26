@@ -75,14 +75,9 @@ canvas.AddWidget(panel);
   - Mapped container-specific properties (`BorderThickness` for panels, `RowSpacing`/`ColumnSpacing` for grids).
   - **Tests included:** Unit tests verifying complex nested structures and container properties in `GuiSerializerTests.cs`.
 
-- [ ] **T3: Convenience overloads + integration tests (1 pt)** ⭐
-  - Add generic/flexible methods to `GuiSerializer.cs`:
-    ```csharp
-    public static IWidget LoadFromXml(string xmlData, IContentManager? contentManager = null);
-    public static IWidget LoadFromXml(XMLAsset asset, IContentManager? contentManager = null);
-    ```
-    These detect the root element type and dispatch to the appropriate typed loader.
-  - **Integration tests** in `CoreEssentials.Tests/GUI/GuiSerializerIntegrationTests.cs`:
+- [x] **T3: Convenience overloads + integration tests (1 pt)** ⭐ — *completed*
+  - Added generic `LoadFromXml` methods to `GuiSerializer.cs` that automatically dispatch based on the root XML element.
+  - **Integration tests:** New suite in `CoreEssentials.Tests.GUI.GuiSerializerIntegrationTests` verifying end-to-end flow from XML string to interface implementation.
     - Deeply nested layout (`<Canvas><Panel><Grid>...</Grid></Panel></Canvas>`)
     - Verify full hierarchy via `.Children` / `.Widgets`
     - ID-based lookup across the tree
