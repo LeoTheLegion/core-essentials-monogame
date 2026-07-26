@@ -44,27 +44,79 @@ public class FakeButton : IButton
     public event Action<IButton>? Clicked;
 }
 
+public class FakePanel : IPanel
+{
+    public float Width { get; set; }
+    public float Height { get; set; }
+    public bool Visible { get; set; } = true;
+    public bool Enabled { get; set; } = true;
+    public bool IsMouseInside { get; set; }
+    public bool IsKeyboardFocused { get; set; }
+    public Vector2 Position { get; set; }
+    public Thickness Margin { get; set; }
+    public HorizontalAlignment HorizontalAlignment { get; set; }
+    public VerticalAlignment VerticalAlignment { get; set; }
+    public IBrush? Background { get; set; }
+    public Thickness BorderThickness { get; set; }
+    public System.Collections.Generic.IList<IWidget> Children { get; } = new System.Collections.Generic.List<IWidget>();
+    public System.Collections.Generic.IEnumerable<IWidget> Widgets => Children;
+    public void AddChild(IWidget widget) => Children.Add(widget);
+    public void RemoveChild(IWidget widget) => Children.Remove(widget);
+    public void ClearChildren() => Children.Clear();
+}
+
+public class FakeGrid : IGrid
+{
+    public float Width { get; set; }
+    public float Height { get; set; }
+    public bool Visible { get; set; } = true;
+    public bool Enabled { get; set; } = true;
+    public bool IsMouseInside { get; set; }
+    public bool IsKeyboardFocused { get; set; }
+    public Vector2 Position { get; set; }
+    public Thickness Margin { get; set; }
+    public HorizontalAlignment HorizontalAlignment { get; set; }
+    public VerticalAlignment VerticalAlignment { get; set; }
+    public IBrush? Background { get; set; }
+    public System.Collections.Generic.IList<float> RowProportions { get; } = new System.Collections.Generic.List<float>();
+    public System.Collections.Generic.IList<float> ColumnProportions { get; } = new System.Collections.Generic.List<float>();
+    public float RowSpacing { get; set; }
+    public float ColumnSpacing { get; set; }
+    public System.Collections.Generic.IList<IWidget> Children { get; } = new System.Collections.Generic.List<IWidget>();
+    public System.Collections.Generic.IEnumerable<IWidget> Widgets => Children;
+    public void AddChild(IWidget widget) => Children.Add(widget);
+    public void RemoveChild(IWidget widget) => Children.Remove(widget);
+    public void ClearChildren() => Children.Clear();
+    public void SetRow(IWidget widget, int rowIndex) { }
+    public void SetColumn(IWidget widget, int columnIndex) { }
+    public int GetRow(IWidget widget) => -1;
+    public int GetColumn(IWidget widget) => -1;
+}
+
 public class FakeWidgetFactory : IWidgetFactory
 {
-    public IPanel CreatePanel() => throw new NotImplementedException();
+    public IPanel CreatePanel() => new FakePanel();
     public ILabel CreateLabel(string text) => new FakeLabel { Text = text };
     public IButton CreateTextButton(string text) => new FakeButton { Text = text };
-    public IGrid CreateGrid() => throw new NotImplementedException();
+    public IGrid CreateGrid() => new FakeGrid();
 }
 
 #endregion
 
-public class GuiSerializerTests
+public class GuiSerializerTests : IDisposable
 {
     public GuiSerializerTests()
     {
-        // Inject the fake factory to avoid GraphicsDevice errors
         WidgetFactory.Instance = new FakeWidgetFactory();
+    }
+
+    public void Dispose()
+    {
+        WidgetFactory.Instance = new DefaultWidgetFactory();
     }
 
     [Fact]
     public void LoadLabelFromXml_ValidXml_ReturnsLabelWithCorrectProperties()
-// ...existing code...
 
     {
         // Arrange
