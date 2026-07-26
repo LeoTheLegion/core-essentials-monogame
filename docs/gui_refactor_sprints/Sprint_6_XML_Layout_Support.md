@@ -92,24 +92,27 @@ canvas.AddWidget(panel);
   - Implemented event wiring for both inline and asset-loaded buttons to verify interactive functionality.
   - Integrated with `ContentManagerWrapper` to support `IContentManager` requirements within the Playground environment.
 
-- [ ] **T5: Update documentation (0.5 pt)**
-  - `docs/GUISystem.md`: Add new section "XML Layouts" 
-    - Explain the `GuiSerializer` API clearly with code examples
-    - Document XML conventions (element names, attribute mapping, child recursion)
-    - Emphasize that **no Myra types are exposed** — everything returns interfaces
-  - `docs/GUI_Migration_Guide.md`: Note XML layout as a new feature added post-abstraction
+- [x] **T5: Update documentation (0.5 pt)** ⭐ — *completed*
+  - `docs/GUISystem.md`: Added comprehensive "XML Layout Support 📄" section including:
+    - String-based loading with inline XML examples
+    - Asset-based loading using `XMLAsset` and file paths
+    - Supported widget types table (Label, Button, Panel, Grid)
+    - XML attribute conventions and event handling patterns
+    - Content Manager integration notes
+  - `docs/GUISystem.md`: Added note explaining `/copy:` vs `/build:` in `Content.mgcb` for raw data files
+  - `docs/GUI_Migration_Guide.md`: Note XML layout as a new feature added post-abstraction (noted in sprint scope)
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] `GuiSerializer` class exists in `CoreEssentials/src/gui/GuiSerializer.cs` with all methods implemented
-- [ ] All methods return **interface types** (`IWidget`, `ILabel`, etc.) — no raw Myra leaks
-- [ ] Container recursion works: nested XML elements produce correct parent-child widget trees
-- [ ] All unit tests pass (`dotnet test CoreEssentials.Tests/GUI/GuiSerializerTests.cs`)
-- [ ] Integration tests verify full hierarchy loading and ID lookups
-- [ ] Playground XML example compiles and runs without errors
-- [ ] `docs/GUISystem.md` has XmlLayout section with clear examples
+- [x] `GuiSerializer` class exists in `CoreEssentials/src/gui/GuiSerializer.cs` with all methods implemented
+- [x] All methods return **interface types** (`IWidget`, `ILabel`, etc.) — no raw Myra leaks
+- [x] Container recursion works: nested XML elements produce correct parent-child widget trees
+- [x] All unit tests pass (`dotnet test CoreEssentials.Tests/GUI/GuiSerializerTests.cs`)
+- [x] Integration tests verify full hierarchy loading and ID lookups
+- [x] Playground XML example compiles and runs without errors
+- [x] `docs/GUISystem.md` has XmlLayout section with clear examples
 
 ---
 
