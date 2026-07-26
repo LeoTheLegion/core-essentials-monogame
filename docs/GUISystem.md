@@ -316,7 +316,31 @@ GUIManager.AddWidget(panel);
 
 ---
 
-## UI Components
+### Real-world Example: Debug Overlay with StickyLog ⭐
+
+The `StickyLog` class in the `CoreEssentials.Debugging` namespace is a real-world example of XML layouts powering runtime UI. It displays an on-screen debug overlay that can show key-value pairs (FPS, entity counts, game state) during development.
+
+**Before Sprint 7** — imperative setup (~15 lines):
+```csharp
+_grid = WidgetFactory.CreateGrid();
+_grid.RowSpacing = 8; _grid.ColumnSpacing = 8;
+_grid.Background = Color.Black.WithAlpha(100).AsBrush();
+_grid.Width = 300; _grid.Height = 100;
+_grid.Visible = true;
+```
+
+**After Sprint 7** — declarative XML layout (3 lines):
+```csharp
+// Grid structure loaded from embedded resource: CoreEssentials.Content.StickyLogLayout.xml
+_grid = GuiSerializer.LoadGridFromXmlEmbedded("CoreEssentials.Content.StickyLogLayout.xml");
+_grid.Background = Color.Black.WithAlpha(100).AsBrush(); // opacity still set imperatively (Sprint 8 pending)
+```
+
+The XML layout file (`StickyLogLayout.xml`) defines the static container structure — dimensions, spacing, visibility. Runtime-dynamic elements (individual log entries added via `CreateNewLabel()`) remain imperative, which is correct: **XML for static structure, code for dynamic content**.
+
+See `docs/gui_refactor_sprints/Sprint_7_StickyLog_XML_Refactor.md` for the full migration details.
+
+---
 
 ## UI Components
 
