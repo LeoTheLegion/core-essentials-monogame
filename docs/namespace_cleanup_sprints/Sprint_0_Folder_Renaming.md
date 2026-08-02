@@ -1,8 +1,22 @@
 # Sprint 0 — Folder Renaming (Simple Renames) 📋
 
 **Points:** 7  
-**Status:** Not Started  
+**Status:** ✅ Complete  
 **Sprint Goal:** Rename folders with casing mismatches that have **no namespace changes required**. These are safe renames where the namespace already matches the target folder name.
+
+---
+
+## Results Summary
+
+| Task | Folder | Build | Tests | Status |
+|------|--------|-------|-------|--------|
+| T1 + T1b | `assets/` → `Assets/` | ✅ | 37 passed | ✅ |
+| T2 + T2b | `debugging/` → `Debugging/` | ✅ | 13 passed | ✅ |
+| T3 + T3b | `gameSystems/` → `GameSystems/` | ✅ | 196 passed | ✅ |
+| T4 + T4b | `gui/` → `GUI/` | ✅ | 48 passed | ✅ |
+| T5 + T5b | `inputs/` → `Inputs/` | ✅ | 5 passed, 2 skipped | ✅ |
+
+**Final Validation:** Full test suite — 366 total, 364 succeeded, 2 skipped (matches baseline)
 
 ---
 
@@ -57,10 +71,10 @@
 
 ## Acceptance Criteria
 
-- [ ] Folders renamed: `Assets/`, `Debugging/`, `GameSystems/`, `GUI/`, `Inputs/` (all PascalCase)
-- [ ] No namespace changes required for these folders
-- [ ] Solution builds cleanly with zero errors after each rename
-- [ ] All affected test suites pass after each rename
+- [x] Folders renamed: `Assets/`, `Debugging/`, `GameSystems/`, `GUI/`, `Inputs/` (all PascalCase)
+- [x] No namespace changes required for these folders
+- [x] Solution builds cleanly with zero errors after each rename
+- [x] All affected test suites pass after each rename
 
 ---
 
