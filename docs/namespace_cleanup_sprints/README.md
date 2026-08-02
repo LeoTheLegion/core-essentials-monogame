@@ -26,6 +26,9 @@ The `CoreEssentials/src/` directory has **inconsistent folder casing** and a few
 |--------|------|--------|--------|-------------|
 | 📋 [Sprint 0](Sprint_0_Folder_Renaming.md) | Folder Renaming (Simple) | 7 | ✅ Complete | Renamed 5 folders to PascalCase where namespace already matches — no code changes needed |
 | 🔧 [Sprint 1](Sprint_1_Namespace_Fixes.md) | Namespace Fixes & Test Updates | 7 | ✅ Complete | Fixed `Cameras`→`Camera`, `SceneManager`→`Scenes` namespaces, updated Playground + Tests |
+| 📁 [Sprint 2](Sprint_2_GameSystems_Inner_Folders.md) | GameSystems Inner Folders | 5 | ✅ Complete | Renamed inner folders under `GameSystems/` to PascalCase (EntitySystems/, Physics/, Types/, Engines/) — no code changes needed |
+| 🎨 [Sprint 3](Sprint_3_GUI_Inner_Folders.md) | GUI Inner Folders | 3 | ✅ Complete | Renamed inner folders under `GUI/` to PascalCase (Factory/, Types/) — no code changes needed |
+| 🔍 [Sprint 4](Sprint_4_Remaining_Lowercase_Folders.md) | Remaining Lowercase Folders | 3 | ✅ Complete | Renamed `aether/`, `engines/`, `myra/` to PascalCase — zero lowercase folders remain |
 
 ---
 
@@ -41,16 +44,16 @@ CoreEssentials/src/
 ├── Coroutines/                        ← CoreEssentials.Coroutines ✅
 ├── Debugging/                         ← CoreEssentials.Debugging ✅
 ├── GameSystems/                       ← CoreEssentials.GameSystems.* ✅
-│   ├── entitySystems/
+│   ├── EntitySystems/
 │   │   └── EntityOOPSystem/          ← CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem
 │   └── Physics/                      ← CoreEssentials.GameSystems.Physics.*
-│       ├── types/
-│       └── engines/aether/
+│       ├── Types/
+│       └── Engines/Aether/
 ├── GUI/                               ← CoreEssentials.GUI.* ✅
-│   ├── types/
-│   ├── factory/
+│   ├── Types/
+│   ├── Factory/
 │   ├── Internal/
-│   └── engines/myra/
+│   └── Engines/Myra/
 ├── Inputs/                            ← CoreEssentials.Inputs ✅
 ├── Scene/                             ← CoreEssentials.Scenes ✅ (fixed from SceneManager; plural to avoid type conflict)
 └── Timing/                            ← CoreEssentials.Timing ✅
@@ -73,5 +76,8 @@ CoreEssentials/src/
 |--------|--------|--------|-------|-------|
 | Sprint 0 | 7 | ✅ Complete | Clean | 364 passed, 2 skipped |
 | Sprint 1 | 7 | ✅ Complete | Clean (0 errors) | 364 passed, 2 skipped |
+| Sprint 2 | 5 | ✅ Complete | Clean (0 errors) | 364 passed, 2 skipped |
+| Sprint 3 | 3 | ✅ Complete | Clean (0 errors) | 364 passed, 2 skipped |
+| Sprint 4 | 3 | ✅ Complete | Clean (0 errors) | 364 passed, 2 skipped |
 
-**Total: 14 points earned — namespace & folder cleanup complete!** 🎉
+**Total: 25 points earned — all namespace & folder cleanup complete!** 🎉
