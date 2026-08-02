@@ -33,6 +33,28 @@ jobs:
         fi
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Extracted version: $VERSION"
+
+    - name: Check if release already exists
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        RELEASE_EXISTS=$(gh release view "${{ github.ref_name }}" --json id --jq '.id' 2>/dev/null || true)
+        if [ -n "$RELEASE_EXISTS" ]; then
+          echo "::error::Release '${{ github.ref_name }}' already exists. Aborting."
+          exit 1
+        fi
+
+    - name: Check if NuGet package version already exists
+      env:
+        NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        PACKAGE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "X-API-Key: ${NUGET_TOKEN}" \
+          "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json/CoreEssentials-MonoGame/$VERSION" 2>/dev/null || echo "000")
+        if [ "$PACKAGE_EXISTS" = "200" ]; then
+          echo "::error::NuGet package CoreEssentials-MonoGame.${VERSION} already exists. Aborting."
+          exit 1
+        fi
       
     - name: Restore dependencies
       run: dotnet restore CoreEssentials/CoreEssentials.csproj
