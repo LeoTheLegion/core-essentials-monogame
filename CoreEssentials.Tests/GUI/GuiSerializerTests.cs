@@ -46,7 +46,9 @@ public class FakeButton : IButton
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
     public string? Text { get; set; }
+#pragma warning disable CS0067 // The event is never used (required by IButton interface)
     public event Action<IButton>? Clicked;
+#pragma warning restore CS0067
 }
 
 public class FakePanel : IPanel
