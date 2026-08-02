@@ -156,16 +156,14 @@ namespace CoreEssentials.Camera
         /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if (!_disposed && disposing)
             {
-                if (disposing)
+                // Dispose managed state (managed objects).
+                if (MainCamera == this)
                 {
-                    // Dispose managed state (managed objects).
-                    if (MainCamera == this)
-                    {
-                        SetMainCamera(null!);
-                    }
+                    SetMainCamera(null!);
                 }
+
 
                 // Free unmanaged resources (unmanaged objects) and override a finalizer below.
                 // Set large fields to null.

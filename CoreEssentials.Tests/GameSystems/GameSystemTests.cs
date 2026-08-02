@@ -48,13 +48,11 @@ namespace CoreEssentials.Tests.GameSystems
             {
                 FixedUpdateCalled = true;
             }
-        }        // Custom Scene implementation for testing since we can't mock Scene.GetGameSystem
+        }
+
+        // Custom Scene implementation for testing since we can't mock Scene.GetGameSystem
         private class TestScene : Scene
         {
-            public TestGameSystem TestSystemToReturn { get; set; }
-
-            public bool GetGameSystemCalled { get; private set; }
-
             protected override GameSystem[] LoadGameSystems()
             {
                 return new GameSystem[0];
@@ -63,16 +61,6 @@ namespace CoreEssentials.Tests.GameSystems
             protected override IEnumerator OnStartCoroutine()
             {
                 yield break;
-            }
-
-            public new T GetGameSystem<T>() where T : GameSystem
-            {
-                GetGameSystemCalled = true;
-                if (typeof(T) == typeof(TestGameSystem))
-                {
-                    return (T)(object)TestSystemToReturn;
-                }
-                return default;
             }
         }
 

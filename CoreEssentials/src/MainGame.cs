@@ -22,7 +22,7 @@ namespace CoreEssentials
     /// </summary>
     public class MainGame : Game
     {
-        private GraphicsDeviceManager _graphics;
+        private readonly GraphicsDeviceManager _graphics;
 
         /// <summary>
         /// The <see cref="SpriteBatch"/> used for drawing 2D sprites and textures.
@@ -32,7 +32,7 @@ namespace CoreEssentials
         /// <summary>
         /// The time interval in milliseconds between fixed update calls (set at 50 FPS).
         /// </summary>
-        private const float FIXED_UPDATE_MS = 1000 / 50;
+        private const float FIXED_UPDATE_MS = 1000f / 50;
 
         /// <summary>
         /// Accumulated time since the last fixed update.

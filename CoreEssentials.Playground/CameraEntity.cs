@@ -14,46 +14,31 @@ namespace CoreEssentials.Playground
     /// </summary>
     public class CameraEntity : Entity
     {
-        private Camera.Camera camera;
+        private readonly Camera.Camera camera;
         private Entity targetToFollow;
-        private float cameraSpeed = 1f;
-        private float zoomSpeed = 1f; // This is more like a sensitivity factor
-        private float actualZoomSpeed = 0.1f; // Actual amount to change zoom per input
-        private bool followingTarget = false;
+        private const float ActualZoomSpeed = 0.1f; // Actual amount to change zoom per input
 
         private EventHandler<KeyboardEventArgs> _keyReleaseHandler;
         
         /// <summary>
-        /// Gets the wrapped camera instance
+        /// Gets the wrapped camera instance.
         /// </summary>
         public Camera.Camera Camera => camera;
         
         /// <summary>
-        /// Gets or sets the speed at which the camera moves
+        /// Gets or sets the speed at which the camera moves.
         /// </summary>
-        public float CameraSpeed
-        {
-            get => cameraSpeed;
-            set => cameraSpeed = value;
-        }
+        public float CameraSpeed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the sensitivity factor for zooming.
+        /// </summary>
+        public float ZoomSpeed { get; set; }
         
         /// <summary>
-        /// Gets or sets the speed at which the camera zooms
+        /// Gets or sets whether the camera is following a target.
         /// </summary>
-        public float ZoomSpeed
-        {
-            get => zoomSpeed;
-            set => zoomSpeed = value;
-        }
-        
-        /// <summary>
-        /// Gets or sets whether the camera is following a target
-        /// </summary>
-        public bool FollowingTarget
-        {
-            get => followingTarget;
-            set => followingTarget = value;
-        }
+        public bool FollowingTarget { get; set; }
         
         /// <summary>
         /// Creates a new camera entity
@@ -61,6 +46,10 @@ namespace CoreEssentials.Playground
         public CameraEntity()
         {
             // Create a camera and set it as the main camera
+            CameraSpeed = 1f;
+            ZoomSpeed = 1f;
+            FollowingTarget = false;
+
             camera = new Camera.Camera();
             camera.SetAsMainCamera();
         }
@@ -68,20 +57,13 @@ namespace CoreEssentials.Playground
         public override void OnStart()
         {
             base.OnStart();
-            // _keyPressHandler = HandleCameraKeyPress; // Commented out, will be handled in Update
             _keyReleaseHandler = HandleCameraKeyRelease;
-
-            // Input.Keyboard.KeyPressed += _keyPressHandler; // Commented out
             Input.Keyboard.KeyReleased += _keyReleaseHandler;
         }
 
         public override void OnDestroy()
         {
             base.OnDestroy();
-            // if (_keyPressHandler != null) // Commented out
-            // {
-            //     Input.Keyboard.KeyPressed -= _keyPressHandler;
-            // }
             if (_keyReleaseHandler != null)
             {
                 Input.Keyboard.KeyReleased -= _keyReleaseHandler;
@@ -94,43 +76,44 @@ namespace CoreEssentials.Playground
             base.Update(gameTime);
 
             // Handle manual camera movement with WASD if not following a target
-            if (!followingTarget)
+            if (!FollowingTarget)
             {
                 if (Input.Keyboard.IsKeyDown(Keys.A))
                 {
-                    Move(new Vector2(-1, 0), (float)Time.DeltaTime);
+                    Position += new Vector2(-CameraSpeed, 0) * (float)Time.DeltaTime;
                 }
                 if (Input.Keyboard.IsKeyDown(Keys.D))
                 {
-                    Move(new Vector2(1, 0), (float)Time.DeltaTime);
+                    Position += new Vector2(CameraSpeed, 0) * (float)Time.DeltaTime;
                 }
                 if (Input.Keyboard.IsKeyDown(Keys.W))
                 {
-                    Move(new Vector2(0, -1), (float)Time.DeltaTime);
+                    Position += new Vector2(0, -CameraSpeed) * (float)Time.DeltaTime;
                 }
                 if (Input.Keyboard.IsKeyDown(Keys.S))
                 {
-                    Move(new Vector2(0, 1), (float)Time.DeltaTime);
+                    Position += new Vector2(0, CameraSpeed) * (float)Time.DeltaTime;
                 }
             }
 
             // Zoom controls with Q and E
             if (Input.Keyboard.IsKeyDown(Keys.Q))
             {
-                Zoom(1f * (float)Time.DeltaTime * 0.1f); // Adjusted zoom to be time-based and smoother
+                camera.Zoom += 1f * (float)Time.DeltaTime * ActualZoomSpeed * ZoomSpeed;
             }
             if (Input.Keyboard.IsKeyDown(Keys.E))
             {
-                Zoom(-1f * (float)Time.DeltaTime * 0.1f); // Adjusted zoom to be time-based and smoother
+                camera.Zoom -= 1f * (float)Time.DeltaTime * ActualZoomSpeed * ZoomSpeed;
             }
+            camera.Zoom = MathHelper.Clamp(camera.Zoom, 0.1f, 3f);
             
             // Update position
             camera.Position = Position;
             
             // Follow target if enabled
-            if (followingTarget && targetToFollow != null)
+            if (FollowingTarget && targetToFollow != null)
             {
-                Position = Vector2.Lerp(Position, targetToFollow.Position, 0.1f); // Increased Lerp factor for snappier follow
+                Position = Vector2.Lerp(Position, targetToFollow.Position, 0.1f);
             }
         }
         
@@ -141,9 +124,9 @@ namespace CoreEssentials.Playground
         /// <param name="deltaTime">The time elapsed since last frame in seconds</param>
         public void Move(Vector2 direction, float deltaTime)
         {
-            if (!followingTarget) // Only allow manual move if not following
+            if (!FollowingTarget) // Only allow manual move if not following
             {
-                Position += direction * cameraSpeed * deltaTime;
+                Position += direction * CameraSpeed * deltaTime;
             }
         }
         
@@ -155,7 +138,7 @@ namespace CoreEssentials.Playground
         public void SetFollowTarget(Entity target, bool startFollowingImmediately = true)
         {
             targetToFollow = target;
-            followingTarget = startFollowingImmediately;
+            FollowingTarget = startFollowingImmediately;
         }
         
         /// <summary>
@@ -164,20 +147,18 @@ namespace CoreEssentials.Playground
         /// <param name="amount">Amount to zoom (positive to zoom in, negative to zoom out)</param>
         public void Zoom(float amount) // Amount is now a factor, actual zoom speed is internal
         {
-            camera.Zoom += amount * zoomSpeed * actualZoomSpeed ; // Removed Time.DeltaTime here as it's applied at call site
+            camera.Zoom += amount * ZoomSpeed * ActualZoomSpeed;
             camera.Zoom = MathHelper.Clamp(camera.Zoom, 0.1f, 3f);
         }
         
         /// <summary>
-        /// Resets the camera position, rotation, and zoom
+        /// Resets the camera position, rotation, and zoom.
         /// </summary>
         public void ResetCamera()
         {
             Position = Vector2.Zero;
             camera.Rotation = 0f;
             camera.Zoom = 1f;
-            // Optionally stop following
-            // SetFollowTarget(null, false); 
         }
 
         public void ToggleFollow(Entity targetToToggle)

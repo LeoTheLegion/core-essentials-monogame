@@ -13,46 +13,25 @@ namespace CoreEssentials.Scenes
     /// </summary>
     public class LoadingScene : Scene
     {
-        private string _loadingText = "Loading...";
-        private Color _backgroundColor = Color.Black;
-        private Color _loadingBarColor = Color.White;
-        private Color _textColor = Color.White;
-        
         /// <summary>
-        /// Sets the text to display on the loading screen.
+        /// Gets or sets the text to display on the loading screen.
         /// </summary>
-        public string LoadingText 
-        { 
-            get => _loadingText;
-            set => _loadingText = value;
-        }
-        
+        public string LoadingText { get; set; } = "Loading...";
+
         /// <summary>
-        /// Sets the background color of the loading screen.
+        /// Gets or sets the background color of the loading screen.
         /// </summary>
-        public Color BackgroundColor
-        {
-            get => _backgroundColor;
-            set => _backgroundColor = value;
-        }
-        
+        public Color BackgroundColor { get; set; } = Color.Black;
+
         /// <summary>
-        /// Sets the color of the loading progress bar.
+        /// Gets or sets the color of the loading progress bar.
         /// </summary>
-        public Color LoadingBarColor
-        {
-            get => _loadingBarColor;
-            set => _loadingBarColor = value;
-        }
-        
+        public Color LoadingBarColor { get; set; } = Color.White;
+
         /// <summary>
-        /// Sets the color of the loading text.
+        /// Gets or sets the color of the loading text.
         /// </summary>
-        public Color TextColor
-        {
-            get => _textColor;
-            set => _textColor = value;
-        }
+        public Color TextColor { get; set; } = Color.White;
 
         /// <summary>
         /// Creates a new instance of the LoadingScene class with default settings.
@@ -71,10 +50,10 @@ namespace CoreEssentials.Scenes
         /// <param name="textColor">The color of the loading text.</param>
         public LoadingScene(string loadingText, Color backgroundColor, Color loadingBarColor, Color textColor)
         {
-            _loadingText = loadingText;
-            _backgroundColor = backgroundColor;
-            _loadingBarColor = loadingBarColor;
-            _textColor = textColor;
+            LoadingText = loadingText;
+            BackgroundColor = backgroundColor;
+            LoadingBarColor = loadingBarColor;
+            TextColor = textColor;
         }
         
         /// <summary>
@@ -113,7 +92,7 @@ namespace CoreEssentials.Scenes
             int screenHeight = graphicsDevice.Viewport.Height;
             
             // Clear the background
-            graphicsDevice.Clear(_backgroundColor);
+            graphicsDevice.Clear(BackgroundColor);
             
             spriteBatch.Begin();
             
@@ -139,12 +118,12 @@ namespace CoreEssentials.Scenes
                 );
                 
                 // Draw the bars
-                CoreEssentials.Debugging.Debug.Primitives.DrawRectangle(spriteBatch, barBg, _loadingBarColor.WithAlpha(0.5f));
+                CoreEssentials.Debugging.Debug.Primitives.DrawRectangle(spriteBatch, barBg, LoadingBarColor.WithAlpha(0.5f));
                 
                 // Fill the progress bar
                 Texture2D pixel = new Texture2D(graphicsDevice, 1, 1);
-                pixel.SetData(new[] { _loadingBarColor });
-                spriteBatch.Draw(pixel, barFill, _loadingBarColor);
+                pixel.SetData(new[] { LoadingBarColor });
+                spriteBatch.Draw(pixel, barFill, LoadingBarColor);
                 
                 // Draw percentage text
                 string percentText = $"{Math.Floor(progress * 100)}%";
@@ -155,18 +134,18 @@ namespace CoreEssentials.Scenes
                 );
                 
                 // Simple text rendering (in a real game, use SpriteFont)
-                DrawSimpleText(spriteBatch, percentText, percentPos, _textColor);
+                DrawSimpleText(spriteBatch, percentText, percentPos, TextColor);
             }
             
             // Draw loading text
-            Vector2 textSize = new Vector2(8 * _loadingText.Length, 16); // Simple text size approximation
+            Vector2 textSize = new Vector2(8 * LoadingText.Length, 16); // Simple text size approximation
             Vector2 textPos = new Vector2(
                 screenWidth / 2 - textSize.X / 2,
                 screenHeight / 2 - textSize.Y / 2
             );
             
             // Simple text rendering (in a real game, use SpriteFont)
-            DrawSimpleText(spriteBatch, _loadingText, textPos, _textColor);
+            DrawSimpleText(spriteBatch, LoadingText, textPos, TextColor);
             
             spriteBatch.End();
         }
@@ -175,11 +154,8 @@ namespace CoreEssentials.Scenes
         /// Simple utility to draw text without a SpriteFont.
         /// In a real game, you would use a SpriteFont instead.
         /// </summary>
-        private void DrawSimpleText(SpriteBatch spriteBatch, string text, Vector2 position, Color color)
+        private static void DrawSimpleText(SpriteBatch spriteBatch, string text, Vector2 position, Color color)
         {
-            // This is a placeholder - in a real game you would use:
-            // spriteBatch.DrawString(font, text, position, color);
-            
             // For the placeholder, we'll draw rectangles representing characters
             for (int i = 0; i < text.Length; i++)
             {

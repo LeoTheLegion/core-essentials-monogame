@@ -13,7 +13,7 @@ public class SceneManager
     /// <summary>
     /// Reference to the MainGame instance that this SceneManager is associated with.
     /// </summary>
-    MainGame? _game;
+    readonly MainGame? _game;
     /// <summary>
     /// The current active scene.
     /// </summary>
@@ -29,7 +29,7 @@ public class SceneManager
     /// <summary>
     /// CoroutineOwner for managing scene transition coroutines.
     /// </summary>
-    private CoroutineOwner _coroutineOwner;
+    private readonly CoroutineOwner _coroutineOwner;
     /// <summary>
     /// Tracks the current transition coroutine ID.
     /// </summary>

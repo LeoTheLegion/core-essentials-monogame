@@ -13,7 +13,7 @@ namespace CoreEssentials.Playground;
 
 public class PhysicsEntityScene : Scene
 {
-    private Random random = new Random();
+    private readonly Random _random = new();
     
     protected override GameSystem[] LoadGameSystems()
     {
@@ -58,13 +58,13 @@ public class PhysicsEntityScene : Scene
         {
             // Create a random y between 0 and 720
             int padding = 32;
-            int y = random.Next(padding, graphics.PreferredBackBufferHeight - padding);
+            int y = _random.Next(padding, graphics.PreferredBackBufferHeight - padding);
 
             Ball ball = entitySystem.CreateEntity<Ball>(new Vector2(i, y));
             // add Random force to the ball
             ball.Body.ApplyImpulse(new Vector2(
-                (float)(random.NextDouble() * 10 - 5), 
-                (float)(random.NextDouble() * 10 - 5)
+                (float)(_random.NextDouble() * 10 - 5), 
+                (float)(_random.NextDouble() * 10 - 5)
             ));
             
             // Update progress (from 55% to 90%)
@@ -89,7 +89,7 @@ public class PhysicsEntityScene : Scene
         yield return new WaitForSeconds(0.1f);
 
         // Create a world border
-        WorldBorder worldBorder = entitySystem.CreateEntity<WorldBorder>(
+        entitySystem.CreateEntity<WorldBorder>(
             new Vector2(0, 0), 
             new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight)
         );
