@@ -9,7 +9,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Linq;
 using System.Collections.Generic;
 using System;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
 using CoreEssentials.Timing;
@@ -45,7 +45,7 @@ namespace CoreEssentials
         public GraphicsDeviceManager Graphics => _graphics;
 
         /// <summary>
-        /// Gets the <see cref="SceneManagement.SceneManager"/> responsible for managing game scenes.
+        /// Gets the <see cref="SceneManager"/> responsible for managing game scenes.
         /// </summary>
         public SceneManager SceneManager { get; private set; }
 

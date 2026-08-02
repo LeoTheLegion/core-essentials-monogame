@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 
 namespace CoreEssentials.GameSystems
 {

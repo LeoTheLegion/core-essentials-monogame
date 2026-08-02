@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.Camera;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 
@@ -54,7 +55,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        var camera = Cameras.Camera.MainCamera;
+        var camera = Camera.Camera.MainCamera;
         if (camera == null)
         {
             spriteBatch.Begin();

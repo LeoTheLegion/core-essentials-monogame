@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using CoreEssentials.GUI.Engines.Myra;
 using CoreEssentials.GUI.Types;
-using CoreEssentials.Cameras;
+using CoreEssentials.Camera;
 
 namespace CoreEssentials.GUI;
 

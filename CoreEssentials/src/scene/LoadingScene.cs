@@ -5,7 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace CoreEssentials.SceneManagement
+namespace CoreEssentials.Scenes
 {
     /// <summary>
     /// A simple loading screen scene that displays loading progress.

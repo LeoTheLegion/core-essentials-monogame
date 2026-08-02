@@ -4,7 +4,7 @@ using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.Inputs;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;

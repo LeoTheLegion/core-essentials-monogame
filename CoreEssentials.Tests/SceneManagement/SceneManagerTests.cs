@@ -3,7 +3,7 @@ using System.Collections;
 using Xunit;
 using Microsoft.Xna.Framework;
 using CoreEssentials.Coroutines;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.GameSystems;
 using CoreEssentials.Tests.Coroutines;
 

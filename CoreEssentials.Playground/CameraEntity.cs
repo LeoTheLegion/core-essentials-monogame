@@ -1,4 +1,4 @@
-using CoreEssentials.Cameras;
+using CoreEssentials.Camera;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -14,7 +14,7 @@ namespace CoreEssentials.Playground
     /// </summary>
     public class CameraEntity : Entity
     {
-        private Cameras.Camera camera;
+        private Camera.Camera camera;
         private Entity targetToFollow;
         private float cameraSpeed = 1f;
         private float zoomSpeed = 1f; // This is more like a sensitivity factor
@@ -26,7 +26,7 @@ namespace CoreEssentials.Playground
         /// <summary>
         /// Gets the wrapped camera instance
         /// </summary>
-        public Cameras.Camera Camera => camera;
+        public Camera.Camera Camera => camera;
         
         /// <summary>
         /// Gets or sets the speed at which the camera moves
@@ -61,7 +61,7 @@ namespace CoreEssentials.Playground
         public CameraEntity()
         {
             // Create a camera and set it as the main camera
-            camera = new Cameras.Camera();
+            camera = new Camera.Camera();
             camera.SetAsMainCamera();
         }
         

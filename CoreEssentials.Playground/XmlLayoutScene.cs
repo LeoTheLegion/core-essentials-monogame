@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Linq;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Types;

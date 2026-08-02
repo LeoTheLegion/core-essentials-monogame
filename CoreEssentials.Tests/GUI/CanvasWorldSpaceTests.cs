@@ -2,7 +2,7 @@
 using Xunit;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Internal;
-using CoreEssentials.Cameras;
+// Camera type alias not needed - using fully qualified names below
 using Microsoft.Xna.Framework;
 using System;
 
@@ -15,7 +15,7 @@ namespace CoreEssentials.Tests.GUI
     public class CanvasWorldSpaceTests : IDisposable
     {
         private readonly Game _mockGame;
-        private readonly Camera _testCamera;
+        private readonly CoreEssentials.Camera.Camera _testCamera;
         private bool _disposed = false;
 
         public CanvasWorldSpaceTests()
@@ -27,8 +27,8 @@ namespace CoreEssentials.Tests.GUI
             GUIManager.Init(_mockGame, 800, 600);
 
             // Set up a test camera
-            _testCamera = new Camera();
-            Camera.SetMainCamera(_testCamera);
+            _testCamera = new CoreEssentials.Camera.Camera();
+            CoreEssentials.Camera.Camera.SetMainCamera(_testCamera);
         }
 
         public void Dispose()
@@ -50,7 +50,7 @@ namespace CoreEssentials.Tests.GUI
                     engine.Shutdown();
                     
                     // Reset the main camera
-                    Camera.SetMainCamera(null);
+                    CoreEssentials.Camera.Camera.SetMainCamera(null);
                 }
                 _disposed = true;
             }
@@ -196,7 +196,7 @@ namespace CoreEssentials.Tests.GUI
             canvas.SetPosition(worldPosition);
 
             // Set main camera to null
-            Camera.SetMainCamera(null);
+            CoreEssentials.Camera.Camera.SetMainCamera(null);
 
             // Act - should not throw when camera is null
             Exception exception = Record.Exception(() => canvas.Update(new GameTime()));

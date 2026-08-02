@@ -7,7 +7,7 @@ using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace CoreEssentials.SceneManagement;
+namespace CoreEssentials.Scenes;
 
 /// <summary>
 /// Represents a self-contained game scene containing game systems, entities, and scene-specific logic.

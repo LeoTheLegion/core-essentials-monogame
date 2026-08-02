@@ -57,7 +57,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     {
         if (!_isScreenSpace)
         {
-            var camera = CoreEssentials.Cameras.Camera.MainCamera;
+            var camera = CoreEssentials.Camera.Camera.MainCamera;
             if (camera != null)
             {
                 Vector2 screenPosition = camera.WorldToScreen(_position);

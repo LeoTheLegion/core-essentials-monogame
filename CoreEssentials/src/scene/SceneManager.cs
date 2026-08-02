@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections;
 
-namespace CoreEssentials.SceneManagement;
+namespace CoreEssentials.Scenes;
 /// <summary>
 /// The SceneManager is responsible for managing the current scene and transitioning between scenes.
 /// </summary>
