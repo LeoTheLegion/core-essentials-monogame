@@ -9,12 +9,12 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class FontAsset : Asset
 {
-    private SpriteFont _spriteFont;
+    private SpriteFont? _spriteFont;
 
     /// <summary>
     /// Gets the loaded SpriteFont.
     /// </summary>
-    public SpriteFont Font => _spriteFont;
+    public SpriteFont? Font => _spriteFont;
 
     /// <summary>
     /// Initializes a new instance of the FontAsset class.

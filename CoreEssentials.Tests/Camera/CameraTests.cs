@@ -1,4 +1,4 @@
-using CoreEssentials.Cameras;
+using CoreEssentials.Camera;
 using Microsoft.Xna.Framework;
 using System;
 using Xunit;
@@ -11,7 +11,7 @@ namespace CoreEssentials.Tests.Cameras
         public void Constructor_SetsDefaultValues()
         {
             // Arrange & Act
-            var camera = new CoreEssentials.Cameras.Camera();
+            var camera = new CoreEssentials.Camera.Camera();
 
             // Assert
             Assert.Equal(Vector2.Zero, camera.Position);
@@ -24,33 +24,33 @@ namespace CoreEssentials.Tests.Cameras
         public void SetAsMainCamera_SetsInstanceAsMainCamera()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera();
+            var camera = new CoreEssentials.Camera.Camera();
 
             // Act
             camera.SetAsMainCamera();
 
             // Assert
-            Assert.Same(camera, CoreEssentials.Cameras.Camera.MainCamera);
+            Assert.Same(camera, CoreEssentials.Camera.Camera.MainCamera);
         }
 
         [Fact]
         public void SetMainCamera_SetsSpecifiedCameraAsMainCamera()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera();
+            var camera = new CoreEssentials.Camera.Camera();
 
             // Act
-            CoreEssentials.Cameras.Camera.SetMainCamera(camera);
+            CoreEssentials.Camera.Camera.SetMainCamera(camera);
 
             // Assert
-            Assert.Same(camera, CoreEssentials.Cameras.Camera.MainCamera);
+            Assert.Same(camera, CoreEssentials.Camera.Camera.MainCamera);
         }
 
         [Fact]
         public void Move_UpdatesPosition()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera();
+            var camera = new CoreEssentials.Camera.Camera();
             var initialPosition = Vector2.Zero;
             var moveAmount = new Vector2(10, 20);
 
@@ -65,7 +65,7 @@ namespace CoreEssentials.Tests.Cameras
         public void ViewMatrix_ReturnsCorrectTransformationMatrix()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera
+            var camera = new CoreEssentials.Camera.Camera
             {
                 Position = new Vector2(100, 200),
                 Zoom = 2.0f,
@@ -89,7 +89,7 @@ namespace CoreEssentials.Tests.Cameras
         public void ScreenToWorld_TransformsScreenCoordinatesToWorldCoordinates()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera
+            var camera = new CoreEssentials.Camera.Camera
             {
                 Position = new Vector2(100, 100),
                 Zoom = 2.0f
@@ -110,7 +110,7 @@ namespace CoreEssentials.Tests.Cameras
         public void WorldToScreen_TransformsWorldCoordinatesToScreenCoordinates()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera
+            var camera = new CoreEssentials.Camera.Camera
             {
                 Position = new Vector2(100, 100),
                 Zoom = 2.0f
@@ -131,32 +131,32 @@ namespace CoreEssentials.Tests.Cameras
         public void Dispose_WhenIsMainCamera_SetsMainCameraToNull()
         {
             // Arrange
-            var camera = new CoreEssentials.Cameras.Camera();
+            var camera = new CoreEssentials.Camera.Camera();
             camera.SetAsMainCamera();
-            Assert.Same(camera, CoreEssentials.Cameras.Camera.MainCamera); // Ensure it was set
+            Assert.Same(camera, CoreEssentials.Camera.Camera.MainCamera); // Ensure it was set
 
             // Act
             camera.Dispose();
 
             // Assert
-            Assert.Null(CoreEssentials.Cameras.Camera.MainCamera);
+            Assert.Null(CoreEssentials.Camera.Camera.MainCamera);
         }
 
         [Fact]
         public void Dispose_WhenNotMainCamera_DoesNotAffectMainCamera()
         {
             // Arrange
-            var mainCam = new CoreEssentials.Cameras.Camera();
+            var mainCam = new CoreEssentials.Camera.Camera();
             mainCam.SetAsMainCamera();
 
-            var otherCamera = new CoreEssentials.Cameras.Camera();
-            Assert.NotSame(otherCamera, CoreEssentials.Cameras.Camera.MainCamera); // Ensure it's not main
+            var otherCamera = new CoreEssentials.Camera.Camera();
+            Assert.NotSame(otherCamera, CoreEssentials.Camera.Camera.MainCamera); // Ensure it's not main
 
             // Act
             otherCamera.Dispose();
 
             // Assert
-            Assert.Same(mainCam, CoreEssentials.Cameras.Camera.MainCamera); // MainCamera should still be mainCam
+            Assert.Same(mainCam, CoreEssentials.Camera.Camera.MainCamera); // MainCamera should still be mainCam
             mainCam.Dispose(); // Clean up mainCam
         }
     }

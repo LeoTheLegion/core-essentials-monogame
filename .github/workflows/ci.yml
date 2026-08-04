@@ -40,5 +40,34 @@ jobs:
         retention-days: 7
         if-no-files-found: error
         
-    # Note: Tests require Windows due to MonoGame.Framework.WindowsDX dependency
-    # They cannot be run on Linux runners. Tests should be run locally on Windows.
+  test:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore -c Release
+
+    - name: Test
+      run: dotnet test CoreEssentials.Tests/ --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: CoreEssentials.Tests/TestResults/*.trx
+        retention-days: 7

@@ -7,36 +7,42 @@ using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace CoreEssentials.SceneManagement;
+namespace CoreEssentials.Scenes;
 
+/// <summary>
+/// Represents a self-contained game scene containing game systems, entities, and scene-specific logic.
+/// </summary>
 public abstract class Scene
 {
     /// <summary>
     /// Reference to the SceneManager that manages this scene.
     /// </summary>
-    private SceneManager _sceneManager;
+    private SceneManager? _sceneManager;
 
-    public SceneManager SceneManager => _sceneManager;
+    /// <summary>
+    /// Gets the <see cref="SceneManager"/> responsible for managing this scene.
+    /// </summary>
+    public SceneManager SceneManager => _sceneManager ?? throw new InvalidOperationException("SceneManager has not been assigned.");
     
     /// <summary>
     /// Collection of all registered game systems mapped by their type.
     /// </summary>
-    private Dictionary<Type, GameSystem> _gameSystems = new Dictionary<Type, GameSystem>();
+    private readonly Dictionary<Type, GameSystem> _gameSystems = new Dictionary<Type, GameSystem>();
 
     /// <summary>
     /// Array of game systems that implement the IUpdateGameSystem interface.
     /// </summary>
-    private IUpdateGameSystem[] _updateSystems;
+    private IUpdateGameSystem[] _updateSystems = Array.Empty<IUpdateGameSystem>();
 
     /// <summary>
     /// Array of game systems that implement the IDrawGameSystem interface.
     /// </summary>
-    private IDrawGameSystem[] _drawSystems;
+    private IDrawGameSystem[] _drawSystems = Array.Empty<IDrawGameSystem>();
 
     /// <summary>
     /// Array of game systems that implement the IFixedUpdateGameSystem interface.
     /// </summary>
-    private IFixedUpdateGameSystem[] _fixedUpdateSystems;
+    private IFixedUpdateGameSystem[] _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
     
     /// <summary>
     /// Tracks the current loading progress of the scene, from 0.0 to 1.0
@@ -85,7 +91,7 @@ public abstract class Scene
     /// Default constructor for the Scene class.
     /// Initializes the IsLoaded property to false.
     /// </summary>
-    public Scene()
+    protected Scene()
     {
         IsLoaded = false;
         IsLoading = false;
@@ -159,7 +165,7 @@ public abstract class Scene
         for (int i = 0; i < systems.Length; i++)
         {
             if (_gameSystems.ContainsKey(systems[i].GetType()))
-                throw new Exception("Game System already exists: " + systems[i].GetType().ToString());
+                throw new InvalidOperationException("Game system already exists: " + systems[i].GetType().Name);
 
             _gameSystems.Add(systems[i].GetType(), systems[i]);
             systems[i].SetScene(this);
@@ -188,8 +194,6 @@ public abstract class Scene
         foreach (var system in _gameSystems.Values)
         {
             system.OnStart();
-            // Potentially yield here if OnStart methods are lengthy
-            // yield return null; 
         }
         
         UpdateLoadingProgress(0.5f, "Initializing scene..."); // Or a new progress point e.g. 0.6f
@@ -222,10 +226,9 @@ public abstract class Scene
     /// <exception cref="Exception">Thrown when the requested game system is not found.</exception>
     public T GetGameSystem<T>() where T : GameSystem
     {
-        if (_gameSystems.ContainsKey(typeof(T)))
-            return (T)_gameSystems[typeof(T)];
-        else
-            throw new Exception("Game System not found: " + typeof(T).ToString());
+        if (_gameSystems.TryGetValue(typeof(T), out var system))
+            return (T)system;
+        throw new KeyNotFoundException("Game system not found: " + typeof(T).Name);
     }
 
     /// <summary>
@@ -299,9 +302,9 @@ public abstract class Scene
         }
 
         _gameSystems.Clear();
-        _updateSystems = null;
-        _drawSystems = null;
-        _fixedUpdateSystems = null;
+        _updateSystems = Array.Empty<IUpdateGameSystem>();
+        _drawSystems = Array.Empty<IDrawGameSystem>();
+        _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
         
         IsLoaded = false;
         IsLoading = false;

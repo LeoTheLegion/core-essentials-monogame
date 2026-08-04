@@ -8,6 +8,9 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public abstract class Asset
 {
+    /// <summary>
+    /// The name of the asset. Cannot be null or empty.
+    /// </summary>
     protected string _assetName;
 
     /// <summary>

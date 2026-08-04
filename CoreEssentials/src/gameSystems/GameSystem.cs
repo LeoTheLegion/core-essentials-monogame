@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 
 namespace CoreEssentials.GameSystems
 {
@@ -12,13 +12,20 @@ namespace CoreEssentials.GameSystems
     /// </summary>
     public abstract class GameSystem
     {
-        private Scene _scene;
+        private Scene? _scene;
 
         /// <summary>
         /// Gets the MainGame instance associated with this system.
         /// </summary>
-        public MainGame Game => _scene?.SceneManager?.Game;
+        /// <remarks>
+        /// Returns <see langword="null"/> if no scene has been assigned to this system yet.
+        /// </remarks>
+        public MainGame? Game => _scene?.SceneManager?.Game;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GameSystem"/> class.
+        /// This protected constructor is intended for use by derived system types.
+        /// </summary>
         protected GameSystem()
         {
         }
@@ -38,8 +45,14 @@ namespace CoreEssentials.GameSystems
         /// </summary>
         /// <typeparam name="T">The type of the game system to retrieve.</typeparam>
         /// <returns>The game system instance of the specified type.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no scene has been assigned to this system.</exception>
         public T GetGameSystem<T>() where T : GameSystem
         {
+            if (_scene is null)
+            {
+                throw new InvalidOperationException("Cannot retrieve a game system before a scene has been assigned.");
+            }
+
             return _scene.GetGameSystem<T>();
         }
 

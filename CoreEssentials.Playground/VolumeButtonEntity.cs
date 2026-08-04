@@ -1,8 +1,8 @@
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GUI;
 using CoreEssentials.Audio;
+using CoreEssentials.GUI.Factory;
 using Microsoft.Xna.Framework;
-using Myra.Graphics2D.UI;
 using System;
 
 namespace CoreEssentials.Playground;
@@ -22,14 +22,14 @@ public class VolumeButtonEntity : Entity
         _volumeLevel = volumeLevel;
         _buttonText = buttonText;
         
-        // Create canvas for Myra UI components
+        // Create canvas for UI components
         _canvas = new Canvas();
         
-        // Create a button for setting the volume
-        var button = Button.CreateTextButton(_buttonText);
+        // Create a button for setting the volume via factory (returns IButton interface)
+        var button = WidgetFactory.CreateTextButton(_buttonText);
         
         // Add button click handler
-        button.Click += (s, a) => 
+        button.Clicked += (b) => 
         {
             // Set the volume level when button is clicked
             AudioManager.Instance.SetMasterVolume(_volumeLevel);

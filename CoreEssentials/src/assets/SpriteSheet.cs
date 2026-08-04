@@ -13,20 +13,34 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class SpriteSheet : Asset
 {
-    private Texture2DAsset _texture;
-    private SpriteSheetMetadata _metaData;
-    private Rectangle[] _frames;
+    private Texture2DAsset? _texture;
+    private SpriteSheetMetadata? _metaData;
+    private Rectangle[]? _frames;
     
     /// <summary>
     /// Gets the texture used by this sprite sheet.
     /// </summary>
-    public Texture2D Texture => _texture.Texture;
+    public Texture2D? Texture => _texture?.Texture;
     
     /// <summary>
     /// Gets the origin point for all frames in this sprite sheet.
     /// </summary>
-    public Vector2 FrameOrigin => new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
-    
+    public Vector2 FrameOrigin
+    {
+        get
+        {
+            if (_metaData == null)
+            {
+                throw new InvalidOperationException("Sprite sheet metadata is not loaded.");
+            }
+            if (_metaData.Origin == null)
+            {
+                throw new InvalidOperationException("Sprite sheet origin metadata is not loaded.");
+            }
+            return new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
+        }
+    }
+
     /// <summary>
     /// Initializes a new instance of the SpriteSheet class.
     /// Loads sprite sheet metadata from an XML file and the associated texture.
@@ -41,6 +55,14 @@ public class SpriteSheet : Asset
     
     private void InitializeFrames()
     {
+        if (_texture == null || _metaData == null)
+        {
+            throw new InvalidOperationException("Cannot initialize frames without loaded texture and metadata.");
+        }
+        if (_metaData.Grid == null)
+        {
+            throw new InvalidOperationException("Sprite sheet grid metadata is not loaded.");
+        }
         // Calculate frame dimensions based on grid
         int frameWidth = (int)(_texture.Width / _metaData.Grid.Columns);
         int frameHeight = (int)(_texture.Height / _metaData.Grid.Rows);
@@ -74,10 +96,28 @@ public class SpriteSheet : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SpriteSheetDataXml), "http://schemas.coreessentials.monogame/2025/spritesheet");
+            if (xml == null || xml.XMLContent == null)
+                throw new InvalidOperationException("XML content is missing.");
             using (StringReader reader = new StringReader(xml.XMLContent))
             {
-                var xmlData = (SpriteSheetDataXml)serializer.Deserialize(reader);
+                var xmlData = (SpriteSheetDataXml?)serializer.Deserialize(reader);
                 
+                if (xmlData == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize XML sprite sheet metadata.");
+                }
+                if (xmlData.SourceType == null)
+                {
+                    throw new InvalidOperationException("Sprite sheet metadata source type cannot be null.");
+                }
+                if (xmlData.Grid == null)
+                {
+                    throw new InvalidOperationException("Sprite sheet metadata grid cannot be null.");
+                }
+                if (xmlData.Origin == null)
+                {
+                    throw new InvalidOperationException("Sprite sheet metadata origin cannot be null.");
+                }
                 // Convert XML data to SpriteMeta format
                 _metaData = new SpriteSheetMetadata
                 {
@@ -105,12 +145,40 @@ public class SpriteSheet : Asset
     /// <summary>
     /// Gets the number of rows in the sprite sheet grid.
     /// </summary>
-    public int Rows => _metaData.Grid.Rows;
+    public int Rows
+    {
+        get
+        {
+            if (_metaData == null)
+            {
+                throw new InvalidOperationException("Sprite sheet metadata is not loaded.");
+            }
+            if (_metaData.Grid == null)
+            {
+                throw new InvalidOperationException("Sprite sheet grid metadata is not loaded.");
+            }
+            return _metaData.Grid.Rows;
+        }
+    }
     
     /// <summary>
     /// Gets the number of columns in the sprite sheet grid.
     /// </summary>
-    public int Columns => _metaData.Grid.Columns;
+    public int Columns
+    {
+        get
+        {
+            if (_metaData == null)
+            {
+                throw new InvalidOperationException("Sprite sheet metadata is not loaded.");
+            }
+            if (_metaData.Grid == null)
+            {
+                throw new InvalidOperationException("Sprite sheet grid metadata is not loaded.");
+            }
+            return _metaData.Grid.Columns;
+        }
+    }
     
     /// <summary>
     /// Gets the total number of frames in the sprite sheet.
@@ -118,6 +186,10 @@ public class SpriteSheet : Asset
     /// <returns>The total number of frames.</returns>
     public int GetFrameCount()
     {
+        if (_frames == null)
+        {
+            throw new InvalidOperationException("Sprite sheet frames are not initialized.");
+        }
         return _frames.Length;
     }
     
@@ -127,6 +199,10 @@ public class SpriteSheet : Asset
     /// <returns>A Vector2 containing the width and height of a single frame.</returns>
     public Vector2 GetFrameSize()
     {
+        if (_frames == null)
+        {
+            throw new InvalidOperationException("Sprite sheet frames are not initialized.");
+        }
         if (_frames.Length > 0)
         {
             return new Vector2(_frames[0].Width, _frames[0].Height);
@@ -142,6 +218,10 @@ public class SpriteSheet : Asset
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the index is out of range.</exception>
     public Rectangle GetFrame(int index)
     {
+        if (_frames == null)
+        {
+            throw new InvalidOperationException("Sprite sheet frames are not initialized.");
+        }
         if (index < 0 || index >= _frames.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Frame index is out of range");
@@ -158,6 +238,18 @@ public class SpriteSheet : Asset
     /// <exception cref="ArgumentOutOfRangeException">Thrown when coordinates are out of range.</exception>
     public Rectangle GetFrameAt(int row, int column)
     {
+        if (_metaData == null)
+        {
+            throw new InvalidOperationException("Sprite sheet metadata is not loaded.");
+        }
+        if (_frames == null)
+        {
+            throw new InvalidOperationException("Sprite sheet frames are not initialized.");
+        }
+        if (_metaData.Grid == null)
+        {
+            throw new InvalidOperationException("Sprite sheet grid metadata is not loaded.");
+        }
         if (row < 0 || row >= _metaData.Grid.Rows || column < 0 || column >= _metaData.Grid.Columns)
         {
             throw new ArgumentOutOfRangeException(
@@ -167,9 +259,18 @@ public class SpriteSheet : Asset
         int index = row * _metaData.Grid.Columns + column;
         return _frames[index];
     }
-
+    /// <summary>
+    /// Loads the sprite sheet metadata and texture from content.
+    /// </summary>
+    /// <param name="contentManager">The content manager to use for loading.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the content manager is null.</exception>
     public override void Load(IContentManager contentManager)
     {
+        if (contentManager == null)
+        {
+            throw new ArgumentNullException(nameof(contentManager));
+        }
+
         string extension = Path.GetExtension(Name);
         if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
         {
@@ -180,6 +281,11 @@ public class SpriteSheet : Asset
             throw new InvalidOperationException($"Unsupported sprite sheet data format: {extension}. Use .xml format");
         }
 
+        if (_metaData == null)
+        {
+            throw new InvalidOperationException("Sprite sheet metadata is not loaded.");
+        }
+
         if (_metaData.SourceType == null)
         {
             throw new InvalidOperationException("Sprite sheet metadata source type cannot be null.");
@@ -188,6 +294,10 @@ public class SpriteSheet : Asset
         switch (_metaData.SourceType)
         {
             case "texture2d":
+                if (_metaData.Source == null)
+                {
+                    throw new InvalidOperationException("Sprite sheet metadata source cannot be null for texture2d.");
+                }
                 _texture = (Texture2DAsset)AssetManager.LoadAsset<Texture2DAsset>(_metaData.Source);
                 break;
             default:
@@ -197,9 +307,17 @@ public class SpriteSheet : Asset
         // Initialize frames based on the grid
         InitializeFrames();
     }
-
+    /// <summary>
+    /// Unloads the sprite sheet and its associated texture from content.
+    /// </summary>
+    /// <param name="contentManager">The content manager to use for unloading.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the content manager is null.</exception>
     public override void Unload(IContentManager contentManager)
     {
+        if (contentManager == null)
+        {
+            throw new ArgumentNullException(nameof(contentManager));
+        }
         if (_texture != null)
         {
             AssetManager.UnloadAsset<Texture2DAsset>(_texture.Name);
@@ -218,22 +336,22 @@ public class SpriteSheet : Asset
         /// <summary>
         /// Gets or sets the type of source for the sprite sheet (e.g., "texture2d").
         /// </summary>
-        public string SourceType { get; set; }
+        public string? SourceType { get; set; }
         
         /// <summary>
         /// Gets or sets the source asset name.
         /// </summary>
-        public string Source { get; set; }
+        public string? Source { get; set; }
         
         /// <summary>
         /// Gets or sets the grid information for dividing the texture.
         /// </summary>
-        public Grid Grid { get; set; }
+        public Grid? Grid { get; set; }
         
         /// <summary>
         /// Gets or sets the origin point of the sprite.
         /// </summary>
-        public Origin Origin { get; set; }
+        public Origin? Origin { get; set; }
     }
     
     /// <summary>
@@ -274,21 +392,50 @@ public class SpriteSheet : Asset
     [XmlRoot("SpriteSheetData", Namespace = "http://schemas.coreessentials.monogame/2025/spritesheet")]
     public class SpriteSheetDataXml
     {
-        public string SourceType { get; set; }
-        public string Source { get; set; }
+        /// <summary>
+        /// Gets or sets the source type of the sprite sheet (e.g., "texture2
+        /// d" or "spritesheet").
+        /// </summary>
+        public string? SourceType { get; set; }
+        /// <summary>
+        /// Gets or sets the source asset name of the sprite sheet.
+        /// </summary>
+        public string? Source { get; set; }
         
-        public GridXml Grid { get; set; }
-        public OriginXml Origin { get; set; }
-        
+        /// <summary>
+        /// Gets or sets the grid information for dividing the texture into frames.
+        /// </summary>
+        public GridXml? Grid { get; set; }
+        /// <summary>
+        /// Gets or sets the origin point of the sprite sheet.
+        /// </summary>
+        public OriginXml? Origin { get; set; }
+        /// <summary>
+        /// XML serializable class for grid data
+        /// </summary>
         public class GridXml
         {
+            /// <summary>
+            /// Gets or sets the number of rows in the grid.
+            /// </summary>
             public int Rows { get; set; }
+            /// <summary>
+            /// Gets or sets the number of columns in the grid.
+            /// </summary>
             public int Columns { get; set; }
         }
-        
+        /// <summary>
+        /// XML serializable class for origin data
+        /// </summary>
         public class OriginXml
         {
+            /// <summary>
+            /// Gets or sets the X coordinate of the origin point.
+            /// </summary>
             public float X { get; set; }
+            /// <summary>
+            /// Gets or sets the Y coordinate of the origin point.
+            /// </summary>
             public float Y { get; set; }
         }
     }

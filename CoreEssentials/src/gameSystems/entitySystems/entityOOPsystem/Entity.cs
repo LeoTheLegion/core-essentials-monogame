@@ -71,8 +71,9 @@ public abstract class Entity
 
     /// <summary>
     /// The EntitySystem that manages this entity.
+    /// This is <see langword="null"/> until the entity is added to a system.
     /// </summary>
-    protected EntitySystem EntitySystem;
+    protected EntitySystem? EntitySystem;
 
     /// <summary>
     /// Initializes a new instance of the Entity class.
@@ -114,7 +115,7 @@ public abstract class Entity
     /// Renders the entity.
     /// Called once per frame for active entities during the draw phase.
     /// </summary>
-    /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+    /// <param name="_spriteBatch">The SpriteBatch used for drawing.</param>
     public virtual void Render(SpriteBatch _spriteBatch) { }
 
     /// <summary>

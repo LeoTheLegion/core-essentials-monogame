@@ -1,5 +1,5 @@
 ﻿using CoreEssentials.Playground;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using Microsoft.Xna.Framework;
 
 
@@ -21,6 +21,6 @@ LoadingScene loadingScene = new LoadingScene(
 game.SceneManager.SetLoadingScene(loadingScene);
 
 // Use our new CharacterScene instead of the PhysicsEntityScene
-game.SceneManager.LoadScene(new CameraScene());
+game.SceneManager.LoadScene(new PhysicsEntityScene());
 
 game.Run();

@@ -1,6 +1,6 @@
 using Xunit;
 using CoreEssentials.GameSystems;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using Microsoft.Xna.Framework;
 using System.Collections;
 

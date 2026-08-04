@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -16,10 +16,10 @@ namespace CoreEssentials.Playground;
 /// A scene to demonstrate the SpriteSheet functionality with a character display.
 /// </summary>
 public class CharacterScene : Scene
-{    private Random random = new Random();
+{
     private string songID;
-    private string _infoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
-    private string _characterInfo = "Static Character (Left) | Animated Character (Right)";
+    private const string InfoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
+    private const string CharacterInfo = "Static Character (Left) | Animated Character (Right)";
     
     protected override GameSystem[] LoadGameSystems()
     {
@@ -49,26 +49,26 @@ public class CharacterScene : Scene
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
         
         // Create a static character entity at the left side of the screen
-        CharacterEntity staticCharacter = entitySystem.CreateEntity<CharacterEntity>(
+        entitySystem.CreateEntity<CharacterEntity>(
             new Vector2(graphics.PreferredBackBufferWidth / 4, graphics.PreferredBackBufferHeight / 2)
         );
 
         // Create an animated character entity at the right side of the screen
-        AnimatedCharacterEntity animatedCharacter = entitySystem.CreateEntity<AnimatedCharacterEntity>(
+        entitySystem.CreateEntity<AnimatedCharacterEntity>(
             new Vector2(graphics.PreferredBackBufferWidth * 3 / 4, graphics.PreferredBackBufferHeight / 2)
         );
         
         // Create text entities for UI information
-        TextEntity infoTextEntity = entitySystem.CreateEntity<TextEntity>(
+        entitySystem.CreateEntity<TextEntity>(
             new Vector2(graphics.PreferredBackBufferWidth / 2, 20),
-            _infoText,
+            InfoText,
             Color.White,
             TextEntity.TextAlignment.Center
         );
         
-        TextEntity characterInfoTextEntity = entitySystem.CreateEntity<TextEntity>(
+        entitySystem.CreateEntity<TextEntity>(
             new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight - 40),
-            _characterInfo,
+            CharacterInfo,
             Color.LightGreen,
             TextEntity.TextAlignment.Center
         );
@@ -93,13 +93,13 @@ public class CharacterScene : Scene
         );
         
         // Create volume control buttons
-        var volumeDownButton = entitySystem.CreateEntity<VolumeButtonEntity>(
+        entitySystem.CreateEntity<VolumeButtonEntity>(
             new Vector2(100, 250),
             0.1f,
             "Volume: 10%"
         );
         
-        var volumeUpButton = entitySystem.CreateEntity<VolumeButtonEntity>(
+        entitySystem.CreateEntity<VolumeButtonEntity>(
             new Vector2(100, 300),
             1.0f,
             "Volume: 100%"
@@ -135,7 +135,7 @@ public class CharacterScene : Scene
         };
     }
 
-    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
+    private static EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
     {
         return (sender, args) =>
         {

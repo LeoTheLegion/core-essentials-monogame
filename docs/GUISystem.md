@@ -1,146 +1,393 @@
 # GUI System
 
-CoreEssentials-MonoGame includes a GUI system built on top of Myra, a UI library for MonoGame. This system allows you to create interactive user interfaces with buttons, panels, labels, and more.
+CoreEssentials-MonoGame provides an abstraction layer over the Myra UI framework, giving you a clean, engine-agnostic API for building user interfaces. All widgets are created through factories and interact via interfaces — concrete implementation types are never exposed to your code.
 
 ## Key Components
 
-### GUIManager
+### WidgetFactory ⭐
 
-The `GUIManager` class manages the UI rendering and interaction:
-
-```csharp
-// Get the GUIManager from a scene
-GUIManager guiManager = GetGameSystem<GUIManager>();
-
-// Create and show a desktop
-Desktop desktop = new Desktop();
-guiManager.SetDesktop(desktop);
-```
-
-### Creating UI Elements
-
-You can create UI elements using Myra's component system:
+All UI elements are created through `WidgetFactory`, which returns interface types (`IButton`, `ILabel`, `IPanel`, etc.). This ensures complete decoupling from the underlying rendering engine.
 
 ```csharp
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using Microsoft.Xna.Framework;
+
 // Create a panel
-var panel = new Panel
-{
-    Width = 200,
-    Height = 150,
-    Background = new SolidBrush(Color.DarkBlue)
-};
+IPanel panel = WidgetFactory.CreatePanel();
+panel.Width = 200f;
+panel.Height = 150f;
+panel.Background = new SolidColorBrush(Color.DarkBlue);
 
-// Add a label
-var label = new Label
-{
-    Text = "Score: 0",
-    HorizontalAlignment = HorizontalAlignment.Center,
-    VerticalAlignment = VerticalAlignment.Top,
-    Margin = new Thickness(0, 10, 0, 0)
-};
-panel.Widgets.Add(label);
+// Create a label and add it to the panel
+ILabel label = WidgetFactory.CreateLabel("Score: 0");
+panel.AddChild(label);
 
-// Add a button
-var button = new TextButton
-{
-    Text = "Click Me",
-    Width = 100,
-    HorizontalAlignment = HorizontalAlignment.Center,
-    VerticalAlignment = VerticalAlignment.Bottom,
-    Margin = new Thickness(0, 0, 0, 10)
-};
-button.Click += (s, a) => 
+// Create a button with an event handler
+IButton button = WidgetFactory.CreateTextButton("Click Me");
+button.Clicked += (btn) => 
 {
     label.Text = "Button clicked!";
 };
-panel.Widgets.Add(button);
+panel.AddChild(button);
 
-// Add the panel to a desktop and show it
-Desktop desktop = new Desktop();
-desktop.Root = panel;
-guiManager.SetDesktop(desktop);
+// Add the panel to the GUI root hierarchy
+GUIManager.AddWidget(panel);
 ```
 
-## Creating UI with XML
+### Canvas 🖼️
 
-Myra supports defining UI layouts in XML, which can be loaded at runtime:
+The `Canvas` class provides a convenient way to manage groups of UI components that can be positioned together. Canvases support both **screen space** (HUDs, menus) and **world space** (floating labels above entities).
 
 ```csharp
-// Load UI from XML
-var uiXml = @"
-<Panel Width=""200"" Height=""150"" Background=""#FF00008B"">
-    <Label Id=""scoreLabel"" Text=""Score: 0"" HorizontalAlignment=""Center"" VerticalAlignment=""Top"" Margin=""0, 10, 0, 0""/>
-    <TextButton Id=""clickButton"" Text=""Click Me"" Width=""100"" HorizontalAlignment=""Center"" VerticalAlignment=""Bottom"" Margin=""0, 0, 0, 10""/>
+// Screen-space canvas (default) — position in absolute screen coordinates
+ICanvas hudCanvas = new Canvas();
+hudCanvas.SetPosition(new Vector2(100f, 50f));
+
+// Or explicitly specify screen space via factory
+ICanvas explicitScreenCanvas = CanvasFactory.CreateScreenSpace();
+
+// World-space canvas — position in game world coordinates (auto-converted via camera)
+ICanvas worldCanvas = new Canvas(false); // or: CanvasFactory.CreateWorldSpace()
+worldCanvas.SetPosition(new Vector2(500f, 300f)); // World position
+
+// Add widgets to the canvas
+ILabel scoreLabel = WidgetFactory.CreateLabel("Score: 10");
+hudCanvas.AddWidget(scoreLabel);
+
+IButton menuButton = WidgetFactory.CreateTextButton("Menu");
+worldCanvas.AddWidget(menuButton);
+```
+
+#### Canvas Lifecycle
+
+```csharp
+// Add children (widgets) to the canvas
+canvas.AddChild(WidgetFactory.CreateLabel("Hello World"));
+
+// Remove a specific widget from the canvas
+canvas.RemoveChild(label);
+
+// Update canvas state each frame (required for world-space camera transforms)
+canvas.Update(gameTime);
+
+// Clean up and release resources when done
+canvas.CleanUp();
+```
+
+### GUIManager — Lifecycle Management
+
+`GUIManager` is a static class that manages initialization, rendering, and the root widget hierarchy. It delegates all operations to the active engine backend (default: Myra-based `GuiManagerImpl`).
+
+```csharp
+// Initialize the GUI system once in your game's LoadContent or Initialize
+GUIManager.Init(this, 1280, 720); // width=1280, height=720
+
+// Add widgets to the root hierarchy (visible globally)
+GUIManager.AddWidget(panel);
+GUIManager.RemoveWidget(panel);
+
+// Check focus state
+bool anyFocused = GUIManager.IsAnyWidgetFocused();
+bool focused = GUIManager.IsWidgetFocused(button);
+
+// Draw all GUI elements each frame in your game's Draw method
+GUIManager.Draw(gameTime);
+```
+
+## API Reference
+
+| Interface / Class | Namespace | Purpose |
+|-------------------|-----------|---------|
+| `IGuiManager` | `CoreEssentials.GUI.Types` | Lifecycle, widget management, rendering (engine-level) |
+| `ICanvas` | `CoreEssentials.GUI.Types` | Positioned container for widgets in screen/world space |
+| `IWidget` | `CoreEssentials.GUI.Types` | Base abstraction for all UI elements |
+| `IContainer` | `CoreEssentials.GUI.Types` | Widget containers with child management (`AddChild`, `RemoveChild`) |
+| `IPanel` | `CoreEssentials.GUI.Types` | Container with styling (`Background`, `BorderThickness`) |
+| `ILabel` | `CoreEssentials.GUI.Types` | Text display (`Text`, `Font`, `TextColor`) |
+| `IButton` | `CoreEssentials.GUI.Types` | Clickable element (`Text`, `Clicked` event) |
+| `IGrid` | `CoreEssentials.GUI.Types` | Tabular layout with rows/columns, spacing, proportions |
+| `IBrush` | `CoreEssentials.GUI.Types` | Background/styling abstraction (`Color`, `Opacity`) |
+| `WidgetFactory` | `CoreEssentials.GUI.Factory` | Static factory methods returning interface instances |
+| `CanvasFactory` | `CoreEssentials.GUI.Factory` | Creates screen-space or world-space canvases |
+| `GUIManager` | `CoreEssentials.GUI` | Static facade for GUI lifecycle and root widget management |
+
+## Complete Example — HUD Layout
+
+```csharp
+using CoreEssentials;
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using Microsoft.Xna.Framework;
+using SceneManagement;
+
+public class GameHudScene : Scene
+{
+    private ICanvas _hudCanvas;
+    private ILabel _scoreLabel;
+
+    public override void LoadContent()
+    {
+        base.LoadContent();
+
+        // Initialize GUI system if not already done
+        GUIManager.Init(this.Game, 1280, 720);
+
+        // Create HUD canvas in screen space
+        _hudCanvas = CanvasFactory.CreateScreenSpace();
+        _hudCanvas.SetPosition(new Vector2(20f, 20f));
+        _hudCanvas.Background = new SolidColorBrush(new Color(50, 50, 50, 150));
+
+        // Create score label
+        _scoreLabel = WidgetFactory.CreateLabel("Score: 0");
+        _scoreLabel.TextColor = Color.White;
+        _hudCanvas.AddChild(_scoreLabel);
+
+        // Create a grid for settings row
+        IGrid settingsGrid = WidgetFactory.CreateGrid();
+        settingsGrid.RowSpacing = 5f;
+        settingsGrid.ColumnSpacing = 10f;
+
+        ILabel healthLabel = WidgetFactory.CreateLabel("Health:");
+        ILabel ammoLabel = WidgetFactory.CreateLabel("Ammo:");
+        
+        settingsGrid.AddChild(healthLabel);
+        settingsGrid.SetColumn(healthLabel, 0);
+        settingsGrid.AddChild(ammoLabel);
+        settingsGrid.SetColumn(ammoLabel, 1);
+
+        _hudCanvas.AddChild(settingsGrid);
+
+        // Add canvas to the GUI root hierarchy
+        GUIManager.AddWidget(_hudCanvas);
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+        base.Update(gameTime);
+
+        // Update canvas for any camera transforms (screen-space is a no-op)
+        _hudCanvas?.Update(gameTime);
+    }
+
+    // Example: update score from game logic
+    public void OnScoreChanged(int newScore)
+    {
+        if (_scoreLabel != null)
+            _scoreLabel.Text = $"Score: {newScore}";
+    }
+
+    public override void UnloadContent()
+    {
+        base.UnloadContent();
+        
+        // Clean up canvas resources
+        _hudCanvas?.CleanUp();
+    }
+}
+```
+
+## Advanced: Swapping GUI Engines 🔮
+
+The GUI system is designed to be engine-swappable. By default, `EngineResolver` returns the Myra-based `GuiManagerImpl`, but you can register a custom implementation at runtime:
+
+```csharp
+using CoreEssentials.GUI.Internal;
+
+// Register a custom GUI engine (e.g., your own rendering backend)
+EngineResolver.SetEngine(new CustomGuiEngine());
+
+// Or restore the default Myra engine
+EngineResolver.SetEngine(new GuiManagerImpl());
+```
+
+## XML Layout Support 📄
+
+CoreEssentials provides a `GuiSerializer` class for parsing UI layouts from XML strings or asset files. This enables data-driven UI design while maintaining our abstraction layer — all widgets are returned as interface types, with no Myra types exposed.
+
+### String-Based Loading (Inline XML)
+
+Define your layout directly in code using an XML string:
+
+```csharp
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Types;
+using Microsoft.Xna.Framework;
+
+// Define UI layout as a string
+string inlineXml = @"
+<Panel Width=""400"" Height=""300"" X=""100"" Y=""100"">
+    <Label Text=""Score: 0"" Width=""300"" X=""50"" Y=""20"" TextColor=""Yellow"" />
+    <Button Text=""Reset Score"" Width=""150"" Height=""40"" X=""125"" Y=""200"" />
 </Panel>";
 
-var project = Project.LoadFromXml(uiXml);
-var panel = project.Root as Panel;
-var scoreLabel = panel.FindWidgetById("scoreLabel") as Label;
-var clickButton = panel.FindWidgetById("clickButton") as TextButton;
+// Parse the XML and get an IPanel (interface type)
+IPanel panel = GuiSerializer.LoadPanelFromXml(inlineXml, contentManager);
 
-clickButton.Click += (s, a) =>
+// Find widgets by iterating children
+IButton resetButton = panel.Children.OfType<IButton>().FirstOrDefault();
+if (resetButton != null)
 {
-    scoreLabel.Text = "Button clicked!";
-};
+    resetButton.Clicked += (_) => 
+    {
+        var label = panel.Children.OfType<ILabel>().FirstOrDefault();
+        if (label != null) label.Text = "Score: 0";
+    };
+}
 
-Desktop desktop = new Desktop();
-desktop.Root = panel;
-guiManager.SetDesktop(desktop);
+// Add to the GUI root hierarchy
+GUIManager.AddWidget(panel);
 ```
+
+### Asset-Based Loading (XML File)
+
+Store your layout in a `.xml` file under the `Content/` directory and load it at runtime:
+
+1. Create an XML file, e.g., `Content/layout/main.xml`:
+   ```xml
+   <Panel Width="300" Height="200">
+       <Label Text="Asset Loaded Panel" X="20" Y="20" />
+       <Button Text="Load Asset" X="50" Y="80" />
+   </Panel>
+   ```
+
+2. Load the XML asset and parse it:
+   ```csharp
+   using CoreEssentials.Assets;
+   
+   // Create an XMLAsset pointing to your file path
+   var xmlAsset = new XMLAsset("layout/main.xml");
+   xmlAsset.Load(contentManager);  // Reads directly from disk
+   
+   // Parse the asset content into interface types
+   IPanel panel = GuiSerializer.LoadPanelFromXml(xmlAsset, contentManager);
+   
+   GUIManager.AddWidget(panel);
+   ```
+
+### Supported Widget Types
+
+| XML Element | Interface Type | Key Properties |
+|-------------|----------------|----------------|
+| `<Label>` | `ILabel` | Text, Width, Height, X, Y, TextColor |
+| `<Button>` | `IButton` | Text, Width, Height, X, Y |
+| `<Panel>` | `IPanel` | Width, Height, X, Y, BorderThickness |
+| `<Grid>` | `IGrid` | RowSpacing, ColumnSpacing, children |
+
+### XML Attribute Conventions
+
+- **Property mapping**: XML attribute names map 1:1 to interface property names (case-insensitive). Position attributes use `X` and `Y`.
+- **Child recursion**: Container elements (`<Panel>`, `<Grid>`) automatically parse nested child widgets.
+- **Optional Id**: Use the `Id` attribute for later identification, though ID-based lookup is not yet implemented in `GuiSerializer`.
+
+### Event Handling Pattern
+
+XML cannot directly wire up event handlers. The recommended approach is to parse the layout first, then attach handlers via code:
+
+```csharp
+var panel = GuiSerializer.LoadPanelFromXml(xmlString, contentManager);
+
+// Find button by type/position and attach handler
+IButton myButton = panel.Children.OfType<IButton>().FirstOrDefault();
+if (myButton != null)
+{
+    myButton.Clicked += (_) => 
+    {
+        // Handle click
+    };
+}
+
+GUIManager.AddWidget(panel);
+```
+
+### Content Manager Integration
+
+`GuiSerializer` accepts an optional `IContentManager` for resolving asset paths (e.g., fonts, brushes). If not provided, these properties will be null — acceptable for simple layouts but should be documented if your design relies on them.
+
+> **Note: XML files use `/copy:` in Content.mgcb**
+> 
+> Unlike textures or font files that are processed by MonoGame's content pipeline (using `/build:`), raw data files like `.xml`, `.json`, and `.csv` should be configured with `/copy:` in `Content.mgcb`. This tells the pipeline to simply copy the file as-is to the output directory without any transformation.
+> 
+> Example entry in your project's `Content/Content.mgcb`:
+> ```
+> #begin layout/main.xml
+> /copy:layout/main.xml
+> ```
+
+---
+
+### Real-world Example: Debug Overlay with StickyLog ⭐
+
+The `StickyLog` class in the `CoreEssentials.Debugging` namespace is a real-world example of XML layouts powering runtime UI. It displays an on-screen debug overlay that can show key-value pairs (FPS, entity counts, game state) during development.
+
+**Before Sprint 7** — imperative setup (~15 lines):
+```csharp
+_grid = WidgetFactory.CreateGrid();
+_grid.RowSpacing = 8; _grid.ColumnSpacing = 8;
+_grid.Background = Color.Black.WithAlpha(100).AsBrush();
+_grid.Width = 300; _grid.Height = 100;
+_grid.Visible = true;
+```
+
+**After Sprint 7** — declarative XML layout (3 lines):
+```csharp
+// Grid structure loaded from embedded resource: CoreEssentials.Content.StickyLogLayout.xml
+_grid = GuiSerializer.LoadGridFromXmlEmbedded("CoreEssentials.Content.StickyLogLayout.xml");
+_grid.Background = Color.Black.WithAlpha(100).AsBrush(); // opacity still set imperatively (Sprint 8 pending)
+```
+
+The XML layout file (`StickyLogLayout.xml`) defines the static container structure — dimensions, spacing, visibility. Runtime-dynamic elements (individual log entries added via `CreateNewLabel()`) remain imperative, which is correct: **XML for static structure, code for dynamic content**.
+
+See `docs/gui_refactor_sprints/Sprint_7_StickyLog_XML_Refactor.md` for the full migration details.
+
+---
 
 ## UI Components
 
-Myra provides a wide range of UI components:
+The abstraction layer supports a wide range of UI components via the factory:
 
-- **Containers**: Panel, HorizontalStackPanel, VerticalStackPanel, Grid
-- **Basic Widgets**: Label, Image, TextButton, ImageButton
-- **Input Widgets**: TextField, SpinButton, ComboBox, CheckBox
-- **Advanced Widgets**: ScrollPane, Window, TabControl, ProgressBar
-- **Dialogs**: FileDialog, MessageBox
+- **Containers**: Panel, StackPanel, Grid
+- **Basic Widgets**: Label, Button
+- **Input Widgets**: TextField (via `WidgetFactory`)
+- **Advanced Widgets**: ProgressBar, ComboBox (via `WidgetFactory`)
 
 ## Using the Canvas System
 
-The `Canvas` class provides a convenient way to manage a group of UI components that can be positioned together. It acts as a container for Myra UI widgets, allowing them to be treated as a cohesive unit. Canvas can operate in either screen space (default) or world space.
+The `Canvas` class provides a convenient way to manage a group of UI components that can be positioned together. It acts as a container for widgets, allowing them to be treated as a cohesive unit. Canvas can operate in either screen space (default) or world space.
 
 ### Creating a Canvas
 
-You can create a Canvas instance and add widgets to it:
-
 ```csharp
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Types;
+
 // Create a new canvas in screen space (default)
-Canvas screenCanvas = new Canvas();
-
-// Or explicitly specify screen space
-Canvas explicitScreenCanvas = new Canvas(true);
-
-// Create a canvas in world space
-Canvas worldCanvas = new Canvas(false);
-
-// Set the canvas position
-// For screen canvas: position is in screen coordinates
-// For world canvas: position is in world coordinates
+ICanvas screenCanvas = CanvasFactory.CreateScreenSpace();
 screenCanvas.SetPosition(new Vector2(100, 50));
+
+// Or create a world-space canvas for floating labels above entities
+ICanvas worldCanvas = CanvasFactory.CreateWorldSpace();
 worldCanvas.SetPosition(new Vector2(500, 300)); // World position
 
 // Add widgets to the canvas
-var label = new Label { Text = "Hello World" };
-screenCanvas.AddWidget(label);
+ILabel label = WidgetFactory.CreateLabel("Hello World");
+screenCanvas.AddChild(label);
 
-var button = new Button();
-button.Content = "Click Me";
-worldCanvas.AddWidget(button);
+IButton button = WidgetFactory.CreateTextButton("Click Me");
+worldCanvas.AddChild(button);
 ```
 
 ### Managing Canvas Content
 
-The Canvas provides methods to add, remove, and manage widgets:
+The canvas provides methods to add, remove, and manage widgets:
 
 ```csharp
 // Add a widget to the canvas
-canvas.AddWidget(new Label { Text = "New Label" });
+canvas.AddChild(WidgetFactory.CreateLabel("New Label"));
 
 // Remove a specific widget
-canvas.RemoveWidget(label);
+canvas.RemoveChild(label);
 
 // Update the canvas (typically called in your game's Update method)
 canvas.Update(gameTime);
@@ -160,28 +407,22 @@ canvas.CleanUp();
 
 ```csharp
 // In your scene's LoadContent method
-private Canvas _hudCanvas;
+private ICanvas _hudCanvas;
 
 public override void LoadContent()
 {
     base.LoadContent();
     
     // Create HUD canvas
-    _hudCanvas = new Canvas();
+    _hudCanvas = CanvasFactory.CreateScreenSpace();
     _hudCanvas.SetPosition(new Vector2(10, 10));
     
     // Add score display
-    var scoreLabel = new Label { Text = "Score: 0" };
-    _hudCanvas.AddWidget(scoreLabel);
+    ILabel scoreLabel = WidgetFactory.CreateLabel("Score: 0");
+    _hudCanvas.AddChild(scoreLabel);
     
     // Add health bar
-    var healthBar = new ProgressBar { 
-        Width = 200, 
-        Height = 20,
-        Value = 100,
-        Minimum = 0,
-        Maximum = 100
-    };
+    IProgressBar healthBar = WidgetFactory.CreateProgressBar();
     healthBar.Top = 30;
     _hudCanvas.AddWidget(healthBar);
 }

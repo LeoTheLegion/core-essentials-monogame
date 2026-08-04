@@ -11,11 +11,8 @@ namespace CoreEssentials.Tests.Assets
     {
         private class MockSprite : Sprite
         {
-            private bool _isLoaded = false;
-            
             public MockSprite() : base("test_sprite")
             {
-                _isLoaded = true;
             }
             
             public override void Load(IContentManager contentManager) 

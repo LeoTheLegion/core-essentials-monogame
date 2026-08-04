@@ -4,6 +4,7 @@ using Xunit;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace CoreEssentials.Tests
 {
@@ -75,7 +76,7 @@ namespace CoreEssentials.Tests
         {
             // Use FormatterServices.GetUninitializedObject to create a Texture2D without calling constructor
             // This is a special case for testing only, not for production code
-            Instance = (Texture2D)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Texture2D));
+            Instance = (Texture2D)RuntimeHelpers.GetUninitializedObject(typeof(Texture2D));
         }
     }
 }

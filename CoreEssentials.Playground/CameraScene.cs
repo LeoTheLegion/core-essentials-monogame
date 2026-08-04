@@ -1,5 +1,5 @@
-using CoreEssentials.Cameras;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Camera;
+using CoreEssentials.Scenes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;

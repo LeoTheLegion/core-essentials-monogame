@@ -1,9 +1,10 @@
 ﻿using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Internal;
+using CoreEssentials.GUI.Types;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended.Input.InputListeners;
-using Myra.Graphics2D.Brushes;
-using Myra.Graphics2D.UI;
 using System.Collections.Generic;
 
 namespace CoreEssentials.Debugging
@@ -18,17 +19,17 @@ namespace CoreEssentials.Debugging
         /// <summary>
         /// UI grid that contains all log entries.
         /// </summary>
-        private Grid _grid;
+        private IGrid? _grid;
         
         /// <summary>
         /// Canvas that manages the grid widget.
         /// </summary>
-        private Canvas _canvas;
+        private ICanvas? _canvas;
         
         /// <summary>
         /// Dictionary mapping log keys to their label UI elements.
         /// </summary>
-        private Dictionary<string, Label> log = new Dictionary<string, Label>();
+        private readonly Dictionary<string, ILabel> _log = new();
 
         /// <summary>
         /// Initializes a new instance of the StickyLog class and registers the toggle key handler.
@@ -49,9 +50,9 @@ namespace CoreEssentials.Debugging
         /// <summary>
         /// Event handler that toggles the visibility of the log when the R key is pressed.
         /// </summary>
-        /// <param name="sender">The source of the event.</param>
+        /// <param name="sender">The source of the event, or <see langword="null"/>.</param>
         /// <param name="e">The keyboard event arguments.</param>
-        private void ToggleGUI(object sender, KeyboardEventArgs e)
+        private void ToggleGUI(object? sender, KeyboardEventArgs e)
         {
             if(e.Key == Microsoft.Xna.Framework.Input.Keys.R && _grid != null)
                 this._grid.Visible = !this._grid.Visible;
@@ -68,31 +69,20 @@ namespace CoreEssentials.Debugging
 
         /// <summary>
         /// Creates and initializes the UI grid for displaying log entries.
+        /// The static grid structure is loaded from an embedded XML layout resource,
+        /// while runtime concerns (position, background brush) are set imperatively.
         /// </summary>
         public void LoadGUI()
         {
-            // Initialize the Canvas
-            _canvas = new Canvas();
+            // Initialize the Canvas via factory (returns ICanvas interface)
+            _canvas = CanvasFactory.CreateScreenSpace();
             _canvas.SetPosition(new Vector2(10, 10)); // Default position, top-left with small margin
             
-            // Create the grid for the log entries
-            _grid = new Grid
-            {
-                RowSpacing = 8,
-                ColumnSpacing = 8,
-            };
+            // Load grid from embedded XML layout resource (background set declaratively in XML)
+            _grid = GuiSerializer.LoadGridFromXmlEmbedded("CoreEssentials.Content.StickyLogLayout.xml");
 
-            Color c = Color.Black;
-            c.A = 100;
-
-            _grid.Background = new SolidBrush(c);
-            _grid.Width = 200;
-            _grid.Height = 100;
-
-            this._grid.Visible = true;
-
-            // Add the grid to the canvas instead of directly to GUIManager
-            _canvas.AddWidget(_grid);
+            // Add the grid as a child of the canvas
+            _canvas.AddChild(_grid);
         }
         
         /// <summary>
@@ -112,9 +102,9 @@ namespace CoreEssentials.Debugging
         /// <param name="value">The value to display.</param>
         public void Log(string key, string value)
         {
-            if (log.ContainsKey(key))
+            if (_log.ContainsKey(key))
             {
-                log[key].Text = value;
+                _log[key].Text = value;
             }
             else
             {
@@ -131,29 +121,20 @@ namespace CoreEssentials.Debugging
         {
             if (_grid == null) return;
 
-            int logCount = log.Count;
+            int logCount = _log.Count;
 
-            _grid.ColumnsProportions.Add(new Proportion(ProportionType.Auto));
-            _grid.RowsProportions.Add(new Proportion(ProportionType.Auto));
+            var keyLabel = WidgetFactory.CreateLabel(key);
+            _grid.SetColumn(keyLabel, 0);
+            _grid.SetRow(keyLabel, logCount);
+            _grid.AddChild(keyLabel);
 
-            var keyLabel = new Label
-            {
-                Text = key
-            };
-            Grid.SetColumn(keyLabel, 0);
-            Grid.SetRow(keyLabel, logCount);
-            _grid.Widgets.Add(keyLabel);
-
-            var valueLabel = new Label
-            {
-                Text = value
-            };
-            Grid.SetColumn(valueLabel, 1);
-            Grid.SetRow(valueLabel, logCount);
-            _grid.Widgets.Add(valueLabel);
+            var valueLabel = WidgetFactory.CreateLabel(value);
+            _grid.SetColumn(valueLabel, 1);
+            _grid.SetRow(valueLabel, logCount);
+            _grid.AddChild(valueLabel);
 
 
-            log[key] = valueLabel;
+            _log[key] = valueLabel;
         }
 
         /// <summary>
@@ -174,48 +155,35 @@ namespace CoreEssentials.Debugging
         /// <param name="key">The key of the log entry to remove.</param>
         public void Remove(string key)
         {
-            if (_grid != null && log.ContainsKey(key))
+            if (_grid != null && _log.ContainsKey(key))
             {
                 // Find the row of the entry to remove
+                var logEntry = _log[key];
                 int rowToRemove = -1;
-                foreach (var widget in _grid.Widgets)
+
+                var foundWidget = _grid.Widgets.FirstOrDefault(w => w is ILabel label && label == logEntry);
+                if (foundWidget != null)
                 {
-                    if (widget is Label label && label == log[key])
-                    {
-                        rowToRemove = Grid.GetRow(label);
-                        break;
-                    }
+                    rowToRemove = _grid.GetRow(foundWidget);
                 }
 
                 if (rowToRemove >= 0)
                 {
                     // Remove the widgets for this entry
-                    List<Widget> widgetsToRemove = new List<Widget>();
-                    foreach (var widget in _grid.Widgets)
-                    {
-                        if (Grid.GetRow(widget) == rowToRemove)
-                        {
-                            widgetsToRemove.Add(widget);
-                        }
-                    }
-
+                    var widgetsToRemove = _grid.Widgets.Where(w => _grid.GetRow(w) == rowToRemove).ToList();
                     foreach (var widget in widgetsToRemove)
                     {
-                        _grid.Widgets.Remove(widget);
+                        _grid.RemoveChild(widget);
                     }
 
                     // Shift up the rows for widgets below the removed row
-                    foreach (var widget in _grid.Widgets)
+                    foreach (var widget in _grid.Widgets.Where(w => _grid.GetRow(w) > rowToRemove))
                     {
-                        int row = Grid.GetRow(widget);
-                        if (row > rowToRemove)
-                        {
-                            Grid.SetRow(widget, row - 1);
-                        }
+                        _grid.SetRow(widget, _grid.GetRow(widget) - 1);
                     }
 
                     // Remove from dictionary
-                    log.Remove(key);
+                    _log.Remove(key);
                 }
             }
         }
@@ -227,8 +195,8 @@ namespace CoreEssentials.Debugging
         {
             if (_grid != null)
             {
-                _grid.Widgets.Clear();
-                log.Clear();
+                _grid.ClearChildren();
+                _log.Clear();
             }
         }
     }

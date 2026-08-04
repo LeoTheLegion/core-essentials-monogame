@@ -9,10 +9,9 @@ using Microsoft.Xna.Framework.Input;
 using System.Linq;
 using System.Collections.Generic;
 using System;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
-using Myra;
 using CoreEssentials.Timing;
 
 namespace CoreEssentials
@@ -23,13 +22,17 @@ namespace CoreEssentials
     /// </summary>
     public class MainGame : Game
     {
-        private GraphicsDeviceManager _graphics;
-        protected SpriteBatch _spriteBatch;
+        private readonly GraphicsDeviceManager _graphics;
+
+        /// <summary>
+        /// The <see cref="SpriteBatch"/> used for drawing 2D sprites and textures.
+        /// </summary>
+        protected SpriteBatch? _spriteBatch;
 
         /// <summary>
         /// The time interval in milliseconds between fixed update calls (set at 50 FPS).
         /// </summary>
-        private const float FIXED_UPDATE_MS = 1000 / 50;
+        private const float FIXED_UPDATE_MS = 1000f / 50;
 
         /// <summary>
         /// Accumulated time since the last fixed update.
@@ -41,7 +44,9 @@ namespace CoreEssentials
         /// </summary>
         public GraphicsDeviceManager Graphics => _graphics;
 
-
+        /// <summary>
+        /// Gets the <see cref="SceneManager"/> responsible for managing game scenes.
+        /// </summary>
         public SceneManager SceneManager { get; private set; }
 
         /// <summary>
@@ -84,8 +89,6 @@ namespace CoreEssentials
         {
 
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            MyraEnvironment.Game = this;
 
             IContentManager contentManagerWrapper = new ContentManagerWrapper(Content);
 
@@ -138,6 +141,9 @@ namespace CoreEssentials
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            if (_spriteBatch == null)
+                return;
+
             Debug.baseGameDiagnostics.DrawBegin();
             GraphicsDevice.Clear(Color.Black);
 

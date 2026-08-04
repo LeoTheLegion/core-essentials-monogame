@@ -8,6 +8,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <NoWarn>$(NoWarn);CS7022;CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>

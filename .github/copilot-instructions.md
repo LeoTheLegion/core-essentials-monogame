@@ -5,7 +5,7 @@ The playground/integration logic is in the CoreEssentials.Playground folder.
 The test logic is in the CoreEssentials.Tests folder.
 The documentation is in the docs folder.
 
-New features or bug fixes must be accompanied by tests, documentation, and on a new branch.
+New features or bug fixes must be accompanied by tests, documentation (added or updated in the `docs` folder as a Markdown file covering usage, parameters, and an example), and on a new branch.
 
 Break your work into steps where you pause to get feedback from the developer.
 
@@ -15,6 +15,3 @@ Branching startegy is as follows:
 
 See the scripts folder for any scripts that are used to build the project or run tests.
 If I am missing a script that you think would be useful, please add it.
-
-If you get stuck, please ask for help. Once you learn something the is project specific and not part of the documentation,
-please document it in the .github/memory.md file. An example could be on how to run a script.

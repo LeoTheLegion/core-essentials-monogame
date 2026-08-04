@@ -4,7 +4,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using Xunit;
 using CoreEssentials.Coroutines;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.GameSystems;
 
 namespace CoreEssentials.Tests.SceneManagement

@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>CoreEssentials</RootNamespace>
     <PackageId>CoreEssentials-MonoGame</PackageId>
-    <Version>0.13.0</Version>
+    <Version>0.13.1</Version>
     <Authors>Michael Mena</Authors>
     <Company>LeoTheLegion</Company>
     <PackageDescription>A jump start for monogame dev</PackageDescription>
@@ -32,7 +32,14 @@
   </ItemGroup>  <ItemGroup>
     <Folder Include="src\Coroutines\" />
   </ItemGroup>
-  
+
+  <!-- Embedded resources shipped inside the NuGet DLL -->
+  <ItemGroup>
+    <EmbeddedResource Include="Content\StickyLogLayout.xml">
+      <LogicalName>CoreEssentials.Content.StickyLogLayout.xml</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
