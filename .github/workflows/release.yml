@@ -34,6 +34,16 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Extracted version: $VERSION"
 
+    - name: Verify tag version matches csproj version
+      run: |
+        CSPROJ_VERSION=$(grep -oP '(?<=<Version>)[^<]+' CoreEssentials/CoreEssentials.csproj)
+        TAG_VERSION="${{ steps.get_version.outputs.VERSION }}"
+        if [ "$CSPROJ_VERSION" != "$TAG_VERSION" ]; then
+          echo "::error::Version mismatch! Tag is v${TAG_VERSION} but csproj has version ${CSPROJ_VERSION}"
+          exit 1
+        fi
+        echo "Versions match: $CSPROJ_VERSION == $TAG_VERSION"
+
     - name: Check if release already exists
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,7 +73,7 @@ jobs:
       run: dotnet build CoreEssentials/CoreEssentials.csproj --no-restore -c Release
       
     - name: Pack
-      run: dotnet pack CoreEssentials/CoreEssentials.csproj --no-build -c Release
+      run: dotnet pack CoreEssentials/CoreEssentials.csproj --no-build -c Release /p:Version=${{ steps.get_version.outputs.VERSION }}
       
     - name: Publish to GitHub Packages
       run: |
