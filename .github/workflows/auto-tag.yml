@@ -1,0 +1,119 @@
+name: Auto-Create Release Tag
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to create the tag from (defaults to current default branch)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  auto-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref }}
+        fetch-depth: 0
+
+    - name: Extract version from csproj
+      id: get_version
+      run: |
+        VERSION=$(grep -oP '(?<=<Version>)[^<]+' CoreEssentials/CoreEssentials.csproj)
+        if [ -z "$VERSION" ]; then
+          echo "::error::Could not extract version from CoreEssentials.csproj"
+          exit 1
+        fi
+        # Validate semantic version format (X.Y.Z)
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Version '$VERSION' does not match expected format X.Y.Z"
+          exit 1
+        fi
+        TAG="v${VERSION}"
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "TAG=$TAG" >> $GITHUB_OUTPUT
+        echo "Extracted version: v$VERSION (tag: $TAG)"
+
+    - name: Get previous tag version
+      id: get_previous
+      run: |
+        # Find the most recent tag before this commit
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREVIOUS_TAG" ]; then
+          PREV_VERSION=${PREVIOUS_TAG#v}
+          echo "PREVIOUS_VERSION=$PREV_VERSION" >> $GITHUB_OUTPUT
+          echo "Previous tag: $PREVIOUS_TAG (version: $PREV_VERSION)"
+        else
+          echo "PREVIOUS_VERSION=" >> $GITHUB_OUTPUT
+          echo "No previous tag found."
+        fi
+
+    - name: Check if version was bumped
+      id: check_bump
+      run: |
+        CURRENT="${{ steps.get_version.outputs.VERSION }}"
+        PREVIOUS="${{ steps.get_previous.outputs.PREVIOUS_VERSION }}"
+        
+        # If no previous tag, this is the first release — proceed
+        if [ -z "$PREVIOUS" ]; then
+          echo "BUMP_NEEDED=true" >> $GITHUB_OUTPUT
+          echo "No previous tag exists — creating first release tag."
+        elif [ "$CURRENT" = "$PREVIOUS" ]; then
+          echo "BUMP_NEEDED=false" >> $GITHUB_OUTPUT
+          echo "Version unchanged (v$CURRENT). Skipping tag creation."
+        else
+          echo "BUMP_NEEDED=true" >> $GITHUB_OUTPUT
+          echo "Version bumped from v${PREVIOUS} to v${CURRENT}"
+        fi
+
+    - name: Skip on version unchanged (auto-trigger)
+      if: github.event_name == 'push' && steps.check_bump.outputs.BUMP_NEEDED != 'true'
+      run: |
+        exit 0
+
+    - name: Check if tag already exists remotely
+      id: check_remote
+      run: |
+        TAG="v${{ steps.get_version.outputs.VERSION }}"
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+          echo "EXISTS=true" >> $GITHUB_OUTPUT
+        else
+          echo "EXISTS=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Fail if tag exists (manual trigger only)
+      if: github.event_name == 'workflow_dispatch' && steps.check_remote.outputs.EXISTS == 'true'
+      run: |
+        TAG="v${{ steps.get_version.outputs.VERSION }}"
+        echo "::error::Tag $TAG already exists! Cannot create duplicate tag."
+        exit 1
+
+    - name: Create and push tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: steps.check_remote.outputs.EXISTS != 'true' || github.event_name == 'push'
+      run: |
+        TAG="v${{ steps.get_version.outputs.VERSION }}"
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        
+        # Double-check before tagging (safety for auto-trigger)
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+          echo "::warning::Tag $TAG already exists on remote. Skipping."
+          exit 1
+        fi
+        
+        git tag -a "$TAG" -m "Release $TAG"
+        git push origin "$TAG"
+        echo "Successfully created and pushed tag $TAG"
