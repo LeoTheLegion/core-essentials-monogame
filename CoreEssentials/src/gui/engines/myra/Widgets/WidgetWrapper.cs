@@ -120,6 +120,20 @@ public abstract class WidgetWrapper : IWidget
         set => MyraWidget.VerticalAlignment = MapVerticalAlignment(value);
     }
 
+    /// <inheritdoc />
+    public Microsoft.Xna.Framework.Vector2 Scale
+    {
+        get => MyraWidget.Scale;
+        set => MyraWidget.Scale = value;
+    }
+
+    /// <inheritdoc />
+    public float Opacity
+    {
+        get => MyraWidget.Opacity;
+        set => MyraWidget.Opacity = value;
+    }
+
     private static CoreEssentials.GUI.Types.HorizontalAlignment MapHorizontalAlignment(MyraHorizontalAlignment myraAlignment)
     {
         return myraAlignment switch

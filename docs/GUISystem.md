@@ -101,7 +101,7 @@ GUIManager.Draw(gameTime);
 |-------------------|-----------|---------|
 | `IGuiManager` | `CoreEssentials.GUI.Types` | Lifecycle, widget management, rendering (engine-level) |
 | `ICanvas` | `CoreEssentials.GUI.Types` | Positioned container for widgets in screen/world space |
-| `IWidget` | `CoreEssentials.GUI.Types` | Base abstraction for all UI elements |
+| `IWidget` | `CoreEssentials.GUI.Types` | Base abstraction for all UI elements (Width, Height, Position, Scale, Opacity, Visible, etc.) |
 | `IContainer` | `CoreEssentials.GUI.Types` | Widget containers with child management (`AddChild`, `RemoveChild`) |
 | `IPanel` | `CoreEssentials.GUI.Types` | Container with styling (`Background`, `BorderThickness`) |
 | `ILabel` | `CoreEssentials.GUI.Types` | Text display (`Text`, `Font`, `TextColor`) |
