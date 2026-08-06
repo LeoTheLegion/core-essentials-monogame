@@ -1,43 +1,146 @@
-name: Publish NuGet Package
+name: Release & Publish NuGet Package
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to create the release from (defaults to current default branch)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  publish:
+  # ── Job 1: Auto-tag if version changed ──────────────────────────────────────
+  auto-tag:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-      
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
+      tag: ${{ steps.get_version.outputs.TAG }}
+      tagged: ${{ steps.create_tag.outputs.TAGGED }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref }}
+        fetch-depth: 0
+
+    - name: Extract version from csproj
+      id: get_version
+      run: |
+        VERSION=$(grep -oP '(?<=<Version>)[^<]+' CoreEssentials/CoreEssentials.csproj)
+        if [ -z "$VERSION" ]; then
+          echo "::error::Could not extract version from CoreEssentials/CoreEssentials.csproj"
+          exit 1
+        fi
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Version '$VERSION' does not match expected format X.Y.Z"
+          exit 1
+        fi
+        TAG="v${VERSION}"
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "TAG=$TAG" >> $GITHUB_OUTPUT
+        echo "Extracted version: v$VERSION (tag: $TAG)"
+
+    - name: Get previous tag version
+      id: get_previous
+      run: |
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREVIOUS_TAG" ]; then
+          PREV_VERSION=${PREVIOUS_TAG#v}
+          echo "PREVIOUS_VERSION=$PREV_VERSION" >> $GITHUB_OUTPUT
+          echo "Previous tag: $PREVIOUS_TAG (version: $PREV_VERSION)"
+        else
+          echo "PREVIOUS_VERSION=" >> $GITHUB_OUTPUT
+          echo "No previous tag found."
+        fi
+
+    - name: Check if version was bumped
+      id: check_bump
+      run: |
+        CURRENT="${{ steps.get_version.outputs.VERSION }}"
+        PREVIOUS="${{ steps.get_previous.outputs.PREVIOUS_VERSION }}"
+        
+        if [ -z "$PREVIOUS" ]; then
+          echo "BUMP_NEEDED=true" >> $GITHUB_OUTPUT
+          echo "No previous tag exists — creating first release tag."
+        elif [ "$CURRENT" = "$PREVIOUS" ]; then
+          echo "BUMP_NEEDED=false" >> $GITHUB_OUTPUT
+          echo "Version unchanged (v$CURRENT). Skipping."
+        else
+          echo "BUMP_NEEDED=true" >> $GITHUB_OUTPUT
+          echo "Version bumped from v${PREVIOUS} to v${CURRENT}"
+        fi
+
+    - name: Skip if version unchanged
+      if: steps.check_bump.outputs.BUMP_NEEDED != 'true'
+      run: |
+        echo "TAGGED=false" >> $GITHUB_OUTPUT
+        exit 0
+
+    - name: Check if tag already exists remotely
+      id: check_remote
+      run: |
+        TAG="v${{ steps.get_version.outputs.VERSION }}"
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+          echo "EXISTS=true" >> $GITHUB_OUTPUT
+        else
+          echo "EXISTS=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Fail if tag already exists
+      if: steps.check_remote.outputs.EXISTS == 'true'
+      run: |
+        TAG="v${{ steps.get_version.outputs.VERSION }}"
+        echo "::error::Tag $TAG already exists! Cannot create duplicate release."
+        exit 1
+
+    - name: Create and push tag
+      id: create_tag
+      if: steps.check_remote.outputs.EXISTS != 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG="v${{ steps.get_version.outputs.VERSION }}"
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+          echo "::warning::Tag $TAG already exists on remote. Aborting."
+          exit 1
+        fi
+
+        git tag -a "$TAG" -m "Release $TAG"
+        git push origin "$TAG"
+        echo "TAGGED=true" >> $GITHUB_OUTPUT
+        echo "Successfully created and pushed tag $TAG"
+
+  # ── Job 2: Build, pack & publish NuGet package ──────────────────────────────
+  publish:
+    needs: auto-tag
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-        
-    - name: Extract version from tag
-      id: get_version
-      run: |
-        # Extract version from tag (e.g., v0.13.0 -> 0.13.0)
-        VERSION="${GITHUB_REF#refs/tags/v}"
-        # Validate that version was extracted
-        if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF" ]; then
-          echo "Error: Tag must start with 'v' (e.g., v0.13.0)"
-          exit 1
-        fi
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Extracted version: $VERSION"
 
     - name: Verify tag version matches csproj version
       run: |
         CSPROJ_VERSION=$(grep -oP '(?<=<Version>)[^<]+' CoreEssentials/CoreEssentials.csproj)
-        TAG_VERSION="${{ steps.get_version.outputs.VERSION }}"
+        TAG_VERSION="${{ needs.auto-tag.outputs.VERSION }}"
         if [ "$CSPROJ_VERSION" != "$TAG_VERSION" ]; then
           echo "::error::Version mismatch! Tag is v${TAG_VERSION} but csproj has version ${CSPROJ_VERSION}"
           exit 1
@@ -48,9 +151,9 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        RELEASE_EXISTS=$(gh release view "${{ github.ref_name }}" --json id --jq '.id' 2>/dev/null || true)
+        RELEASE_EXISTS=$(gh release view "${{ needs.auto-tag.outputs.TAG }}" --json id --jq '.id' 2>/dev/null || true)
         if [ -n "$RELEASE_EXISTS" ]; then
-          echo "::error::Release '${{ github.ref_name }}' already exists. Aborting."
+          echo "::error::Release '${{ needs.auto-tag.outputs.TAG }}' already exists. Aborting."
           exit 1
         fi
 
@@ -58,6 +161,7 @@ jobs:
       env:
         NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        VERSION="${{ needs.auto-tag.outputs.VERSION }}"
         PACKAGE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
           -H "X-API-Key: ${NUGET_TOKEN}" \
           "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json/CoreEssentials-MonoGame/$VERSION" 2>/dev/null || echo "000")
@@ -65,28 +169,29 @@ jobs:
           echo "::error::NuGet package CoreEssentials-MonoGame.${VERSION} already exists. Aborting."
           exit 1
         fi
-      
+
     - name: Restore dependencies
       run: dotnet restore CoreEssentials/CoreEssentials.csproj
-      
+
     - name: Build
       run: dotnet build CoreEssentials/CoreEssentials.csproj --no-restore -c Release
-      
+
     - name: Pack
-      run: dotnet pack CoreEssentials/CoreEssentials.csproj --no-build -c Release /p:Version=${{ steps.get_version.outputs.VERSION }}
-      
+      run: dotnet pack CoreEssentials/CoreEssentials.csproj --no-build -c Release /p:Version=${{ needs.auto-tag.outputs.VERSION }}
+
     - name: Publish to GitHub Packages
       run: |
-        dotnet nuget push CoreEssentials/bin/Release/CoreEssentials-MonoGame.${{ steps.get_version.outputs.VERSION }}.nupkg \
+        dotnet nuget push CoreEssentials/bin/Release/CoreEssentials-MonoGame.${{ needs.auto-tag.outputs.VERSION }}.nupkg \
           --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json \
           --api-key ${{ secrets.GITHUB_TOKEN }} \
           --skip-duplicate
-      
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: ${{ needs.auto-tag.outputs.TAG }}
         files: |
           CoreEssentials/bin/Release/*.nupkg
           CoreEssentials/bin/Release/*.snupkg
         generate_release_notes: true
-        name: Release ${{ steps.get_version.outputs.VERSION }}
+        name: Release ${{ needs.auto-tag.outputs.VERSION }}
