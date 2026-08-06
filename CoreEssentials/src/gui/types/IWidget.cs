@@ -57,6 +57,18 @@ public interface IWidget
     /// Gets or sets the vertical alignment of this widget within its layout container.
     /// </summary>
     VerticalAlignment VerticalAlignment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the scale factor for this widget in X and Y dimensions.
+    /// A value of (1, 1) represents no scaling; values greater than 1 enlarge, less than 1 shrink.
+    /// </summary>
+    Vector2 Scale { get; set; }
+
+    /// <summary>
+    /// Gets or sets the opacity of this widget. 
+    /// 0.0 is fully transparent, 1.0 is fully opaque.
+    /// </summary>
+    float Opacity { get; set; }
 }
 
 /// <summary>

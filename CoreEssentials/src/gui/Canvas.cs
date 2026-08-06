@@ -100,4 +100,10 @@ public class Canvas : ICanvas
 
     /// <inheritdoc />
     public VerticalAlignment VerticalAlignment { get => _impl.VerticalAlignment; set => _impl.VerticalAlignment = value; }
+
+    /// <inheritdoc />
+    public Vector2 Scale { get => _impl.Scale; set => _impl.Scale = value; }
+
+    /// <inheritdoc />
+    public float Opacity { get => _impl.Opacity; set => _impl.Opacity = value; }
 }

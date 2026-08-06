@@ -28,6 +28,8 @@ public class FakeLabel : ILabel
     public Thickness Margin { get; set; }
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
+    public Vector2 Scale { get; set; } = Vector2.One;
+    public float Opacity { get; set; } = 1.0f;
     public string? Text { get; set; }
     public object? Font { get; set; }
     public Color TextColor { get; set; } = Color.White;
@@ -45,6 +47,8 @@ public class FakeButton : IButton
     public Thickness Margin { get; set; }
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
+    public Vector2 Scale { get; set; } = Vector2.One;
+    public float Opacity { get; set; } = 1.0f;
     public string? Text { get; set; }
 #pragma warning disable CS0067 // The event is never used (required by IButton interface)
     public event Action<IButton>? Clicked;
@@ -63,6 +67,8 @@ public class FakePanel : IPanel
     public Thickness Margin { get; set; }
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
+    public Vector2 Scale { get; set; } = Vector2.One;
+    public float Opacity { get; set; } = 1.0f;
     public IBrush? Background { get; set; }
     public Thickness BorderThickness { get; set; }
     public System.Collections.Generic.IList<IWidget> Children { get; } = new System.Collections.Generic.List<IWidget>();
@@ -84,6 +90,8 @@ public class FakeGrid : IGrid
     public Thickness Margin { get; set; }
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
+    public Vector2 Scale { get; set; } = Vector2.One;
+    public float Opacity { get; set; } = 1.0f;
     public IBrush? Background { get; set; }
     public System.Collections.Generic.IList<float> RowProportions { get; } = new System.Collections.Generic.List<float>();
     public System.Collections.Generic.IList<float> ColumnProportions { get; } = new System.Collections.Generic.List<float>();
