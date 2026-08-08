@@ -20,7 +20,7 @@
   - `HasComponent<T>()` method
   - Auto-call lifecycle hooks on attach/detach
 
-- [ ] **T3: Create `RigidbodyComponent` (1 pt)** ⭐ User-facing
+- [x] **T3: Create `RigidbodyComponent` (1 pt)** ⭐ User-facing
   - Wraps `IPhysicsBody` with sync to Entity Position/Rotation
   - Body type (Static, Kinematic, Dynamic)
   - Auto-sync physics body transform ↔ entity transform on attach/update

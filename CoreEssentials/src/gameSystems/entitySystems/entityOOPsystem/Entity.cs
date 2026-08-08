@@ -96,6 +96,12 @@ public abstract class Entity
     protected EntitySystem? EntitySystem;
 
     /// <summary>
+    /// Gets the EntitySystem that manages this entity.
+    /// Used by components to access game systems.
+    /// </summary>
+    internal EntitySystem? GetEntitySystem() => EntitySystem;
+
+    /// <summary>
     /// The collection of tags assigned to this entity.
     /// Tags are case-insensitive and provide a simple way to group entities.
     /// </summary>
