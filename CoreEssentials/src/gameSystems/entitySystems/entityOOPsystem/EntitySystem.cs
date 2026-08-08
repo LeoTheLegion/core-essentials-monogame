@@ -24,6 +24,11 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     private Dictionary<string, List<Entity>> _tagIndex = new Dictionary<string, List<Entity>>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Dictionary of entity pools, keyed by type name.
+    /// </summary>
+    private Dictionary<Type, object> _pools = new Dictionary<Type, object>();
+
+    /// <summary>
     /// Initializes a new instance of the EntitySystem class.
     /// </summary>
     public EntitySystem()
@@ -102,6 +107,63 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         UpdateTagIndexForEntity(entity, true);
         entity.OnStart();
         return entity;
+    }
+
+    /// <summary>
+    /// Creates and initializes a new pooled entity of the specified type.
+    /// The entity will be recycled back to the pool when <see cref="ReleasePooled{T}"/> is called.
+    /// </summary>
+    /// <typeparam name="T">The type of pooled entity to create (must implement <see cref="Pooling.IPooledEntity"/>).</typeparam>
+    /// <param name="position">The position to activate the entity at.</param>
+    /// <param name="args">Constructor arguments for the entity (if not using default constructor).</param>
+    /// <returns>The newly created pooled entity.</returns>
+    public T CreatePooled<T>(Vector2 position = default, params object[] args) where T : Entity, Pooling.IPooledEntity, new()
+    {
+        var pool = GetOrCreatePool<T>();
+        var entity = pool.Acquire(position);
+        entity.SetGameSystem(this);
+        _entities.Add(entity);
+        UpdateTagIndexForEntity(entity, true);
+        entity.OnStart();
+        return entity;
+    }
+
+    /// <summary>
+    /// Returns a pooled entity to the pool instead of destroying it.
+    /// The entity becomes inactive and available for reuse.
+    /// </summary>
+    /// <typeparam name="T">The type of pooled entity to release.</typeparam>
+    /// <param name="entity">The entity to release back to the pool.</param>
+    public void ReleasePooled<T>(T entity) where T : Entity, Pooling.IPooledEntity, new()
+    {
+        if (entity == null)
+            return;
+
+        // Remove from entity list
+        _entities.Remove(entity);
+        UpdateTagIndexForEntity(entity, false);
+
+        // Return to pool
+        var pool = GetOrCreatePool<T>();
+        pool.Release(entity);
+    }
+
+    /// <summary>
+    /// Gets or creates an entity pool for the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of pooled entity.</typeparam>
+    /// <param name="initialCapacity">Initial pool capacity (default: 10).</param>
+    /// <param name="maxSize">Maximum pool size (default: 100).</param>
+    /// <returns>The entity pool for the specified type.</returns>
+    public Pooling.EntityPool<T> GetOrCreatePool<T>(int initialCapacity = 10, int maxSize = 100) where T : Entity, Pooling.IPooledEntity, new()
+    {
+        var type = typeof(T);
+        if (!_pools.TryGetValue(type, out var pool))
+        {
+            pool = new Pooling.EntityPool<T>(initialCapacity, maxSize);
+            _pools[type] = pool;
+        }
+        return (Pooling.EntityPool<T>)pool;
     }
 
     /// <summary>
@@ -228,6 +290,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         ClearEntities();
         _entities = null!;
         _tagIndex.Clear();
+        _pools.Clear();
     }
 
     /// <summary>
