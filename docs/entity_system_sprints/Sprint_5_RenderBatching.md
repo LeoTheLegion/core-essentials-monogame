@@ -12,7 +12,7 @@
   - Entities expose current active texture for rendering
   - Track texture changes during render preparation
 
-- [ ] **T2: Implement texture-based sort in `EntitySystem.Draw()` (2 pts)** ⭐ User-facing
+- [x] **T2: Implement texture-based sort in `EntitySystem.Draw()` (2 pts)** ⭐ User-facing
   - Group entities by active texture before rendering
   - Single `SpriteBatch.Begin()` per texture group
   - Maintain sort order within each texture group
