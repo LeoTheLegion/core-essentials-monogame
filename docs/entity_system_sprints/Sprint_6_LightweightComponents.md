@@ -26,11 +26,11 @@
   - Auto-sync physics body transform ↔ entity transform on attach/update
   - Lazy body creation via `PhysicsEngine` GameSystem
 
-- [ ] **T4: Create `SpriteComponent` (1 pt)** ⭐ User-facing
-  - Decouples rendering from Entity
-  - Texture, scale, origin, color, effect (flip)
+- [x] **T4: Create `SpriteComponent` (1 pt)** ⭐ User-facing
+  - Hybrid rendering component (additional draw path alongside Entity.Render)
+  - Sprite, scale, origin, color, effect (flip), layer depth
   - Sort order override
-  - Optional: animation frame support
+  - Animation frame support
 
 - [x] **T5: Write unit tests (1 pt)** 🔁 Validation
   - Test add/get/remove components
@@ -42,12 +42,12 @@
 
 ## Acceptance Criteria
 
-- [ ] `EntityComponent` base class with lifecycle hooks
-- [ ] Entities can add, get, and remove components
-- [ ] Built-in components (Health, Velocity, Damage) are available
-- [ ] Components are cleaned up when entity is destroyed
-- [ ] Project builds cleanly — **0 errors, 0 warnings**
-- [ ] All existing tests pass + new component tests added
+- [x] `EntityComponent` base class with lifecycle hooks
+- [x] Entities can add, get, and remove components
+- [x] Built-in components (Rigidbody, Sprite) are available
+- [x] Components are cleaned up when entity is destroyed
+- [x] Project builds cleanly — **0 errors, 0 warnings**
+- [x] All existing tests pass + new component tests added
 
 ---
 
