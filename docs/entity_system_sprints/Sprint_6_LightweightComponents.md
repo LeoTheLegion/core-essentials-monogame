@@ -69,6 +69,7 @@
 - **Medium risk** — component order matters for some use cases
 - Consider component priority for update ordering
 - Memory overhead for component dictionaries
+- **Hybrid rendering approach** — `Entity.Draw()` remains the default render path for backward compatibility. Components like `SpriteComponent` provide *additional* rendering options. Future sprint will enforce full component-based rendering.
 
 ---
 
