@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -130,10 +131,10 @@ public abstract class Entity
     public float LocalRotation { get; set; } = 0f;
 
     /// <summary>
-    /// The current texture used for rendering this entity.
+    /// The current texture asset used for rendering this entity.
     /// Used by the render batching system to group entities by texture for efficient drawing.
     /// </summary>
-    public Texture2D? Texture { get; set; }
+    public Texture2DAsset? Texture { get; set; }
 
     /// <summary>
     /// Gets whether the texture has changed since the last render preparation.
@@ -144,8 +145,8 @@ public abstract class Entity
     /// <summary>
     /// Sets the texture for this entity and marks it as changed.
     /// </summary>
-    /// <param name="texture">The texture to use for rendering.</param>
-    public void SetTexture(Texture2D? texture)
+    /// <param name="texture">The texture asset to use for rendering.</param>
+    public void SetTexture(Texture2DAsset? texture)
     {
         Texture = texture;
         TextureChanged = true;

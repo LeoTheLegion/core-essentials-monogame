@@ -17,7 +17,7 @@
   - Single `SpriteBatch.Begin()` per texture group
   - Maintain sort order within each texture group
 
-- [ ] **T3: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T3: Write unit tests (1 pt)** 🔁 Validation
   - Test entities are grouped by texture
   - Test sort order is preserved within groups
   - Test entities without textures render correctly

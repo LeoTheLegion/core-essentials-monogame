@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.Assets;
 using CoreEssentials.Camera;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -62,7 +63,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
 
     /// <summary>
     /// Renders all active entities using texture-based batching.
-    /// Entities are grouped by their active texture to minimize SpriteBatch begin/end calls.
+    /// Entities are grouped by their active texture asset to minimize SpriteBatch begin/end calls.
     /// Within each texture group, entities maintain their sort order.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
@@ -72,8 +73,8 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         var camera = Camera.Camera.MainCamera;
         var hasCamera = camera != null;
 
-        // Group entities by texture while preserving sort order
-        var textureGroups = new Dictionary<Texture2D, List<Entity>>();
+        // Group entities by texture asset while preserving sort order
+        var textureGroups = new Dictionary<Texture2DAsset, List<Entity>>();
         var noTextureEntities = new List<Entity>(); // Group for entities without texture
 
         for (int i = 0; i < _entities.Count; i++)
