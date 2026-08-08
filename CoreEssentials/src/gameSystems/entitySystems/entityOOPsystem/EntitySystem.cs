@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.Assets;
 using CoreEssentials.Camera;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -61,18 +62,42 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
-    /// Renders all active entities.
+    /// Renders all active entities using texture-based batching.
+    /// Entities are grouped by their active texture asset to minimize SpriteBatch begin/end calls.
+    /// Within each texture group, entities maintain their sort order.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         var camera = Camera.Camera.MainCamera;
-        if (camera == null)
+        var hasCamera = camera != null;
+
+        // Group entities by texture asset while preserving sort order
+        var textureGroups = new Dictionary<Texture2DAsset, List<Entity>>();
+        var noTextureEntities = new List<Entity>(); // Group for entities without texture
+
+        for (int i = 0; i < _entities.Count; i++)
         {
-            spriteBatch.Begin();
+            var entity = _entities[i];
+            if (entity.GetActive())
+            {
+                var texture = entity.BatchTexture;
+                if (texture == null)
+                {
+                    noTextureEntities.Add(entity);
+                }
+                else
+                {
+                    if (!textureGroups.ContainsKey(texture))
+                        textureGroups[texture] = new List<Entity>();
+                    textureGroups[texture].Add(entity);
+                }
+            }
         }
-        else
+
+        // Render entities without texture first
+        if (noTextureEntities.Count > 0)
         {
             spriteBatch.Begin(
                 SpriteSortMode.Deferred,
@@ -81,16 +106,43 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 DepthStencilState.None,
                 RasterizerState.CullNone,
                 null,
-                camera.ViewMatrix
+                hasCamera ? camera!.ViewMatrix : null
             );
+
+            foreach (var entity in noTextureEntities)
+            {
+                entity.Render(spriteBatch);
+            }
+
+            spriteBatch.End();
         }
 
+        // Render each texture group
+        foreach (var textureGroup in textureGroups)
+        {
+            spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone,
+                null,
+                hasCamera ? camera!.ViewMatrix : null
+            );
+
+            foreach (var entity in textureGroup.Value)
+            {
+                entity.Render(spriteBatch);
+            }
+
+            spriteBatch.End();
+        }
+
+        // Reset texture changed flags for next frame
         for (int i = 0; i < _entities.Count; i++)
         {
-            if (_entities[i].GetActive())
-                _entities[i].Render(spriteBatch);
+            _entities[i].BatchTextureDirty = false;
         }
-        spriteBatch.End();
     }
 
     /// <summary>

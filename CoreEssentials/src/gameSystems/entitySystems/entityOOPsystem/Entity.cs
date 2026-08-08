@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -128,6 +129,39 @@ public abstract class Entity
     /// Only meaningful when this entity has a parent.
     /// </summary>
     public float LocalRotation { get; set; } = 0f;
+
+    /// <summary>
+    /// The current texture asset used for instanced rendering batching.
+    /// Entities sharing the same <see cref="BatchTexture"/> are rendered in a single SpriteBatch call.
+    /// </summary>
+    public Texture2DAsset? BatchTexture { get; set; }
+
+    /// <summary>
+    /// Gets whether the batch texture has changed since the last render preparation.
+    /// Set to <see langword="false"/> during render preparation to indicate the texture has been processed.
+    /// </summary>
+    public bool BatchTextureDirty { get; set; }
+
+    /// <summary>
+    /// Registers a texture asset for instanced rendering on this entity.
+    /// Entities sharing the same texture are batched together for efficient drawing.
+    /// </summary>
+    /// <param name="texture">The texture asset to use for instanced rendering.</param>
+    public void RegisterForInstancedRendering(Texture2DAsset? texture)
+    {
+        BatchTexture = texture;
+        BatchTextureDirty = true;
+    }
+
+    /// <summary>
+    /// Registers a sprite's texture for instanced rendering on this entity.
+    /// If the sprite uses a SpriteSheet, the texture will be null and batching won't apply.
+    /// </summary>
+    /// <param name="sprite">The sprite to extract the texture from.</param>
+    public void RegisterForInstancedRendering(Sprite sprite)
+    {
+        RegisterForInstancedRendering(sprite.Texture);
+    }
 
     /// <summary>
     /// Adds a tag to this entity.

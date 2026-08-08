@@ -12,7 +12,8 @@ using Microsoft.Xna.Framework.Graphics;
 namespace CoreEssentials.Playground;
 
 public class Ball : Entity
-{    private Sprite _sprite;
+{
+    private Sprite _sprite;
     private IPhysicsBody _body;
     private ICollider _collisionFixture;
     private float _radius;
@@ -22,7 +23,7 @@ public class Ball : Entity
 
     private CoroutineOwner _coroutineOwner;
 
-    public IPhysicsBody Body => _body;    
+    public IPhysicsBody Body => _body;
 
     // Add a Scale property
     public float Scale
@@ -43,20 +44,24 @@ public class Ball : Entity
     {
         Position = position;
         sort = 0;
-        
+
         // Randomize the scale between 0.5 and 1.5
         _scale = (float)(_random.NextDouble() + 0.5f);
-    }    public override void OnStart()
+    }
+    public override void OnStart()
     {
         base.OnStart();
 
         this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
 
+        // Register sprite's texture for instanced rendering batching
+        RegisterForInstancedRendering(_sprite);
+
         // I hate this but I have to do it this way for now
         _radius = this._sprite.GetSize().X / 2; // Assuming the sprite is a circle, use half the width as the radius
 
         PhysicsEngine physicsEngine = EntitySystem.GetGameSystem<PhysicsEngine>();
-        
+
         // Create the physics body with appropriate scale
         CreatePhysicsBody(physicsEngine);
 
@@ -82,12 +87,12 @@ public class Ball : Entity
         {
             // Remove the old fixture and create new one with updated scale
             _body.RemoveCollider(_collisionFixture);
-            
+
             // Create a new fixture with the updated scale
             Vector2 offset = new Vector2(0, 1);
             _collisionFixture = _body.CreateCircleCollider(_radius * _scale, offset);
             _collisionFixture.Restitution = 1f;
-            
+
             // Update mass based on scale
             _body.Mass = 1f * _scale * _scale;
         }
@@ -117,10 +122,11 @@ public class Ball : Entity
             // Wait for a short duration before applying the next force
             yield return new WaitForSeconds(_random.Next(1, 5)); // Random wait time between 1 and 5 seconds
         }
-    }    public override void Render(SpriteBatch _spriteBatch)
+    }
+    public override void Render(SpriteBatch _spriteBatch)
     {
         float rotation = _body.Rotation; // Get the rotation from the physics body
-        
+
         // Use the new Draw method with scale
         _sprite.Draw(_spriteBatch, Position, Color.White, rotation, _scale, SpriteEffects.None, 0f);
     }
@@ -137,7 +143,7 @@ public class Ball : Entity
         _coroutineOwner = null; // Clean up the coroutine owner
     }
 
-    ~ Ball()
+    ~Ball()
     {
         // Destructor to clean up resources if needed
         if (_body != null)

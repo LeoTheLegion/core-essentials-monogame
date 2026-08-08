@@ -19,6 +19,13 @@ public class Sprite : Asset
     private int _defaultFrame; // Default frame for sprite sheet rendering
 
     /// <summary>
+    /// Gets the underlying texture asset for this sprite.
+    /// Returns null if this sprite uses a SpriteSheet instead.
+    /// Used for instanced rendering/batching optimization.
+    /// </summary>
+    public Texture2DAsset? Texture => _texture;
+
+    /// <summary>
     /// Initializes a new instance of the Sprite class.
     /// Loads sprite metadata from an XML file and the associated texture.
     /// </summary>

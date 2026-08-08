@@ -8,16 +8,16 @@
 
 ## Tasks
 
-- [ ] **T1: Add texture tracking to entities (1 pt)** 🔒 Internal
+- [x] **T1: Add texture tracking to entities (1 pt)** 🔒 Internal
   - Entities expose current active texture for rendering
   - Track texture changes during render preparation
 
-- [ ] **T2: Implement texture-based sort in `EntitySystem.Draw()` (2 pts)** ⭐ User-facing
+- [x] **T2: Implement texture-based sort in `EntitySystem.Draw()` (2 pts)** ⭐ User-facing
   - Group entities by active texture before rendering
   - Single `SpriteBatch.Begin()` per texture group
   - Maintain sort order within each texture group
 
-- [ ] **T3: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T3: Write unit tests (1 pt)** 🔁 Validation
   - Test entities are grouped by texture
   - Test sort order is preserved within groups
   - Test entities without textures render correctly
@@ -26,11 +26,11 @@
 
 ## Acceptance Criteria
 
-- [ ] Entities are sorted by texture before drawing
-- [ ] SpriteBatch is begun/ended per texture group
-- [ ] Sort order is preserved within texture groups
-- [ ] Project builds cleanly — **0 errors, 0 warnings**
-- [ ] All existing tests pass + new batching tests added
+- [x] Entities are sorted by texture before drawing
+- [x] SpriteBatch is begun/ended per texture group
+- [x] Sort order is preserved within texture groups
+- [x] Project builds cleanly — **0 errors, 0 warnings**
+- [x] All existing tests pass + new batching tests added
 
 ---
 
