@@ -13,7 +13,7 @@
   - `OnAttach()` and `OnDetach()` lifecycle hooks
   - `Update(GameTime)` optional override
 
-- [ ] **T2: Add component management to `Entity` (2 pts)** ⭐ User-facing
+- [x] **T2: Add component management to `Entity` (2 pts)** ⭐ User-facing
   - `Dictionary<Type, EntityComponent>` for component storage
   - `AddComponent<T>(T component)` method
   - `GetComponent<T>()` method
@@ -32,7 +32,7 @@
   - Sort order override
   - Optional: animation frame support
 
-- [ ] **T5: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T5: Write unit tests (1 pt)** 🔁 Validation
   - Test add/get/remove components
   - Test component lifecycle hooks
   - Test component cleanup on entity destroy
