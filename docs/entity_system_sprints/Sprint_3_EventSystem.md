@@ -1,31 +1,31 @@
 # Sprint 3 — Event System 📡
 
 **Points:** 5  
-**Status:** Not Started  
+**Status:** ✅ Completed  
 **Sprint Goal:** Add decoupled publish/subscribe so entities don't need direct references.
 
 ---
 
 ## Tasks
 
-- [ ] **T1: Create `EntityEventArgs<T>` class (1 pt)** 🔒 Internal
+- [x] **T1: Create `EntityEventArgs<T>` class (1 pt)** 🔒 Internal
   - Generic event data container with `Source` (sender entity) and `Data` (payload)
   - Non-generic `EntityEventArgs` for simple events
   - Thread-safe event data encapsulation
 
-- [ ] **T2: Create `EntityEventSystem` class (2 pts)** ⭐ User-facing
+- [x] **T2: Create `EntityEventSystem` class (2 pts)** ⭐ User-facing
   - Global event registry with string-based event names
   - `Subscribe(string eventName, Action<EntityEventArgs> handler)`
   - `Publish(string eventName, EntityEventArgs data)`
   - Entity-scoped subscriptions (auto-unsubscribe on entity destroy)
 
-- [ ] **T3: Add event convenience methods to `Entity` (1 pt)** ⭐ User-facing
+- [x] **T3: Add event convenience methods to `Entity` (1 pt)** ⭐ User-facing
   - `Subscribe(eventName, handler)` — subscribe with auto-cleanup
   - `Publish(eventName, data)` — publish from entity
   - `Unsubscribe(eventName, handler)` — manual unsubscribe
   - Auto-unsubscribe on `OnDestroy()`
 
-- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T4: Write unit tests (1 pt)** 🔁 Validation
   - Test subscribe/publish cycle
   - Test entity-scoped subscriptions
   - Test auto-unsubscribe on entity destroy
