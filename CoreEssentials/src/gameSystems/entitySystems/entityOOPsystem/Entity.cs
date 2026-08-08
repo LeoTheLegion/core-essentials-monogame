@@ -131,25 +131,36 @@ public abstract class Entity
     public float LocalRotation { get; set; } = 0f;
 
     /// <summary>
-    /// The current texture asset used for rendering this entity.
-    /// Used by the render batching system to group entities by texture for efficient drawing.
+    /// The current texture asset used for instanced rendering batching.
+    /// Entities sharing the same <see cref="BatchTexture"/> are rendered in a single SpriteBatch call.
     /// </summary>
-    public Texture2DAsset? Texture { get; set; }
+    public Texture2DAsset? BatchTexture { get; set; }
 
     /// <summary>
-    /// Gets whether the texture has changed since the last render preparation.
+    /// Gets whether the batch texture has changed since the last render preparation.
     /// Set to <see langword="false"/> during render preparation to indicate the texture has been processed.
     /// </summary>
-    public bool TextureChanged { get; set; }
+    public bool BatchTextureDirty { get; set; }
 
     /// <summary>
-    /// Sets the texture for this entity and marks it as changed.
+    /// Registers a texture asset for instanced rendering on this entity.
+    /// Entities sharing the same texture are batched together for efficient drawing.
     /// </summary>
-    /// <param name="texture">The texture asset to use for rendering.</param>
-    public void SetTexture(Texture2DAsset? texture)
+    /// <param name="texture">The texture asset to use for instanced rendering.</param>
+    public void RegisterForInstancedRendering(Texture2DAsset? texture)
     {
-        Texture = texture;
-        TextureChanged = true;
+        BatchTexture = texture;
+        BatchTextureDirty = true;
+    }
+
+    /// <summary>
+    /// Registers a sprite's texture for instanced rendering on this entity.
+    /// If the sprite uses a SpriteSheet, the texture will be null and batching won't apply.
+    /// </summary>
+    /// <param name="sprite">The sprite to extract the texture from.</param>
+    public void RegisterForInstancedRendering(Sprite sprite)
+    {
+        RegisterForInstancedRendering(sprite.Texture);
     }
 
     /// <summary>

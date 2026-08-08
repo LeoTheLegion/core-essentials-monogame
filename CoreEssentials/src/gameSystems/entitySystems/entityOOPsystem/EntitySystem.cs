@@ -82,7 +82,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
             var entity = _entities[i];
             if (entity.GetActive())
             {
-                var texture = entity.Texture;
+                var texture = entity.BatchTexture;
                 if (texture == null)
                 {
                     noTextureEntities.Add(entity);
@@ -141,7 +141,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         // Reset texture changed flags for next frame
         for (int i = 0; i < _entities.Count; i++)
         {
-            _entities[i].TextureChanged = false;
+            _entities[i].BatchTextureDirty = false;
         }
     }
 
