@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 
@@ -82,6 +83,12 @@ public abstract class Entity
     /// Tags are case-insensitive and provide a simple way to group entities.
     /// </summary>
     public HashSet<string> Tags { get; }
+
+    /// <summary>
+    /// The collection of event handlers subscribed by this entity.
+    /// Used for auto-cleanup when the entity is destroyed.
+    /// </summary>
+    private readonly List<(string EventName, EntityEventHandler Handler)> _eventSubscriptions = new();
 
     /// <summary>
     /// Adds a tag to this entity.
@@ -183,8 +190,16 @@ public abstract class Entity
     /// </summary>
     public virtual void OnDestroy()
     {
-        // Cleanup logic for when the entity is destroyed.
-        // Override this method in derived classes to implement custom cleanup.
+        // Auto-unsubscribe from all events
+        var eventSystem = EntityEventSystem.Instance;
+        if (eventSystem != null)
+        {
+            foreach (var (eventName, handler) in _eventSubscriptions)
+            {
+                eventSystem.Unsubscribe(this, eventName, handler);
+            }
+        }
+        _eventSubscriptions.Clear();
     }
 
     /// <summary>
@@ -215,4 +230,54 @@ public abstract class Entity
     /// </summary>
     /// <returns>True if the entity is active; otherwise, false.</returns>
     public virtual bool GetActive() { return _active; }
+
+    /// <summary>
+    /// Subscribes to an event with a handler. The subscription is automatically removed when this entity is destroyed.
+    /// </summary>
+    /// <param name="eventName">The name of the event to subscribe to.</param>
+    /// <param name="handler">The handler to invoke when the event is raised.</param>
+    public void Subscribe(string eventName, EntityEventHandler handler)
+    {
+        if (EntitySystem == null)
+            throw new InvalidOperationException("Cannot subscribe to events before the entity is added to an EntitySystem.");
+
+        var eventSystem = EntityEventSystem.Instance;
+        if (eventSystem == null)
+            throw new InvalidOperationException("Cannot subscribe to events before the EntityEventSystem is initialized.");
+
+        _eventSubscriptions.Add((eventName, handler));
+        eventSystem.Subscribe(this, eventName, handler);
+    }
+
+    /// <summary>
+    /// Publishes an event from this entity.
+    /// </summary>
+    /// <param name="eventName">The name of the event to publish.</param>
+    /// <param name="args">The event arguments.</param>
+    public void Publish(string eventName, EntityEventArgs args)
+    {
+        if (EntitySystem == null)
+            throw new InvalidOperationException("Cannot publish events before the entity is added to an EntitySystem.");
+
+        var eventSystem = EntityEventSystem.Instance;
+        if (eventSystem == null)
+            throw new InvalidOperationException("Cannot publish events before the EntityEventSystem is initialized.");
+
+        eventSystem.Publish(this, eventName, args);
+    }
+
+    /// <summary>
+    /// Unsubscribes from an event with a specific handler.
+    /// </summary>
+    /// <param name="eventName">The name of the event to unsubscribe from.</param>
+    /// <param name="handler">The handler to remove.</param>
+    public void Unsubscribe(string eventName, EntityEventHandler handler)
+    {
+        var eventSystem = EntityEventSystem.Instance;
+        if (eventSystem == null)
+            throw new InvalidOperationException("Cannot unsubscribe from events before the EntityEventSystem is initialized.");
+
+        eventSystem.Unsubscribe(this, eventName, handler);
+        _eventSubscriptions.RemoveAll(s => s.EventName == eventName && s.Handler == handler);
+    }
 }
