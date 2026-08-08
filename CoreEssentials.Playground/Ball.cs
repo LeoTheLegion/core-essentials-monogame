@@ -51,7 +51,11 @@ public class Ball : Entity
         base.OnStart();
 
         this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
-
+        
+        // Set the texture for render batching (extract from sprite)
+        // The sprite's texture is accessed internally, so we use reflection or set it when available
+        // For now, we'll set it in Render() when we have access
+        
         // I hate this but I have to do it this way for now
         _radius = this._sprite.GetSize().X / 2; // Assuming the sprite is a circle, use half the width as the radius
 
@@ -120,6 +124,19 @@ public class Ball : Entity
     }    public override void Render(SpriteBatch _spriteBatch)
     {
         float rotation = _body.Rotation; // Get the rotation from the physics body
+        
+        // Set texture for render batching (extract from sprite's internal texture)
+        // We need to access the sprite's texture through reflection since it's private
+        if (Texture == null)
+        {
+            var textureField = typeof(Sprite).GetField("_texture", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (textureField != null)
+            {
+                var textureAsset = textureField.GetValue(_sprite) as Texture2DAsset;
+                SetTexture(textureAsset);
+            }
+        }
         
         // Use the new Draw method with scale
         _sprite.Draw(_spriteBatch, Position, Color.White, rotation, _scale, SpriteEffects.None, 0f);

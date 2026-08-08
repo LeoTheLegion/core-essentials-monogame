@@ -26,11 +26,11 @@
 
 ## Acceptance Criteria
 
-- [ ] Entities are sorted by texture before drawing
-- [ ] SpriteBatch is begun/ended per texture group
-- [ ] Sort order is preserved within texture groups
-- [ ] Project builds cleanly — **0 errors, 0 warnings**
-- [ ] All existing tests pass + new batching tests added
+- [x] Entities are sorted by texture before drawing
+- [x] SpriteBatch is begun/ended per texture group
+- [x] Sort order is preserved within texture groups
+- [x] Project builds cleanly — **0 errors, 0 warnings**
+- [x] All existing tests pass + new batching tests added
 
 ---
 
