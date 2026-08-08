@@ -1,7 +1,7 @@
 # Sprint 6 — Lightweight Components 🧩
 
-**Points:** 6  
-**Status:** Not Started  
+**Points:** 10  
+**Status:** In Progress  
 **Sprint Goal:** Add mixin-style component system for composable entity behavior.
 
 ---
@@ -37,6 +37,25 @@
   - Test component lifecycle hooks
   - Test component cleanup on entity destroy
   - Test duplicate component handling
+
+- [ ] **T7: Create `ColliderComponent` (2 pts)** ⭐ User-facing
+  - Wraps `ICollider` with shape creation helpers
+  - Requires `RigidbodyComponent` on the same entity
+  - Circle, Rectangle, Polygon shape factories
+  - Friction, Restitution, Offset properties
+  - Collision event forwarding (OnCollision, OnSeparation)
+  - Auto-creates collider on RigidbodyComponent's body in `OnAttach()`
+
+- [ ] **T8: Refactor `Ball.cs` to use components (1 pt)** 🔧 Playground demo
+  - Replace manual sprite/physics/collider logic with components
+  - Demonstrate component-based entity composition
+  - Verify playground still runs correctly
+
+- [ ] **T9: Write unit tests for ColliderComponent (1 pt)** 🔁 Validation
+  - Test collider creation (circle, rectangle, polygon)
+  - Test dependency on RigidbodyComponent
+  - Test friction/restitution properties
+  - Test collider cleanup on detach
 
 ---
 
