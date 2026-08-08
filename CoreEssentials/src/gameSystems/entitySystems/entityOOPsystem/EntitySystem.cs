@@ -155,6 +155,59 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Finds all active entities of the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of entity to find.</typeparam>
+    /// <returns>A list of all active entities of type T.</returns>
+    public List<T> FindByType<T>() where T : Entity
+    {
+        var results = new List<T>();
+        foreach (var entity in _entities)
+        {
+            if (entity is T typed && entity.GetActive())
+                results.Add(typed);
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// Finds all active entities within the specified radius of a position.
+    /// </summary>
+    /// <param name="position">The center position to search around.</param>
+    /// <param name="radius">The search radius.</param>
+    /// <returns>A list of all active entities within the radius.</returns>
+    public List<Entity> FindNearby(Vector2 position, float radius)
+    {
+        var squaredRadius = radius * radius;
+        var results = new List<Entity>();
+        foreach (var entity in _entities)
+        {
+            if (entity.GetActive() && Vector2.DistanceSquared(entity.Position, position) <= squaredRadius)
+                results.Add(entity);
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// Finds all active entities of the specified type within the specified radius of a position.
+    /// </summary>
+    /// <typeparam name="T">The type of entity to find.</typeparam>
+    /// <param name="position">The center position to search around.</param>
+    /// <param name="radius">The search radius.</param>
+    /// <returns>A list of all active entities of type T within the radius.</returns>
+    public List<T> FindNearby<T>(Vector2 position, float radius) where T : Entity
+    {
+        var squaredRadius = radius * radius;
+        var results = new List<T>();
+        foreach (var entity in _entities)
+        {
+            if (entity is T typed && entity.GetActive() && Vector2.DistanceSquared(entity.Position, position) <= squaredRadius)
+                results.Add(typed);
+        }
+        return results;
+    }
+
+    /// <summary>
     /// Removes all entities from the system.
     /// </summary>
     public void ClearEntities()
