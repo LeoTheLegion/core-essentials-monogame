@@ -1,6 +1,6 @@
 # Sprint 6 — Lightweight Components 🧩
 
-**Points:** 5  
+**Points:** 6  
 **Status:** Not Started  
 **Sprint Goal:** Add mixin-style component system for composable entity behavior.
 
@@ -8,7 +8,7 @@
 
 ## Tasks
 
-- [ ] **T1: Create `EntityComponent` base class (1 pt)** ⭐ User-facing
+- [x] **T1: Create `EntityComponent` base class (1 pt)** ⭐ User-facing
   - Base class with `Entity Owner` reference
   - `OnAttach()` and `OnDetach()` lifecycle hooks
   - `Update(GameTime)` optional override
@@ -20,12 +20,19 @@
   - `HasComponent<T>()` method
   - Auto-call lifecycle hooks on attach/detach
 
-- [ ] **T3: Create built-in components (1 pt)** ⭐ User-facing
-  - `HealthComponent` with Current/Maximum properties
-  - `VelocityComponent` with speed/direction
-  - `DamageComponent` with damage value
+- [ ] **T3: Create `RigidbodyComponent` (1 pt)** ⭐ User-facing
+  - Wraps `IPhysicsBody` with sync to Entity Position/Rotation
+  - Body type (Static, Kinematic, Dynamic)
+  - Auto-sync physics body transform ↔ entity transform on attach/update
+  - Lazy body creation via `PhysicsEngine` GameSystem
 
-- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+- [ ] **T4: Create `SpriteComponent` (1 pt)** ⭐ User-facing
+  - Decouples rendering from Entity
+  - Texture, scale, origin, color, effect (flip)
+  - Sort order override
+  - Optional: animation frame support
+
+- [ ] **T5: Write unit tests (1 pt)** 🔁 Validation
   - Test add/get/remove components
   - Test component lifecycle hooks
   - Test component cleanup on entity destroy
@@ -50,9 +57,8 @@
 |------|------|------------|-------|
 | `Components/EntityComponent.cs` | New | ⭐ PUBLIC | Base component class |
 | `Components/ComponentSystem.cs` | New | 🔒 Internal | Component management |
-| `Components/BuiltIn/HealthComponent.cs` | New | ⭐ PUBLIC | Health component |
-| `Components/BuiltIn/VelocityComponent.cs` | New | ⭐ PUBLIC | Velocity component |
-| `Components/BuiltIn/DamageComponent.cs` | New | ⭐ PUBLIC | Damage component |
+| `Components/BuiltIn/RigidbodyComponent.cs` | New | ⭐ PUBLIC | Wraps `IPhysicsBody`, syncs transform ↔ entity |
+| `Components/BuiltIn/SpriteComponent.cs` | New | ⭐ PUBLIC | Decouples rendering (texture, scale, origin, color, effect, sort) |
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add component management |
 | `EntityComponentTests.cs` | New | 🔒 Internal | Unit tests for components |
 
