@@ -18,6 +18,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     private List<Entity> _entities = new List<Entity>();
 
     /// <summary>
+    /// Dictionary for O(1) tag-based entity lookups.
+    /// Maps tag names to lists of entities with that tag.
+    /// </summary>
+    private Dictionary<string, List<Entity>> _tagIndex = new Dictionary<string, List<Entity>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Initializes a new instance of the EntitySystem class.
     /// </summary>
     public EntitySystem()
@@ -42,6 +48,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         {
             if (_entities[i].Destroyed)
             {
+                UpdateTagIndexForEntity(_entities[i], false);
                 _entities[i].OnDestroy();
                 _entities.RemoveAt(i);
             }
@@ -92,6 +99,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         T entity = (T)(Activator.CreateInstance(typeof(T), args) ?? throw new InvalidOperationException($"Failed to create entity of type {typeof(T)}."));
         entity.SetGameSystem(this);
         _entities.Add(entity);
+        UpdateTagIndexForEntity(entity, true);
         entity.OnStart();
         return entity;
     }
@@ -117,6 +125,36 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Gets all entities with the specified tag.
+    /// </summary>
+    /// <param name="tag">The tag to search for.</param>
+    /// <returns>A list of entities with the specified tag.</returns>
+    public List<Entity> GetEntitiesByTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            return new List<Entity>();
+        
+        if (_tagIndex.TryGetValue(tag, out var entities))
+            return new List<Entity>(entities);
+        return new List<Entity>();
+    }
+
+    /// <summary>
+    /// Finds the first entity with the specified tag.
+    /// </summary>
+    /// <param name="tag">The tag to search for.</param>
+    /// <returns>The first entity with the tag, or null if not found.</returns>
+    public Entity? FindByTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            return null;
+        
+        if (_tagIndex.TryGetValue(tag, out var entities) && entities.Count > 0)
+            return entities[0];
+        return null;
+    }
+
+    /// <summary>
     /// Removes all entities from the system.
     /// </summary>
     public void ClearEntities()
@@ -136,5 +174,68 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     {
         ClearEntities();
         _entities = null!;
+        _tagIndex.Clear();
+    }
+
+    /// <summary>
+    /// Called by an entity when a tag is added.
+    /// </summary>
+    /// <param name="entity">The entity that added the tag.</param>
+    /// <param name="tag">The tag that was added.</param>
+    internal void OnEntityTagAdded(Entity entity, string tag)
+    {
+        if (!_tagIndex.TryGetValue(tag, out var list))
+        {
+            list = new List<Entity>();
+            _tagIndex[tag] = list;
+        }
+        if (!list.Contains(entity))
+            list.Add(entity);
+    }
+
+    /// <summary>
+    /// Called by an entity when a tag is removed.
+    /// </summary>
+    /// <param name="entity">The entity that removed the tag.</param>
+    /// <param name="tag">The tag that was removed.</param>
+    internal void OnEntityTagRemoved(Entity entity, string tag)
+    {
+        if (_tagIndex.TryGetValue(tag, out var list))
+        {
+            list.Remove(entity);
+            if (list.Count == 0)
+                _tagIndex.Remove(tag);
+        }
+    }
+
+    /// <summary>
+    /// Updates the tag index when an entity's tags change or when an entity is created/destroyed.
+    /// </summary>
+    /// <param name="entity">The entity whose tags have changed.</param>
+    /// <param name="adding">True to add the entity to the index, false to remove it.</param>
+    private void UpdateTagIndexForEntity(Entity entity, bool adding)
+    {
+        foreach (var tag in entity.Tags.ToList())
+        {
+            if (adding)
+            {
+                if (!_tagIndex.TryGetValue(tag, out var list))
+                {
+                    list = new List<Entity>();
+                    _tagIndex[tag] = list;
+                }
+                if (!list.Contains(entity))
+                    list.Add(entity);
+            }
+            else
+            {
+                if (_tagIndex.TryGetValue(tag, out var list))
+                {
+                    list.Remove(entity);
+                    if (list.Count == 0)
+                        _tagIndex.Remove(tag);
+                }
+            }
+        }
     }
 }

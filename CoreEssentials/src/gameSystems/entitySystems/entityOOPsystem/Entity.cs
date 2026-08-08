@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -76,6 +78,52 @@ public abstract class Entity
     protected EntitySystem? EntitySystem;
 
     /// <summary>
+    /// The collection of tags assigned to this entity.
+    /// Tags are case-insensitive and provide a simple way to group entities.
+    /// </summary>
+    public HashSet<string> Tags { get; }
+
+    /// <summary>
+    /// Adds a tag to this entity.
+    /// </summary>
+    /// <param name="tag">The tag to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when tag is null or whitespace.</exception>
+    public void SetTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            throw new ArgumentNullException(nameof(tag), "Tag cannot be null or whitespace.");
+        Tags.Add(tag);
+        EntitySystem?.OnEntityTagAdded(this, tag);
+    }
+
+    /// <summary>
+    /// Removes a tag from this entity.
+    /// </summary>
+    /// <param name="tag">The tag to remove.</param>
+    /// <returns>True if the tag was removed; false if the tag was not found.</returns>
+    public bool RemoveTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            return false;
+        var removed = Tags.Remove(tag);
+        if (removed)
+            EntitySystem?.OnEntityTagRemoved(this, tag);
+        return removed;
+    }
+
+    /// <summary>
+    /// Checks if this entity has the specified tag.
+    /// </summary>
+    /// <param name="tag">The tag to check for.</param>
+    /// <returns>True if the entity has the tag; otherwise, false.</returns>
+    public bool HasTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            return false;
+        return Tags.Contains(tag);
+    }
+
+    /// <summary>
     /// Initializes a new instance of the Entity class.
     /// </summary>
     protected Entity()
@@ -84,6 +132,7 @@ public abstract class Entity
         sort = -1;
         _destroyed = false;
         _active = true;
+        Tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
