@@ -130,6 +130,28 @@ public abstract class Entity
     public float LocalRotation { get; set; } = 0f;
 
     /// <summary>
+    /// The current texture used for rendering this entity.
+    /// Used by the render batching system to group entities by texture for efficient drawing.
+    /// </summary>
+    public Texture2D? Texture { get; set; }
+
+    /// <summary>
+    /// Gets whether the texture has changed since the last render preparation.
+    /// Set to <see langword="false"/> during render preparation to indicate the texture has been processed.
+    /// </summary>
+    public bool TextureChanged { get; set; }
+
+    /// <summary>
+    /// Sets the texture for this entity and marks it as changed.
+    /// </summary>
+    /// <param name="texture">The texture to use for rendering.</param>
+    public void SetTexture(Texture2D? texture)
+    {
+        Texture = texture;
+        TextureChanged = true;
+    }
+
+    /// <summary>
     /// Adds a tag to this entity.
     /// </summary>
     /// <param name="tag">The tag to add.</param>
