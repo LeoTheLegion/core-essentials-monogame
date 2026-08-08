@@ -22,32 +22,32 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var system = CreateSystem();
             var entity = system.CreateEntity<TestEntity>();
 
-            Assert.Null(entity.Texture);
+            Assert.Null(entity.BatchTexture);
         }
 
         [Fact]
-        public void Texture_SetTexture_AssignsTexture()
+        public void Texture_RegisterForInstancedRendering_AssignsTexture()
         {
             var system = CreateSystem();
             var entity = system.CreateEntity<TestEntity>();
             var mockTexture = new MockTexture2DAsset("testTexture");
 
-            entity.SetTexture(mockTexture);
+            entity.RegisterForInstancedRendering(mockTexture);
 
-            Assert.Equal(mockTexture, entity.Texture);
+            Assert.Equal(mockTexture, entity.BatchTexture);
         }
 
         [Fact]
-        public void Texture_SetTexture_MarksAsChanged()
+        public void Texture_RegisterForInstancedRendering_MarksAsChanged()
         {
             var system = CreateSystem();
             var entity = system.CreateEntity<TestEntity>();
             var mockTexture = new MockTexture2DAsset("testTexture");
 
-            entity.TextureChanged = false;
-            entity.SetTexture(mockTexture);
+            entity.BatchTextureDirty = false;
+            entity.RegisterForInstancedRendering(mockTexture);
 
-            Assert.True(entity.TextureChanged);
+            Assert.True(entity.BatchTextureDirty);
         }
 
         [Fact]
@@ -57,10 +57,10 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity = system.CreateEntity<TestEntity>();
             var mockTexture = new MockTexture2DAsset("testTexture");
 
-            entity.TextureChanged = false;
-            entity.Texture = mockTexture;
+            entity.BatchTextureDirty = false;
+            entity.BatchTexture = mockTexture;
 
-            Assert.False(entity.TextureChanged);
+            Assert.False(entity.BatchTextureDirty);
         }
 
         [Fact]
@@ -70,11 +70,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity = system.CreateEntity<TestEntity>();
             var mockTexture = new MockTexture2DAsset("testTexture");
 
-            entity.SetTexture(mockTexture);
-            entity.SetTexture(null);
+            entity.RegisterForInstancedRendering(mockTexture);
+            entity.RegisterForInstancedRendering((Texture2DAsset?)null);
 
-            Assert.Null(entity.Texture);
-            Assert.True(entity.TextureChanged);
+            Assert.Null(entity.BatchTexture);
+            Assert.True(entity.BatchTextureDirty);
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var system = CreateSystem();
             var entity = system.CreateEntity<TestEntity>();
 
-            Assert.False(entity.TextureChanged);
+            Assert.False(entity.BatchTextureDirty);
         }
 
         [Fact]
@@ -96,13 +96,13 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var textureA = new MockTexture2DAsset("textureA");
             var textureB = new MockTexture2DAsset("textureB");
 
-            entity1.SetTexture(textureA);
-            entity2.SetTexture(textureB);
-            entity3.SetTexture(textureA);
+            entity1.RegisterForInstancedRendering(textureA);
+            entity2.RegisterForInstancedRendering(textureB);
+            entity3.RegisterForInstancedRendering(textureA);
 
-            Assert.Equal(textureA, entity1.Texture);
-            Assert.Equal(textureB, entity2.Texture);
-            Assert.Equal(textureA, entity3.Texture);
+            Assert.Equal(textureA, entity1.BatchTexture);
+            Assert.Equal(textureB, entity2.BatchTexture);
+            Assert.Equal(textureA, entity3.BatchTexture);
         }
 
         [Fact]
@@ -113,11 +113,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity2 = system.CreateEntity<TestEntity>();
             var sharedTexture = new MockTexture2DAsset("sharedTexture");
 
-            entity1.SetTexture(sharedTexture);
-            entity2.SetTexture(sharedTexture);
+            entity1.RegisterForInstancedRendering(sharedTexture);
+            entity2.RegisterForInstancedRendering(sharedTexture);
 
-            Assert.Same(sharedTexture, entity1.Texture);
-            Assert.Same(sharedTexture, entity2.Texture);
+            Assert.Same(sharedTexture, entity1.BatchTexture);
+            Assert.Same(sharedTexture, entity2.BatchTexture);
         }
 
         // ===== Render Batching (T2) =====
@@ -133,22 +133,22 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity2 = system.CreateEntity<TestEntity>();
             var entity3 = system.CreateEntity<TestEntity>();
 
-            entity1.SetTexture(textureA);
-            entity2.SetTexture(textureB);
-            entity3.SetTexture(textureA);
+            entity1.RegisterForInstancedRendering(textureA);
+            entity2.RegisterForInstancedRendering(textureB);
+            entity3.RegisterForInstancedRendering(textureA);
 
             // Access internal grouping logic via reflection
             var entitiesField = typeof(EntitySystem).GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
             var entities = entitiesField!.GetValue(system) as List<Entity>;
 
             // Verify entities have correct textures assigned
-            Assert.Equal(textureA, entities![0].Texture);
-            Assert.Equal(textureB, entities[1].Texture);
-            Assert.Equal(textureA, entities[2].Texture);
+            Assert.Equal(textureA, entities![0].BatchTexture);
+            Assert.Equal(textureB, entities[1].BatchTexture);
+            Assert.Equal(textureA, entities[2].BatchTexture);
 
             // Count entities per texture
-            var textureACount = entities.Count(e => e.Texture == textureA);
-            var textureBCount = entities.Count(e => e.Texture == textureB);
+            var textureACount = entities.Count(e => e.BatchTexture == textureA);
+            var textureBCount = entities.Count(e => e.BatchTexture == textureB);
 
             Assert.Equal(2, textureACount);
             Assert.Equal(1, textureBCount);
@@ -164,15 +164,15 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity2 = system.CreateEntity<TestEntity>();
             var entity3 = system.CreateEntity<TestEntity>();
 
-            entity1.SetTexture(textureA);
+            entity1.RegisterForInstancedRendering(textureA);
             // entity2 has no texture
-            entity3.SetTexture(textureA);
+            entity3.RegisterForInstancedRendering(textureA);
 
             var entitiesField = typeof(EntitySystem).GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
             var entities = entitiesField!.GetValue(system) as List<Entity>;
 
-            var noTextureCount = entities!.Count(e => e.Texture == null);
-            var withTextureCount = entities.Count(e => e.Texture != null);
+            var noTextureCount = entities!.Count(e => e.BatchTexture == null);
+            var withTextureCount = entities.Count(e => e.BatchTexture != null);
 
             Assert.Equal(1, noTextureCount);
             Assert.Equal(2, withTextureCount);
@@ -187,16 +187,16 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity1 = system.CreateEntity<TestEntity>();
             var entity2 = system.CreateEntity<TestEntity>();
 
-            entity1.SetTexture(textureA);
-            entity2.SetTexture(textureA);
+            entity1.RegisterForInstancedRendering(textureA);
+            entity2.RegisterForInstancedRendering(textureA);
 
             // Manually reset flags to simulate post-draw state
-            entity1.TextureChanged = false;
-            entity2.TextureChanged = false;
+            entity1.BatchTextureDirty = false;
+            entity2.BatchTextureDirty = false;
 
             // Verify flags can be reset
-            Assert.False(entity1.TextureChanged);
-            Assert.False(entity2.TextureChanged);
+            Assert.False(entity1.BatchTextureDirty);
+            Assert.False(entity2.BatchTextureDirty);
         }
 
         [Fact]
@@ -209,13 +209,13 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity2 = system.CreateEntity<TestEntity>();
             var entity3 = system.CreateEntity<TestEntity>();
 
-            entity1.SetTexture(textureA);
+            entity1.RegisterForInstancedRendering(textureA);
             entity1.SetSort(10);
             
-            entity2.SetTexture(textureA);
+            entity2.RegisterForInstancedRendering(textureA);
             entity2.SetSort(5);
             
-            entity3.SetTexture(textureA);
+            entity3.RegisterForInstancedRendering(textureA);
             entity3.SetSort(15);
 
             system.Update(new GameTime());
@@ -224,7 +224,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entities = entitiesField!.GetValue(system) as List<Entity>;
 
             // All entities have same texture, so they should be sorted by sort order
-            var textureAEntities = entities!.Where(e => e.Texture == textureA).ToList();
+            var textureAEntities = entities!.Where(e => e.BatchTexture == textureA).ToList();
             
             Assert.Equal(3, textureAEntities.Count);
             // Higher sort value first (15, 10, 5)
@@ -242,15 +242,15 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity1 = system.CreateEntity<TestEntity>();
             var entity2 = system.CreateEntity<TestEntity>();
 
-            entity1.SetTexture(textureA);
-            entity2.SetTexture(textureA);
+            entity1.RegisterForInstancedRendering(textureA);
+            entity2.RegisterForInstancedRendering(textureA);
             entity2.SetActive(false);
 
             var entitiesField = typeof(EntitySystem).GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
             var entities = entitiesField!.GetValue(system) as List<Entity>;
 
-            var activeWithTexture = entities!.Count(e => e.GetActive() && e.Texture == textureA);
-            var inactiveWithTexture = entities.Count(e => !e.GetActive() && e.Texture == textureA);
+            var activeWithTexture = entities!.Count(e => e.GetActive() && e.BatchTexture == textureA);
+            var inactiveWithTexture = entities.Count(e => !e.GetActive() && e.BatchTexture == textureA);
 
             Assert.Equal(1, activeWithTexture);
             Assert.Equal(1, inactiveWithTexture);
