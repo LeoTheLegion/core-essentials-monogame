@@ -8,7 +8,7 @@
 
 ## Tasks
 
-- [ ] **T1: Add texture tracking to entities (1 pt)** 🔒 Internal
+- [x] **T1: Add texture tracking to entities (1 pt)** 🔒 Internal
   - Entities expose current active texture for rendering
   - Track texture changes during render preparation
 
