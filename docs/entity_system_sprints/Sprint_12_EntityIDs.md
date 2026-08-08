@@ -1,0 +1,65 @@
+# Sprint 12 — Entity IDs & References 🔖
+
+**Points:** 4  
+**Status:** Not Started  
+**Sprint Goal:** Unique identifiers and cross-entity linking for XML-driven scenes.
+
+---
+
+## Tasks
+
+- [ ] **T1: Add ID storage to `Entity` (1 pt)** ⭐ User-facing
+  - `string Id` property for unique identifier
+  - `SetId(string id)` method
+  - Auto-generate IDs if not provided
+
+- [ ] **T2: Add ID lookup to `EntitySystem` (1.5 pts)** ⭐ User-facing
+  - `Dictionary<string, Entity>` for ID index
+  - `FindById(string id)` method
+  - `ResolveReferences()` method for cross-entity linking
+  - Parse `<Reference>` elements in XML
+
+- [ ] **T3: Add reference resolution (1 pt)** ⭐ User-facing
+  - `EntityReference` class for deferred entity lookup
+  - Auto-resolve references after scene load
+  - Handle missing references gracefully
+
+- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+  - Test ID assignment and lookup
+  - Test reference resolution
+  - Test duplicate ID handling
+  - Test missing reference handling
+
+---
+
+## Acceptance Criteria
+
+- [ ] Entities have unique IDs
+- [ ] `FindById()` returns correct entity
+- [ ] References are resolved after scene load
+- [ ] Duplicate IDs are handled (error or auto-fix)
+- [ ] Project builds cleanly — **0 errors, 0 warnings**
+- [ ] All existing tests pass + new ID tests added
+
+---
+
+## Deliverables
+
+| File | Type | Visibility | Notes |
+|------|------|------------|-------|
+| `Serialization/EntityReference.cs` | New | ⭐ PUBLIC | Entity reference class |
+| `Entity.cs` | Modified | ⭐ PUBLIC | Add `Id` property |
+| `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add ID index and lookup |
+| `EntityIdTests.cs` | New | 🔒 Internal | Unit tests for IDs and references |
+
+---
+
+## Notes & Risks
+
+- **Low risk** — simple ID system with clear requirements
+- Consider ID naming conventions (e.g., "hero", "chest_1")
+- Error handling for duplicate IDs
+
+---
+
+*Created: 2026-08-07 | Part of Entity System Enhancements Project*
