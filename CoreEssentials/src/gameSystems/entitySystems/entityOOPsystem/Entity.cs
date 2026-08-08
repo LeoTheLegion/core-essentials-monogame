@@ -19,10 +19,18 @@ public abstract class Entity
 
     /// <summary>
     /// Gets or sets the position of the entity in the game world.
+    /// When this entity has a parent, the getter returns the world position (parent position + local offset).
+    /// The setter always sets the local world position (independent of parent).
+    /// Use <see cref="LocalPosition"/> to set the offset relative to the parent.
     /// </summary>
     public Vector2 Position
     {
-        get => _position;
+        get
+        {
+            if (Parent != null)
+                return Parent.Position + LocalPosition;
+            return _position;
+        }
         set => _position = value;
     }
 
@@ -33,10 +41,18 @@ public abstract class Entity
 
     /// <summary>
     /// Gets or sets the rotation of the entity in radians.
+    /// When this entity has a parent, the getter returns the world rotation (parent rotation + local offset).
+    /// The setter always sets the local rotation value.
+    /// Use <see cref="LocalRotation"/> to set the rotation offset relative to the parent.
     /// </summary>
     public float Rotation
     {
-        get => _rotation;
+        get
+        {
+            if (Parent != null)
+                return Parent.Rotation + LocalRotation;
+            return _rotation;
+        }
         set => _rotation = value;
     }
 
@@ -89,6 +105,29 @@ public abstract class Entity
     /// Used for auto-cleanup when the entity is destroyed.
     /// </summary>
     private readonly List<(string EventName, EntityEventHandler Handler)> _eventSubscriptions = new();
+
+    /// <summary>
+    /// The parent entity of this entity in the hierarchy.
+    /// <see langword="null"/> if this entity has no parent.
+    /// </summary>
+    public Entity? Parent { get; private set; }
+
+    /// <summary>
+    /// The collection of child entities in this entity's hierarchy.
+    /// </summary>
+    public List<Entity> Children { get; } = new();
+
+    /// <summary>
+    /// The local position offset relative to the parent entity.
+    /// Only meaningful when this entity has a parent.
+    /// </summary>
+    public Vector2 LocalPosition { get; set; } = Vector2.Zero;
+
+    /// <summary>
+    /// The local rotation offset relative to the parent entity in radians.
+    /// Only meaningful when this entity has a parent.
+    /// </summary>
+    public float LocalRotation { get; set; } = 0f;
 
     /// <summary>
     /// Adds a tag to this entity.
@@ -177,15 +216,21 @@ public abstract class Entity
     /// <summary>
     /// Marks the entity for destruction.
     /// The entity will be removed from the system on the next update.
+    /// All children are also destroyed when their parent is destroyed.
     /// </summary>
     public void Destroy()
     {
         _destroyed = true;
         _active = false;
+        // Destroy all children recursively
+        foreach (var child in Children)
+        {
+            child.Destroy();
+        }
     }
     
     /// <summary>
-    /// Called by Entity Sytem when the entity is destroyed.
+    /// Called by Entity Sy System when the entity is destroyed.
     /// Override this method to implement custom cleanup logic.
     /// </summary>
     public virtual void OnDestroy()
@@ -223,7 +268,15 @@ public abstract class Entity
     /// Sets whether the entity is active.
     /// </summary>
     /// <param name="active">True to activate, false to deactivate.</param>
-    public virtual void SetActive(bool active) => _active = active;
+    public virtual void SetActive(bool active)
+    {
+        _active = active;
+        // Propagate activation state to all children
+        foreach (var child in Children)
+        {
+            child.SetActive(active);
+        }
+    }
 
     /// <summary>
     /// Gets whether the entity is currently active.
@@ -279,5 +332,61 @@ public abstract class Entity
 
         eventSystem.Unsubscribe(this, eventName, handler);
         _eventSubscriptions.RemoveAll(s => s.EventName == eventName && s.Handler == handler);
+    }
+
+    /// <summary>
+    /// Adds the specified entity as a child of this entity.
+    /// </summary>
+    /// <param name="child">The entity to add as a child.</param>
+    /// <exception cref="ArgumentNullException">Thrown when child is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when attempting to add this entity as its own child or creating a circular reference.</exception>
+    public void AddChild(Entity child)
+    {
+        if (child == null)
+            throw new ArgumentNullException(nameof(child), "Child cannot be null.");
+
+        if (child == this)
+            throw new ArgumentException("An entity cannot be its own parent.", nameof(child));
+
+        // Prevent circular references: check if child is already an ancestor of this
+        Entity? ancestor = this.Parent;
+        while (ancestor != null)
+        {
+            if (ancestor == child)
+                throw new ArgumentException("Cannot add entity as its own descendant. This would create a circular reference.", nameof(child));
+            ancestor = ancestor.Parent;
+        }
+
+        // Prevent circular references: check if this is already an ancestor of child
+        ancestor = child.Parent;
+        while (ancestor != null)
+        {
+            if (ancestor == this)
+                throw new ArgumentException("Cannot add entity as its own descendant. This would create a circular reference.", nameof(child));
+            ancestor = ancestor.Parent;
+        }
+
+        // Remove from previous parent if any
+        if (child.Parent != null)
+            child.Parent.Children.Remove(child);
+        child.Parent = this;
+        Children.Add(child);
+    }
+
+    /// <summary>
+    /// Removes the specified entity from this entity's children.
+    /// </summary>
+    /// <param name="child">The entity to remove as a child.</param>
+    /// <returns>True if the child was removed; false if the child was not found.</returns>
+    public bool RemoveChild(Entity child)
+    {
+        if (child == null)
+            return false;
+
+        if (!Children.Remove(child))
+            return false;
+
+        child.Parent = null;
+        return true;
     }
 }

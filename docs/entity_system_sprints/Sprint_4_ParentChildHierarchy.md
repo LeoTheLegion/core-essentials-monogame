@@ -8,24 +8,24 @@
 
 ## Tasks
 
-- [ ] **T1: Add parent-child storage to `Entity` (1 pt)** 🔒 Internal
+- [x] **T1: Add parent-child storage to `Entity` (1 pt)** 🔒 Internal
   - `Entity Parent` property
   - `List<Entity> Children` collection
   - `Vector2 LocalPosition` for child offset
   - `AddChild(Entity child)` and `RemoveChild(Entity child)`
 
-- [ ] **T2: Implement transform inheritance (2 pts)** ⭐ User-facing
+- [x] **T2: Implement transform inheritance (2 pts)** ⭐ User-facing
   - Child `Position` returns `Parent.Position + LocalPosition`
   - Child `Rotation` returns `Parent.Rotation + LocalRotation`
   - Recursive transform calculation for nested hierarchies
   - Invalidate transform cache on parent change
 
-- [ ] **T3: Add hierarchy lifecycle management (1 pt)** ⭐ User-facing
+- [x] **T3: Add hierarchy lifecycle management (1 pt)** ⭐ User-facing
   - Auto-remove children when parent is destroyed
   - Children follow parent when parent is deactivated
   - Prevent circular parent references
 
-- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T4: Write unit tests (1 pt)** 🔁 Validation
   - Test child position follows parent
   - Test nested hierarchy (child of child)
   - Test child removal on parent destroy
