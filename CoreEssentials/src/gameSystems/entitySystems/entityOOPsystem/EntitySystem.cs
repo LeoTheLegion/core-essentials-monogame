@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.Camera;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Spatial;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 
@@ -30,6 +31,22 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     private Dictionary<Type, object> _pools = new Dictionary<Type, object>();
 
     /// <summary>
+    /// The spatial grid for fast spatial queries.
+    /// </summary>
+    private SpatialGrid? _spatialGrid;
+
+    /// <summary>
+    /// Gets or sets whether spatial partitioning is enabled.
+    /// When enabled, entities are automatically tracked in the spatial grid for fast spatial queries.
+    /// </summary>
+    public bool SpatialPartitioningEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets the cell size used by the spatial grid (default: 100).
+    /// </summary>
+    public float SpatialCellSize { get; set; } = 100f;
+
+    /// <summary>
     /// Initializes a new instance of the EntitySystem class.
     /// </summary>
     public EntitySystem()
@@ -50,11 +67,22 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 _entities[i].Update(gameTime);
         }
 
+        // Auto-update spatial grid for entities that have moved
+        if (SpatialPartitioningEnabled && _spatialGrid != null)
+        {
+            for (int i = 0; i < _entities.Count; i++)
+            {
+                if (_entities[i].GetActive())
+                    _spatialGrid.UpdatePosition(_entities[i]);
+            }
+        }
+
         for (int i = _entities.Count - 1; i >= 0; i--)
         {
             if (_entities[i].Destroyed)
             {
                 UpdateTagIndexForEntity(_entities[i], false);
+                UpdateSpatialGridForEntity(_entities[i], false);
                 _entities[i].OnDestroy();
                 _entities.RemoveAt(i);
             }
@@ -157,6 +185,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         entity.SetGameSystem(this);
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
+        UpdateSpatialGridForEntity(entity, true);
         entity.OnStart();
         return entity;
     }
@@ -176,6 +205,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         entity.SetGameSystem(this);
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
+        UpdateSpatialGridForEntity(entity, true);
         entity.OnStart();
         return entity;
     }
@@ -194,6 +224,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         // Remove from entity list
         _entities.Remove(entity);
         UpdateTagIndexForEntity(entity, false);
+        UpdateSpatialGridForEntity(entity, false);
 
         // Return to pool
         var pool = GetOrCreatePool<T>();
@@ -303,6 +334,80 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Finds all active entities within the specified rectangle.
+    /// Uses spatial partitioning for fast queries when enabled.
+    /// </summary>
+    /// <param name="bounds">The rectangle to search within.</param>
+    /// <returns>A list of all active entities within the bounds.</returns>
+    public List<Entity> FindInBounds(Rectangle bounds)
+    {
+        var results = new List<Entity>();
+
+        if (SpatialPartitioningEnabled && _spatialGrid != null)
+        {
+            var entities = _spatialGrid.Query(bounds);
+            foreach (var entity in entities)
+            {
+                var pos = entity.Position;
+                if (entity.GetActive() && bounds.Contains((int)pos.X, (int)pos.Y))
+                    results.Add(entity);
+            }
+        }
+        else
+        {
+            // Fallback to linear search when spatial partitioning is disabled
+            foreach (var entity in _entities)
+            {
+                var pos = entity.Position;
+                if (entity.GetActive() && bounds.Contains((int)pos.X, (int)pos.Y))
+                    results.Add(entity);
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Finds the closest active entity to a position within the specified radius.
+    /// Uses spatial partitioning for fast queries when enabled.
+    /// </summary>
+    /// <param name="position">The position to search around.</param>
+    /// <param name="radius">The maximum search radius.</param>
+    /// <returns>The closest entity, or null if no entity is found within the radius.</returns>
+    public Entity? FindClosest(Vector2 position, float radius)
+    {
+        Entity? closest = null;
+        var closestDistanceSquared = radius * radius;
+
+        HashSet<Entity> candidates;
+
+        if (SpatialPartitioningEnabled && _spatialGrid != null)
+        {
+            candidates = _spatialGrid.Query(position, radius);
+        }
+        else
+        {
+            // Fallback to linear search when spatial partitioning is disabled
+            candidates = new HashSet<Entity>(_entities);
+        }
+
+        foreach (var entity in candidates)
+        {
+            if (!entity.GetActive())
+                continue;
+
+            var distanceSquared = Vector2.DistanceSquared(entity.Position, position);
+            if (distanceSquared < closestDistanceSquared)
+            {
+                closest = entity;
+                closestDistanceSquared = distanceSquared;
+            }
+        }
+
+        return closest;
+    }
+
+    /// <summary>
     /// Finds all active entities of the specified type within the specified radius of a position.
     /// </summary>
     /// <typeparam name="T">The type of entity to find.</typeparam>
@@ -343,6 +448,34 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         _entities = null!;
         _tagIndex.Clear();
         _pools.Clear();
+        _spatialGrid?.Clear();
+    }
+
+    /// <summary>
+    /// Ensures the spatial grid is initialized.
+    /// </summary>
+    private void EnsureSpatialGrid()
+    {
+        if (_spatialGrid == null)
+            _spatialGrid = new SpatialGrid(SpatialCellSize);
+    }
+
+    /// <summary>
+    /// Updates the spatial grid when an entity is added or removed.
+    /// </summary>
+    /// <param name="entity">The entity to update in the spatial grid.</param>
+    /// <param name="adding">True to add the entity, false to remove it.</param>
+    private void UpdateSpatialGridForEntity(Entity entity, bool adding)
+    {
+        if (!SpatialPartitioningEnabled)
+            return;
+
+        EnsureSpatialGrid();
+
+        if (adding)
+            _spatialGrid!.Insert(entity);
+        else
+            _spatialGrid!.Remove(entity);
     }
 
     /// <summary>
