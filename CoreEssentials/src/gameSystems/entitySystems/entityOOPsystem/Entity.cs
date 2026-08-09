@@ -480,6 +480,24 @@ public abstract class Entity
     }
 
     /// <summary>
+    /// Adds a component to this entity using runtime type resolution.
+    /// Use this when the component is known only as a base type (e.g., from a factory).
+    /// </summary>
+    public void AddComponent(Components.EntityComponent component)
+    {
+        if (component == null)
+            throw new ArgumentNullException(nameof(component));
+
+        var componentType = component.GetType();
+        if (_components.ContainsKey(componentType))
+            throw new InvalidOperationException($"Entity already has a component of type '{componentType.Name}'. Use RemoveComponent first.");
+
+        component.Owner = this;
+        _components[componentType] = component;
+        component.OnAttach();
+    }
+
+    /// <summary>
     /// Gets a component of the specified type from this entity.
     /// </summary>
     /// <typeparam name="T">The type of component to get.</typeparam>
