@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
+using CoreEssentials.Coroutines;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 
@@ -78,6 +80,21 @@ public abstract class Entity
     /// Flag indicating whether the entity has started.
     /// </summary>
     private bool _hasStarted = false;
+
+    /// <summary>
+    /// The identifier for the delayed destroy coroutine, if one is active.
+    /// </summary>
+    private Guid? _destroyCoroutineId;
+
+    /// <summary>
+    /// The position where this entity will respawn, if respawn is scheduled.
+    /// </summary>
+    internal Vector2? _respawnPosition;
+
+    /// <summary>
+    /// The delay before this entity respawns, if respawn is scheduled.
+    /// </summary>
+    internal TimeSpan? _respawnDelay;
 
     /// <summary>
     /// Gets whether the entity has been destroyed.
@@ -287,13 +304,95 @@ public abstract class Entity
             child.Destroy();
         }
     }
-    
+
+    /// <summary>
+    /// Schedules the entity for destruction after a specified delay.
+    /// Uses the coroutine system for timing. The delayed destruction can be cancelled before it expires.
+    /// </summary>
+    /// <param name="delay">The time to wait before destroying the entity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when delay is negative.</exception>
+    public void DestroyAfter(TimeSpan delay)
+    {
+        if (delay.TotalMilliseconds < 0)
+            throw new ArgumentOutOfRangeException(nameof(delay), "Delay cannot be negative.");
+
+        // Cancel any existing delayed destroy
+        CancelDestroyAfter();
+
+        _destroyCoroutineId = CoroutineManager.StartCoroutine(DestroyAfterRoutine(delay));
+    }
+
+    /// <summary>
+    /// Cancels a pending delayed destruction. Does nothing if no delayed destruction is scheduled.
+    /// </summary>
+    /// <returns>True if a delayed destroy was cancelled; otherwise, false.</returns>
+    public bool CancelDestroyAfter()
+    {
+        if (_destroyCoroutineId.HasValue)
+        {
+            CoroutineManager.StopCoroutine(_destroyCoroutineId.Value);
+            _destroyCoroutineId = null;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Coroutine that waits for the specified delay and then destroys the entity.
+    /// </summary>
+    /// <param name="delay">The time to wait before destroying the entity.</param>
+    private IEnumerator DestroyAfterRoutine(TimeSpan delay)
+    {
+        yield return new WaitForSeconds((float)delay.TotalSeconds);
+        _destroyCoroutineId = null;
+        Destroy();
+    }
+
+    /// <summary>
+    /// Configures this entity to automatically respawn at the specified position after destruction and a delay.
+    /// Once triggered, this one-time respawn will fire. Call again for multiple respawns.
+    /// </summary>
+    /// <param name="position">The position to respawn at.</param>
+    /// <param name="delay">The time to wait between destruction and respawn.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when delay is negative.</exception>
+    public void RespawnAt(Vector2 position, TimeSpan delay)
+    {
+        if (delay.TotalMilliseconds < 0)
+            throw new ArgumentOutOfRangeException(nameof(delay), "Delay cannot be negative.");
+
+        _respawnPosition = position;
+        _respawnDelay = delay;
+    }
+
+    /// <summary>
+    /// Gets whether this entity has a pending respawn scheduled.
+    /// </summary>
+    public bool HasPendingRespawn => _respawnPosition.HasValue && _respawnDelay.HasValue;
+
+    /// <summary>
+    /// Cancels any pending respawn configuration. Does nothing if no respawn is scheduled.
+    /// </summary>
+    /// <returns>True if a respawn was cancelled; otherwise, false.</returns>
+    public bool CancelRespawnAt()
+    {
+        if (HasPendingRespawn)
+        {
+            _respawnPosition = null;
+            _respawnDelay = null;
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// Called by Entity System when the entity is destroyed.
     /// Override this method to implement custom cleanup logic.
     /// </summary>
     public virtual void OnDestroy()
     {
+        // Cancel any pending delayed destroy coroutine
+        CancelDestroyAfter();
+
         // Detach all components
         foreach (var component in _components.Values)
         {

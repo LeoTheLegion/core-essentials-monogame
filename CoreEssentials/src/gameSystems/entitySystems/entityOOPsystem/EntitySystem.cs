@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.Camera;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Spatial;
+using CoreEssentials.Coroutines;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 
@@ -34,6 +36,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// The spatial grid for fast spatial queries.
     /// </summary>
     private SpatialGrid? _spatialGrid;
+
+    /// <summary>
+    /// Dictionary of pending spawns keyed by unique spawn ID for cancellation support.
+    /// Maps spawn IDs to the scheduled spawn action.
+    /// </summary>
+    private readonly Dictionary<Guid, Action> _pendingSpawns = new();
 
     /// <summary>
     /// Gets or sets whether spatial partitioning is enabled.
@@ -81,9 +89,19 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         {
             if (_entities[i].Destroyed)
             {
-                UpdateTagIndexForEntity(_entities[i], false);
-                UpdateSpatialGridForEntity(_entities[i], false);
-                _entities[i].OnDestroy();
+                var destroyedEntity = _entities[i];
+                // Check for pending respawn before cleanup
+                if (destroyedEntity.HasPendingRespawn)
+                {
+                    Type entityType = destroyedEntity.GetType();
+                    Vector2 respawnPos = destroyedEntity._respawnPosition.Value;
+                    TimeSpan respawnDelay = destroyedEntity._respawnDelay.Value;
+                    CoroutineManager.StartCoroutine(RespawnRoutine(entityType, respawnPos, respawnDelay));
+                }
+
+                UpdateTagIndexForEntity(destroyedEntity, false);
+                UpdateSpatialGridForEntity(destroyedEntity, false);
+                destroyedEntity.OnDestroy();
                 _entities.RemoveAt(i);
             }
         }
@@ -538,5 +556,73 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Schedules creation of a new entity after a specified delay at a given position.
+    /// Uses the coroutine system for timing. The delayed spawn can be cancelled before it expires.
+    /// </summary>
+    /// <typeparam name="T">The type of entity to create.</typeparam>
+    /// <param name="position">The position to spawn the entity at.</param>
+    /// <param name="delay">The time to wait before spawning the entity.</param>
+    /// <param name="args">Constructor arguments for the entity.</param>
+    /// <returns>A unique spawn ID that can be used to cancel the pending spawn.</returns>
+    public Guid SpawnAfter<T>(Vector2 position, TimeSpan delay, params object[] args) where T : Entity
+    {
+        if (delay.TotalMilliseconds < 0)
+            throw new ArgumentOutOfRangeException(nameof(delay), "Delay cannot be negative.");
+
+        var spawnId = Guid.NewGuid();
+        _pendingSpawns[spawnId] = () =>
+        {
+            var entity = CreateEntity<T>(args);
+            ((Entity)entity).Position = position;
+        };
+
+        CoroutineManager.StartCoroutine(SpawnAfterRoutine(spawnId, delay));
+        return spawnId;
+    }
+
+    /// <summary>
+    /// Cancels a pending delayed spawn by its spawn ID.
+    /// </summary>
+    /// <param name="spawnId">The unique spawn ID returned from <see cref="SpawnAfter{T}"/>.</param>
+    /// <returns>True if the pending spawn was cancelled; otherwise, false.</returns>
+    public bool CancelSpawnAfter(Guid spawnId)
+    {
+        if (_pendingSpawns.Remove(spawnId))
+            return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Coroutine that waits for the specified delay and then spawns an entity.
+    /// </summary>
+    private IEnumerator SpawnAfterRoutine(Guid spawnId, TimeSpan delay)
+    {
+        yield return new WaitForSeconds((float)delay.TotalSeconds);
+        if (_pendingSpawns.TryGetValue(spawnId, out var createAction))
+        {
+            createAction();
+            _pendingSpawns.Remove(spawnId);
+        }
+    }
+
+    /// <summary>
+    /// Coroutine that waits for the specified delay and then respawns an entity at a given position.
+    /// </summary>
+    private IEnumerator RespawnRoutine(Type entityType, Vector2 position, TimeSpan delay)
+    {
+        yield return new WaitForSeconds((float)delay.TotalSeconds);
+        var entity = (Entity?)Activator.CreateInstance(entityType);
+        if (entity == null)
+            yield break;
+
+        entity.SetGameSystem(this);
+        entity.Position = position;
+        _entities.Add(entity);
+        UpdateTagIndexForEntity(entity, true);
+        UpdateSpatialGridForEntity(entity, true);
+        entity.OnStart();
     }
 }
