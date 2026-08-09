@@ -1,29 +1,29 @@
 # Sprint 9 — Delayed Lifecycle ⏱️
 
 **Points:** 3  
-**Status:** Not Started  
+**Status:** ✅ Complete  
 **Sprint Goal:** Built-in spawn/destroy/respawn scheduling on coroutines.
 
 ---
 
 ## Tasks
 
-- [ ] **T1: Add `DestroyAfter()` to `Entity` (1 pt)** ⭐ User-facing
+- [x] **T1: Add `DestroyAfter()` to `Entity` (1 pt)** ⭐ User-facing
   - `DestroyAfter(TimeSpan delay)` method
   - Uses existing coroutine system for timing
   - Cancelable before delay expires
 
-- [ ] **T2: Add `SpawnAfter()` to `EntitySystem` (1 pt)** ⭐ User-facing
+- [x] **T2: Add `SpawnAfter()` to `EntitySystem` (1 pt)** ⭐ User-facing
   - `SpawnAfter<T>(position, TimeSpan delay)` method
   - Uses coroutine system for timing
   - Cancelable before delay expires
 
-- [ ] **T3: Add `RespawnAt()` to `Entity` (0.5 pt)** ⭐ User-facing
+- [x] **T3: Add `RespawnAt()` to `Entity` (0.5 pt)** ⭐ User-facing
   - `RespawnAt(Vector2 position, TimeSpan delay)` method
   - Stores original position for respawn
   - Auto-respawn after destroy and delay
 
-- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T4: Write unit tests (1 pt)** 🔁 Validation
   - Test destroy after delay
   - Test spawn after delay
   - Test respawn at position
@@ -33,12 +33,12 @@
 
 ## Acceptance Criteria
 
-- [ ] `DestroyAfter()` schedules entity destruction
-- [ ] `SpawnAfter()` schedules entity creation
-- [ ] `RespawnAt()` schedules entity respawn
-- [ ] Delayed operations can be cancelled
-- [ ] Project builds cleanly — **0 errors, 0 warnings**
-- [ ] All existing tests pass + new lifecycle tests added
+- [x] `DestroyAfter()` schedules entity destruction
+- [x] `SpawnAfter()` schedules entity creation
+- [x] `RespawnAt()` schedules entity respawn
+- [x] Delayed operations can be cancelled
+- [x] Project builds cleanly — **0 errors, 0 warnings**
+- [x] All existing tests pass + new lifecycle tests added
 
 ---
 
