@@ -8,6 +8,7 @@ using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 namespace CoreEssentials.Playground;
 
@@ -62,7 +63,7 @@ public class PhysicsEntityScene : Scene
 
             Ball ball = entitySystem.CreateEntity<Ball>(new Vector2(i, y));
             // add Random force to the ball
-            ball.Body.ApplyImpulse(new Vector2(
+            ball.GetComponent<RigidbodyComponent>().ApplyImpulse(new Vector2(
                 (float)(_random.NextDouble() * 10 - 5), 
                 (float)(_random.NextDouble() * 10 - 5)
             ));

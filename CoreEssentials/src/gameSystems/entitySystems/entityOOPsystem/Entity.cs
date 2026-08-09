@@ -96,6 +96,12 @@ public abstract class Entity
     protected EntitySystem? EntitySystem;
 
     /// <summary>
+    /// Gets the EntitySystem that manages this entity.
+    /// Used by components to access game systems.
+    /// </summary>
+    internal EntitySystem? GetEntitySystem() => EntitySystem;
+
+    /// <summary>
     /// The collection of tags assigned to this entity.
     /// Tags are case-insensitive and provide a simple way to group entities.
     /// </summary>
@@ -106,6 +112,18 @@ public abstract class Entity
     /// Used for auto-cleanup when the entity is destroyed.
     /// </summary>
     private readonly List<(string EventName, EntityEventHandler Handler)> _eventSubscriptions = new();
+
+    /// <summary>
+    /// The dictionary of components attached to this entity.
+    /// Keys are component types, values are component instances.
+    /// Only one component of each type can be attached to an entity.
+    /// </summary>
+    private readonly Dictionary<Type, Components.EntityComponent> _components = new();
+
+    /// <summary>
+    /// Gets all components attached to this entity.
+    /// </summary>
+    public IEnumerable<Components.EntityComponent> Components => _components.Values;
 
     /// <summary>
     /// The parent entity of this entity in the hierarchy.
@@ -236,9 +254,16 @@ public abstract class Entity
     /// <summary>
     /// Updates the entity's state.
     /// Called once per frame for active entities.
+    /// Also updates all attached components.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
-    public virtual void Update(GameTime gameTime) { }
+    public virtual void Update(GameTime gameTime)
+    {
+        foreach (var component in _components.Values)
+        {
+            component.Update(gameTime);
+        }
+    }
 
     /// <summary>
     /// Renders the entity.
@@ -264,11 +289,19 @@ public abstract class Entity
     }
     
     /// <summary>
-    /// Called by Entity Sy System when the entity is destroyed.
+    /// Called by Entity System when the entity is destroyed.
     /// Override this method to implement custom cleanup logic.
     /// </summary>
     public virtual void OnDestroy()
     {
+        // Detach all components
+        foreach (var component in _components.Values)
+        {
+            component.OnDetach();
+            component.Owner = null!;
+        }
+        _components.Clear();
+
         // Auto-unsubscribe from all events
         var eventSystem = EntityEventSystem.Instance;
         if (eventSystem != null)
@@ -422,5 +455,76 @@ public abstract class Entity
 
         child.Parent = null;
         return true;
+    }
+
+    /// <summary>
+    /// Adds a component to this entity.
+    /// </summary>
+    /// <typeparam name="T">The type of component to add.</typeparam>
+    /// <param name="component">The component instance to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when component is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a component of the same type already exists.</exception>
+    public T AddComponent<T>(T component) where T : Components.EntityComponent
+    {
+        if (component == null)
+            throw new ArgumentNullException(nameof(component));
+
+        var componentType = typeof(T);
+        if (_components.ContainsKey(componentType))
+            throw new InvalidOperationException($"Entity already has a component of type '{componentType.Name}'. Use RemoveComponent first.");
+
+        component.Owner = this;
+        _components[componentType] = component;
+        component.OnAttach();
+        return component;
+    }
+
+    /// <summary>
+    /// Gets a component of the specified type from this entity.
+    /// </summary>
+    /// <typeparam name="T">The type of component to get.</typeparam>
+    /// <returns>The component if found; otherwise, null.</returns>
+    public T? GetComponent<T>() where T : Components.EntityComponent
+    {
+        return _components.TryGetValue(typeof(T), out var component) ? (T)component : null;
+    }
+
+    /// <summary>
+    /// Gets a component of the specified type from this entity.
+    /// </summary>
+    /// <typeparam name="T">The type of component to get.</typeparam>
+    /// <param name="component">When this method returns, contains the component if found; otherwise, null.</param>
+    /// <returns>True if the component was found; otherwise, false.</returns>
+    public bool TryGetComponent<T>(out T? component) where T : Components.EntityComponent
+    {
+        component = GetComponent<T>();
+        return component != null;
+    }
+
+    /// <summary>
+    /// Checks if this entity has a component of the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of component to check for.</typeparam>
+    /// <returns>True if the entity has the component; otherwise, false.</returns>
+    public bool HasComponent<T>() where T : Components.EntityComponent
+    {
+        return _components.ContainsKey(typeof(T));
+    }
+
+    /// <summary>
+    /// Removes a component of the specified type from this entity.
+    /// </summary>
+    /// <typeparam name="T">The type of component to remove.</typeparam>
+    /// <returns>The removed component if found; otherwise, null.</returns>
+    public T? RemoveComponent<T>() where T : Components.EntityComponent
+    {
+        if (_components.TryGetValue(typeof(T), out var component))
+        {
+            component.OnDetach();
+            component.Owner = null!;
+            _components.Remove(typeof(T));
+            return (T)component;
+        }
+        return null;
     }
 }
