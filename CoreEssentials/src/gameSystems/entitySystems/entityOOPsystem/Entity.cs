@@ -254,9 +254,16 @@ public abstract class Entity
     /// <summary>
     /// Updates the entity's state.
     /// Called once per frame for active entities.
+    /// Also updates all attached components.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
-    public virtual void Update(GameTime gameTime) { }
+    public virtual void Update(GameTime gameTime)
+    {
+        foreach (var component in _components.Values)
+        {
+            component.Update(gameTime);
+        }
+    }
 
     /// <summary>
     /// Renders the entity.
