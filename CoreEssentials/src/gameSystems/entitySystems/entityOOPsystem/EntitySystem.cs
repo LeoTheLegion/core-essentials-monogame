@@ -176,18 +176,29 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <summary>
     /// Creates and initializes a new entity of the specified type.
     /// </summary>
-    /// <typeparam name="T">The type of entity to create.</typeparam>
+    /// <param name="type">The Type of entity to create.</param>
     /// <param name="args">Constructor arguments for the entity.</param>
     /// <returns>The newly created entity.</returns>
-    public T CreateEntity<T>(params object[] args) where T : Entity
+    public Entity CreateEntity(Type type, params object[] args)
     {
-        T entity = (T)(Activator.CreateInstance(typeof(T), args) ?? throw new InvalidOperationException($"Failed to create entity of type {typeof(T)}."));
+        Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
         entity.SetGameSystem(this);
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
         entity.OnStart();
         return entity;
+    }
+
+    /// <summary>
+    /// Creates and initializes a new entity of the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of entity to create.</typeparam>
+    /// <param name="args">Constructor arguments for the entity.</param>
+    /// <returns>The newly created entity.</returns>
+    public T CreateEntity<T>(params object[] args) where T : Entity
+    {
+        return (T)CreateEntity(typeof(T), args);
     }
 
     /// <summary>

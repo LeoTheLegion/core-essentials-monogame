@@ -16,6 +16,28 @@ public class EntitySerializerTests
         public override void Render(SpriteBatch spriteBatch) { }
     }
 
+    /// <summary>
+    /// Entity that creates its own SpriteComponent in OnStart (like Ball does).
+    /// Used to test XML color override on existing components.
+    /// </summary>
+    private class EntityWithPreCreatedComponent : Entity
+    {
+        public SpriteComponent? Sprite;
+
+        public override void OnStart()
+        {
+            base.OnStart();
+            Sprite = new SpriteComponent(null)
+            {
+                Color = Color.White,
+                Scale = new Vector2(1f, 1f)
+            };
+            AddComponent(Sprite);
+        }
+
+        public override void Render(SpriteBatch spriteBatch) { }
+    }
+
     private EntitySystem CreateEntitySystem()
     {
         return new EntitySystem();
@@ -578,6 +600,63 @@ public class EntitySerializerTests
 
         Assert.Throws<FormatException>(() =>
             EntitySerializer.LoadSceneFromXml(xml, system));
+    }
+
+    [Fact]
+    public void LoadSceneFromXml_WithComponentPropertyColor_ShouldSetColorOnExistingComponent()
+    {
+        // This tests the case where an entity's OnStart() creates a SpriteComponent (White)
+        // and XML should modify its properties instead of adding a duplicate or throwing
+        var system = CreateEntitySystem();
+        var xml = @"
+            <Scene>
+                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntitySerializerTests+EntityWithPreCreatedComponent"" Id=""coloredEntity"">
+                    <Position X=""50"" Y=""50"" />
+                    <Components>
+                        <Component Type=""SpriteComponent"">
+                            <Properties>
+                                <Property Name=""Color"" Value=""Red"" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Scene>";
+
+        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
+
+        Assert.Single(entities);
+        var sprite = entities[0].GetComponent<SpriteComponent>();
+        Assert.NotNull(sprite);
+        Assert.Equal(Color.Red, sprite.Color);
+    }
+
+    [Fact]
+    public void LoadSceneFromXml_WithMultipleComponentProperties_ShouldApplyAll()
+    {
+        // Tests that XML properties override existing component properties set in OnStart
+        var system = CreateEntitySystem();
+        var xml = @"
+            <Scene>
+                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntitySerializerTests+EntityWithPreCreatedComponent"" Id=""configured"">
+                    <Position X=""100"" Y=""200"" />
+                    <Components>
+                        <Component Type=""SpriteComponent"">
+                            <Properties>
+                                <Property Name=""Color"" Value=""Green"" />
+                                <Property Name=""Scale"" Value=""2,2"" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Scene>";
+
+        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
+
+        Assert.Single(entities);
+        var sprite = entities[0].GetComponent<SpriteComponent>();
+        Assert.NotNull(sprite);
+        Assert.Equal(Color.Green, sprite.Color);
+        Assert.Equal(new Vector2(2f, 2f), sprite.Scale);
     }
 
     #endregion

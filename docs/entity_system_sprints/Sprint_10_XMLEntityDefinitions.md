@@ -81,7 +81,7 @@
 - `LoadEntity<T>()` / `LoadEntityFromFile<T>()` — parse XML into Entity instances
 - `SaveEntity()` / `SaveEntityToString()` — serialize entities back to XML
 - `LoadSceneFromXml()` / `LoadSceneFromFile()` — load complete scenes with multiple entities
-- `CreateEntityByTypeName()` — reflection-based entity creation across all loaded assemblies (including test assemblies)
+- `CreateEntityByTypeName()` — resolves types across all loaded assemblies and uses the non-generic `EntitySystem.CreateEntity(Type)` for proper system registration
 - `ApplyEntityProperties()` — parse position, rotation, sort, tags, active state
 - `LoadComponents()` — attach components from `<Components>` section via factory
 - `SetProperty()` — reflection-based property setter (int, float, bool, string, Vector2, Color, enum)
@@ -93,6 +93,10 @@
 - `DefaultComponentFactory` uses dictionary-based registration
 - Supports `Register(string, Func<EntityComponent>)` for components w/o parameterless constructors
 - Gracefully handles missing/unregistered component types (skips silently)
+
+**EntitySystem.cs** (`EntityOOPSystem/EntitySystem.cs`):
+- Added non-generic `CreateEntity(Type type, params object[] args)` to centralize registration logic and support dynamic instantiation from the serializer.
+- Refactored generic `CreateEntity<T>` to delegate to the non-generic implementation.
 
 **Entity.cs** (`EntityOOPSystem/Entity.cs`):
 - Added non-generic `AddComponent(EntityComponent)` overload — stores by runtime type (`component.GetType()`)

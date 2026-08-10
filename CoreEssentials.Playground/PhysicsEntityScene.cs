@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.Inputs;
 using CoreEssentials.Scenes;
@@ -50,7 +51,7 @@ public class PhysicsEntityScene : Scene
         UpdateLoadingProgress(0.55f, "Setting up entities...");
         
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
-        
+
         int totalEntities = graphics.PreferredBackBufferWidth / 10;
         int currentEntity = 0;
         
@@ -67,11 +68,11 @@ public class PhysicsEntityScene : Scene
                 (float)(_random.NextDouble() * 10 - 5), 
                 (float)(_random.NextDouble() * 10 - 5)
             ));
-            
+
             // Update progress (from 55% to 90%)
             currentEntity++;
             float progress = 0.55f + 0.35f * (currentEntity / (float)totalEntities);
-            
+
             // Update loading progress and display entity creation count
             if (i % 50 == 0)
             {
@@ -84,7 +85,51 @@ public class PhysicsEntityScene : Scene
                 _loadingProgress = progress;
             }
         }
-        
+
+        // Sprint 10 Demo: Load extra VIP balls from XML! 🎉
+        UpdateLoadingProgress(0.92f, "Loading VIP balls from XML...");
+        string vipBallXml = @"
+            <Scene>
+                <EntityDefinition Type=""CoreEssentials.Playground.Ball"" Id=""vip1"">
+                    <Position X=""100"" Y=""100"" />
+                    <Component Type=""SpriteComponent"">
+                        <Properties>
+                            <Property Name=""Color"" Value=""Red"" />
+                        </Properties>
+                    </Component>
+                </EntityDefinition>
+                <EntityDefinition Type=""CoreEssentials.Playground.Ball"" Id=""vip2"">
+                    <Position X=""500"" Y=""360"" />
+                    <Component Type=""SpriteComponent"">
+                        <Properties>
+                            <Property Name=""Color"" Value=""Green"" />
+                        </Properties>
+                    </Component>
+                </EntityDefinition>
+                <EntityDefinition Type=""CoreEssentials.Playground.Ball"" Id=""vip3"">
+                    <Position X=""1000"" Y=""600"" />
+                    <Component Type=""SpriteComponent"">
+                        <Properties>
+                            <Property Name=""Color"" Value=""Cyan"" />
+                        </Properties>
+                    </Component>
+                </EntityDefinition>
+            </Scene>";
+
+        var xmlBalls = EntitySerializer.LoadSceneFromXml(vipBallXml, entitySystem);
+        foreach (var ball in xmlBalls)
+        {
+            var spriteComp = ball.GetComponent<SpriteComponent>();
+            Console.WriteLine($"[PhysicsEntityScene] Ball color AFTER XML load: {spriteComp?.Color}");
+            
+            ball.GetComponent<RigidbodyComponent>()?.ApplyImpulse(new Vector2(
+                (float)(_random.NextDouble() * 15 - 7.5f),
+                (float)(_random.NextDouble() * 15 - 7.5f)
+            ));
+        }
+
+        Console.WriteLine($"Loaded {xmlBalls.Count} VIP balls from XML!");
+
         // Update progress to 95%
         UpdateLoadingProgress(0.95f, "Setting up world border...");
         yield return new WaitForSeconds(0.1f);

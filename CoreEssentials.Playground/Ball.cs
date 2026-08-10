@@ -50,6 +50,9 @@ public class Ball : Entity
         _scale = (float)(_random.NextDouble() + 0.5f);
     }
 
+    // Parameterless constructor for XML serialization (Sprint 10)
+    public Ball() : this(Vector2.Zero) { }
+
     public override void OnStart()
     {
         base.OnStart();

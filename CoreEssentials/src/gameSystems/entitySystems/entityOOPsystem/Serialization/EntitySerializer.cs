@@ -155,11 +155,23 @@ public static class EntitySerializer
         // Apply properties (position, rotation, sort, tags, active)
         ApplyEntityProperties(entity, entityDef);
 
-        // Load components
+        // Load components - support both <Components><Component .../></Components> and direct <Component .../>
         var componentsElement = entityDef.Element("Components");
         if (componentsElement != null)
         {
             LoadComponents(entity, componentsElement, factory);
+        }
+        else
+        {
+            // Support direct <Component> children without wrapper - create a virtual wrapper
+            foreach (var componentElement in entityDef.Elements("Component"))
+            {
+                var typeName = componentElement.Attribute("Type")?.Value;
+                if (!string.IsNullOrWhiteSpace(typeName))
+                {
+                    LoadComponent(entity, componentElement, factory);
+                }
+            }
         }
 
         // Load nested children from &lt;Children&gt; element
@@ -261,11 +273,8 @@ public static class EntitySerializer
         if (type == null || !typeof(Entity).IsAssignableFrom(type))
             throw new FormatException($"Entity type '{typeName}' not found or does not inherit from Entity.");
 
-        var entity = (Entity)Activator.CreateInstance(type)!;
-        entity.SetGameSystem(system);
-        entity.OnStart();
-
-        return entity;
+        // Use the non-generic CreateEntity method for proper registration
+        return system.CreateEntity(type);
     }
 
     private static XElement ParseRootElement(string xmlData, string expectedName)
@@ -371,31 +380,59 @@ public static class EntitySerializer
         foreach (var componentElement in componentsElement.Elements("Component"))
         {
             var typeName = componentElement.Attribute("Type")?.Value;
-            if (string.IsNullOrWhiteSpace(typeName))
-                continue;
-
-            var component = factory.Create(typeName);
-            if (component == null)
-                continue;
-
-            // Apply &lt;Properties&gt;&lt;Property Name="..." Value="..."/&gt; elements
-            var propertiesElement = componentElement.Element("Properties");
-            if (propertiesElement != null)
+            if (!string.IsNullOrWhiteSpace(typeName))
             {
-                foreach (var propertyElement in propertiesElement.Elements("Property"))
-                {
-                    var propertyName = propertyElement.Attribute("Name")?.Value;
-                    var propertyValue = propertyElement.Attribute("Value")?.Value;
-
-                    if (string.IsNullOrWhiteSpace(propertyName) || string.IsNullOrWhiteSpace(propertyValue))
-                        continue;
-
-                    SetProperty(component, propertyName, propertyValue);
-                }
+                LoadComponent(entity, componentElement, factory);
             }
+        }
+    }
 
+    private static void LoadComponent(Entity entity, XElement componentElement, IComponentFactory factory)
+    {
+        var typeName = componentElement.Attribute("Type")?.Value;
+        if (string.IsNullOrWhiteSpace(typeName))
+            return;
+
+        // Check if entity already has this component type - if so, modify existing instead of adding new
+        var existingComponent = GetExistingComponent(entity, typeName);
+        EntityComponent component = existingComponent ?? factory.Create(typeName);
+        
+        if (component == null)
+            return;
+
+        // Apply <Properties><Property Name="..." Value="..."/></Properties> elements
+        var propertiesElement = componentElement.Element("Properties");
+        if (propertiesElement != null)
+        {
+            foreach (var propertyElement in propertiesElement.Elements("Property"))
+            {
+                var propertyName = propertyElement.Attribute("Name")?.Value;
+                var propertyValue = propertyElement.Attribute("Value")?.Value;
+
+                if (string.IsNullOrWhiteSpace(propertyName) || string.IsNullOrWhiteSpace(propertyValue))
+                    continue;
+
+                SetProperty(component, propertyName, propertyValue);
+            }
+        }
+
+        // Only add to entity if it's a new component (not already existing)
+        if (existingComponent == null)
+        {
             entity.AddComponent(component);
         }
+    }
+
+    private static EntityComponent? GetExistingComponent(Entity entity, string typeName)
+    {
+        foreach (var component in entity.Components)
+        {
+            if (component.GetType().Name.Equals(typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return component;
+            }
+        }
+        return null;
     }
 
     private static void SetProperty(object target, string propertyName, string valueString)
@@ -423,7 +460,7 @@ public static class EntitySerializer
             else if (targetType.IsEnum)
                 property.SetValue(target, Enum.Parse(targetType, valueString, ignoreCase: true));
         }
-        catch
+        catch (Exception ex)
         {
             // Silently skip properties we can't parse
         }
