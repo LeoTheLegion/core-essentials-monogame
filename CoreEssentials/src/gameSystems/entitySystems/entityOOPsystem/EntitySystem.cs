@@ -33,6 +33,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     private Dictionary<Type, object> _pools = new Dictionary<Type, object>();
 
     /// <summary>
+    /// Cache of registered entity templates for fast instantiation.
+    /// Maps template names to their corresponding EntityTemplate blueprint.
+    /// </summary>
+    private readonly Dictionary<string, Serialization.EntityTemplate> _templates = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The spatial grid for fast spatial queries.
     /// </summary>
     private SpatialGrid? _spatialGrid;
@@ -465,6 +471,34 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
             _entities[i].OnDestroy();
             _entities.RemoveAt(i);
         }
+    }
+
+    /// <summary>
+    /// Registers an entity template from an XML file.
+    /// </summary>
+    /// <param name="name">The unique name to assign to this template.</param>
+    /// <param name="xmlPath">The path to the XML file containing the <c>&lt;EntityTemplate&gt;</c> definition.</param>
+    public void RegisterTemplate(string name, string xmlPath)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Template name cannot be empty.", nameof(name));
+        if (string.IsNullOrWhiteSpace(xmlPath)) throw new ArgumentException("XML path cannot be empty.", nameof(xmlPath));
+
+        var template = Serialization.EntityTemplateLoader.LoadFromFile(xmlPath);
+        _templates[name] = template;
+    }
+
+    /// <summary>
+    /// Instantiates an entity from a registered template at the specified position.
+    /// </summary>
+    /// <param name="templateName">The name of the registered template to use.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <returns>The newly created entity.</returns>
+    public Entity Instantiate(string templateName, Vector2 position)
+    {
+        if (!_templates.TryGetValue(templateName, out var template))
+            throw new KeyNotFoundException($"Entity template '{templateName}' is not registered.");
+
+        return Serialization.EntityTemplateLoader.Instantiate(template, this, position);
     }
 
     /// <summary>

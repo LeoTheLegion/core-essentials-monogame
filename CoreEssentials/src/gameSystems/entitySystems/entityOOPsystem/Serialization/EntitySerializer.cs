@@ -120,20 +120,79 @@ public static class EntitySerializer
         var idToEntity = new Dictionary<string, Entity>();
         var rootEntities = new List<Entity>();
 
-        // First pass - create all entities
-        foreach (var entityDef in root.Elements("EntityDefinition"))
+        // First pass - create all entities and instantiate templates
+        foreach (var element in root.Elements())
         {
-            var entity = LoadEntityFromDefinition(entityDef, system, factory, idToEntity);
-            rootEntities.Add(entity);
+            if (element.Name.LocalName == "EntityDefinition")
+            {
+                var entity = LoadEntityFromDefinition(element, system, factory, idToEntity);
+                rootEntities.Add(entity);
+            }
+            else if (element.Name.LocalName == "Template")
+            {
+                var entity = LoadEntityFromTemplate(element, system, idToEntity);
+                rootEntities.Add(entity);
+            }
         }
 
-        // Second pass - resolve &lt;Reference&gt; links
-        foreach (var entityDef in root.Elements("EntityDefinition"))
+        // Second pass - resolve <Reference> links
+        foreach (var element in root.Elements())
         {
-            ResolveReferences(entityDef, idToEntity, rootEntities);
+            if (element.Name.LocalName == "EntityDefinition")
+            {
+                ResolveReferences(element, idToEntity, rootEntities);
+            }
+            else if (element.Name.LocalName == "Template")
+            {
+                ResolveReferences(element, idToEntity, rootEntities);
+            }
         }
 
         return rootEntities;
+    }
+
+    private static Entity LoadEntityFromTemplate(XElement templateElem, EntitySystem system, Dictionary<string, Entity> idToEntity)
+    {
+        var source = templateElem.Attribute("Source")?.Value;
+        if (string.IsNullOrWhiteSpace(source))
+            throw new FormatException("Template element missing required 'Source' attribute.");
+
+        // Parse position override
+        var posElement = templateElem.Element("Position");
+        Vector2 position = Vector2.Zero;
+        if (posElement != null)
+        {
+            position = ParseVector2(posElement);
+        }
+        else if (float.TryParse(templateElem.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                 float.TryParse(templateElem.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+        {
+            position = new Vector2(x, y);
+        }
+
+        // Instantiate from system
+        var entity = system.Instantiate(source, position);
+
+        // Track by Id if available for reference resolution
+        var entityId = templateElem.Attribute("Id")?.Value;
+        if (!string.IsNullOrWhiteSpace(entityId))
+        {
+            idToEntity[entityId] = entity;
+        }
+
+        // Support overrides (Tags, etc.)
+        var tagsElement = templateElem.Element("Tags");
+        if (tagsElement != null)
+        {
+            foreach (var tagElement in tagsElement.Elements("Tag"))
+            {
+                var tagName = tagElement.Attribute("Name")?.Value;
+                if (!string.IsNullOrWhiteSpace(tagName))
+                    entity.SetTag(tagName);
+            }
+        }
+
+        return entity;
     }
 
     private static Entity LoadEntityFromDefinition(XElement entityDef, EntitySystem system, IComponentFactory factory, Dictionary<string, Entity> idToEntity)
@@ -441,64 +500,21 @@ public static class EntitySerializer
         if (property == null || !property.CanWrite)
             return;
 
-        var targetType = property.PropertyType;
-
         try
         {
-            if (targetType == typeof(int))
-                property.SetValue(target, int.Parse(valueString));
-            else if (targetType == typeof(float))
-                property.SetValue(target, float.Parse(valueString, NumberStyles.Any, CultureInfo.InvariantCulture));
-            else if (targetType == typeof(bool))
-                property.SetValue(target, bool.Parse(valueString));
-            else if (targetType == typeof(string))
-                property.SetValue(target, valueString);
-            else if (targetType == typeof(Vector2))
-                property.SetValue(target, ParseVector2FromString(valueString));
-            else if (targetType == typeof(Color))
-                property.SetValue(target, ParseColor(valueString));
-            else if (targetType.IsEnum)
-                property.SetValue(target, Enum.Parse(targetType, valueString, ignoreCase: true));
+            property.SetValue(target, SerializationUtils.ParseValue(property.PropertyType, valueString));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Silently skip properties we can't parse
         }
     }
 
-    private static Vector2 ParseVector2FromString(string value)
-    {
-        var parts = value.Split(',');
-        if (parts.Length >= 2 &&
-            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-            float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-        {
-            return new Vector2(x, y);
-        }
-        return Vector2.Zero;
-    }
-
-    private static Color ParseColor(string value)
-    {
-        try
-        {
-            var colorType = typeof(Color);
-            // Try field first (some engines use static fields for named colors)
-            var field = colorType.GetField(value, BindingFlags.Static | BindingFlags.Public);
-            if (field != null)
-                return (Color)field.GetValue(null)!;
-
-            // Try property (MonoGame uses static properties for named colors)
-            var prop = colorType.GetProperty(value, BindingFlags.Static | BindingFlags.Public);
-            if (prop != null)
-                return (Color)prop.GetValue(null)!;
-        }
-        catch
-        {
-            // Fall through to default
-        }
-        return Color.White;
-    }
+    #region Helpers from SerializationUtils
+    // The following methods are now handled by SerializationUtils to avoid duplication
+    // Vector2 ParseVector2FromString(string value) { ... }
+    // Color ParseColor(string value) { ... }
+    #endregion
 
     private static IComponentFactory CreateDefaultComponentFactory()
     {
