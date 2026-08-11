@@ -1,0 +1,25 @@
+<EntityTemplate Type="CoreEssentials.Playground.Ball" Rotation="0" Sort="0" Active="true">
+    <Tags>
+        <Tag Name="Ball" />
+        <Tag Name="Physical" />
+    </Tags>
+    <Components>
+        <Component Type="SpriteComponent">
+            <Properties>
+                <Property Name="Color" Value="White" />
+                <Property Name="Origin" Value="0.5,0.5" />
+            </Properties>
+        </Component>
+        <Component Type="RigidbodyComponent">
+            <Properties>
+                <Property Name="FixedRotation" Value="false" />
+                <Property Name="Mass" Value="1.0" />
+            </Properties>
+        </Component>
+        <Component Type="ColliderComponent">
+            <Properties>
+                <Property Name="Restitution" Value="1.0" />
+            </Properties>
+        </Component>
+    </Components>
+</EntityTemplate>

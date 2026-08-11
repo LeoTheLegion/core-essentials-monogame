@@ -28,6 +28,9 @@
 /processorParam:TextureFormat=Color
 /build:Ball.png
 
+#begin BallTemplate.xml
+/copy:BallTemplate.xml
+
 #begin base.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor

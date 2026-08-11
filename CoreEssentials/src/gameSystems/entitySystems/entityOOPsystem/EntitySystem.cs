@@ -215,6 +215,23 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Creates a new entity without calling OnStart(). Use when you need to configure the entity before initialization (e.g., templates).
+    /// Call <see cref="Entity.OnStart"/> manually after configuration is complete.
+    /// </summary>
+    /// <param name="type">The Type of entity to create.</param>
+    /// <param name="args">Constructor arguments for the entity.</param>
+    /// <returns>The newly created entity (not yet started).</returns>
+    internal Entity CreateEntityUnstarted(Type type, params object[] args)
+    {
+        Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
+        entity.SetGameSystem(this);
+        _entities.Add(entity);
+        UpdateTagIndexForEntity(entity, true);
+        UpdateSpatialGridForEntity(entity, true);
+        return entity;
+    }
+
+    /// <summary>
     /// Creates and initializes a new entity of the specified type.
     /// </summary>
     /// <typeparam name="T">The type of entity to create.</typeparam>
@@ -474,16 +491,16 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
-    /// Registers an entity template from an XML file.
+    /// Registers an entity template from an XML asset.
     /// </summary>
     /// <param name="name">The unique name to assign to this template.</param>
-    /// <param name="xmlPath">The path to the XML file containing the <c>&lt;EntityTemplate&gt;</c> definition.</param>
-    public void RegisterTemplate(string name, string xmlPath)
+    /// <param name="assetName">The name of the XML asset containing the <c>&lt;EntityTemplate&gt;</c> definition.</param>
+    public void RegisterTemplate(string name, string assetName)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Template name cannot be empty.", nameof(name));
-        if (string.IsNullOrWhiteSpace(xmlPath)) throw new ArgumentException("XML path cannot be empty.", nameof(xmlPath));
+        if (string.IsNullOrWhiteSpace(assetName)) throw new ArgumentException("Asset name cannot be empty.", nameof(assetName));
 
-        var template = Serialization.EntityTemplateLoader.LoadFromFile(xmlPath);
+        var template = Serialization.EntityTemplateLoader.LoadFromAsset(assetName);
         _templates[name] = template;
     }
 
