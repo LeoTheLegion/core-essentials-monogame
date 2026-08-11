@@ -1,6 +1,6 @@
 # Sprint 16 — Entity Lifecycle Hooks 🔄
 
-**Points:** 3  
+**Points:** 3.5  
 **Status:** Not Started  
 **Sprint Goal:** Additional lifecycle events for fine-grained control (OnEnable, OnDisable, OnPause, OnResume, OnAwake).
 
@@ -27,6 +27,12 @@
   - Test OnPause/OnResume are called correctly
   - Test lifecycle order
 
+- [ ] **T4: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/EntityLifecycleHooks.md` user guide
+  - Document lifecycle hook order
+  - Document when each hook is called
+  - Provide examples for each hook
+
 ---
 
 ## Acceptance Criteria
@@ -47,6 +53,7 @@
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add lifecycle hooks |
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add lifecycle management |
 | `EntityLifecycleTests.cs` | New | 🔒 Internal | Unit tests for lifecycle hooks |
+| `docs/EntityLifecycleHooks.md` | New | ⭐ PUBLIC | User guide for lifecycle hooks |
 
 ---
 

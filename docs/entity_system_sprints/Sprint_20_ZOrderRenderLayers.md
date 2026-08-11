@@ -1,6 +1,6 @@
 # Sprint 20 — Z-Order Render Layers 📐
 
-**Points:** 5  
+**Points:** 5.5  
 **Status:** Not Started  
 **Sprint Goal:** Combine texture batching with z-order layers to maintain correct render order across different textures.
 
@@ -49,6 +49,12 @@ Current batching renders all A's together, then all B's — putting B in front o
   - Test interleaved textures render correctly
   - Test z-layer collision filtering
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/ZOrderRenderLayers.md` user guide
+  - Document z-layer concept
+  - Document render batching with z-layers
+  - Provide layering examples
+
 ---
 
 ## Acceptance Criteria
@@ -69,6 +75,7 @@ Current batching renders all A's together, then all B's — putting B in front o
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add ZLayer property |
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Z-aware render batching |
 | `EntityZOrderTests.cs` | New | 🔒 Internal | Unit tests for z-ordering |
+| `docs/ZOrderRenderLayers.md` | New | ⭐ PUBLIC | User guide for z-order layers |
 
 ---
 

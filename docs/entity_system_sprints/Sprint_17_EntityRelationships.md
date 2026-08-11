@@ -1,6 +1,6 @@
 # Sprint 17 — Entity Relationships 🔗
 
-**Points:** 4  
+**Points:** 4.5  
 **Status:** Not Started  
 **Sprint Goal:** Weak-reference relationships between entities (target, owner, follower, etc.).
 
@@ -30,6 +30,12 @@
   - Test auto-clean on entity destroy
   - Test relationship change events
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/EntityRelationships.md` user guide
+  - Document relationship API
+  - Document weak references
+  - Provide examples: target, owner, follower
+
 ---
 
 ## Acceptance Criteria
@@ -50,6 +56,7 @@
 | `EntityRelationship.cs` | New | ⭐ PUBLIC | Relationship class |
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add relationship storage |
 | `EntityRelationshipTests.cs` | New | 🔒 Internal | Unit tests for relationships |
+| `docs/EntityRelationships.md` | New | ⭐ PUBLIC | User guide for entity relationships |
 
 ---
 

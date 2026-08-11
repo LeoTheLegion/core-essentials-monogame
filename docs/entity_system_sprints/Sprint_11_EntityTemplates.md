@@ -26,7 +26,7 @@
   - Instantiate templates at specified positions
   - Support template overrides (e.g., different tags per instance)
 
-- [ ] **T4: Write unit tests (1.5 pts)** 🔁 Validation
+- [x] **T4: Write unit tests (1.5 pts)** 🔁 Validation
   - Test template registration and instantiation
   - Test multiple instances from same template
   - Test template with components
@@ -41,7 +41,7 @@
 - [x] Each instance has independent state
 - [x] Templates support position override on instantiation
 - [x] Project builds cleanly — **0 errors, 0 warnings** (10 warnings pre-existing, unrelated)
-- [ ] All existing tests pass + new template tests added
+- [x] All existing tests pass + new template tests added
 
 ---
 
@@ -55,7 +55,7 @@
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add `RegisterTemplate`, `Instantiate`, `CreateEntityUnstarted` |
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add non-generic `GetComponent(Type)` |
 | `Serialization/EntitySerializer.cs` | Modified | ⭐ PUBLIC | Support `<Template>` elements in scene XML |
-| `EntityTemplateTests.cs` | New | 🔒 Internal | Unit tests for templates (pending) |
+| `EntityTemplateTests.cs` | New | 🔒 Internal | Unit tests for templates (12 tests, all passing) |
 
 ---
 

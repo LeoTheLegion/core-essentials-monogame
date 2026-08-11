@@ -1,6 +1,6 @@
 # Sprint 19 — Collision Groups 💥
 
-**Points:** 5  
+**Points:** 5.5  
 **Status:** Not Started  
 **Sprint Goal:** Assign entities to collision groups for filtered interaction.
 
@@ -31,6 +31,12 @@
   - Test collision queries
   - Test collision filtering
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/CollisionGroups.md` user guide
+  - Document collision groups
+  - Document collision matrix
+  - Provide filtering examples
+
 ---
 
 ## Acceptance Criteria
@@ -52,6 +58,7 @@
 | `Collision/CollisionMatrix.cs` | New | ⭐ PUBLIC | Collision filtering |
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add collision query methods |
 | `CollisionGroupTests.cs` | New | 🔒 Internal | Unit tests for collision groups |
+| `docs/CollisionGroups.md` | New | ⭐ PUBLIC | User guide for collision groups |
 
 ---
 
