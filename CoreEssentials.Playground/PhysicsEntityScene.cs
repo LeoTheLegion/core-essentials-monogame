@@ -52,17 +52,20 @@ public class PhysicsEntityScene : Scene
         
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 
+        // Register the template first — all balls use it
+        entitySystem.RegisterTemplate("BallPrefab", "BallTemplate.xml");
+        
         int totalEntities = graphics.PreferredBackBufferWidth / 10;
         int currentEntity = 0;
         
-        // Create balls one by one with progress updates
+        // Create regular balls from template with progress updates
         for (int i = 0; i < graphics.PreferredBackBufferWidth; i += 10)
         {
             // Create a random y between 0 and 720
             int padding = 32;
             int y = _random.Next(padding, graphics.PreferredBackBufferHeight - padding);
 
-            Ball ball = entitySystem.CreateEntity<Ball>(new Vector2(i, y));
+            Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", new Vector2(i, y));
             // add Random force to the ball
             ball.GetComponent<RigidbodyComponent>().ApplyImpulse(new Vector2(
                 (float)(_random.NextDouble() * 10 - 5), 
@@ -86,49 +89,36 @@ public class PhysicsEntityScene : Scene
             }
         }
 
-        // Sprint 10 Demo: Load extra VIP balls from XML! 🎉
-        UpdateLoadingProgress(0.92f, "Loading VIP balls from XML...");
-        string vipBallXml = @"
-            <Scene>
-                <EntityDefinition Type=""CoreEssentials.Playground.Ball"" Id=""vip1"">
-                    <Position X=""100"" Y=""100"" />
-                    <Component Type=""SpriteComponent"">
-                        <Properties>
-                            <Property Name=""Color"" Value=""Red"" />
-                        </Properties>
-                    </Component>
-                </EntityDefinition>
-                <EntityDefinition Type=""CoreEssentials.Playground.Ball"" Id=""vip2"">
-                    <Position X=""500"" Y=""360"" />
-                    <Component Type=""SpriteComponent"">
-                        <Properties>
-                            <Property Name=""Color"" Value=""Green"" />
-                        </Properties>
-                    </Component>
-                </EntityDefinition>
-                <EntityDefinition Type=""CoreEssentials.Playground.Ball"" Id=""vip3"">
-                    <Position X=""1000"" Y=""600"" />
-                    <Component Type=""SpriteComponent"">
-                        <Properties>
-                            <Property Name=""Color"" Value=""Cyan"" />
-                        </Properties>
-                    </Component>
-                </EntityDefinition>
-            </Scene>";
+        // Sprint 10 & 11 Demo: Load VIP balls using Templates! 🎉
+        UpdateLoadingProgress(0.92f, "Loading VIP balls from Template...");
 
-        var xmlBalls = EntitySerializer.LoadSceneFromXml(vipBallXml, entitySystem);
-        foreach (var ball in xmlBalls)
+        // Instantiate 3 VIP balls from the template at center positions with distinct colors
+        (Vector2 Position, Color Color)[] vipBalls = {
+            (new Vector2(640, 360), Color.Blue),
+            (new Vector2(580, 300), Color.Green),
+            (new Vector2(700, 420), Color.Red)
+        };
+
+        foreach (var (pos, color) in vipBalls)
         {
-            var spriteComp = ball.GetComponent<SpriteComponent>();
-            Console.WriteLine($"[PhysicsEntityScene] Ball color AFTER XML load: {spriteComp?.Color}");
+            Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", pos);
             
+            // Make VIP balls larger and set their unique color
+            ball.Scale = 2.0f;
+            var spriteComp = ball.GetComponent<SpriteComponent>();
+            if (spriteComp != null)
+                spriteComp.Color = color;
+            
+            // Apply random impulse for fun movement
             ball.GetComponent<RigidbodyComponent>()?.ApplyImpulse(new Vector2(
                 (float)(_random.NextDouble() * 15 - 7.5f),
                 (float)(_random.NextDouble() * 15 - 7.5f)
             ));
+            
+            Console.WriteLine($"VIP Ball spawned at {pos} with Scale={ball.Scale}, Color={color}");
         }
 
-        Console.WriteLine($"Loaded {xmlBalls.Count} VIP balls from XML!");
+        Console.WriteLine($"Loaded {vipBalls.Length} VIP balls from Template!");
 
         // Update progress to 95%
         UpdateLoadingProgress(0.95f, "Setting up world border...");

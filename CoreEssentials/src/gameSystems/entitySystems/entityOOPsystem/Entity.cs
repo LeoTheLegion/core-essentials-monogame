@@ -609,6 +609,16 @@ public abstract class Entity
     /// <summary>
     /// Gets a component of the specified type from this entity.
     /// </summary>
+    /// <param name="type">The type of component to get.</param>
+    /// <returns>The component if found; otherwise, null.</returns>
+    public Components.EntityComponent? GetComponent(Type type)
+    {
+        return _components.TryGetValue(type, out var component) ? component : null;
+    }
+
+    /// <summary>
+    /// Gets a component of the specified type from this entity.
+    /// </summary>
     /// <typeparam name="T">The type of component to get.</typeparam>
     /// <param name="component">When this method returns, contains the component if found; otherwise, null.</param>
     /// <returns>True if the component was found; otherwise, false.</returns>
