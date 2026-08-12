@@ -570,6 +570,25 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Saves the complete entity system state to an XML file.
+    /// </summary>
+    /// <param name="filePath">The path to save the game state file.</param>
+    public void SaveState(string filePath)
+    {
+        Serialization.GameStateSerializer.SaveState(this, filePath);
+    }
+
+    /// <summary>
+    /// Loads a game state from an XML file and applies it to the entity system.
+    /// </summary>
+    /// <param name="filePath">The path to the game state file.</param>
+    /// <param name="mergeExisting">If true, merges saved state with existing entities. If false, replaces all entities.</param>
+    public void LoadState(string filePath, bool mergeExisting = false)
+    {
+        Serialization.GameStateSerializer.LoadState(this, filePath, mergeExisting);
+    }
+
+    /// <summary>
     /// Releases all resources used by the <see cref="EntitySystem"/>.
     /// Implements <see cref="IDisposable.Dispose"/>.
     /// </summary>
