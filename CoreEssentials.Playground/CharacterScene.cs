@@ -54,10 +54,9 @@ public class CharacterScene : Scene
             string typeName = entityElement.Attribute("Type")?.Value ?? throw new FormatException("Entity type is required");
             Type type = Type.GetType(typeName) ?? throw new FormatException($"Unknown entity type: {typeName}");
 
-            // Create entity and apply XML properties (including ID)
-            var entity = entitySystem.CreateEntityUnstarted(type);
+            // Create entity (OnStart applies defaults), then XML overrides them
+            var entity = entitySystem.CreateEntity(type);
             EntitySerializer.ApplyEntityProperties(entity, entityElement);
-            entity.OnStart();
         }
 
         UpdateLoadingProgress(0.5f, "Looking up entities by ID...");
