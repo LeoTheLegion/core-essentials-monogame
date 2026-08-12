@@ -229,7 +229,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="type">The Type of entity to create.</param>
     /// <param name="args">Constructor arguments for the entity.</param>
     /// <returns>The newly created entity (not yet started).</returns>
-    internal Entity CreateEntityUnstarted(Type type, params object[] args)
+    public Entity CreateEntityUnstarted(Type type, params object[] args)
     {
         Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
         entity.SetGameSystem(this);
@@ -374,6 +374,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
 
         return _idIndex.TryGetValue(id, out var entity) ? entity : null;
     }
+
+    /// <summary>
+    /// Gets a snapshot of the current ID index for reference resolution.
+    /// </summary>
+    /// <returns>A dictionary mapping entity IDs to entities.</returns>
+    public Dictionary<string, Entity> GetIdIndex() => new(_idIndex);
 
     /// <summary>
     /// Resolves all pending entity references after scene load.

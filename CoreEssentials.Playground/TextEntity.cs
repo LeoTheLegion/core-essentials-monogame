@@ -20,7 +20,16 @@ public class TextEntity : Entity
         Center,
         Right
     }
-      // Constructor that matches what's being passed in CharacterScene.cs
+      // Parameterless constructor for XML-based entity loading
+    public TextEntity() : base()
+    {
+        _text = "";
+        _color = Color.White;
+        _alignment = TextAlignment.Left;
+        _offset = Vector2.Zero;
+    }
+    
+    // Constructor that matches what's being passed in CharacterScene.cs
     // Called by entitySystem.CreateEntity<TextEntity>(position, text, color, alignment)
     public TextEntity(Vector2 position, string text, Color color, TextAlignment alignment) : base()
     {
@@ -50,7 +59,14 @@ public class TextEntity : Entity
         get => _color;
         set => _color = value;
     }
-      public override void Render(SpriteBatch spriteBatch)
+
+    public TextAlignment Alignment
+    {
+        get => _alignment;
+        set => _alignment = value;
+    }
+
+    public override void Render(SpriteBatch spriteBatch)
     {
         base.Render(spriteBatch);
         

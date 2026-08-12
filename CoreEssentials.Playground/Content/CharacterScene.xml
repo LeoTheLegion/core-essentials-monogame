@@ -1,0 +1,31 @@
+<Scene>
+    <Entity Type="CoreEssentials.Playground.CharacterEntity" Id="staticCharacter">
+        <Position X="320" Y="360" />
+        <Tags>
+            <Tag Name="Character" />
+            <Tag Name="Static" />
+        </Tags>
+    </Entity>
+
+    <Entity Type="CoreEssentials.Playground.AnimatedCharacterEntity" Id="animatedCharacter">
+        <Position X="960" Y="360" />
+        <Tags>
+            <Tag Name="Character" />
+            <Tag Name="Animated" />
+        </Tags>
+    </Entity>
+
+    <Entity Type="CoreEssentials.Playground.TextEntity" Id="infoText">
+        <Position X="640" Y="20" />
+        <Tags>
+            <Tag Name="UI" />
+        </Tags>
+    </Entity>
+
+    <Entity Type="CoreEssentials.Playground.TextEntity" Id="characterInfoText">
+        <Position X="640" Y="680" />
+        <Tags>
+            <Tag Name="UI" />
+        </Tags>
+    </Entity>
+</Scene>

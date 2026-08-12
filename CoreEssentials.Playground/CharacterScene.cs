@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.Scenes;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
@@ -14,64 +15,114 @@ namespace CoreEssentials.Playground;
 
 /// <summary>
 /// A scene to demonstrate the SpriteSheet functionality with a character display.
+/// Demonstrates XML-based entity loading with unique IDs and cross-entity references.
 /// </summary>
 public class CharacterScene : Scene
 {
     private string songID;
     private const string InfoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
     private const string CharacterInfo = "Static Character (Left) | Animated Character (Right)";
-    
+
     protected override GameSystem[] LoadGameSystems()
     {
-        // Only need the entity system for this demo
         return new GameSystem[]
         {
             new EntitySystem()
         };
     }
-    
+
     protected override IEnumerator OnStartCoroutine()
     {
         UpdateLoadingProgress(0.1f, "Initializing character scene...");
         yield return null;
-        
-        GraphicsDeviceManager graphics = SceneManager.Game.Graphics;
 
-        // Ensure window size is appropriate
+        GraphicsDeviceManager graphics = SceneManager.Game.Graphics;
         graphics.PreferredBackBufferWidth = 1280;
         graphics.PreferredBackBufferHeight = 720;
         graphics.ApplyChanges();
-        
-        UpdateLoadingProgress(0.5f, "Creating characters...");
-        yield return null;
-        
-        // Get access to the entity system
-        EntitySystem entitySystem = GetGameSystem<EntitySystem>();
-        
-        // Create a static character entity at the left side of the screen
-        entitySystem.CreateEntity<CharacterEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 4, graphics.PreferredBackBufferHeight / 2)
-        );
 
-        // Create an animated character entity at the right side of the screen
-        entitySystem.CreateEntity<AnimatedCharacterEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth * 3 / 4, graphics.PreferredBackBufferHeight / 2)
-        );
-        
-        // Create text entities for UI information
-        entitySystem.CreateEntity<TextEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 2, 20),
-            InfoText,
-            Color.White,
-            TextEntity.TextAlignment.Center
-        );
-        
-        entitySystem.CreateEntity<TextEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight - 40),
-            CharacterInfo,
-            Color.LightGreen,
-            TextEntity.TextAlignment.Center
-        );
+        UpdateLoadingProgress(0.3f, "Loading entities from XML...");
+        yield return null;
+
+        EntitySystem entitySystem = GetGameSystem<EntitySystem>();
+
+        // --- Demo: Load entities from XML with IDs ---
+        string sceneXml = $@"
+<Scene>
+    <Entity Type=""CoreEssentials.Playground.CharacterEntity"" Id=""staticCharacter"">
+        <Position X=""{graphics.PreferredBackBufferWidth / 4}"" Y=""{graphics.PreferredBackBufferHeight / 2}"" />
+        <Tags>
+            <Tag Name=""Character"" />
+            <Tag Name=""Static"" />
+        </Tags>
+    </Entity>
+
+    <Entity Type=""CoreEssentials.Playground.AnimatedCharacterEntity"" Id=""animatedCharacter"">
+        <Position X=""{graphics.PreferredBackBufferWidth * 3 / 4}"" Y=""{graphics.PreferredBackBufferHeight / 2}"" />
+        <Tags>
+            <Tag Name=""Character"" />
+            <Tag Name=""Animated"" />
+        </Tags>
+    </Entity>
+
+    <Entity Type=""CoreEssentials.Playground.TextEntity"" Id=""infoText"">
+        <Position X=""{graphics.PreferredBackBufferWidth / 2}"" Y=""20"" />
+    </Entity>
+
+    <Entity Type=""CoreEssentials.Playground.TextEntity"" Id=""characterInfoText"">
+        <Position X=""{graphics.PreferredBackBufferWidth / 2}"" Y=""{graphics.PreferredBackBufferHeight - 40}"" />
+    </Entity>
+</Scene>";
+
+        // Parse and load entities from XML
+        var sceneElement = System.Xml.Linq.XDocument.Parse(sceneXml).Root;
+        foreach (var entityElement in sceneElement.Elements("Entity"))
+        {
+            string typeName = entityElement.Attribute("Type")?.Value ?? throw new FormatException("Entity type is required");
+            Type type = Type.GetType(typeName) ?? throw new FormatException($"Unknown entity type: {typeName}");
+
+            // Create entity and apply XML properties (including ID)
+            var entity = entitySystem.CreateEntityUnstarted(type);
+            EntitySerializer.ApplyEntityProperties(entity, entityElement);
+            entity.OnStart();
+        }
+
+        UpdateLoadingProgress(0.5f, "Looking up entities by ID...");
+        yield return null;
+
+        // --- Demo: Find entities by ID ---
+        var staticChar = entitySystem.FindById("staticCharacter") as CharacterEntity;
+        var animatedChar = entitySystem.FindById("animatedCharacter") as AnimatedCharacterEntity;
+        var infoTextEntity = entitySystem.FindById("infoText") as TextEntity;
+        var charInfoTextEntity = entitySystem.FindById("characterInfoText") as TextEntity;
+
+        // Configure text entities using ID lookup
+        if (infoTextEntity != null)
+        {
+            infoTextEntity.Text = InfoText;
+            infoTextEntity.Color = Color.White;
+            infoTextEntity.Alignment = TextEntity.TextAlignment.Center;
+        }
+
+        if (charInfoTextEntity != null)
+        {
+            charInfoTextEntity.Text = CharacterInfo;
+            charInfoTextEntity.Color = Color.LightGreen;
+            charInfoTextEntity.Alignment = TextEntity.TextAlignment.Center;
+        }
+
+        // --- Demo: EntityReference for cross-entity linking ---
+        var reference = new EntityReference("staticCharacter");
+        bool resolved = reference.Resolve(entitySystem.GetIdIndex());
+        Console.WriteLine($"Reference to 'staticCharacter' resolved: {resolved}");
+
+        if (resolved)
+        {
+            Console.WriteLine($"  -> Found entity at position: {reference.ResolvedEntity.Position}");
+        }
+
+        UpdateLoadingProgress(0.7f, "Creating UI buttons...");
+        yield return null;
 
         // Create sound button entities
         entitySystem.CreateEntity<SoundButtonEntity>(
@@ -79,26 +130,26 @@ public class CharacterScene : Scene
             "footstep1_sound.xml",
             "Footstep 1"
         );
-        
+
         entitySystem.CreateEntity<SoundButtonEntity>(
             new Vector2(100, 150),
             "footstep2_sound.xml",
             "Footstep 2"
         );
-        
+
         entitySystem.CreateEntity<SoundButtonEntity>(
             new Vector2(100, 200),
             "footstep3_sound.xml",
             "Footstep 3"
         );
-        
+
         // Create volume control buttons
         entitySystem.CreateEntity<VolumeButtonEntity>(
             new Vector2(100, 250),
             0.1f,
             "Volume: 10%"
         );
-        
+
         entitySystem.CreateEntity<VolumeButtonEntity>(
             new Vector2(100, 300),
             1.0f,
@@ -108,9 +159,9 @@ public class CharacterScene : Scene
         // Register input handler
         Input.Keyboard.KeyReleased += Reset();
         Input.Keyboard.KeyReleased += PlaySound();
-        
+
         UpdateLoadingProgress(1.0f, "Scene ready!");
-        Console.WriteLine("Character scene loaded successfully!");
+        Console.WriteLine("Character scene loaded successfully with XML IDs!");
 
         songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
