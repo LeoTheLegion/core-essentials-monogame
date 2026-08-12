@@ -65,6 +65,15 @@
 #begin CharacterTemplate.xml
 /copy:CharacterTemplate.xml
 
+#begin SoundButtonTemplate.xml
+/copy:SoundButtonTemplate.xml
+
+#begin VolumeButtonTemplate.xml
+/copy:VolumeButtonTemplate.xml
+
+#begin TextTemplate.xml
+/copy:TextTemplate.xml
+
 #begin footstep00.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

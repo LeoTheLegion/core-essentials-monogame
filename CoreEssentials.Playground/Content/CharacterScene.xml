@@ -1,31 +1,49 @@
 <Scene>
-    <Entity Type="CoreEssentials.Playground.CharacterEntity" Id="staticCharacter">
+    <!-- Character entities -->
+    <EntityDefinition Type="CoreEssentials.Playground.CharacterEntity" Id="staticCharacter">
         <Position X="320" Y="360" />
         <Tags>
             <Tag Name="Character" />
             <Tag Name="Static" />
         </Tags>
-    </Entity>
+    </EntityDefinition>
 
-    <Entity Type="CoreEssentials.Playground.AnimatedCharacterEntity" Id="animatedCharacter">
+    <EntityDefinition Type="CoreEssentials.Playground.AnimatedCharacterEntity" Id="animatedCharacter">
         <Position X="960" Y="360" />
         <Tags>
             <Tag Name="Character" />
             <Tag Name="Animated" />
         </Tags>
-    </Entity>
+    </EntityDefinition>
 
-    <Entity Type="CoreEssentials.Playground.TextEntity" Id="infoText">
+    <!-- Text entities using template -->
+    <Template Source="TextPrefab" Id="infoText">
         <Position X="640" Y="20" />
-        <Tags>
-            <Tag Name="UI" />
-        </Tags>
-    </Entity>
+    </Template>
 
-    <Entity Type="CoreEssentials.Playground.TextEntity" Id="characterInfoText">
+    <Template Source="TextPrefab" Id="characterInfoText">
         <Position X="640" Y="680" />
-        <Tags>
-            <Tag Name="UI" />
-        </Tags>
-    </Entity>
+    </Template>
+
+    <!-- Sound button entities using template -->
+    <Template Source="SoundButtonPrefab" Id="footstep1Button">
+        <Position X="100" Y="100" />
+    </Template>
+
+    <Template Source="SoundButtonPrefab" Id="footstep2Button">
+        <Position X="100" Y="150" />
+    </Template>
+
+    <Template Source="SoundButtonPrefab" Id="footstep3Button">
+        <Position X="100" Y="200" />
+    </Template>
+
+    <!-- Volume button entities using template -->
+    <Template Source="VolumeButtonPrefab" Id="volumeLowButton">
+        <Position X="100" Y="250" />
+    </Template>
+
+    <Template Source="VolumeButtonPrefab" Id="volumeHighButton">
+        <Position X="100" Y="300" />
+    </Template>
 </Scene>

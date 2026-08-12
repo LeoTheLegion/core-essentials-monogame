@@ -20,7 +20,8 @@ public class TextEntity : Entity
         Center,
         Right
     }
-      // Parameterless constructor for XML-based entity loading
+
+    // Parameterless constructor for XML-based entity loading
     public TextEntity() : base()
     {
         _text = "";
@@ -30,7 +31,6 @@ public class TextEntity : Entity
     }
     
     // Constructor that matches what's being passed in CharacterScene.cs
-    // Called by entitySystem.CreateEntity<TextEntity>(position, text, color, alignment)
     public TextEntity(Vector2 position, string text, Color color, TextAlignment alignment) : base()
     {
         Position = position;

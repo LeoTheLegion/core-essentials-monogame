@@ -1,27 +1,24 @@
 using System;
 using System.Collections;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.Scenes;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using CoreEssentials.Audio;
-using CoreEssentials.Assets;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Playground;
 
 /// <summary>
 /// A scene to demonstrate the SpriteSheet functionality with a character display.
-/// Demonstrates XML-based entity loading with unique IDs and cross-entity references.
+/// Demonstrates XML-based entity loading using templates and EntitySerializer.LoadSceneFromXml.
 /// </summary>
 public class CharacterScene : Scene
 {
     private string songID;
-    private const string InfoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
-    private const string CharacterInfo = "Static Character (Left) | Animated Character (Right)";
 
     protected override GameSystem[] LoadGameSystems()
     {
@@ -41,99 +38,69 @@ public class CharacterScene : Scene
         graphics.PreferredBackBufferHeight = 720;
         graphics.ApplyChanges();
 
-        UpdateLoadingProgress(0.3f, "Loading entities from XML...");
+        UpdateLoadingProgress(0.3f, "Registering templates...");
         yield return null;
 
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 
-        // --- Demo: Load entities from XML file with IDs ---
-        var sceneAsset = AssetManager.LoadAsset<XMLAsset>("CharacterScene.xml");
-        var sceneElement = System.Xml.Linq.XDocument.Parse(sceneAsset.XMLContent).Root;
-        foreach (var entityElement in sceneElement.Elements("Entity"))
-        {
-            string typeName = entityElement.Attribute("Type")?.Value ?? throw new FormatException("Entity type is required");
-            Type type = Type.GetType(typeName) ?? throw new FormatException($"Unknown entity type: {typeName}");
+        // Register reusable entity templates
+        entitySystem.RegisterTemplate("TextPrefab", "TextTemplate.xml");
+        entitySystem.RegisterTemplate("SoundButtonPrefab", "SoundButtonTemplate.xml");
+        entitySystem.RegisterTemplate("VolumeButtonPrefab", "VolumeButtonTemplate.xml");
 
-            // Create entity (OnStart applies defaults), then XML overrides them
-            var entity = entitySystem.CreateEntity(type);
-            EntitySerializer.ApplyEntityProperties(entity, entityElement);
-        }
-
-        UpdateLoadingProgress(0.5f, "Looking up entities by ID...");
+        UpdateLoadingProgress(0.5f, "Loading entities from XML...");
         yield return null;
 
-        // --- Demo: Find entities by ID ---
-        var staticChar = entitySystem.FindById("staticCharacter") as CharacterEntity;
-        var animatedChar = entitySystem.FindById("animatedCharacter") as AnimatedCharacterEntity;
-        var infoTextEntity = entitySystem.FindById("infoText") as TextEntity;
-        var charInfoTextEntity = entitySystem.FindById("characterInfoText") as TextEntity;
+        // Load all entities from scene definition (uses EntitySerializer.LoadSceneFromXml)
+        var sceneAsset = AssetManager.LoadAsset<CoreEssentials.Assets.XMLAsset>("CharacterScene.xml");
+        var entities = LoadEntitiesFromXml(sceneAsset, entitySystem);
+
+        UpdateLoadingProgress(0.7f, "Configuring entities by ID...");
+        yield return null;
 
         // Configure text entities using ID lookup
+        var infoTextEntity = entitySystem.FindById("infoText") as TextEntity;
         if (infoTextEntity != null)
         {
-            infoTextEntity.Text = InfoText;
+            infoTextEntity.Text = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
             infoTextEntity.Color = Color.White;
             infoTextEntity.Alignment = TextEntity.TextAlignment.Center;
         }
 
+        var charInfoTextEntity = entitySystem.FindById("characterInfoText") as TextEntity;
         if (charInfoTextEntity != null)
         {
-            charInfoTextEntity.Text = CharacterInfo;
+            charInfoTextEntity.Text = "Static Character (Left) | Animated Character (Right)";
             charInfoTextEntity.Color = Color.LightGreen;
             charInfoTextEntity.Alignment = TextEntity.TextAlignment.Center;
         }
 
-        // --- Demo: EntityReference for cross-entity linking ---
-        var reference = new EntityReference("staticCharacter");
-        bool resolved = reference.Resolve(entitySystem.GetIdIndex());
-        Console.WriteLine($"Reference to 'staticCharacter' resolved: {resolved}");
+        // Configure sound buttons using ID lookup
+        var footstep1Btn = entitySystem.FindById("footstep1Button") as SoundButtonEntity;
+        if (footstep1Btn != null) footstep1Btn.Configure("footstep1_sound.xml", "Footstep 1");
 
-        if (resolved)
-        {
-            Console.WriteLine($"  -> Found entity at position: {reference.ResolvedEntity.Position}");
-        }
+        var footstep2Btn = entitySystem.FindById("footstep2Button") as SoundButtonEntity;
+        if (footstep2Btn != null) footstep2Btn.Configure("footstep2_sound.xml", "Footstep 2");
 
-        UpdateLoadingProgress(0.7f, "Creating UI buttons...");
+        var footstep3Btn = entitySystem.FindById("footstep3Button") as SoundButtonEntity;
+        if (footstep3Btn != null) footstep3Btn.Configure("footstep3_sound.xml", "Footstep 3");
+
+        // Configure volume buttons using ID lookup
+        var volumeLowBtn = entitySystem.FindById("volumeLowButton") as VolumeButtonEntity;
+        if (volumeLowBtn != null) volumeLowBtn.Configure(0.1f, "Volume: 10%");
+
+        var volumeHighBtn = entitySystem.FindById("volumeHighButton") as VolumeButtonEntity;
+        if (volumeHighBtn != null) volumeHighBtn.Configure(1.0f, "Volume: 100%");
+
+        UpdateLoadingProgress(0.9f, "Scene ready!");
         yield return null;
-
-        // Create sound button entities
-        entitySystem.CreateEntity<SoundButtonEntity>(
-            new Vector2(100, 100),
-            "footstep1_sound.xml",
-            "Footstep 1"
-        );
-
-        entitySystem.CreateEntity<SoundButtonEntity>(
-            new Vector2(100, 150),
-            "footstep2_sound.xml",
-            "Footstep 2"
-        );
-
-        entitySystem.CreateEntity<SoundButtonEntity>(
-            new Vector2(100, 200),
-            "footstep3_sound.xml",
-            "Footstep 3"
-        );
-
-        // Create volume control buttons
-        entitySystem.CreateEntity<VolumeButtonEntity>(
-            new Vector2(100, 250),
-            0.1f,
-            "Volume: 10%"
-        );
-
-        entitySystem.CreateEntity<VolumeButtonEntity>(
-            new Vector2(100, 300),
-            1.0f,
-            "Volume: 100%"
-        );
 
         // Register input handler
         Input.Keyboard.KeyReleased += Reset();
         Input.Keyboard.KeyReleased += PlaySound();
 
         UpdateLoadingProgress(1.0f, "Scene ready!");
-        Console.WriteLine("Character scene loaded successfully with XML IDs!");
+        Console.WriteLine($"Character scene loaded with {entities.Count} entities from XML!");
 
         songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
