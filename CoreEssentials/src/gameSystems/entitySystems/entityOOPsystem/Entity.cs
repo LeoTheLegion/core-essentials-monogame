@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
@@ -119,6 +120,18 @@ public abstract class Entity
     internal EntitySystem? GetEntitySystem() => EntitySystem;
 
     /// <summary>
+    /// The unique identifier for this entity.
+    /// Used for XML-driven scene loading and cross-entity references.
+    /// </summary>
+    private string? _id;
+
+    /// <summary>
+    /// Gets the unique identifier for this entity.
+    /// Returns null if no ID has been assigned.
+    /// </summary>
+    public string? Id => _id;
+
+    /// <summary>
     /// The collection of tags assigned to this entity.
     /// Tags are case-insensitive and provide a simple way to group entities.
     /// </summary>
@@ -196,6 +209,35 @@ public abstract class Entity
     public void RegisterForInstancedRendering(Sprite sprite)
     {
         RegisterForInstancedRendering(sprite.Texture);
+    }
+
+    /// <summary>
+    /// Sets the unique identifier for this entity.
+    /// </summary>
+    /// <param name="id">The unique identifier to assign.</param>
+    /// <exception cref="ArgumentNullException">Thrown when id is null or whitespace.</exception>
+    public void SetId(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            throw new ArgumentNullException(nameof(id), "ID cannot be null or whitespace.");
+        _id = id;
+        EntitySystem?.OnEntityIdChanged(this, id);
+    }
+
+    /// <summary>
+    /// Generates a unique identifier for this entity if one hasn't been assigned.
+    /// The generated ID follows the pattern "{TypeName}_xxxxxxxx" where x is 8 chars of a GUID.
+    /// </summary>
+    /// <returns>The assigned or generated ID.</returns>
+    internal string EnsureId()
+    {
+        if (string.IsNullOrEmpty(_id))
+        {
+            var typeName = GetType().Name;
+            var shortGuid = Guid.NewGuid().ToString("N").Substring(0, 8);
+            _id = $"{typeName}_{shortGuid}";
+        }
+        return _id;
     }
 
     /// <summary>

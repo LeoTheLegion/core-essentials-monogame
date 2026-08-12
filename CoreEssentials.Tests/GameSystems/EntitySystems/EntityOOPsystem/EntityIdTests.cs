@@ -1,0 +1,301 @@
+using System;
+using System.Collections.Generic;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+using Microsoft.Xna.Framework;
+using Xunit;
+
+namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
+
+public class EntityIdTests
+{
+    private EntitySystem CreateSystem() => new EntitySystem();
+
+    // ===== ID Assignment (T1) =====
+
+    [Fact]
+    public void Id_DefaultIsNull()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+
+        Assert.Null(entity.Id);
+    }
+
+    [Fact]
+    public void SetId_AssignsId()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+
+        entity.SetId("hero");
+
+        Assert.Equal("hero", entity.Id);
+    }
+
+    [Fact]
+    public void SetId_NullThrowsException()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+
+        Assert.Throws<ArgumentNullException>(() => entity.SetId(null!));
+    }
+
+    [Fact]
+    public void SetId_WhitespaceThrowsException()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+
+        Assert.Throws<ArgumentNullException>(() => entity.SetId("   "));
+    }
+
+    [Fact]
+    public void EnsureId_GeneratesUniqueIds()
+    {
+        var system = CreateSystem();
+        var entity1 = system.CreateEntity<TestEntity>();
+        var entity2 = system.CreateEntity<TestEntity>();
+
+        var id1 = entity1.EnsureId();
+        var id2 = entity2.EnsureId();
+
+        Assert.NotEqual(id1, id2);
+        Assert.StartsWith("TestEntity_", id1);
+        Assert.StartsWith("TestEntity_", id2);
+    }
+
+    [Fact]
+    public void EnsureId_ReturnsExistingIdIfSet()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("myHero");
+
+        var id = entity.EnsureId();
+
+        Assert.Equal("myHero", id);
+    }
+
+    // ===== ID Lookup (T2) =====
+
+    [Fact]
+    public void FindById_ReturnsEntityWithMatchingId()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("player1");
+
+        var found = system.FindById("player1");
+
+        Assert.NotNull(found);
+        Assert.Equal(entity, found);
+    }
+
+    [Fact]
+    public void FindById_ReturnsNullForUnknownId()
+    {
+        var system = CreateSystem();
+
+        var found = system.FindById("nonexistent");
+
+        Assert.Null(found);
+    }
+
+    [Fact]
+    public void FindById_NullReturnsNull()
+    {
+        var system = CreateSystem();
+
+        var found = system.FindById(null!);
+
+        Assert.Null(found);
+    }
+
+    [Fact]
+    public void FindById_WhitespaceReturnsNull()
+    {
+        var system = CreateSystem();
+
+        var found = system.FindById("   ");
+
+        Assert.Null(found);
+    }
+
+    [Fact]
+    public void FindById_IsCaseInsensitive()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("Hero");
+
+        Assert.Equal(entity, system.FindById("hero"));
+        Assert.Equal(entity, system.FindById("HERO"));
+        Assert.Equal(entity, system.FindById("HeRo"));
+    }
+
+    [Fact]
+    public void DuplicateId_ThrowsException()
+    {
+        var system = CreateSystem();
+        var entity1 = system.CreateEntity<TestEntity>();
+        entity1.SetId("duplicate");
+
+        var entity2 = system.CreateEntity<TestEntity>();
+
+        Assert.Throws<InvalidOperationException>(() => entity2.SetId("duplicate"));
+    }
+
+    [Fact]
+    public void EntityRemovedFromIdIndexOnDestroy()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("tempEntity");
+
+        Assert.NotNull(system.FindById("tempEntity"));
+
+        entity.Destroy();
+        system.Update(new Microsoft.Xna.Framework.GameTime());
+
+        Assert.Null(system.FindById("tempEntity"));
+    }
+
+    // ===== EntityReference (T3) =====
+
+    [Fact]
+    public void EntityReference_StoresTargetId()
+    {
+        var reference = new EntityReference("targetEntity");
+
+        Assert.Equal("targetEntity", reference.TargetId);
+    }
+
+    [Fact]
+    public void EntityReference_NullTargetThrowsException()
+    {
+        Assert.Throws<ArgumentNullException>(() => new EntityReference(null!));
+    }
+
+    [Fact]
+    public void EntityReference_IsResolvedFalseInitially()
+    {
+        var reference = new EntityReference("targetEntity");
+
+        Assert.False(reference.IsResolved);
+    }
+
+    [Fact]
+    public void EntityReference_Resolve_FindsEntity()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("targetEntity");
+
+        var reference = new EntityReference("targetEntity");
+        var entities = new Dictionary<string, Entity> { { "targetEntity", entity } };
+
+        var result = reference.Resolve(entities);
+
+        Assert.True(result);
+        Assert.True(reference.IsResolved);
+        Assert.Equal(entity, reference.ResolvedEntity);
+    }
+
+    [Fact]
+    public void EntityReference_Resolve_MissingEntityReturnsFalse()
+    {
+        var reference = new EntityReference("missingEntity");
+        var entities = new Dictionary<string, Entity>();
+
+        var result = reference.Resolve(entities);
+
+        Assert.False(result);
+        Assert.False(reference.IsResolved);
+        Assert.Null(reference.ResolvedEntity);
+    }
+
+    [Fact]
+    public void EntityReference_GetEntity_ThrowsWhenNotResolved()
+    {
+        var reference = new EntityReference("targetEntity");
+
+        Assert.Throws<InvalidOperationException>(() => reference.GetEntity());
+    }
+
+    [Fact]
+    public void EntityReference_GetEntity_ReturnsResolvedEntity()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("targetEntity");
+
+        var reference = new EntityReference("targetEntity");
+        var entities = new Dictionary<string, Entity> { { "targetEntity", entity } };
+        reference.Resolve(entities);
+
+        var resolved = reference.GetEntity();
+
+        Assert.Equal(entity, resolved);
+    }
+
+    [Fact]
+    public void EntityReference_ImplicitConversion_ReturnsResolvedEntity()
+    {
+        var system = CreateSystem();
+        var entity = system.CreateEntity<TestEntity>();
+        entity.SetId("targetEntity");
+
+        var reference = new EntityReference("targetEntity");
+        var entities = new Dictionary<string, Entity> { { "targetEntity", entity } };
+        reference.Resolve(entities);
+
+        Entity? converted = reference;
+
+        Assert.Equal(entity, converted);
+    }
+
+    [Fact]
+    public void ResolveReferences_ResolvesAllHolders()
+    {
+        var system = CreateSystem();
+        var target = system.CreateEntity<TestEntity>();
+        target.SetId("target");
+
+        var holder = system.CreateEntity<TestReferenceHolder>();
+        holder.AddReference(new EntityReference("target"));
+
+        var resolved = system.ResolveReferences();
+
+        Assert.Equal(1, resolved);
+        Assert.True(holder.References[0].IsResolved);
+    }
+
+    // ===== Test Entities =====
+
+    private class TestEntity : Entity
+    {
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+    }
+
+    private class TestReferenceHolder : Entity, IEntityReferenceHolder
+    {
+        public List<EntityReference> References { get; } = new();
+
+        public void AddReference(EntityReference reference) => References.Add(reference);
+
+        public int ResolveReferences(Dictionary<string, Entity> entities)
+        {
+            int resolved = 0;
+            foreach (var reference in References)
+            {
+                if (reference.Resolve(entities))
+                    resolved++;
+            }
+            return resolved;
+        }
+
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+    }
+}

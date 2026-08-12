@@ -8,29 +8,28 @@
 
 ## Tasks
 
-- [ ] **T1: Add ID storage to `Entity` (1 pt)** ⭐ User-facing
+- [x] **T1: Add ID storage to `Entity` (1 pt)** ⭐ User-facing
   - `string Id` property for unique identifier
   - `SetId(string id)` method
   - Auto-generate IDs if not provided
 
-- [ ] **T2: Add ID lookup to `EntitySystem` (1.5 pts)** ⭐ User-facing
+- [x] **T2: Add ID lookup to `EntitySystem` (1.5 pts)** ⭐ User-facing
   - `Dictionary<string, Entity>` for ID index
   - `FindById(string id)` method
   - `ResolveReferences()` method for cross-entity linking
-  - Parse `<Reference>` elements in XML
 
-- [ ] **T3: Add reference resolution (1 pt)** ⭐ User-facing
+- [x] **T3: Add reference resolution (1 pt)** ⭐ User-facing
   - `EntityReference` class for deferred entity lookup
   - Auto-resolve references after scene load
   - Handle missing references gracefully
 
-- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T4: Write unit tests (1 pt)** 🔁 Validation
   - Test ID assignment and lookup
   - Test reference resolution
   - Test duplicate ID handling
   - Test missing reference handling
 
-- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+- [x] **T5: Create user documentation (0.5 pt)** 📚 User-facing
   - Create `docs/EntityIDs.md` user guide
   - Document ID assignment and lookup
   - Document reference resolution
