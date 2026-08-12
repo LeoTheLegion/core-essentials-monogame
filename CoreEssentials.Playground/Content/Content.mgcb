@@ -59,6 +59,12 @@
 #begin character_sprite.xml
 /copy:character_sprite.xml
 
+#begin CharacterScene.xml
+/copy:CharacterScene.xml
+
+#begin CharacterTemplate.xml
+/copy:CharacterTemplate.xml
+
 #begin footstep00.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

@@ -46,36 +46,9 @@ public class CharacterScene : Scene
 
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 
-        // --- Demo: Load entities from XML with IDs ---
-        string sceneXml = $@"
-<Scene>
-    <Entity Type=""CoreEssentials.Playground.CharacterEntity"" Id=""staticCharacter"">
-        <Position X=""{graphics.PreferredBackBufferWidth / 4}"" Y=""{graphics.PreferredBackBufferHeight / 2}"" />
-        <Tags>
-            <Tag Name=""Character"" />
-            <Tag Name=""Static"" />
-        </Tags>
-    </Entity>
-
-    <Entity Type=""CoreEssentials.Playground.AnimatedCharacterEntity"" Id=""animatedCharacter"">
-        <Position X=""{graphics.PreferredBackBufferWidth * 3 / 4}"" Y=""{graphics.PreferredBackBufferHeight / 2}"" />
-        <Tags>
-            <Tag Name=""Character"" />
-            <Tag Name=""Animated"" />
-        </Tags>
-    </Entity>
-
-    <Entity Type=""CoreEssentials.Playground.TextEntity"" Id=""infoText"">
-        <Position X=""{graphics.PreferredBackBufferWidth / 2}"" Y=""20"" />
-    </Entity>
-
-    <Entity Type=""CoreEssentials.Playground.TextEntity"" Id=""characterInfoText"">
-        <Position X=""{graphics.PreferredBackBufferWidth / 2}"" Y=""{graphics.PreferredBackBufferHeight - 40}"" />
-    </Entity>
-</Scene>";
-
-        // Parse and load entities from XML
-        var sceneElement = System.Xml.Linq.XDocument.Parse(sceneXml).Root;
+        // --- Demo: Load entities from XML file with IDs ---
+        var sceneAsset = AssetManager.LoadAsset<XMLAsset>("CharacterScene.xml");
+        var sceneElement = System.Xml.Linq.XDocument.Parse(sceneAsset.XMLContent).Root;
         foreach (var entityElement in sceneElement.Elements("Entity"))
         {
             string typeName = entityElement.Attribute("Type")?.Value ?? throw new FormatException("Entity type is required");

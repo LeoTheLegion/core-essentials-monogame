@@ -17,9 +17,20 @@ namespace CoreEssentials.Playground
     {
         private AnimatedSprite _animatedSprite;
         private AnimationState _animationState;
+
+        // Parameterless constructor for XML-based entity loading
+        public AnimatedCharacterEntity()
+        {
+        }
+
         public AnimatedCharacterEntity(Vector2 position)
         {
             Position = position;
+        }
+
+        public override void OnStart()
+        {
+            base.OnStart();
 
             // Load the animated sprite
             _animatedSprite = (AnimatedSprite)AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
@@ -29,11 +40,6 @@ namespace CoreEssentials.Playground
 
             Console.WriteLine($"Animation has {_animatedSprite.FrameCount} frames with base frame rate of {_animatedSprite.FrameRate}s per frame");
             Console.WriteLine($"Effective frame time with speed {_animationState.Speed}: {_animationState.EffectiveFrameTime}s per frame");
-        }
-
-        public override void OnStart()
-        {
-            base.OnStart();
             Console.WriteLine("Animated character entity created!");
         }
 
