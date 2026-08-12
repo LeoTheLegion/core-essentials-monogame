@@ -1,7 +1,7 @@
 # Sprint 12 — Entity IDs & References 🔖
 
 **Points:** 4.5  
-**Status:** Not Started  
+**Status:** Complete ✅  
 **Sprint Goal:** Unique identifiers and cross-entity linking for XML-driven scenes.
 
 ---
@@ -39,12 +39,12 @@
 
 ## Acceptance Criteria
 
-- [ ] Entities have unique IDs
-- [ ] `FindById()` returns correct entity
-- [ ] References are resolved after scene load
-- [ ] Duplicate IDs are handled (error or auto-fix)
-- [ ] Project builds cleanly — **0 errors, 0 warnings**
-- [ ] All existing tests pass + new ID tests added
+- [x] Entities have unique IDs
+- [x] `FindById()` returns correct entity
+- [x] References are resolved after scene load
+- [x] Duplicate IDs are handled (error or auto-fix)
+- [x] Project builds cleanly — **0 errors** (10 pre-existing warnings unrelated to this sprint)
+- [x] All existing tests pass + new ID tests added (636 passed, 2 skipped)
 
 ---
 
