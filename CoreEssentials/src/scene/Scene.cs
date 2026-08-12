@@ -4,6 +4,9 @@ using System.Linq;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.Coroutines;
+using CoreEssentials.Assets;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -229,6 +232,31 @@ public abstract class Scene
         if (_gameSystems.TryGetValue(typeof(T), out var system))
             return (T)system;
         throw new KeyNotFoundException("Game system not found: " + typeof(T).Name);
+    }
+
+    /// <summary>
+    /// Loads entities from an XML scene definition file by asset name.
+    /// Uses <see cref="EntitySerializer.LoadSceneFromXml"/> for two-pass loading with reference resolution.
+    /// </summary>
+    /// <param name="xmlAssetName">The name/key of the XML asset in the AssetManager (e.g., "MyScene.xml").</param>
+    /// <param name="entitySystem">The EntitySystem to create entities in.</param>
+    /// <returns>A list of all root entities loaded from the scene.</returns>
+    protected List<Entity> LoadEntitiesFromXml(string xmlAssetName, EntitySystem entitySystem)
+    {
+        var sceneAsset = AssetManager.LoadAsset<XMLAsset>(xmlAssetName);
+        return LoadEntitiesFromXml(sceneAsset, entitySystem);
+    }
+
+    /// <summary>
+    /// Loads entities from an already-loaded <see cref="XMLAsset"/>.
+    /// Uses <see cref="EntitySerializer.LoadSceneFromXml"/> for two-pass loading with reference resolution.
+    /// </summary>
+    /// <param name="xmlAsset">The XML asset containing the scene definition.</param>
+    /// <param name="entitySystem">The EntitySystem to create entities in.</param>
+    /// <returns>A list of all root entities loaded from the scene.</returns>
+    protected List<Entity> LoadEntitiesFromXml(XMLAsset xmlAsset, EntitySystem entitySystem)
+    {
+        return EntitySerializer.LoadSceneFromXml(xmlAsset.XMLContent!, entitySystem);
     }
 
     /// <summary>

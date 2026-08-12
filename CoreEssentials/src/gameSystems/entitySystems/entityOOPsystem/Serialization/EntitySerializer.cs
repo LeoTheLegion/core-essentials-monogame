@@ -356,8 +356,21 @@ public static class EntitySerializer
         }
     }
 
-    private static void ApplyEntityProperties(Entity entity, XElement element)
+    /// <summary>
+    /// Applies entity properties from an XML element to an existing entity.
+    /// This includes position, rotation, sort order, tags, active state, and ID.
+    /// </summary>
+    /// <param name="entity">The entity to configure.</param>
+    /// <param name="element">The XML element containing entity properties.</param>
+    public static void ApplyEntityProperties(Entity entity, XElement element)
     {
+        // ID
+        var idAttribute = element.Attribute("Id")?.Value;
+        if (!string.IsNullOrWhiteSpace(idAttribute))
+        {
+            entity.SetId(idAttribute);
+        }
+
         // Position
         var positionElement = element.Element("Position");
         if (positionElement != null)

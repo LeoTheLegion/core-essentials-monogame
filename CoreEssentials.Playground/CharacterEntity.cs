@@ -12,17 +12,24 @@ namespace CoreEssentials.Playground;
 public class CharacterEntity : Entity
 {
     private Sprite _sprite;
+
+    // Parameterless constructor for XML-based entity loading
+    public CharacterEntity()
+    {
+    }
+
     public CharacterEntity(Vector2 position)
     {
         Position = position;
-        
-        // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
     }
     
     public override void OnStart()
     {
         base.OnStart();
+        
+        // Load the character sprite that references the sprite sheet
+        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
+        
         Console.WriteLine("Character entity created!");
     }
     

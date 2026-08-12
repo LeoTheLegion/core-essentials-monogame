@@ -59,6 +59,21 @@
 #begin character_sprite.xml
 /copy:character_sprite.xml
 
+#begin CharacterScene.xml
+/copy:CharacterScene.xml
+
+#begin CharacterTemplate.xml
+/copy:CharacterTemplate.xml
+
+#begin SoundButtonTemplate.xml
+/copy:SoundButtonTemplate.xml
+
+#begin VolumeButtonTemplate.xml
+/copy:VolumeButtonTemplate.xml
+
+#begin TextTemplate.xml
+/copy:TextTemplate.xml
+
 #begin footstep00.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

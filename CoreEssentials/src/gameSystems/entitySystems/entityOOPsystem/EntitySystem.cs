@@ -28,6 +28,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     private Dictionary<string, List<Entity>> _tagIndex = new Dictionary<string, List<Entity>>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Dictionary for O(1) ID-based entity lookups.
+    /// Maps entity IDs to entities.
+    /// </summary>
+    private readonly Dictionary<string, Entity> _idIndex = new Dictionary<string, Entity>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Dictionary of entity pools, keyed by type name.
     /// </summary>
     private Dictionary<Type, object> _pools = new Dictionary<Type, object>();
@@ -106,6 +112,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 }
 
                 UpdateTagIndexForEntity(destroyedEntity, false);
+                UpdateIdIndexForEntity(destroyedEntity, false);
                 UpdateSpatialGridForEntity(destroyedEntity, false);
                 destroyedEntity.OnDestroy();
                 _entities.RemoveAt(i);
@@ -209,6 +216,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         entity.SetGameSystem(this);
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
+        UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
         entity.OnStart();
         return entity;
@@ -221,12 +229,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="type">The Type of entity to create.</param>
     /// <param name="args">Constructor arguments for the entity.</param>
     /// <returns>The newly created entity (not yet started).</returns>
-    internal Entity CreateEntityUnstarted(Type type, params object[] args)
+    public Entity CreateEntityUnstarted(Type type, params object[] args)
     {
         Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
         entity.SetGameSystem(this);
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
+        UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
         return entity;
     }
@@ -257,6 +266,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         entity.SetGameSystem(this);
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
+        UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
         entity.OnStart();
         return entity;
@@ -276,6 +286,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         // Remove from entity list
         _entities.Remove(entity);
         UpdateTagIndexForEntity(entity, false);
+        UpdateIdIndexForEntity(entity, false);
         UpdateSpatialGridForEntity(entity, false);
 
         // Return to pool
@@ -349,6 +360,46 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         if (_tagIndex.TryGetValue(tag, out var entities) && entities.Count > 0)
             return entities[0];
         return null;
+    }
+
+    /// <summary>
+    /// Finds an entity by its unique ID.
+    /// </summary>
+    /// <param name="id">The unique identifier of the entity.</param>
+    /// <returns>The entity with the specified ID, or null if not found.</returns>
+    public Entity? FindById(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        return _idIndex.TryGetValue(id, out var entity) ? entity : null;
+    }
+
+    /// <summary>
+    /// Gets a snapshot of the current ID index for reference resolution.
+    /// </summary>
+    /// <returns>A dictionary mapping entity IDs to entities.</returns>
+    public Dictionary<string, Entity> GetIdIndex() => new(_idIndex);
+
+    /// <summary>
+    /// Resolves all pending entity references after scene load.
+    /// Iterates over all registered <see cref="Serialization.EntityReference"/> instances and resolves them against the ID index.
+    /// </summary>
+    /// <returns>The number of successfully resolved references.</returns>
+    public int ResolveReferences()
+    {
+        var entitiesList = new Dictionary<string, Entity>(_idIndex);
+        int resolved = 0;
+
+        foreach (var entity in _entities)
+        {
+            if (entity is Serialization.IEntityReferenceHolder holder)
+            {
+                resolved += holder.ResolveReferences(entitiesList);
+            }
+        }
+
+        return resolved;
     }
 
     /// <summary>
@@ -590,6 +641,26 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Called by an entity when its ID changes.
+    /// </summary>
+    /// <param name="entity">The entity whose ID changed.</param>
+    /// <param name="newId">The new ID.</param>
+    internal void OnEntityIdChanged(Entity entity, string newId)
+    {
+        // Remove old ID from index if it existed
+        var oldId = entity.Id;
+        if (!string.IsNullOrEmpty(oldId) && oldId != newId)
+            _idIndex.Remove(oldId);
+
+        // Check for duplicate
+        if (_idIndex.ContainsKey(newId))
+            throw new InvalidOperationException($"Duplicate entity ID '{newId}'. Each entity must have a unique identifier.");
+
+        // Add new ID to index
+        _idIndex[newId] = entity;
+    }
+
+    /// <summary>
     /// Updates the tag index when an entity's tags change or when an entity is created/destroyed.
     /// </summary>
     /// <param name="entity">The entity whose tags have changed.</param>
@@ -617,6 +688,29 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                         _tagIndex.Remove(tag);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Updates the ID index when an entity is created or destroyed.
+    /// </summary>
+    /// <param name="entity">The entity whose ID should be indexed.</param>
+    /// <param name="adding">True to add the entity to the index, false to remove it.</param>
+    private void UpdateIdIndexForEntity(Entity entity, bool adding)
+    {
+        var id = entity.Id;
+        if (string.IsNullOrEmpty(id))
+            return;
+
+        if (adding)
+        {
+            // Only add if not already in index (SetId may have already registered it)
+            if (!_idIndex.ContainsKey(id))
+                _idIndex[id] = entity;
+        }
+        else
+        {
+            _idIndex.Remove(id);
         }
     }
 
