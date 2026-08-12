@@ -1,6 +1,6 @@
 # Sprint 14 — Entity Tweening 🎬
 
-**Points:** 4  
+**Points:** 4.5  
 **Status:** Not Started  
 **Sprint Goal:** Built-in animation for position, rotation, scale, and custom properties using MonoGame.Extended.
 
@@ -33,6 +33,12 @@
   - Test tween chaining
   - Test tween cancellation
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/EntityTweening.md` user guide
+  - Document tween API
+  - Document easing functions
+  - Provide animation examples
+
 ---
 
 ## Acceptance Criteria
@@ -54,6 +60,7 @@
 | `Tweening/TweenBuilder.cs` | New | ⭐ PUBLIC | Fluent tween API |
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add tween management |
 | `EntityTweenTests.cs` | New | 🔒 Internal | Unit tests for tweening |
+| `docs/EntityTweening.md` | New | ⭐ PUBLIC | User guide for entity tweening |
 
 ---
 

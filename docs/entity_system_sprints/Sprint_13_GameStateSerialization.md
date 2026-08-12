@@ -1,6 +1,6 @@
 # Sprint 13 — Game State Serialization 💾
 
-**Points:** 6  
+**Points:** 6.5  
 **Status:** Not Started  
 **Sprint Goal:** Serialize and restore the full entity state for save games.
 
@@ -33,6 +33,12 @@
   - Test component serialization
   - Test missing entity handling
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/GameStateSerialization.md` user guide
+  - Document save/load API
+  - Document merge mode usage
+  - Provide save game examples
+
 ---
 
 ## Acceptance Criteria
@@ -54,6 +60,7 @@
 | `Serialization/ISerializableComponent.cs` | New | ⭐ PUBLIC | Component serialization interface |
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add `SaveState`, `LoadState` |
 | `GameStateSerializerTests.cs` | New | 🔒 Internal | Unit tests for game state |
+| `docs/GameStateSerialization.md` | New | ⭐ PUBLIC | User guide for save/load |
 
 ---
 

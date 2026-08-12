@@ -2,6 +2,22 @@
 
 The Entity System in CoreEssentials-MonoGame provides an object-oriented approach to managing game objects. It allows you to define, create, and manage entities in your game scenes.
 
+## Feature Overview
+
+The Entity System includes several advanced features:
+
+| Feature | Documentation | Description |
+|---------|---------------|-------------|
+| **Entity Tags** | [EntityTags.md](./EntityTags.md) | Categorize entities with tags for flexible querying |
+| **Query API** | [EntityQueryAPI.md](./EntityQueryAPI.md) | Find entities by type, position, and spatial queries |
+| **Entity Pooling** | [EntityPooling.md](./EntityPooling.md) | Reuse entities to reduce garbage collection |
+| **Hierarchy** | [EntityHierarchy.md](./EntityHierarchy.md) | Parent-child relationships with transform inheritance |
+| **Spatial Partitioning** | [SpatialPartitioning.md](./SpatialPartitioning.md) | Grid-based optimization for spatial queries |
+| **Lifecycle** | [EntityLifecycle.md](./EntityLifecycle.md) | Delayed destruction, spawning, and respawning |
+| **Templates** | [EntityTemplates.md](./EntityTemplates.md) | Reusable entity blueprints from XML |
+| **XML Definitions** | [XMLEntityDefinitions.md](./XMLEntityDefinitions.md) | Load entities from XML files |
+| **Event System** | [EventSystem.md](./EventSystem.md) | Decoupled entity communication |
+
 ## Key Components
 
 ### EntitySystem
@@ -132,3 +148,19 @@ public class PhysicsEntity : Entity
 - Use the entity system to manage entity creation and retrieval
 - Clean up physics bodies when destroying entities
 - Group similar entities under common base classes for shared behavior
+- Use tags for flexible categorization instead of deep inheritance
+- Use pooling for high-frequency entities like bullets and particles
+- Use spatial queries for performance-critical operations
+- Use templates for reusable entity definitions
+
+## See Also
+
+- [Entity Tags](./EntityTags.md) — Tag-based entity categorization
+- [Entity Query API](./EntityQueryAPI.md) — Finding entities
+- [Entity Pooling](./EntityPooling.md) — Object pooling
+- [Entity Hierarchy](./EntityHierarchy.md) — Parent-child relationships
+- [Spatial Partitioning](./SpatialPartitioning.md) — Grid-based optimization
+- [Entity Lifecycle](./EntityLifecycle.md) — Delayed operations
+- [Entity Templates](./EntityTemplates.md) — Reusable blueprints
+- [XML Entity Definitions](./XMLEntityDefinitions.md) — XML loading
+- [Event System](./EventSystem.md) — Entity communication

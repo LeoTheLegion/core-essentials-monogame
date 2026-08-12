@@ -1,6 +1,6 @@
 # Sprint 18 — Scriptable Behaviors 📜
 
-**Points:** 6  
+**Points:** 6.5  
 **Status:** Not Started  
 **Sprint Goal:** Attach coroutines or scripts declaratively via XML or API.
 
@@ -33,6 +33,12 @@
   - Test script lifecycle
   - Test script cleanup
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/ScriptableBehaviors.md` user guide
+  - Document script registration
+  - Document ScriptComponent usage
+  - Provide XML examples
+
 ---
 
 ## Acceptance Criteria
@@ -54,6 +60,7 @@
 | `Scripting/ScriptComponent.cs` | New | ⭐ PUBLIC | Script component |
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add script management |
 | `ScriptableBehaviorTests.cs` | New | 🔒 Internal | Unit tests for scripts |
+| `docs/ScriptableBehaviors.md` | New | ⭐ PUBLIC | User guide for scriptable behaviors |
 
 ---
 

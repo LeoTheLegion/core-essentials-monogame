@@ -100,7 +100,8 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 | ⏱️ [9](Sprint_9_DelayedLifecycle.md) | Delayed Lifecycle | 3 | Not Started | Built-in spawn/destroy/respawn scheduling |
 | 📄 [10](Sprint_10_XMLEntityDefinitions.md) | XML Entity Definitions | 7 | Not Started | Declarative entity definitions using XML |
 | 📦 [11](Sprint_11_EntityTemplates.md) | Entity Templates/Prefabs | 5 | Not Started | Reusable entity blueprints |
-| 🔖 [12](Sprint_12_EntityIDs.md) | Entity IDs & References | 4 | Not Started | Unique identifiers and cross-entity linking |
+| � [11.5](Sprint_11_5_UserDocumentation.md) | User Documentation | 8 | Not Started | User guides for completed sprints |
+| �🔖 [12](Sprint_12_EntityIDs.md) | Entity IDs & References | 4 | Not Started | Unique identifiers and cross-entity linking |
 | 💾 [13](Sprint_13_GameStateSerialization.md) | Game State Serialization | 6 | Not Started | Save/load full entity state |
 | 🎬 [14](Sprint_14_EntityTweening.md) | Entity Tweening | 4 | Not Started | Built-in animation with MonoGame.Extended |
 | 🔍 [15](Sprint_15_DebugVisualization.md) | Debug Visualization | 3 | Not Started | Draw entity metadata in debug mode |

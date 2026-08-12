@@ -1,6 +1,6 @@
 # Sprint 15 — Debug Visualization 🔍
 
-**Points:** 3  
+**Points:** 3.5  
 **Status:** Not Started  
 **Sprint Goal:** Draw entity metadata in debug mode for visual debugging.
 
@@ -34,6 +34,12 @@
   - Test individual debug overlays
   - Test performance impact of debug mode
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/EntityDebugVisualization.md` user guide
+  - Document debug configuration
+  - Document debug overlays
+  - Provide debugging examples
+
 ---
 
 ## Acceptance Criteria
@@ -55,6 +61,7 @@
 | `Debug/EntityDebugDraw.cs` | New | 🔒 Internal | Debug drawing logic |
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add debug mode |
 | `EntityDebugTests.cs` | New | 🔒 Internal | Unit tests for debug visualization |
+| `docs/EntityDebugVisualization.md` | New | ⭐ PUBLIC | User guide for debug visualization |
 
 ---
 

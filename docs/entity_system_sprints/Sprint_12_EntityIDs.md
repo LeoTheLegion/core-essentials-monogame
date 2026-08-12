@@ -1,6 +1,6 @@
 # Sprint 12 — Entity IDs & References 🔖
 
-**Points:** 4  
+**Points:** 4.5  
 **Status:** Not Started  
 **Sprint Goal:** Unique identifiers and cross-entity linking for XML-driven scenes.
 
@@ -30,6 +30,12 @@
   - Test duplicate ID handling
   - Test missing reference handling
 
+- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+  - Create `docs/EntityIDs.md` user guide
+  - Document ID assignment and lookup
+  - Document reference resolution
+  - Provide XML examples with `<Reference>` elements
+
 ---
 
 ## Acceptance Criteria
@@ -51,6 +57,7 @@
 | `Entity.cs` | Modified | ⭐ PUBLIC | Add `Id` property |
 | `EntitySystem.cs` | Modified | ⭐ PUBLIC | Add ID index and lookup |
 | `EntityIdTests.cs` | New | 🔒 Internal | Unit tests for IDs and references |
+| `docs/EntityIDs.md` | New | ⭐ PUBLIC | User guide for entity IDs and references |
 
 ---
 
