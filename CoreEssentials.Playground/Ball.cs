@@ -185,15 +185,8 @@ public class Ball : Entity
         // Restore base state (Position, Scale, Tags, etc.)
         base.RestoreState(element);
 
-        // Sync physics body to restored entity transform before applying velocity
-        // (body was created at 0,0 during OnStart; we need it at the saved position)
-        if (_rigidbodyComponent.IsBodyCreated)
-        {
-            _rigidbodyComponent.Position = Position;
-            _rigidbodyComponent.Rotation = Rotation;
-        }
-
         // Restore physics velocity — body exists since OnStart ran
+        // (position/rotation sync happens automatically on first Update via component)
         var physics = element.Element("Physics");
         if (physics != null && _rigidbodyComponent.IsBodyCreated)
         {

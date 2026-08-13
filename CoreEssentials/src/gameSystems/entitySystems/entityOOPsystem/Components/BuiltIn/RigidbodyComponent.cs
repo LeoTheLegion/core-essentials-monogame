@@ -107,6 +107,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
 
     private float _mass = 1.0f;
     private bool _fixedRotation;
+    private bool _needsInitialSync;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RigidbodyComponent"/> class.
@@ -135,6 +136,15 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     {
         if (_body == null)
             return;
+
+        // First frame after body creation: sync entity → body so physics starts at the right position.
+        // This handles the case where RestoreState() changed entity Position/Rotation after OnStart().
+        if (_needsInitialSync)
+        {
+            _body.Position = Owner.Position;
+            _body.Rotation = Owner.Rotation;
+            _needsInitialSync = false;
+        }
 
         if (SyncFromPhysics)
         {
@@ -208,22 +218,15 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     }
 
     /// <summary>
-    /// Gets or sets the world position of the physics body.
+    /// Syncs the physics body transform to match the entity's current Position and Rotation.
+    /// Use this when you need to force the physics body to a specific position without waiting for Update().
     /// Setting this directly bypasses physics simulation (useful for teleporting or restoring saved state).
     /// </summary>
-    public Vector2 Position
+    public void SyncBodyFromEntity()
     {
-        get => _body?.Position ?? default;
-        set { if (_body != null) _body.Position = value; }
-    }
-
-    /// <summary>
-    /// Gets or sets the rotation of the physics body in radians.
-    /// </summary>
-    public float Rotation
-    {
-        get => _body?.Rotation ?? 0f;
-        set { if (_body != null) _body.Rotation = value; }
+        if (_body == null) return;
+        _body.Position = Owner.Position;
+        _body.Rotation = Owner.Rotation;
     }
 
     /// <summary>
@@ -253,6 +256,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         _body.FixedRotation = _fixedRotation;
 
         _bodyCreated = true;
+        _needsInitialSync = true;
     }
 
     /// <summary>
