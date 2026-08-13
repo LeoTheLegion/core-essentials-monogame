@@ -18,11 +18,12 @@
   - Created: `CoreEssentials/src/GameSystems/EntitySystems/EntityOOPSystem/Serialization/GameStateSerializer.cs`
 
 - [x] **T2: Entity-driven serialization (2 pts)** ⭐ User-facing
-  - Virtual `SerializeToXml()` and `DeserializeFromXml(mergeExisting)` on Entity base class ✓
-  - Base methods save Id, Type, Position, Rotation, Scale, Sort, Active, Tags ✓
+  - Virtual `SerializeToXml()` on Entity base class for saving state ✓
+  - Virtual `RestoreState(element, mergeTags)` on Entity base class for post-OnStart restoration ✓
+  - Base methods save/restore Id, Type, Position, Rotation, Scale, Sort, Active, Tags ✓
   - Entities override to add custom state (physics velocity, sprite color, etc.) ✓
-  - Deferred component restoration pattern for components created in `OnStart()` ✓
-  - Merge mode preserves runtime tags ✓
+  - Clean single-pass flow: `CreateEntity()` → `OnStart()` → `RestoreState()` — components guaranteed to exist ✓
+  - Merge mode preserves runtime tags via `mergeTags` parameter ✓
 
 - [x] **T3: Add merge mode support (1 pt)** ⭐ User-facing
   - Merge existing entities with saved state ✓
@@ -63,10 +64,10 @@
 
 | File | Type | Visibility | Notes |
 |------|------|------------|-------|
-| `Serialization/GameStateSerializer.cs` | Modified | ⭐ PUBLIC | Refactored to entity-driven approach ✓ |
-| `Entity.cs` | Modified | ⭐ PUBLIC | Virtual `SerializeToXml()` / `DeserializeFromXml(mergeExisting)` ✓ |
+| `Serialization/GameStateSerializer.cs` | Modified | ⭐ PUBLIC | Single-pass CreateEntity → RestoreState flow ✓ |
+| `Entity.cs` | Modified | ⭐ PUBLIC | Virtual `SerializeToXml()` / `RestoreState(mergeTags)` ✓ |
 | `Serialization/EntitySerializer.cs` | Modified | ⭐ PUBLIC | Scale migration for backward compatibility ✓ |
-| `Ball.cs` (Playground) | Modified | 🔒 Demo | Physics + color round-trip with deferred restore ✓ |
+| `Ball.cs` (Playground) | Modified | 🔒 Demo | Physics + color round-trip via RestoreState ✓ |
 | `GameStateSerializerTests.cs` | Modified | 🔒 Internal | Updated for entity-driven approach ✓ |
 | `EntityDrivenSerializationTests.cs` | New | 🔒 Internal | 9 tests: transform, color uint, merge mode, deferred pattern ✓ |
 | `docs/GameStateSerialization.md` | Modified | ⭐ PUBLIC | Entity-driven API docs with examples ✓ |
@@ -76,10 +77,10 @@
 ## Progress Notes
 
 ### Completed
-- GameStateSerializer refactored from component-driven to entity-driven approach
-- Entity base class provides virtual `SerializeToXml()` / `DeserializeFromXml(mergeExisting)`
-- Merge mode preserves runtime tags (was clearing them before)
-- Deferred component restoration pattern for components created in `OnStart()`
+- GameStateSerializer uses clean single-pass CreateEntity → RestoreState flow
+- Entity base class provides virtual `SerializeToXml()` / `RestoreState(mergeTags)`
+- Components guaranteed to exist when RestoreState() is called (post-OnStart)
+- Merge mode preserves runtime tags via `mergeTags` parameter
 - Ball physics velocity + sprite color round-trip working
 - Scale migration in EntitySerializer for backward compatibility with old XML format
 - 9 new entity-driven serialization tests added (664 total passing)
@@ -87,9 +88,9 @@
 
 ### Issues Fixed
 - ~~ISerializableComponent~~ → Replaced with entity-driven approach (entities declare what to save)
-- ~~Components null during deserialization~~ → Deferred restore pattern stores XML, applies after OnStart()
+- ~~Components null during deserialization~~ → Eliminated: RestoreState() runs AFTER OnStart(), components always exist
 - ~~Color round-trip failing for white/red~~ → Use `Color.PackedValue` (uint) instead of signed int
-- ~~Merge mode clearing runtime tags~~ → Added `mergeExisting` flag to `DeserializeFromXml()`
+- ~~Merge mode clearing runtime tags~~ → `mergeTags` parameter on `RestoreState()` preserves existing tags
 - ~~Old XML Scale on SpriteComponent~~ → EntitySerializer redirects to Entity.Scale
 
 ### Next Steps
@@ -120,12 +121,11 @@
 - **Testable** — call `entity.SerializeToXml()` directly in unit tests
 - **Easy for devs** — just override two methods, no interfaces to implement on components
 
-**How deferred restoration works:**
+**How the clean lifecycle works:**
 
 ```
-LoadState → CreateEntity (no OnStart yet) → DeserializeFromXml() → OnStart()
-                                                          ↑
-                                              Components are null here!
-                                              So we store XML elements and apply them after OnStart()
+LoadState → CreateEntity(type) → OnStart() runs → Components exist → RestoreState(element)
 ```
+
+No deferred state needed — `RestoreState()` is called AFTER `OnStart()`, so all components created during initialization are fully initialized and ready to use. For merge mode, pre-existing entities get `mergeTags: true` to preserve their runtime tags.
 

@@ -82,16 +82,31 @@ Loads entity system state from XML string.
 
 Instead of relying on components to know what to save, **entities explicitly declare their serialization needs** by overriding virtual methods. This approach is simpler, more transparent, and easier to debug.
 
+### Entity Lifecycle During Load
+
+When loading state, the serializer follows a clean single-pass flow:
+
+```
+LoadStateFromXml → CreateEntity(type) → OnStart() runs → Components exist → RestoreState(element)
+```
+
+1. **`CreateEntity(type)`** — instantiates the entity and calls `OnStart()`
+2. **`OnStart()`** — entity creates all its components with default values
+3. **`RestoreState(element)`** — applies saved XML state; **components are guaranteed to exist**
+
+This eliminates the need for deferred state patterns — by the time `RestoreState()` is called, all components created in `OnStart()` are fully initialized.
+
 ### How It Works
 
-The `Entity` base class provides two virtual methods:
+The `Entity` base class provides two virtual methods for entity-driven serialization:
 
 ```csharp
 // Called during save - returns XElement with your state
 public virtual XElement SerializeToXml()
 
-// Called during load - restore your state from XElement
-public virtual void DeserializeFromXml(XElement element, bool mergeExisting = false)
+// Called during load AFTER OnStart() - restore your state from XElement
+// Components created in OnStart() are guaranteed to exist here
+public virtual void RestoreState(XElement element, bool mergeTags = false)
 ```
 
 ### Example: Entity with Custom State
@@ -116,10 +131,10 @@ public class Player : Entity
         return element;
     }
 
-    public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
+    public override void RestoreState(XElement element, bool mergeTags = false)
     {
         // Base restores Position, Rotation, Scale, Tags, etc.
-        base.DeserializeFromXml(element, mergeExisting);
+        base.RestoreState(element, mergeTags);
 
         // Restore custom state
         var playerState = element.Element("PlayerState");
@@ -214,43 +229,58 @@ When changing entity structure, consider save file versioning:
 ```
 Update your loader to handle different versions.
 
-### 3. Deferred Component Restoration
+### 3. Components Exist in `RestoreState()`
 
-If your entity creates components in `OnStart()` (like loading sprites from assets), the components **won't exist yet** when `DeserializeFromXml()` is called because it runs *before* `OnStart()`.
-
-**Solution**: Store the XML element during deserialization, then apply it after `OnStart()` creates the component:
+Since `RestoreState()` is called **after** `OnStart()`, all components created during initialization are guaranteed to exist:
 
 ```csharp
 public class Ball : Entity
 {
     private SpriteComponent? _spriteComponent;
-    private XElement? _deferredSpriteElement;  // Stored for later
-
-    public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
-    {
-        base.DeserializeFromXml(element, mergeExisting);
-        // Defer - component doesn't exist yet
-        _deferredSpriteElement = element.Element("Sprite");
-    }
+    private RigidbodyComponent? _rigidbody;
 
     public override void OnStart()
     {
         base.OnStart();
 
-        // Create component
+        // Create components with defaults
         _spriteComponent = new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball.png"));
         AddComponent(_spriteComponent);
 
-        // Now restore deferred state
-        if (_deferredSpriteElement != null && _spriteComponent != null)
+        _rigidbody = new RigidbodyComponent(...);
+        AddComponent(_rigidbody);
+    }
+
+    public override void RestoreState(XElement element, bool mergeTags = false)
+    {
+        // Base restores Position, Rotation, Scale, Tags
+        base.RestoreState(element, mergeTags);
+
+        // Components exist here — no deferred pattern needed!
+        var spriteElement = element.Element("Sprite");
+        if (spriteElement != null && _spriteComponent != null)
         {
-            var colorAttr = _deferredSpriteElement.Attribute("Color")?.Value;
+            var colorAttr = spriteElement.Attribute("Color")?.Value;
             if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
             {
                 _spriteComponent.Color = new Color(argb);
             }
         }
-        _deferredSpriteElement = null;  // Clear
+
+        var physicsElement = element.Element("Physics");
+        if (physicsElement != null && _rigidbody != null && _rigidbody.Body != null)
+        {
+            // Restore velocity via ApplyImpulse (LinearVelocity is read-only)
+            if (float.TryParse(physicsElement.Attribute("LinearVelocityX")?.Value,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
+                float.TryParse(physicsElement.Attribute("LinearVelocityY")?.Value,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
+            {
+                var velocityChange = new Vector2(velX - _rigidbody.Body.LinearVelocity.X,
+                                                 velY - _rigidbody.Body.LinearVelocity.Y);
+                _rigidbody.Body.ApplyImpulse(velocityChange * _rigidbody.Body.Mass, Vector2.Zero);
+            }
+        }
     }
 }
 ```
@@ -325,9 +355,9 @@ public class SaveGameManager
 - Check that entities are added to the EntitySystem before saving
 
 ### Components Not Restoring
-- Verify component implements `ISerializableComponent`
-- Check that `SerializeToXml()` and `DeserializeFromXml()` are implemented correctly
-- Ensure component type name is preserved in XML (use `GetType().FullName` not `GetType().Name`)
+- Make sure you override `RestoreState()` (not `DeserializeFromXml()`) for post-OnStart restoration
+- Check that components are created in `OnStart()` before `RestoreState()` is called
+- Verify component type names are preserved in XML (use `GetType().FullName` not `GetType().Name`)
 
 ### Physics State Not Persisting
 - Make sure RigidbodyComponent and ColliderComponent are added before saving

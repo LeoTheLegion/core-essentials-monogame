@@ -21,10 +21,6 @@ public class Ball : Entity
     private ColliderComponent _colliderComponent;
     private float _radius;
 
-    // Deferred state for post-OnStart restoration (components don't exist during DeserializeFromXml)
-    private XElement? _deferredPhysicsElement;
-    private XElement? _deferredSpriteElement;
-
     static Random _random = new Random();
 
     private CoroutineOwner _coroutineOwner;
@@ -102,37 +98,6 @@ public class Ball : Entity
             };
             AddComponent(_colliderComponent);
         }
-
-        // Restore deferred state (physics velocity, sprite color) now that components exist
-        if (_deferredPhysicsElement != null && _rigidbodyComponent?.Body != null)
-        {
-            var body = _rigidbodyComponent.Body;
-            var physics = _deferredPhysicsElement;
-
-            if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
-                float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
-            {
-                var targetVelocity = new Vector2(velX, velY);
-                var velocityChange = targetVelocity - body.LinearVelocity;
-                body.ApplyImpulse(velocityChange * body.Mass);
-            }
-
-            if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
-            {
-                body.AngularVelocity = angVel;
-            }
-        }
-        _deferredPhysicsElement = null;
-
-        if (_deferredSpriteElement != null && _spriteComponent != null)
-        {
-            var colorAttr = _deferredSpriteElement.Attribute("Color")?.Value;
-            if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
-            {
-                _spriteComponent.Color = new Microsoft.Xna.Framework.Color(argb);
-            }
-        }
-        _deferredSpriteElement = null;
 
         // Start movement coroutine (base.OnStart() double-start guard prevents this from running twice on loaded entities)
         _coroutineOwner ??= new CoroutineOwner();
@@ -228,16 +193,43 @@ public class Ball : Entity
     }
 
     /// <summary>
-    /// Restores this ball's state including physics velocity.
-    /// Defers component restoration to OnStart() since components don't exist yet during deserialization.
+    /// Restores this ball's state including physics velocity and sprite color.
+    /// Called after OnStart() so components are guaranteed to exist.
     /// </summary>
-    public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
+    public override void RestoreState(XElement element, bool mergeTags = false)
     {
         // Restore base state (Position, Scale, Tags, etc.)
-        base.DeserializeFromXml(element, mergeExisting);
+        base.RestoreState(element);
 
-        // Defer physics and sprite restoration until OnStart() creates the components
-        _deferredPhysicsElement = element.Element("Physics");
-        _deferredSpriteElement = element.Element("Sprite");
+        // Restore physics velocity — body exists since OnStart ran
+        var physics = element.Element("Physics");
+        if (physics != null && _rigidbodyComponent?.Body != null)
+        {
+            var body = _rigidbodyComponent.Body;
+
+            if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
+                float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
+            {
+                var targetVelocity = new Vector2(velX, velY);
+                var velocityChange = targetVelocity - body.LinearVelocity;
+                body.ApplyImpulse(velocityChange * body.Mass);
+            }
+
+            if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
+            {
+                body.AngularVelocity = angVel;
+            }
+        }
+
+        // Restore sprite color — component exists since OnStart ran
+        var sprite = element.Element("Sprite");
+        if (sprite != null && _spriteComponent != null)
+        {
+            var colorAttr = sprite.Attribute("Color")?.Value;
+            if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
+            {
+                _spriteComponent.Color = new Microsoft.Xna.Framework.Color(argb);
+            }
+        }
     }
 }

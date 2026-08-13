@@ -46,33 +46,21 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             }
         }
 
-        // Test entity that creates components in OnStart and defers restoration
+        // Test entity that creates components in OnStart and restores state after
         public class DeferredComponentEntity : Entity
         {
             public SpriteComponent? SpriteComp { get; private set; }
             public bool OnStartCalled { get; private set; }
-
-            // Deferred state
-            private XElement? _deferredSpriteElement;
 
             public override void OnStart()
             {
                 base.OnStart();
                 OnStartCalled = true;
 
+                // Create component with defaults
                 SpriteComp = new SpriteComponent();
                 AddComponent(SpriteComp);
-
-                // Restore deferred sprite color now that component exists
-                if (_deferredSpriteElement != null && SpriteComp != null)
-                {
-                    var colorAttr = _deferredSpriteElement.Attribute("Color")?.Value;
-                    if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
-                    {
-                        SpriteComp.Color = new Color(argb);
-                    }
-                }
-                _deferredSpriteElement = null;
+                SpriteComp.Color = Color.White; // Default color
             }
 
             public override XElement SerializeToXml()
@@ -87,11 +75,24 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 return element;
             }
 
-            public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
+            /// <summary>
+            /// Restores sprite color after OnStart() has created the component.
+            /// </summary>
+            public override void RestoreState(XElement element, bool mergeTags = false)
             {
-                base.DeserializeFromXml(element, mergeExisting);
-                // Defer until OnStart creates component
-                _deferredSpriteElement = element.Element("Sprite");
+                // Restore base state (Position, Scale, Tags, etc.)
+                base.RestoreState(element);
+
+                // Restore sprite color — component exists since OnStart ran
+                var sprite = element.Element("Sprite");
+                if (sprite != null && SpriteComp != null)
+                {
+                    var colorAttr = sprite.Attribute("Color")?.Value;
+                    if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
+                    {
+                        SpriteComp.Color = new Color(argb);
+                    }
+                }
             }
         }
 

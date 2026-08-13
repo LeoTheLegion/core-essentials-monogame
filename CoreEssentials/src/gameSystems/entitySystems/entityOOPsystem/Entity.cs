@@ -818,5 +818,78 @@ public abstract class Entity
         }
     }
 
+    /// <summary>
+    /// Restores this entity's state from XML AFTER OnStart() has been called.
+    /// Override this method to restore custom state that depends on components being initialized (e.g., physics velocity, sprite color).
+    /// Called by GameStateSerializer.LoadStateFromXml after the entity is fully started.
+    /// The base implementation restores Position, Rotation, Scale, Sort, Active, and Tags — derived classes call base first.
+    /// </summary>
+    /// <param name="element">The XML element containing the saved state.</param>
+    /// <param name="mergeTags">If true, preserves existing runtime tags instead of replacing them (used in merge mode).</param>
+    public virtual void RestoreState(XElement element, bool mergeTags = false)
+    {
+        // Restore position
+        var positionElement = element.Element("Position");
+        if (positionElement != null)
+        {
+            if (float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+            {
+                Position = new Vector2(x, y);
+            }
+        }
+
+        // Restore rotation
+        if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
+        {
+            Rotation = rotation;
+        }
+
+        // Restore scale
+        var scaleElement = element.Element("Scale");
+        if (scaleElement != null)
+        {
+            if (float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+                float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
+            {
+                Scale = new Vector2(scaleX, scaleY);
+            }
+        }
+
+        // Restore sort order
+        if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sortOrder))
+        {
+            SetSort(sortOrder);
+        }
+
+        // Restore active state
+        if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
+        {
+            SetActive(active);
+        }
+
+        // Restore tags (skip clearing existing tags in merge mode to preserve runtime tags)
+        var tagsElement = element.Element("Tags");
+        if (tagsElement != null)
+        {
+            if (!mergeTags)
+            {
+                foreach (var tag in Tags.ToList())
+                {
+                    RemoveTag(tag);
+                }
+            }
+
+            foreach (var tagElement in tagsElement.Elements("Tag"))
+            {
+                var tagName = tagElement.Attribute("Name")?.Value;
+                if (!string.IsNullOrWhiteSpace(tagName))
+                {
+                    SetTag(tagName);
+                }
+            }
+        }
+    }
+
     #endregion
 }
