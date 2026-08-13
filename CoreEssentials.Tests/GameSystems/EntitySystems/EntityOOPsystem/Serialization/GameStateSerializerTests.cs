@@ -180,12 +180,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var newSystem = CreateTestSystem();
                 GameStateSerializer.LoadState(newSystem, tempFile, mergeExisting: false);
 
-                // Assert
+                // Assert - both parent and child are at root level since all entities with IDs are serialized
                 var entities = newSystem.GetEntities();
-                Assert.Single(entities); // Only parent at root level
+                Assert.Equal(2, entities.Count);
                 
-                var loadedParent = entities[0];
-                Assert.Equal("parent", loadedParent.Id);
+                var loadedParent = entities.FirstOrDefault(e => e.Id == "parent");
+                Assert.NotNull(loadedParent);
                 Assert.Single(loadedParent.Children);
                 Assert.Equal("child", loadedParent.Children[0].Id);
             }

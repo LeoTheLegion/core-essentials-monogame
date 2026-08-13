@@ -79,8 +79,9 @@ public abstract class Entity
 
     /// <summary>
     /// Flag indicating whether the entity has started.
+    /// Protected so derived classes can check startup state if needed.
     /// </summary>
-    private bool _hasStarted = false;
+    protected bool _hasStarted = false;
 
     /// <summary>
     /// The identifier for the delayed destroy coroutine, if one is active.
@@ -304,9 +305,11 @@ public abstract class Entity
     /// <summary>
     /// Called when the entity is first created.
     /// Override this method to initialize entity-specific data.
+    /// This method guards against double-starts — if the entity has already started, it returns immediately.
     /// </summary>
     public virtual void OnStart()
     {
+        if (_hasStarted) return;
         _hasStarted = true;
     }
 

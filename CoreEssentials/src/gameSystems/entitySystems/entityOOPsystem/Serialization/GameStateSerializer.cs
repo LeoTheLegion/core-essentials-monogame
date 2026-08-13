@@ -79,16 +79,25 @@ public static class GameStateSerializer
             throw new FormatException($"Root element must be <{GameStateRootElement}>.");
         }
 
+        Console.WriteLine($"[LoadState] Parsed XML, mergeExisting={mergeExisting}");
+
         if (!mergeExisting)
         {
             // Clear existing entities when not merging
+            Console.WriteLine("[LoadState] Clearing existing entities...");
             system.ClearEntities();
+            Console.WriteLine("[LoadState] Entities cleared");
         }
 
         var entitiesElement = root.Element(EntitiesElement);
         if (entitiesElement == null)
+        {
+            Console.WriteLine("[LoadState] No <Entities> element found, returning early");
             return;
+        }
 
+        var entityCount = entitiesElement.Elements(EntityElement).Count();
+        Console.WriteLine($"[LoadState] === First pass: creating {entityCount} entities ===");
         // First pass: Create all entities and build ID mapping
         var idToEntity = new Dictionary<string, Entity>(StringComparer.OrdinalIgnoreCase);
         var entitiesToProcess = new List<(XElement element, Entity entity)>();
@@ -107,12 +116,41 @@ public static class GameStateSerializer
         }
 
         // Second pass: Restore entity state and build hierarchy
+        Console.WriteLine($"[LoadState] === Second pass: restoring state for {entitiesToProcess.Count} entities ===");
         foreach (var (element, entity) in entitiesToProcess)
         {
-            RestoreEntityState(entity, element, system, mergeExisting);
-            LoadEntityComponents(entity, element);
+            var entityId = element.Attribute("Id")?.Value ?? "unnamed";
+            Console.WriteLine($"[LoadState] Restoring state for {entityId}...");
+            Console.WriteLine($"[LoadState]   Entity position before restore: ({entity.Position.X}, {entity.Position.Y})");
             
-            // Handle children
+            try
+            {
+                RestoreEntityState(entity, element, system, mergeExisting);
+                Console.WriteLine($"[LoadState]   Position/Rotation restored for {entityId} -> ({entity.Position.X}, {entity.Position.Y})");
+                
+                LoadEntityComponents(entity, element);
+                Console.WriteLine($"[LoadState]   Components loaded for {entityId}");
+
+                // Now start the entity after state is restored so OnStart uses correct position
+                if (!entity.HasStarted)
+                {
+                    entity.OnStart();
+                    Console.WriteLine($"[LoadState]   OnStart completed for {entityId} -> pos=({entity.Position.X}, {entity.Position.Y})");
+                }
+                else
+                {
+                    Console.WriteLine($"[LoadState]   Skipping OnStart (already started) for {entityId}");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[LoadState]   ERROR restoring {entityId}: {ex.GetType().Name}: {ex.Message}");
+                Console.WriteLine($"[LoadState]   Stack: {ex.StackTrace?.Split('\n').Take(5).Aggregate((a, b) => a + "\n" + b)}");
+                throw;
+            }
+            
+            // Handle children - restore state and start them too
             var childrenElement = element.Element(ChildrenElement);
             if (childrenElement != null)
             {
@@ -121,6 +159,11 @@ public static class GameStateSerializer
                     var childEntity = CreateEntityFromElement(childElement, system, idToEntity);
                     if (childEntity != null)
                     {
+                        // Restore child state (position, rotation, tags) before starting
+                        RestoreEntityState(childEntity, childElement, system, mergeExisting);
+                        LoadEntityComponents(childEntity, childElement);
+                        childEntity.OnStart();
+
                         entity.AddChild(childEntity);
                         if (!string.IsNullOrEmpty(childEntity.Id))
                         {
@@ -130,18 +173,24 @@ public static class GameStateSerializer
                 }
             }
         }
+        Console.WriteLine($"[LoadState] === All entities restored ===");
     }
 
     private static XDocument CreateGameStateDocument(EntitySystem system)
     {
+        var entities = system.GetEntities().Where(e => e.Id != null).ToList();
+        Console.WriteLine($"[SaveState] Saving {entities.Count} entities");
+        foreach (var e in entities.Take(5))
+        {
+            Console.WriteLine($"[SaveState]   {e.Id}: pos=({e.Position.X}, {e.Position.Y})");
+        }
+
         var document = new XDocument(
             new XElement(GameStateRootElement,
                 new XAttribute("Version", "1.0"),
                 new XAttribute("Timestamp", DateTime.UtcNow.ToString("o")),
                 new XElement(EntitiesElement,
-                    system.GetEntities()
-                        .Where(e => e.Id != null)
-                        .Select(CreateEntityElement)
+                    entities.Select(CreateEntityElement)
                 )
             )
         );
@@ -166,6 +215,19 @@ public static class GameStateSerializer
             )
         );
 
+        // Serialize public Vector2 properties (like WorldBorder.Size)
+        var vector2Props = entity.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(p => p.PropertyType == typeof(Vector2) && p.CanRead && p.CanWrite && p.Name != nameof(Entity.Position))
+            .ToList();
+        foreach (var prop in vector2Props)
+        {
+            var value = (Vector2)prop.GetValue(entity)!;
+            element.Add(new XElement(prop.Name,
+                new XAttribute("X", value.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", value.Y.ToString(CultureInfo.InvariantCulture))
+            ));
+        }
+
         // Serialize components
         if (entity.Components.Any())
         {
@@ -175,7 +237,7 @@ public static class GameStateSerializer
                 if (component is ISerializableComponent serializable)
                 {
                     var componentElement = new XElement(ComponentElement,
-                        new XAttribute("Type", component.GetType().Name),
+                        new XAttribute("Type", component.GetType().FullName),
                         serializable.SerializeToXml()
                     );
                     componentsElement.Add(componentElement);
@@ -204,8 +266,13 @@ public static class GameStateSerializer
         var id = element.Attribute("Id")?.Value;
         var typeName = element.Attribute("Type")?.Value;
 
+        Console.WriteLine($"[LoadState] Creating entity: Id={id}, Type={typeName}");
+
         if (string.IsNullOrWhiteSpace(typeName))
+        {
+            Console.WriteLine($"[LoadState]   SKIP: type name is empty");
             return null;
+        }
 
         // Check if entity already exists in the system (for merge mode)
         if (!string.IsNullOrWhiteSpace(id))
@@ -213,6 +280,7 @@ public static class GameStateSerializer
             var existingInSystem = system.GetEntities().FirstOrDefault(e => e.Id == id);
             if (existingInSystem != null)
             {
+                Console.WriteLine($"[LoadState]   REUSE: entity already in system");
                 idToEntity[id] = existingInSystem;
                 return existingInSystem;
             }
@@ -220,6 +288,7 @@ public static class GameStateSerializer
             // Check if entity already created in this load operation
             if (idToEntity.TryGetValue(id, out var existingEntity))
             {
+                Console.WriteLine($"[LoadState]   REUSE: entity already created this load");
                 return existingEntity;
             }
         }
@@ -230,18 +299,45 @@ public static class GameStateSerializer
                 .Select(a => a.GetType(typeName))
                 .FirstOrDefault(t => t != null);
         
-        if (entityType == null || !typeof(Entity).IsAssignableFrom(entityType))
-            return null;
-        
-        var entity = system.CreateEntity(entityType, Array.Empty<object>());
-        
-        if (!string.IsNullOrWhiteSpace(id))
+        if (entityType == null)
         {
-            entity.SetId(id);
-            idToEntity[id] = entity;
+            Console.WriteLine($"[LoadState]   FAIL: could not resolve type {typeName}");
+            return null;
+        }
+        
+        if (!typeof(Entity).IsAssignableFrom(entityType))
+        {
+            Console.WriteLine($"[LoadState]   FAIL: {typeName} is not an Entity subtype");
+            return null;
         }
 
-        return entity;
+        // Create entity without triggering OnStart yet — position/rotation will be restored first in pass 2
+        Console.WriteLine($"[LoadState]   Creating {typeName} (unstarted)...");
+        try
+        {
+            var entity = system.CreateEntityUnstarted(entityType, Array.Empty<object>());
+            
+            // Set saved ID before OnStart so no auto-ID collision
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                entity.SetId(id);
+                idToEntity[id] = entity;
+                Console.WriteLine($"[LoadState]   Set ID to: {id}");
+            }
+            else
+            {
+                Console.WriteLine($"[LoadState]   Created entity: {entity.GetType().Name}, Id={entity.Id}");
+            }
+
+            // NOTE: OnStart() is deferred to pass 2, after position/rotation are restored
+            return entity;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LoadState]   ERROR creating {typeName}: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine($"[LoadState]   Stack: {ex.StackTrace?.Split('\n').Take(5).Aggregate((a, b) => a + "\n" + b)}");
+            throw;
+        }
     }
 
     private static void RestoreEntityState(Entity entity, XElement element, EntitySystem system, bool mergeExisting)
@@ -298,27 +394,54 @@ public static class GameStateSerializer
                 }
             }
         }
+
+        // Restore public Vector2 properties (like WorldBorder.Size)
+        var vector2Props = entity.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(p => p.PropertyType == typeof(Vector2) && p.CanWrite && p.Name != nameof(Entity.Position))
+            .ToList();
+        foreach (var prop in vector2Props)
+        {
+            var propElement = element.Element(prop.Name);
+            if (propElement != null)
+            {
+                if (float.TryParse(propElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(propElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+                {
+                    prop.SetValue(entity, new Vector2(x, y));
+                }
+            }
+        }
     }
 
     private static void LoadEntityComponents(Entity entity, XElement element)
     {
         var componentsElement = element.Element(ComponentsElement);
+        Console.WriteLine($"[LoadEntityComponents] Looking for '<{ComponentsElement}>' in entity {entity.Id}, found={componentsElement != null}");
+        
         if (componentsElement == null)
             return;
+
+        Console.WriteLine($"[LoadEntityComponents] Found {componentsElement.Elements(ComponentElement).Count()} components to process");
 
         foreach (var componentElement in componentsElement.Elements(ComponentElement))
         {
             var typeName = componentElement.Attribute("Type")?.Value;
+            Console.WriteLine($"[LoadEntityComponents] Processing component type: {typeName}");
+            
             if (string.IsNullOrWhiteSpace(typeName))
+            {
+                Console.WriteLine($"[LoadEntityComponents]   SKIP: typeName is empty");
                 continue;
+            }
 
             // Find existing component or create new one
             var existingComponent = entity.Components.FirstOrDefault(c => 
-                c.GetType().Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+                c.GetType().FullName.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
             EntityComponent component;
             if (existingComponent != null)
             {
+                Console.WriteLine($"[LoadEntityComponents]   Found existing component");
                 component = existingComponent;
             }
             else
@@ -331,19 +454,24 @@ public static class GameStateSerializer
                             .Select(a => a.GetType(typeName))
                             .FirstOrDefault(t => t != null);
 
+                    Console.WriteLine($"[LoadEntityComponents]   Resolved type: {componentType?.FullName ?? "NULL"}");
+
                     if (componentType != null && typeof(EntityComponent).IsAssignableFrom(componentType))
                     {
                         component = (EntityComponent)Activator.CreateInstance(componentType)!;
                         component.Owner = entity;
                         entity.AddComponent(component);
+                        Console.WriteLine($"[LoadEntityComponents]   Created new component: {component.GetType().Name}");
                     }
                     else
                     {
+                        Console.WriteLine($"[LoadEntityComponents]   SKIP: type is not an EntityComponent");
                         continue;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"[LoadEntityComponents]   ERROR creating component: {ex.Message}");
                     continue;
                 }
             }
@@ -354,8 +482,18 @@ public static class GameStateSerializer
                 var stateElement = componentElement.Elements().FirstOrDefault();
                 if (stateElement != null)
                 {
+                    Console.WriteLine($"[LoadEntityComponents] Deserializing {component.GetType().Name} for entity {entity.Id}");
                     serializable.DeserializeFromXml(stateElement);
+                    Console.WriteLine($"[LoadEntityComponents] Done deserializing {component.GetType().Name}");
                 }
+                else
+                {
+                    Console.WriteLine($"[LoadEntityComponents] WARNING: No state element found for {component.GetType().Name}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[LoadEntityComponents] {component.GetType().Name} is NOT serializable");
             }
         }
     }

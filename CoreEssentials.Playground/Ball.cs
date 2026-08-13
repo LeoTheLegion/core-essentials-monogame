@@ -43,11 +43,13 @@ public class Ball : Entity
         }
     }
 
-    public Ball(Vector2 position)
+    public Ball(Vector2 position, string? id = null)
     {
         Position = position;
         sort = 0;
         _scale = (float)(_random.NextDouble() + 0.5f);
+        if (id != null)
+            SetId(id);
     }
 
     // Parameterless constructor for XML serialization (Sprint 10)
@@ -57,40 +59,72 @@ public class Ball : Entity
     {
         base.OnStart();
 
-        // Add sprite component
-        var sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
-        _spriteComponent = new SpriteComponent(sprite)
-        {
-            Scale = new Vector2(_scale, _scale),
-            Origin = new Vector2(0.5f, 0.5f),
-            Color = Color.White,
-            Effects = SpriteEffects.None,
-            LayerDepth = 0f
-        };
-        AddComponent(_spriteComponent);
+        Console.WriteLine($"[Ball.OnStart] Id={Id}, _hasStarted check passed");
 
-        // Add rigidbody component (Dynamic auto-syncs from physics)
-        _rigidbodyComponent = new RigidbodyComponent(RigidbodyType.Dynamic);
-        AddComponent(_rigidbodyComponent);
+        // Add sprite component only if not already present (e.g., from deserialization)
+        _spriteComponent = GetComponent<SpriteComponent>();
+        if (_spriteComponent == null)
+        {
+            Console.WriteLine($"[Ball.OnStart] Creating NEW SpriteComponent for {Id}");
+            var sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+            _spriteComponent = new SpriteComponent(sprite);
+            AddComponent(_spriteComponent);
+        }
+        else
+        {
+            Console.WriteLine($"[Ball.OnStart] Reusing EXISTING SpriteComponent for {Id}, Sprite={_spriteComponent.Sprite?.Name ?? "null"}, Color=({_spriteComponent.Color.R},{_spriteComponent.Color.G},{_spriteComponent.Color.B})");
+        }
+
+        // Assign sprite if it's null (e.g., component was created during deserialization without a sprite)
+        if (_spriteComponent.Sprite == null)
+        {
+            Console.WriteLine($"[Ball.OnStart] Assigning sprite to existing component for {Id}");
+            _spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+        }
+        else
+        {
+            // Only set default properties if this is a fresh entity (not loaded from save)
+            Console.WriteLine($"[Ball.OnStart] Setting default properties for {Id}");
+            _spriteComponent.Scale = new Vector2(_scale, _scale);
+            _spriteComponent.Origin = new Vector2(0.5f, 0.5f);
+            _spriteComponent.Color = Color.White;
+            _spriteComponent.Effects = SpriteEffects.None;
+            _spriteComponent.LayerDepth = 0f;
+        }
+
+        Console.WriteLine($"[Ball.OnStart] Final state for {Id}: Color=({_spriteComponent.Color.R},{_spriteComponent.Color.G},{_spriteComponent.Color.B}), Scale=({_spriteComponent.Scale.X},{_spriteComponent.Scale.Y})");
+
+        // Add rigidbody component only if not already present
+        _rigidbodyComponent = GetComponent<RigidbodyComponent>();
+        if (_rigidbodyComponent == null)
+        {
+            _rigidbodyComponent = new RigidbodyComponent(RigidbodyType.Dynamic);
+            AddComponent(_rigidbodyComponent);
+
+            // Configure rigidbody properties (body auto-creates on first access)
+            _rigidbodyComponent.FixedRotation = false;
+            _rigidbodyComponent.Mass = 1f * _scale * _scale;
+        }
 
         RegisterForInstancedRendering(_spriteComponent.Sprite);
 
         _radius = _spriteComponent.Sprite.GetSize().X / 2;
 
-        // Configure rigidbody properties (body auto-creates on first access)
-        _rigidbodyComponent.FixedRotation = false;
-        _rigidbodyComponent.Mass = 1f * _scale * _scale;
-
-        // Add collider component (circle with offset)
-        var colliderRadius = _radius * _scale;
-        var colliderOffset = new Vector2(0, 1);
-        _colliderComponent = new ColliderComponent(colliderRadius, colliderOffset)
+        // Add collider component only if not already present
+        _colliderComponent = GetComponent<ColliderComponent>();
+        if (_colliderComponent == null)
         {
-            Restitution = 1f
-        };
-        AddComponent(_colliderComponent);
+            var colliderRadius = _radius * _scale;
+            var colliderOffset = new Vector2(0, 1);
+            _colliderComponent = new ColliderComponent(colliderRadius, colliderOffset)
+            {
+                Restitution = 1f
+            };
+            AddComponent(_colliderComponent);
+        }
 
-        _coroutineOwner = new CoroutineOwner();
+        // Start movement coroutine (base.OnStart() double-start guard prevents this from running twice on loaded entities)
+        _coroutineOwner ??= new CoroutineOwner();
         _coroutineOwner.StartCoroutine(RandomMovementCoroutine());
     }
 
@@ -124,7 +158,7 @@ public class Ball : Entity
 
     public override void Render(SpriteBatch spriteBatch)
     {
-        // Use SpriteComponent for hybrid rendering
+        if (_spriteComponent == null) return;
         _spriteComponent.Draw(spriteBatch);
     }
 
