@@ -7,10 +7,11 @@ The Game State Serialization system allows you to save and load the complete sta
 The serialization system captures:
 - Entity positions, rotations, **and scale**
 - Entity tags and sort order
-- Component state (for components implementing `ISerializableComponent`)
 - Entity hierarchies (parent-child relationships)
 - Active/inactive state
-- **Physics state** (velocity, mass, friction, restitution)
+- **Custom entity state** via `SerializeToXml()` / `DeserializeFromXml()` overrides
+
+> **Entity-driven approach**: Each entity explicitly declares what to save by overriding virtual methods. This makes serialization transparent, testable, and easy for developers.
 
 ## Quick Start
 
@@ -77,31 +78,60 @@ public static void LoadStateFromXml(EntitySystem system, string xmlData, bool me
 ```
 Loads entity system state from XML string.
 
-## Creating Serializable Components
+## Entity-Driven Serialization
 
-To make a component saveable, implement `ISerializableComponent`:
+Instead of relying on components to know what to save, **entities explicitly declare their serialization needs** by overriding virtual methods. This approach is simpler, more transparent, and easier to debug.
+
+### How It Works
+
+The `Entity` base class provides two virtual methods:
 
 ```csharp
-public class HealthComponent : EntityComponent, ISerializableComponent
-{
-    public int CurrentHealth { get; set; }
-    public int MaxHealth { get; set; }
+// Called during save - returns XElement with your state
+public virtual XElement SerializeToXml()
 
-    public XElement SerializeToXml()
+// Called during load - restore your state from XElement
+public virtual void DeserializeFromXml(XElement element, bool mergeExisting = false)
+```
+
+### Example: Entity with Custom State
+
+```csharp
+public class Player : Entity
+{
+    public int Score { get; set; }
+    public float Health { get; set; }
+
+    public override XElement SerializeToXml()
     {
-        return new XElement("HealthComponentState",
-            new XAttribute("CurrentHealth", CurrentHealth),
-            new XAttribute("MaxHealth", MaxHealth)
-        );
+        // Base saves Id, Type, Position, Rotation, Scale, Sort, Active, Tags
+        var element = base.SerializeToXml();
+
+        // Add custom state as a child element
+        element.Add(new XElement("PlayerState",
+            new XAttribute("Score", Score),
+            new XAttribute("Health", Health)
+        ));
+
+        return element;
     }
 
-    public void DeserializeFromXml(XElement element)
+    public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
     {
-        if (int.TryParse(element.Attribute("CurrentHealth")?.Value, out int health))
-            CurrentHealth = health;
-        
-        if (int.TryParse(element.Attribute("MaxHealth")?.Value, out int maxHealth))
-            MaxHealth = maxHealth;
+        // Base restores Position, Rotation, Scale, Tags, etc.
+        base.DeserializeFromXml(element, mergeExisting);
+
+        // Restore custom state
+        var playerState = element.Element("PlayerState");
+        if (playerState != null)
+        {
+            if (int.TryParse(playerState.Attribute("Score")?.Value, out int score))
+                Score = score;
+            if (float.TryParse(playerState.Attribute("Health")?.Value,
+                    System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture,
+                    out float health))
+                Health = health;
+        }
     }
 }
 ```
@@ -126,14 +156,25 @@ public class HealthComponent : EntityComponent, ISerializableComponent
     <Tag Name="player" />
     <Tag Name="controllable" />
   </Tags>
-  <Components>
-    <Component Type="SpriteComponent">
-      <SpriteState ColorR="255" ColorG="255" ColorB="255" ColorA="255" OriginX="0.5" OriginY="0.5" />
-    </Component>
-  </Components>
+  <!-- Custom state added by entity overrides -->
+  <PlayerState Score="42" Health="85.5" />
   <Children>
     <!-- Child entities -->
   </Children>
+</Entity>
+```
+
+### Physics Entity Example (Ball)
+```xml
+<Entity Id="vip_ball_blue" Type="CoreEssentials.Playground.Ball" Rotation="-2.4139123" Sort="0" Active="true">
+  <Position X="583.62" Y="250.98" />
+  <Scale X="2" Y="2" />
+  <Tags>
+    <Tag Name="Ball" />
+    <Tag Name="Physical" />
+  </Tags>
+  <Physics LinearVelocityX="-51.93" LinearVelocityY="-108.18" AngularVelocity="-2.34" />
+  <Sprite Color="4294901760" />
 </Entity>
 ```
 
@@ -173,12 +214,44 @@ When changing entity structure, consider save file versioning:
 ```
 Update your loader to handle different versions.
 
-### 3. Component Serialization
-Only components implementing `ISerializableComponent` will have their state saved:
+### 3. Deferred Component Restoration
+
+If your entity creates components in `OnStart()` (like loading sprites from assets), the components **won't exist yet** when `DeserializeFromXml()` is called because it runs *before* `OnStart()`.
+
+**Solution**: Store the XML element during deserialization, then apply it after `OnStart()` creates the component:
+
 ```csharp
-if (component is ISerializableComponent serializable)
+public class Ball : Entity
 {
-    // Serialize component state
+    private SpriteComponent? _spriteComponent;
+    private XElement? _deferredSpriteElement;  // Stored for later
+
+    public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
+    {
+        base.DeserializeFromXml(element, mergeExisting);
+        // Defer - component doesn't exist yet
+        _deferredSpriteElement = element.Element("Sprite");
+    }
+
+    public override void OnStart()
+    {
+        base.OnStart();
+
+        // Create component
+        _spriteComponent = new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball.png"));
+        AddComponent(_spriteComponent);
+
+        // Now restore deferred state
+        if (_deferredSpriteElement != null && _spriteComponent != null)
+        {
+            var colorAttr = _deferredSpriteElement.Attribute("Color")?.Value;
+            if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
+            {
+                _spriteComponent.Color = new Color(argb);
+            }
+        }
+        _deferredSpriteElement = null;  // Clear
+    }
 }
 ```
 

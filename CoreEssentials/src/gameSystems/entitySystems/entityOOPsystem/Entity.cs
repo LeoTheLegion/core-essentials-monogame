@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
@@ -713,4 +716,107 @@ public abstract class Entity
         }
         return null;
     }
+
+    #region Serialization
+
+    /// <summary>
+    /// Serializes this entity's state to XML.
+    /// Override this method to declare what state should be saved for game state persistence.
+    /// The base implementation saves Id, Type, Position, Rotation, Scale, Sort, Active, and Tags.
+    /// </summary>
+    /// <returns>XElement representing the entity's serialized state.</returns>
+    public virtual XElement SerializeToXml()
+    {
+        return new XElement("Entity",
+            new XAttribute("Id", Id ?? string.Empty),
+            new XAttribute("Type", GetType().FullName),
+            new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
+            new XAttribute("Sort", GetSort()),
+            new XAttribute("Active", GetActive()),
+            new XElement("Position",
+                new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))
+            ),
+            new XElement("Scale",
+                new XAttribute("X", Scale.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Scale.Y.ToString(CultureInfo.InvariantCulture))
+            ),
+            new XElement("Tags",
+                Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
+            )
+        );
+    }
+
+    /// <summary>
+    /// Restores this entity's state from XML.
+    /// Override this method to restore custom state during game state loading.
+    /// The base implementation restores Position, Rotation, Scale, Sort, Active, and Tags.
+    /// </summary>
+    /// <param name="element">The XML element containing the saved state.</param>
+    public virtual void DeserializeFromXml(XElement element, bool mergeExisting = false)
+    {
+        // Restore position
+        var positionElement = element.Element("Position");
+        if (positionElement != null)
+        {
+            if (float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+            {
+                Position = new Vector2(x, y);
+            }
+        }
+
+        // Restore rotation
+        if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
+        {
+            Rotation = rotation;
+        }
+
+        // Restore scale
+        var scaleElement = element.Element("Scale");
+        if (scaleElement != null)
+        {
+            if (float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+                float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
+            {
+                Scale = new Vector2(scaleX, scaleY);
+            }
+        }
+
+        // Restore sort order
+        if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
+        {
+            SetSort(sort);
+        }
+
+        // Restore active state
+        if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
+        {
+            SetActive(active);
+        }
+
+        // Restore tags (skip clearing existing tags in merge mode to preserve runtime tags)
+        var tagsElement = element.Element("Tags");
+        if (tagsElement != null)
+        {
+            if (!mergeExisting)
+            {
+                foreach (var tag in Tags.ToList())
+                {
+                    RemoveTag(tag);
+                }
+            }
+
+            foreach (var tagElement in tagsElement.Elements("Tag"))
+            {
+                var tagName = tagElement.Attribute("Name")?.Value;
+                if (!string.IsNullOrWhiteSpace(tagName))
+                {
+                    SetTag(tagName);
+                }
+            }
+        }
+    }
+
+    #endregion
 }

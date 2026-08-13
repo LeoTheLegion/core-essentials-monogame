@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Globalization;
+using System.Xml.Linq;
 using CoreEssentials.Assets;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Debugging;
@@ -18,6 +20,10 @@ public class Ball : Entity
     private RigidbodyComponent _rigidbodyComponent;
     private ColliderComponent _colliderComponent;
     private float _radius;
+
+    // Deferred state for post-OnStart restoration (components don't exist during DeserializeFromXml)
+    private XElement? _deferredPhysicsElement;
+    private XElement? _deferredSpriteElement;
 
     static Random _random = new Random();
 
@@ -97,6 +103,37 @@ public class Ball : Entity
             AddComponent(_colliderComponent);
         }
 
+        // Restore deferred state (physics velocity, sprite color) now that components exist
+        if (_deferredPhysicsElement != null && _rigidbodyComponent?.Body != null)
+        {
+            var body = _rigidbodyComponent.Body;
+            var physics = _deferredPhysicsElement;
+
+            if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
+                float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
+            {
+                var targetVelocity = new Vector2(velX, velY);
+                var velocityChange = targetVelocity - body.LinearVelocity;
+                body.ApplyImpulse(velocityChange * body.Mass);
+            }
+
+            if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
+            {
+                body.AngularVelocity = angVel;
+            }
+        }
+        _deferredPhysicsElement = null;
+
+        if (_deferredSpriteElement != null && _spriteComponent != null)
+        {
+            var colorAttr = _deferredSpriteElement.Attribute("Color")?.Value;
+            if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
+            {
+                _spriteComponent.Color = new Microsoft.Xna.Framework.Color(argb);
+            }
+        }
+        _deferredSpriteElement = null;
+
         // Start movement coroutine (base.OnStart() double-start guard prevents this from running twice on loaded entities)
         _coroutineOwner ??= new CoroutineOwner();
         _coroutineOwner.StartCoroutine(RandomMovementCoroutine());
@@ -158,5 +195,49 @@ public class Ball : Entity
         {
             throw new InvalidOperationException("Coroutine owner is not destroyed properly. Please call StopAllCoroutines() method.");
         }
+    }
+
+    /// <summary>
+    /// Serializes this ball's state including physics velocity.
+    /// </summary>
+    public override XElement SerializeToXml()
+    {
+        // Get base serialization (Position, Scale, Tags, etc.)
+        var element = base.SerializeToXml();
+
+        // Explicitly add physics state - Ball decides what matters for gameplay
+        if (_rigidbodyComponent?.Body != null)
+        {
+            var body = _rigidbodyComponent.Body;
+            element.Add(new XElement("Physics",
+                new XAttribute("LinearVelocityX", body.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("LinearVelocityY", body.LinearVelocity.Y.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("AngularVelocity", body.AngularVelocity.ToString(CultureInfo.InvariantCulture))
+            ));
+        }
+
+        // Save sprite color so it survives save/load round-trips
+        if (_spriteComponent != null)
+        {
+            element.Add(new XElement("Sprite",
+                new XAttribute("Color", _spriteComponent.Color.PackedValue.ToString())
+            ));
+        }
+
+        return element;
+    }
+
+    /// <summary>
+    /// Restores this ball's state including physics velocity.
+    /// Defers component restoration to OnStart() since components don't exist yet during deserialization.
+    /// </summary>
+    public override void DeserializeFromXml(XElement element, bool mergeExisting = false)
+    {
+        // Restore base state (Position, Scale, Tags, etc.)
+        base.DeserializeFromXml(element, mergeExisting);
+
+        // Defer physics and sprite restoration until OnStart() creates the components
+        _deferredPhysicsElement = element.Element("Physics");
+        _deferredSpriteElement = element.Element("Sprite");
     }
 }

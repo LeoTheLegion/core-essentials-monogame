@@ -113,8 +113,8 @@ public static class GameStateSerializer
         {
             try
             {
-                RestoreEntityState(entity, element, system, mergeExisting);
-                LoadEntityComponents(entity, element);
+                // Let the entity restore its own state - it knows what to restore
+                entity.DeserializeFromXml(element, mergeExisting);
 
                 // Now start the entity after state is restored so OnStart uses correct position
                 if (!entity.HasStarted)
@@ -136,9 +136,8 @@ public static class GameStateSerializer
                     var childEntity = CreateEntityFromElement(childElement, system, idToEntity);
                     if (childEntity != null)
                     {
-                        // Restore child state (position, rotation, tags) before starting
-                        RestoreEntityState(childEntity, childElement, system, mergeExisting);
-                        LoadEntityComponents(childEntity, childElement);
+                        // Let the child restore its own state
+                        childEntity.DeserializeFromXml(childElement);
                         childEntity.OnStart();
 
                         entity.AddChild(childEntity);
@@ -171,58 +170,10 @@ public static class GameStateSerializer
 
     private static XElement CreateEntityElement(Entity entity)
     {
-        var element = new XElement(EntityElement,
-            new XAttribute("Id", entity.Id),
-            new XAttribute("Type", entity.GetType().FullName),
-            new XAttribute("Rotation", entity.Rotation.ToString(CultureInfo.InvariantCulture)),
-            new XAttribute("Sort", entity.GetSort()),
-            new XAttribute("Active", entity.GetActive()),
-            new XElement(PositionElement,
-                new XAttribute("X", entity.Position.X.ToString(CultureInfo.InvariantCulture)),
-                new XAttribute("Y", entity.Position.Y.ToString(CultureInfo.InvariantCulture))
-            ),
-            new XElement("Scale",
-                new XAttribute("X", entity.Scale.X.ToString(CultureInfo.InvariantCulture)),
-                new XAttribute("Y", entity.Scale.Y.ToString(CultureInfo.InvariantCulture))
-            ),
-            new XElement("Tags",
-                entity.Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
-            )
-        );
+        // Let the entity serialize itself - it knows what to save
+        var element = entity.SerializeToXml();
 
-        // Serialize public Vector2 properties (like WorldBorder.Size)
-        var vector2Props = entity.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-            .Where(p => p.PropertyType == typeof(Vector2) && p.CanRead && p.CanWrite && p.Name != nameof(Entity.Position))
-            .ToList();
-        foreach (var prop in vector2Props)
-        {
-            var value = (Vector2)prop.GetValue(entity)!;
-            element.Add(new XElement(prop.Name,
-                new XAttribute("X", value.X.ToString(CultureInfo.InvariantCulture)),
-                new XAttribute("Y", value.Y.ToString(CultureInfo.InvariantCulture))
-            ));
-        }
-
-        // Serialize components
-        if (entity.Components.Any())
-        {
-            var componentsElement = new XElement(ComponentsElement);
-            foreach (var component in entity.Components)
-            {
-                if (component is ISerializableComponent serializable)
-                {
-                    var componentElement = new XElement(ComponentElement,
-                        new XAttribute("Type", component.GetType().FullName),
-                        serializable.SerializeToXml()
-                    );
-                    componentsElement.Add(componentElement);
-                }
-            }
-            if (componentsElement.HasElements)
-                element.Add(componentsElement);
-        }
-
-        // Serialize children
+        // Serialize children (entity doesn't know about its children in SerializeToXml)
         if (entity.Children.Any())
         {
             var childrenElement = new XElement(ChildrenElement);
