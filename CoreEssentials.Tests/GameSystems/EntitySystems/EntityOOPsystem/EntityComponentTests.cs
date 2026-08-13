@@ -249,4 +249,35 @@ public class EntityComponentTests
 
         Assert.Empty(entity.Components);
     }
+
+    [Fact]
+    public void OnDestroy_CallsOnDetachBeforeClearingOwner()
+    {
+        // Verify that OnDetach can still access Owner (e.g., to get the physics engine for cleanup)
+        var entity = new TestEntity();
+        entity.SetId("test_entity");
+        var component = new CleanupTrackingComponent();
+        entity.AddComponent(component);
+
+        entity.OnDestroy();
+
+        Assert.True(component.OnDetachCalled);
+        Assert.Equal("test_entity", component.CleanedUpOwnerId);
+    }
+
+    private class CleanupTrackingComponent : EntityComponent
+    {
+        public bool OnDetachCalled { get; private set; }
+        public string? CleanedUpOwnerId { get; private set; }
+
+        public override void OnDetach()
+        {
+            OnDetachCalled = true;
+            // Simulate cleanup that needs Owner reference (like RigidbodyComponent getting PhysicsEngine)
+            if (Owner != null!)
+            {
+                CleanedUpOwnerId = Owner.Id;
+            }
+        }
+    }
 }

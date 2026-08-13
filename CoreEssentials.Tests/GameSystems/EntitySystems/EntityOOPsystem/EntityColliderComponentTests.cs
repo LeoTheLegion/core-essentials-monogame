@@ -453,6 +453,26 @@ public class ColliderComponentTests : IDisposable
         Assert.False(colliderComponent.IsColliderCreated);
         Assert.Empty(entity.Components);
     }
+
+    [Fact]
+    public void OnDestroy_Entity_DestroysRigidbodyBodyThroughOnDetach()
+    {
+        // Arrange
+        var entity = _entitySystem.CreateEntity<TestEntity>();
+        var rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
+        entity.AddComponent(rigidbody);
+
+        // Ensure body is created
+        rigidbody.CreateBody();
+        Assert.True(rigidbody.IsBodyCreated);
+
+        // Act - destroy entity; RigidbodyComponent.DestroyBody() should be called via OnDetach
+        entity.OnDestroy();
+
+        // Assert - physics body should be destroyed by component lifecycle, not manually
+        Assert.False(rigidbody.IsBodyCreated);
+        Assert.Empty(entity.Components);
+    }
 }
 
 /// <summary>
