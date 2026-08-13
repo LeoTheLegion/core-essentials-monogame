@@ -4,6 +4,14 @@
 **Status:** Not Started  
 **Sprint Goal:** Assign entities to collision groups for filtered interaction.
 
+**Dependencies:** Sprint 13 (GameStateSerialization)
+
+**Existing Physics API (from Sprint 13):**
+- `RigidbodyComponent` manages `IPhysicsBody` with component-level properties: `Position`, `Rotation`, `LinearVelocity`, `AngularVelocity`
+- `ColliderComponent` manages colliders attached to physics bodies
+- Both components are serialized/deserialized via entity-driven approach
+- Physics engine accessed via `EntitySystem.GetGameSystem<PhysicsEngine>()`
+
 ---
 
 ## Tasks

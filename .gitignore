@@ -48,6 +48,10 @@ Generated\ Files/
 # NUnit
 *.VisualState.xml
 TestResult.xml
+
+# Runtime save files generated during gameplay
+**/*_Save.xml
+**/PhysicsScene_Save.xml
 nunit-*.xml
 
 # Build Results of an ATL Project
@@ -361,3 +365,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+CoreEssentials.Playground/PhysicsScene_Save.xml

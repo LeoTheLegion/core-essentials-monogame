@@ -4,7 +4,15 @@
 **Status:** Not Started  
 **Sprint Goal:** Built-in animation for position, rotation, scale, and custom properties using MonoGame.Extended.
 
+**Dependencies:** Sprint 13 (GameStateSerialization)
+
 **MonoGame.Extended Coverage:** ✅ Covered — wrapping MonoGame.Extended Tweening system
+
+**Existing Entity Properties (from Sprint 13):**
+- `Entity.Position` — Vector2, tweenable
+- `Entity.Rotation` — float (radians), tweenable
+- `Entity.Scale` — Vector2, moved to Entity base class in Sprint 13 (was previously only on SpriteComponent)
+- For physics bodies: entity owns Position/Rotation; use `SyncBodyFromEntity()` after tweening if you need the physics body to follow
 
 ---
 

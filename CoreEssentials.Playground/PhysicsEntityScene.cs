@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.IO;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
@@ -7,6 +8,9 @@ using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.Inputs;
 using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
@@ -16,6 +20,9 @@ namespace CoreEssentials.Playground;
 public class PhysicsEntityScene : Scene
 {
     private readonly Random _random = new();
+    private IButton _saveButton;
+    private IButton _loadButton;
+    private const string SaveFilePath = "PhysicsScene_Save.xml";
     
     protected override GameSystem[] LoadGameSystems()
     {
@@ -55,17 +62,19 @@ public class PhysicsEntityScene : Scene
         // Register the template first — all balls use it
         entitySystem.RegisterTemplate("BallPrefab", "BallTemplate.xml");
         
-        int totalEntities = graphics.PreferredBackBufferWidth / 10;
+        int totalEntities = 5;
         int currentEntity = 0;
         
         // Create regular balls from template with progress updates
-        for (int i = 0; i < graphics.PreferredBackBufferWidth; i += 10)
+        for (int i = 0; i < totalEntities; i++)
         {
-            // Create a random y between 0 and 720
+            // Create a random position within the screen bounds
             int padding = 32;
+            int x = _random.Next(padding, graphics.PreferredBackBufferWidth - padding);
             int y = _random.Next(padding, graphics.PreferredBackBufferHeight - padding);
 
-            Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", new Vector2(i, y));
+            Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", new Vector2(x, y));
+            // ID auto-generated on creation
             // add Random force to the ball
             ball.GetComponent<RigidbodyComponent>().ApplyImpulse(new Vector2(
                 (float)(_random.NextDouble() * 10 - 5), 
@@ -89,22 +98,23 @@ public class PhysicsEntityScene : Scene
             }
         }
 
-        // Sprint 10 & 11 Demo: Load VIP balls using Templates! 🎉
+        // Sprint 10, 11 & 13 Demo: Load VIP balls using Templates + persistent IDs! 🎉
         UpdateLoadingProgress(0.92f, "Loading VIP balls from Template...");
 
-        // Instantiate 3 VIP balls from the template at center positions with distinct colors
-        (Vector2 Position, Color Color)[] vipBalls = {
-            (new Vector2(640, 360), Color.Blue),
-            (new Vector2(580, 300), Color.Green),
-            (new Vector2(700, 420), Color.Red)
+        // Instantiate 3 VIP balls from the template at center positions with distinct colors and IDs
+        (string Id, Vector2 Position, Color Color)[] vipBalls = {
+            ("vip_ball_blue", new Vector2(640, 360), Color.Blue),
+            ("vip_ball_green", new Vector2(580, 300), Color.Green),
+            ("vip_ball_red", new Vector2(700, 420), Color.Red)
         };
 
-        foreach (var (pos, color) in vipBalls)
+        foreach (var (id, pos, color) in vipBalls)
         {
             Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", pos);
+            ball.SetId(id);
             
             // Make VIP balls larger and set their unique color
-            ball.Scale = 2.0f;
+            ball.Scale = new Vector2(2.0f, 2.0f);
             var spriteComp = ball.GetComponent<SpriteComponent>();
             if (spriteComp != null)
                 spriteComp.Color = color;
@@ -115,7 +125,7 @@ public class PhysicsEntityScene : Scene
                 (float)(_random.NextDouble() * 15 - 7.5f)
             ));
             
-            Console.WriteLine($"VIP Ball spawned at {pos} with Scale={ball.Scale}, Color={color}");
+            Console.WriteLine($"VIP Ball spawned at {pos} with Scale={ball.Scale}, Color={color}, Id={id}");
         }
 
         Console.WriteLine($"Loaded {vipBalls.Length} VIP balls from Template!");
@@ -125,10 +135,14 @@ public class PhysicsEntityScene : Scene
         yield return new WaitForSeconds(0.1f);
 
         // Create a world border
-        entitySystem.CreateEntity<WorldBorder>(
+        var worldBorder = entitySystem.CreateEntity<WorldBorder>(
             new Vector2(0, 0), 
             new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight)
         );
+        // ID auto-generated on creation
+        
+        // Create save/load buttons
+        CreateSaveLoadButtons();
         
         // Register input handler
         Input.Keyboard.KeyReleased += Reset();
@@ -143,6 +157,79 @@ public class PhysicsEntityScene : Scene
     {
         base.Unload();
         Input.Keyboard.KeyReleased -= Reset();
+        // Clean up GUI buttons
+        if (_saveButton != null)
+            GUIManager.RemoveWidget(_saveButton);
+        if (_loadButton != null)
+            GUIManager.RemoveWidget(_loadButton);
+    }
+
+    private void CreateSaveLoadButtons()
+    {
+        // Create save button
+        _saveButton = WidgetFactory.CreateTextButton("Save Physics Scene");
+        _saveButton.Position = new Vector2(20, 20);
+        _saveButton.Width = 200;
+        _saveButton.Height = 50;
+        _saveButton.Clicked += (button) => SaveScene();
+        GUIManager.AddWidget(_saveButton);
+
+        // Create load button
+        _loadButton = WidgetFactory.CreateTextButton("Load Physics Scene");
+        _loadButton.Position = new Vector2(20, 80);
+        _loadButton.Width = 200;
+        _loadButton.Height = 50;
+        _loadButton.Clicked += (button) => LoadScene();
+        GUIManager.AddWidget(_loadButton);
+    }
+
+    private void SaveScene()
+    {
+        try
+        {
+            var entitySystem = GetGameSystem<EntitySystem>();
+            entitySystem.SaveState(SaveFilePath);
+            Console.WriteLine($"Physics scene saved to {SaveFilePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to save physics scene: {ex.Message}");
+        }
+    }
+
+    private void LoadScene()
+    {
+        Console.WriteLine("[LoadScene] === Starting load process ===");
+        try
+        {
+            if (File.Exists(SaveFilePath))
+            {
+                Console.WriteLine($"[LoadScene] Save file found: {SaveFilePath}");
+                var entitySystem = GetGameSystem<EntitySystem>();
+                Console.WriteLine($"[LoadScene] EntitySystem has {entitySystem.GetEntities().Count} entities before load");
+                
+                Console.WriteLine("[LoadState] === Calling LoadState (ID-based replace mode) ===");
+                entitySystem.LoadState(SaveFilePath);
+                Console.WriteLine($"[LoadState] === LoadState completed successfully ===");
+                Console.WriteLine($"[LoadScene] EntitySystem now has {entitySystem.GetEntities().Count} entities after load");
+                
+                Console.WriteLine($"Physics scene loaded from {SaveFilePath}");
+            }
+            else
+            {
+                Console.WriteLine($"Save file not found: {SaveFilePath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load physics scene: {ex.Message}");
+            Console.WriteLine($"Exception type: {ex.GetType().FullName}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+            }
+            Console.WriteLine($"Stack:\n{ex.StackTrace}");
+        }
     }
 
     private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()

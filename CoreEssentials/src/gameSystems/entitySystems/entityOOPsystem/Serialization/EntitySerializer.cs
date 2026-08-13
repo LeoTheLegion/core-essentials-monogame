@@ -484,6 +484,20 @@ public static class EntitySerializer
                 if (string.IsNullOrWhiteSpace(propertyName) || string.IsNullOrWhiteSpace(propertyValue))
                     continue;
 
+                // Scale is now on Entity, not SpriteComponent - handle migration
+                if (propertyName == "Scale" && component is Components.BuiltIn.SpriteComponent)
+                {
+                    // Parse "X,Y" format
+                    var parts = propertyValue.Split(',');
+                    if (parts.Length == 2 && 
+                        float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+                        float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
+                    {
+                        entity.Scale = new Vector2(scaleX, scaleY);
+                    }
+                    continue;
+                }
+
                 SetProperty(component, propertyName, propertyValue);
             }
         }

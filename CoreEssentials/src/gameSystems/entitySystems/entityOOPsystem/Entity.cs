@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
@@ -61,6 +64,20 @@ public abstract class Entity
     }
 
     /// <summary>
+    /// The scale of the entity.
+    /// </summary>
+    protected Vector2 _scale = Vector2.One;
+
+    /// <summary>
+    /// Gets or sets the scale of the entity. Default is (1, 1).
+    /// </summary>
+    public Vector2 Scale
+    {
+        get => _scale;
+        set => _scale = value;
+    }
+
+    /// <summary>
     /// The sort order of the entity, used to determine rendering order.
     /// Higher values are rendered first (further back in the scene).
     /// </summary>
@@ -79,8 +96,9 @@ public abstract class Entity
 
     /// <summary>
     /// Flag indicating whether the entity has started.
+    /// Protected so derived classes can check startup state if needed.
     /// </summary>
-    private bool _hasStarted = false;
+    protected bool _hasStarted = false;
 
     /// <summary>
     /// The identifier for the delayed destroy coroutine, if one is active.
@@ -304,9 +322,11 @@ public abstract class Entity
     /// <summary>
     /// Called when the entity is first created.
     /// Override this method to initialize entity-specific data.
+    /// This method guards against double-starts — if the entity has already started, it returns immediately.
     /// </summary>
     public virtual void OnStart()
     {
+        if (_hasStarted) return;
         _hasStarted = true;
     }
 

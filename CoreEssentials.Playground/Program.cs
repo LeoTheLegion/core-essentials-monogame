@@ -21,6 +21,6 @@ LoadingScene loadingScene = new LoadingScene(
 game.SceneManager.SetLoadingScene(loadingScene);
 
 // Use our new CharacterScene instead of the PhysicsEntityScene
-game.SceneManager.LoadScene(new CharacterScene());
+game.SceneManager.LoadScene(new PhysicsEntityScene());
 
 game.Run();

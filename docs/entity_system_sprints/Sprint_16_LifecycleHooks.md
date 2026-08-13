@@ -4,6 +4,16 @@
 **Status:** Not Started  
 **Sprint Goal:** Additional lifecycle events for fine-grained control (OnEnable, OnDisable, OnPause, OnResume, OnAwake).
 
+**Dependencies:** Sprint 13 (GameStateSerialization)
+
+**Existing Lifecycle (from Sprint 13):**
+```
+Entity: OnStart() → Update() → OnDestroy()
+Component: OnAttach() → Update() → OnDetach()
+OnDestroy() calls OnDetach() on all components, then clears Owner reference.
+Physics bodies are cleaned up via RigidbodyComponent.OnDetach() → DestroyBody().
+```
+
 ---
 
 ## Tasks

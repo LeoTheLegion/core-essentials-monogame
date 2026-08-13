@@ -413,11 +413,9 @@ Serialize and restore the full entity state for save games.
 // Save current entity state
 entitySystem.SaveState("savegame.xml");
 
-// Load entity state (clears existing first)
+// Load entity state - replaces ISaveableEntity instances with saved state
+// Entities not implementing ISaveableEntity are unaffected
 entitySystem.LoadState("savegame.xml");
-
-// Load into existing scene (merge mode)
-entitySystem.LoadState("savegame.xml", mergeExisting: true);
 ```
 
 **MonoGame.Extended Coverage:** ❌ Not covered. No save/load serialization for game state.

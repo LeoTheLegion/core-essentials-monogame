@@ -29,10 +29,11 @@ public class EntitySerializerTests
             base.OnStart();
             Sprite = new SpriteComponent(null)
             {
-                Color = Color.White,
-                Scale = new Vector2(1f, 1f)
+                Color = Color.White
             };
             AddComponent(Sprite);
+            // Scale is now on Entity, not SpriteComponent
+            Scale = new Vector2(1f, 1f);
         }
 
         public override void Render(SpriteBatch spriteBatch) { }
@@ -417,7 +418,8 @@ public class EntitySerializerTests
         var sprite = entity.GetComponent<SpriteComponent>();
 
         Assert.NotNull(sprite);
-        Assert.Equal(new Vector2(3f, 4f), sprite.Scale);
+        // Scale is now on Entity, not SpriteComponent
+        Assert.Equal(new Vector2(3f, 4f), entity.Scale);
     }
 
     [Fact]
@@ -656,7 +658,8 @@ public class EntitySerializerTests
         var sprite = entities[0].GetComponent<SpriteComponent>();
         Assert.NotNull(sprite);
         Assert.Equal(Color.Green, sprite.Color);
-        Assert.Equal(new Vector2(2f, 2f), sprite.Scale);
+        // Scale is now on Entity, not SpriteComponent
+        Assert.Equal(new Vector2(2f, 2f), entities[0].Scale);
     }
 
     #endregion
