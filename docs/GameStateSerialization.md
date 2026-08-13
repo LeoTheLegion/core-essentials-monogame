@@ -9,9 +9,9 @@ The serialization system captures:
 - Entity tags and sort order
 - Entity hierarchies (parent-child relationships)
 - Active/inactive state
-- **Custom entity state** via `SerializeToXml()` / `DeserializeFromXml()` overrides
+- **Custom entity state** via `ISaveableEntity` interface
 
-> **Entity-driven approach**: Each entity explicitly declares what to save by overriding virtual methods. This makes serialization transparent, testable, and easy for developers.
+> **Opt-in approach**: Only entities implementing `ISaveableEntity` are saved and loaded. This gives you full control over what persists and makes serialization explicit and testable.
 
 ## Quick Start
 
@@ -28,11 +28,12 @@ GameStateSerializer.SaveState(entitySystem, "saves/game_save.xml");
 ### Loading Game State
 
 ```csharp
-// Load and replace all entities
-entitySystem.LoadState("saves/game_save.xml", mergeExisting: false);
+// Load state - replaces all ISaveableEntity instances with what's in the save file
+// Entities not implementing ISaveableEntity are unaffected
+entitySystem.LoadState("saves/game_save.xml");
 
-// Or merge with existing entities (preserves runtime-only entities)
-entitySystem.LoadState("saves/game_save.xml", mergeExisting: true);
+// After loading, any ISaveableEntity instances NOT in the save file will be automatically removed
+// This ensures the game state exactly matches what was saved
 ```
 
 ## API Reference
@@ -50,13 +51,18 @@ Saves the complete entity system state to an XML file.
 
 #### LoadState
 ```csharp
-public void LoadState(string filePath, bool mergeExisting = false)
+public void LoadState(string filePath)
 ```
 Loads game state from an XML file.
 
 **Parameters:**
 - `filePath`: Path to the save file
-- `mergeExisting`: If `true`, merges saved state with existing entities. If `false`, replaces all entities.
+
+**Behavior:**
+- Only entities implementing `ISaveableEntity` are affected
+- Entities with matching IDs in the save file are updated in place
+- ISaveableEntity instances NOT in the save file are automatically removed after loading
+- Non-saveable entities (UI, cameras, etc.) are unaffected
 
 ### GameStateSerializer Methods
 
@@ -68,84 +74,131 @@ Saves entity system state to XML.
 
 #### LoadState
 ```csharp
-public static void LoadState(EntitySystem system, string filePath, bool mergeExisting = false)
+public static void LoadState(EntitySystem system, string filePath)
 ```
 Loads entity system state from XML file.
 
 #### LoadStateFromXml
 ```csharp
-public static void LoadStateFromXml(EntitySystem system, string xmlData, bool mergeExisting = false)
+public static void LoadStateFromXml(EntitySystem system, string xmlData)
 ```
 Loads entity system state from XML string.
 
-## Entity-Driven Serialization
+## ISaveableEntity Interface
 
-Instead of relying on components to know what to save, **entities explicitly declare their serialization needs** by overriding virtual methods. This approach is simpler, more transparent, and easier to debug.
+Serialization is **opt-in** — only entities implementing `ISaveableEntity` are saved and loaded. This gives you full control over what persists and makes serialization explicit.
 
-### Entity Lifecycle During Load
-
-When loading state, the serializer follows a clean single-pass flow:
-
-```
-LoadStateFromXml → CreateEntity(type) → OnStart() runs → Components exist → RestoreState(element)
-```
-
-1. **`CreateEntity(type)`** — instantiates the entity and calls `OnStart()`
-2. **`OnStart()`** — entity creates all its components with default values
-3. **`RestoreState(element)`** — applies saved XML state; **components are guaranteed to exist**
-
-This eliminates the need for deferred state patterns — by the time `RestoreState()` is called, all components created in `OnStart()` are fully initialized.
-
-### How It Works
-
-The `Entity` base class provides two virtual methods for entity-driven serialization:
+### The ISaveableEntity Interface
 
 ```csharp
-// Called during save - returns XElement with your state
-public virtual XElement SerializeToXml()
-
-// Called during load AFTER OnStart() - restore your state from XElement
-// Components created in OnStart() are guaranteed to exist here
-public virtual void RestoreState(XElement element, bool mergeTags = false)
+public interface ISaveableEntity
+{
+    XElement SaveState();
+    void LoadState(XElement element);
+}
 ```
+
+### How Loading Works
+
+When loading state, the serializer follows an ID-based replace flow:
+
+1. **Collect IDs** — gather all entity IDs from the save file (including nested children)
+2. **Load entities** — for each saved entity:
+   - If an entity with that ID exists → update it in place via `LoadState()`
+   - Otherwise → create new entity and call `LoadState()`
+3. **Cleanup** — remove any ISaveableEntity instances whose ID wasn't in the save file
+
+This ensures the game state **exactly matches** what was saved.
 
 ### Example: Entity with Custom State
 
 ```csharp
-public class Player : Entity
+public class Player : Entity, ISaveableEntity
 {
     public int Score { get; set; }
     public float Health { get; set; }
 
-    public override XElement SerializeToXml()
+    public XElement SaveState()
     {
-        // Base saves Id, Type, Position, Rotation, Scale, Sort, Active, Tags
-        var element = base.SerializeToXml();
-
-        // Add custom state as a child element
-        element.Add(new XElement("PlayerState",
+        return new XElement("PlayerState",
             new XAttribute("Score", Score),
             new XAttribute("Health", Health)
-        ));
-
-        return element;
+        );
     }
 
-    public override void RestoreState(XElement element, bool mergeTags = false)
+    public void LoadState(XElement element)
     {
-        // Base restores Position, Rotation, Scale, Tags, etc.
-        base.RestoreState(element, mergeTags);
-
-        // Restore custom state
         var playerState = element.Element("PlayerState");
         if (playerState != null)
         {
             if (int.TryParse(playerState.Attribute("Score")?.Value, out int score))
                 Score = score;
             if (float.TryParse(playerState.Attribute("Health")?.Value,
-                    System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture,
+                    NumberStyles.Any, CultureInfo.InvariantCulture,
                     out float health))
                 Health = health;
+        }
+    }
+}
+```
+
+### Example: Physics Entity (Ball)
+
+```csharp
+public class Ball : Entity, ISaveableEntity
+{
+    private RigidbodyComponent? _rigidbody;
+    private SpriteComponent? _sprite;
+
+    public override void OnStart()
+    {
+        base.OnStart();
+        _sprite = new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball.png"));
+        AddComponent(_sprite);
+        _rigidbody = new RigidbodyComponent(...);
+        AddComponent(_rigidbody);
+    }
+
+    public XElement SaveState()
+    {
+        var state = new XElement("BallState",
+            new XAttribute("Color", _sprite?.Color.ToArgb() ?? 0)
+        );
+
+        if (_rigidbody?.Body != null && _rigidbody.Body.IsBodyCreated)
+        {
+            state.Add(new XElement("Physics",
+                new XAttribute("LinearVelocityX", _rigidbody.Body.LinearVelocity.X),
+                new XAttribute("LinearVelocityY", _rigidbody.Body.LinearVelocity.Y),
+                new XAttribute("AngularVelocity", _rigidbody.Body.AngularVelocity)
+            ));
+        }
+
+        return state;
+    }
+
+    public void LoadState(XElement element)
+    {
+        var ballState = element.Element("BallState");
+        if (ballState != null && _sprite != null)
+        {
+            var colorAttr = ballState.Attribute("Color")?.Value;
+            if (colorAttr != null && int.TryParse(colorAttr, out int argb))
+                _sprite.Color = new Color(argb);
+        }
+
+        var physics = element.Element("Physics");
+        if (physics != null && _rigidbody?.Body != null)
+        {
+            if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
+                float.TryParse(physics.Attribute("LinearVelocityY")?.Value,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
+            {
+                var velocityChange = new Vector2(velX - _rigidbody.Body.LinearVelocity.X,
+                                                 velY - _rigidbody.Body.LinearVelocity.Y);
+                _rigidbody.Body.ApplyImpulse(velocityChange * _rigidbody.Body.Mass, Vector2.Zero);
+            }
         }
     }
 }
@@ -193,26 +246,58 @@ public class Player : Entity
 </Entity>
 ```
 
-## Merge Mode
+## Entity Cleanup on Load
 
-Merge mode allows you to load saved state while preserving entities created at runtime.
+When loading state, any ISaveableEntity instances **not present in the save file** will be automatically removed. This ensures the loaded game state exactly matches what was saved.
 
-### When to Use Merge Mode
+### How It Works
 
-- **Merge Mode (`true`)**: Load save file but keep existing entities (good for loading additional content, checkpoints)
-- **Replace Mode (`false`)**: Clear all entities and load from save (good for loading main save games)
-
-### Example: Merge Mode
 ```csharp
-// Create runtime-only entities
-var uiElement = entitySystem.CreateEntity<UIElement>();
-uiElement.SetId("hud");
+// Create some entities
+var ball1 = entitySystem.CreateEntity<Ball>();
+ball1.SetId("ball_1");
+ball1.Implements(ISaveableEntity);
 
-// Load save game but keep UI elements
-entitySystem.LoadState("saves/game.xml", mergeExisting: true);
+var ball2 = entitySystem.CreateEntity<Ball>();
+ball2.SetId("ball_2");
+ball2.Implements(ISaveableEntity);
 
-// UI element still exists, game entities restored from save
+// UI elements don't implement ISaveableEntity, so they're unaffected
+var hud = entitySystem.CreateEntity<HUDElement>();
+hud.SetId("hud");
+
+// Save state (both balls are saved)
+entitySystem.SaveState("saves/game.xml");
+
+// Create another ball at runtime
+var ball3 = entitySystem.CreateEntity<Ball>();
+ball3.SetId("ball_3");
+
+// Load state - ball3 will be removed since it's not in the save file
+entitySystem.LoadState("saves/game.xml");
+
+// Result: ball1, ball2 exist (from save), ball3 is removed, hud still exists (not saveable)
 ```
+
+### Preserving Runtime Entities
+
+To keep entities like UI elements, cameras, or debug overlays across save/load cycles, simply **don't implement ISaveableEntity**:
+
+```csharp
+// This entity won't be saved or affected by LoadState
+public class CameraEntity : Entity
+{
+    // No ISaveableEntity implementation
+    // Entity persists across all save/load operations
+}
+```
+
+### Controlling What Gets Saved
+
+| Interface Implemented | Saved? | Removed on Load if not in file? |
+|-----------------------|--------|----------------------------------|
+| `ISaveableEntity`     | Yes    | Yes                              |
+| None                  | No     | No                               |
 
 ## Best Practices
 
@@ -222,70 +307,34 @@ Entities must have unique IDs to be saved and loaded properly:
 entity.SetId("player_character");
 ```
 
-### 2. Handle Versioning
+### 2. Implement ISaveableEntity for Serializable Entities
+Only entities that need to persist should implement the interface:
+```csharp
+public class Player : Entity, ISaveableEntity
+{
+    public XElement SaveState() { /* ... */ }
+    public void LoadState(XElement element) { /* ... */ }
+}
+```
+
+### 3. Don't Implement ISaveableEntity for Runtime-Only Entities
+UI elements, cameras, and debug overlays should NOT implement `ISaveableEntity`:
+```csharp
+// This entity persists across all save/load operations
+public class CameraEntity : Entity
+{
+    // No ISaveableEntity - unaffected by serialization
+}
+```
+
+### 4. Handle Versioning
 When changing entity structure, consider save file versioning:
 ```xml
 <GameState Version="2.0" ...>
 ```
 Update your loader to handle different versions.
 
-### 3. Components Exist in `RestoreState()`
-
-Since `RestoreState()` is called **after** `OnStart()`, all components created during initialization are guaranteed to exist:
-
-```csharp
-public class Ball : Entity
-{
-    private SpriteComponent? _spriteComponent;
-    private RigidbodyComponent? _rigidbody;
-
-    public override void OnStart()
-    {
-        base.OnStart();
-
-        // Create components with defaults
-        _spriteComponent = new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball.png"));
-        AddComponent(_spriteComponent);
-
-        _rigidbody = new RigidbodyComponent(...);
-        AddComponent(_rigidbody);
-    }
-
-    public override void RestoreState(XElement element, bool mergeTags = false)
-    {
-        // Base restores Position, Rotation, Scale, Tags
-        base.RestoreState(element, mergeTags);
-
-        // Components exist here — no deferred pattern needed!
-        var spriteElement = element.Element("Sprite");
-        if (spriteElement != null && _spriteComponent != null)
-        {
-            var colorAttr = spriteElement.Attribute("Color")?.Value;
-            if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
-            {
-                _spriteComponent.Color = new Color(argb);
-            }
-        }
-
-        var physicsElement = element.Element("Physics");
-        if (physicsElement != null && _rigidbody != null && _rigidbody.Body != null)
-        {
-            // Restore velocity via ApplyImpulse (LinearVelocity is read-only)
-            if (float.TryParse(physicsElement.Attribute("LinearVelocityX")?.Value,
-                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
-                float.TryParse(physicsElement.Attribute("LinearVelocityY")?.Value,
-                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
-            {
-                var velocityChange = new Vector2(velX - _rigidbody.Body.LinearVelocity.X,
-                                                 velY - _rigidbody.Body.LinearVelocity.Y);
-                _rigidbody.Body.ApplyImpulse(velocityChange * _rigidbody.Body.Mass, Vector2.Zero);
-            }
-        }
-    }
-}
-```
-
-### 4. Test Round-Trips
+### 5. Test Round-Trips
 Always test save/load round-trips:
 ```csharp
 // Save
@@ -328,7 +377,7 @@ public class SaveGameManager
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Save slot '{slotName}' not found");
         
-        _entitySystem.LoadState(filePath, mergeExisting: false);
+        _entitySystem.LoadState(filePath);
     }
 
     public void QuickSave()
@@ -355,8 +404,8 @@ public class SaveGameManager
 - Check that entities are added to the EntitySystem before saving
 
 ### Components Not Restoring
-- Make sure you override `RestoreState()` (not `DeserializeFromXml()`) for post-OnStart restoration
-- Check that components are created in `OnStart()` before `RestoreState()` is called
+- Make sure your entity implements `ISaveableEntity`
+- Check that components are created in `OnStart()` before `LoadState()` is called
 - Verify component type names are preserved in XML (use `GetType().FullName` not `GetType().Name`)
 
 ### Physics State Not Persisting
@@ -369,10 +418,10 @@ public class SaveGameManager
 - Don't store scale in both Entity and components - SpriteComponent reads from Owner.Scale
 - Check that old save files with Scale in SpriteComponent are migrated
 
-### Merge Mode Issues
-- Entities with duplicate IDs will be updated, not duplicated
-- Runtime tags are preserved in merge mode
-- New entities from save file will be created
+### Entities Disappearing After Load
+- Only ISaveableEntity instances are affected by loading
+- If an entity implements ISaveableEntity but isn't in the save file, it will be removed
+- To preserve runtime entities (UI, cameras), don't implement ISaveableEntity
 
 ## Built-In Serializable Components
 

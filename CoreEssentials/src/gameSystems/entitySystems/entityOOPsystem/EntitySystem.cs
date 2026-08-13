@@ -547,6 +547,22 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Removes a single entity from the system, cleaning up all indexes and calling OnDestroy.
+    /// </summary>
+    /// <param name="entity">The entity to remove.</param>
+    public void RemoveEntity(Entity entity)
+    {
+        if (entity == null)
+            return;
+
+        UpdateTagIndexForEntity(entity, false);
+        UpdateIdIndexForEntity(entity, false);
+        UpdateSpatialGridForEntity(entity, false);
+        entity.OnDestroy();
+        _entities.Remove(entity);
+    }
+
+    /// <summary>
     /// Removes all entities from the system.
     /// </summary>
     public void ClearEntities()
@@ -604,7 +620,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
-    /// Saves the complete entity system state to an XML file.
+    /// Saves the state of all <see cref="Serialization.ISaveableEntity"/> instances to an XML file.
     /// </summary>
     /// <param name="filePath">The path to save the game state file.</param>
     public void SaveState(string filePath)
@@ -614,12 +630,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
 
     /// <summary>
     /// Loads a game state from an XML file and applies it to the entity system.
+    /// Entities with matching IDs are updated in place; entities without a match are created.
     /// </summary>
     /// <param name="filePath">The path to the game state file.</param>
-    /// <param name="mergeExisting">If true, merges saved state with existing entities. If false, replaces all entities.</param>
-    public void LoadState(string filePath, bool mergeExisting = false)
+    public void LoadState(string filePath)
     {
-        Serialization.GameStateSerializer.LoadState(this, filePath, mergeExisting);
+        Serialization.GameStateSerializer.LoadState(this, filePath);
     }
 
     /// <summary>

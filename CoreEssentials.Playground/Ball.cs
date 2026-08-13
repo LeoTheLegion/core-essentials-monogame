@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
 using System.Globalization;
+using System.Linq;
 using System.Xml.Linq;
 using CoreEssentials.Assets;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
@@ -14,7 +16,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Playground;
 
-public class Ball : Entity
+public class Ball : Entity, ISaveableEntity
 {
     private SpriteComponent _spriteComponent;
     private RigidbodyComponent _rigidbodyComponent;
@@ -148,14 +150,30 @@ public class Ball : Entity
     }
 
     /// <summary>
-    /// Serializes this ball's state including physics velocity.
+    /// Saves this ball's state including position, transform, tags, physics velocity, and sprite color.
     /// </summary>
-    public override XElement SerializeToXml()
+    public XElement SaveState()
     {
-        // Get base serialization (Position, Scale, Tags, etc.)
-        var element = base.SerializeToXml();
+        var element = new XElement("Entity",
+            new XAttribute("Id", Id ?? string.Empty),
+            new XAttribute("Type", GetType().FullName),
+            new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
+            new XAttribute("Sort", GetSort()),
+            new XAttribute("Active", GetActive()),
+            new XElement("Position",
+                new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))
+            ),
+            new XElement("Scale",
+                new XAttribute("X", Scale.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Scale.Y.ToString(CultureInfo.InvariantCulture))
+            ),
+            new XElement("Tags",
+                Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
+            )
+        );
 
-        // Explicitly add physics state - Ball decides what matters for gameplay
+        // Add physics state
         if (_rigidbodyComponent.IsBodyCreated)
         {
             element.Add(new XElement("Physics",
@@ -177,13 +195,69 @@ public class Ball : Entity
     }
 
     /// <summary>
-    /// Restores this ball's state including physics velocity and sprite color.
-    /// Called after OnStart() so components are guaranteed to exist.
+    /// Restores this ball's state from XML including position, transform, tags, physics velocity, and sprite color.
+    /// Called by GameStateSerializer after OnStart() so components are guaranteed to exist.
     /// </summary>
-    public override void RestoreState(XElement element, bool mergeTags = false)
+    public void LoadState(XElement element)
     {
-        // Restore base state (Position, Scale, Tags, etc.)
-        base.RestoreState(element);
+        // Restore position
+        var positionElement = element.Element("Position");
+        if (positionElement != null)
+        {
+            if (float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+            {
+                Position = new Vector2(x, y);
+            }
+        }
+
+        // Restore rotation
+        if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
+        {
+            Rotation = rotation;
+        }
+
+        // Restore scale
+        var scaleElement = element.Element("Scale");
+        if (scaleElement != null)
+        {
+            if (float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+                float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
+            {
+                Scale = new Vector2(scaleX, scaleY);
+            }
+        }
+
+        // Restore sort order
+        if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sortOrder))
+        {
+            SetSort(sortOrder);
+        }
+
+        // Restore active state
+        if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
+        {
+            SetActive(active);
+        }
+
+        // Restore tags
+        var tagsElement = element.Element("Tags");
+        if (tagsElement != null)
+        {
+            foreach (var tag in Tags.ToList())
+            {
+                RemoveTag(tag);
+            }
+
+            foreach (var tagElement in tagsElement.Elements("Tag"))
+            {
+                var tagName = tagElement.Attribute("Name")?.Value;
+                if (!string.IsNullOrWhiteSpace(tagName))
+                {
+                    SetTag(tagName);
+                }
+            }
+        }
 
         // Restore physics velocity — body exists since OnStart ran
         // (position/rotation sync happens automatically on first Update via component)

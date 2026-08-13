@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -80,7 +81,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 File.WriteAllText(tempFile, xml);
 
                 // Act
-                GameStateSerializer.LoadState(system, tempFile, mergeExisting: false);
+                GameStateSerializer.LoadState(system, tempFile);
 
                 // Assert
                 var entities = system.GetEntities();
@@ -100,14 +101,20 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
 
         [Fact]
-        public void LoadState_MergeModePreservesExistingEntities()
+        public void LoadState_UpdatesExistingEntitiesById()
         {
-            // Arrange
+            // Arrange: create an entity that will also be in the save file
             var system = CreateTestSystem();
             var existingEntity = system.CreateEntity<TestEntity>();
             existingEntity.SetId("existing_entity");
             existingEntity.Position = new Vector2(50, 50);
             existingEntity.SetTag("runtime");
+
+            // Also create an entity NOT in the save file (should be removed)
+            var extraEntity = system.CreateEntity<TestEntity>();
+            extraEntity.SetId("extra_entity");
+            extraEntity.Position = new Vector2(999, 999);
+            extraEntity.SetTag("extra");
 
             var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <GameState Version=""1.0"" Timestamp=""2026-01-01T00:00:00Z"">
@@ -133,21 +140,26 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             try
             {
                 // Act
-                GameStateSerializer.LoadState(system, tempFile, mergeExisting: true);
+                GameStateSerializer.LoadState(system, tempFile);
 
-                // Assert
+                // Assert: existing entity updated from save file, new entity created, extra entity removed
                 var entities = system.GetEntities();
                 Assert.Equal(2, entities.Count);
-                
+
                 var updatedEntity = entities.FirstOrDefault(e => e.Id == "existing_entity");
                 Assert.NotNull(updatedEntity);
                 Assert.Equal(new Vector2(100, 200), updatedEntity.Position);
-                // Runtime tag should be preserved in merge mode
-                Assert.True(updatedEntity.HasTag("runtime"));
-                
+                // Tags are replaced (not merged) — runtime tag is cleared, saved tag is added
+                Assert.False(updatedEntity.HasTag("runtime"), "Runtime tag should be replaced");
+                Assert.True(updatedEntity.HasTag("saved"));
+
                 var newEntity = entities.FirstOrDefault(e => e.Id == "new_entity");
                 Assert.NotNull(newEntity);
                 Assert.Equal(new Vector2(300, 400), newEntity.Position);
+
+                // Extra entity should have been removed (not in save file)
+                var extraRemaining = entities.FirstOrDefault(e => e.Id == "extra_entity");
+                Assert.True(extraRemaining == null, "Extra entity not in save file should be removed");
             }
             finally
             {
@@ -178,7 +190,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 GameStateSerializer.SaveState(system, tempFile);
                 
                 var newSystem = CreateTestSystem();
-                GameStateSerializer.LoadState(newSystem, tempFile, mergeExisting: false);
+                GameStateSerializer.LoadState(newSystem, tempFile);
 
                 // Assert - both parent and child are at root level since all entities with IDs are serialized
                 var entities = newSystem.GetEntities();
@@ -236,11 +248,60 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             }
         }
 
-        private class TestEntity : Entity
+        private class TestEntity : Entity, ISaveableEntity
         {
             public override void OnStart()
             {
                 base.OnStart();
+            }
+
+            public XElement SaveState()
+            {
+                return new XElement("Entity",
+                    new XAttribute("Id", Id ?? string.Empty),
+                    new XAttribute("Type", GetType().FullName),
+                    new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
+                    new XAttribute("Sort", GetSort()),
+                    new XAttribute("Active", GetActive()),
+                    new XElement("Position",
+                        new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))
+                    ),
+                    new XElement("Scale",
+                        new XAttribute("X", Scale.X.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", Scale.Y.ToString(CultureInfo.InvariantCulture))
+                    ),
+                    new XElement("Tags",
+                        Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
+                    ));
+            }
+
+            public void LoadState(XElement element)
+            {
+                var pos = element.Element("Position");
+                if (pos != null)
+                    Position = new Vector2(float.Parse(pos.Attribute("X")?.Value ?? "0", CultureInfo.InvariantCulture),
+                        float.Parse(pos.Attribute("Y")?.Value ?? "0", CultureInfo.InvariantCulture));
+
+                if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var rot))
+                    Rotation = rot;
+
+                var sc = element.Element("Scale");
+                if (sc != null)
+                    Scale = new Vector2(float.Parse(sc.Attribute("X")?.Value ?? "1", CultureInfo.InvariantCulture),
+                        float.Parse(sc.Attribute("Y")?.Value ?? "1", CultureInfo.InvariantCulture));
+
+                if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var sort))
+                    SetSort(sort);
+
+                if (bool.TryParse(element.Attribute("Active")?.Value, out var active))
+                    SetActive(active);
+
+                foreach (var t in Tags.ToList()) RemoveTag(t);
+                var tagsEl = element.Element("Tags");
+                if (tagsEl != null)
+                    foreach (var tag in tagsEl.Elements("Tag"))
+                        SetTag(tag.Attribute("Name")?.Value ?? "default");
             }
         }
     }

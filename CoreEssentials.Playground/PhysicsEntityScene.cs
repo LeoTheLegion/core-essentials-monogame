@@ -208,8 +208,8 @@ public class PhysicsEntityScene : Scene
                 var entitySystem = GetGameSystem<EntitySystem>();
                 Console.WriteLine($"[LoadScene] EntitySystem has {entitySystem.GetEntities().Count} entities before load");
                 
-                Console.WriteLine("[LoadState] === Calling LoadState (mergeExisting=false) ===");
-                entitySystem.LoadState(SaveFilePath, mergeExisting: false);
+                Console.WriteLine("[LoadState] === Calling LoadState (ID-based replace mode) ===");
+                entitySystem.LoadState(SaveFilePath);
                 Console.WriteLine($"[LoadState] === LoadState completed successfully ===");
                 Console.WriteLine($"[LoadScene] EntitySystem now has {entitySystem.GetEntities().Count} entities after load");
                 
