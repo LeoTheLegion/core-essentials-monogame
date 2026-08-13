@@ -5,11 +5,12 @@ The Game State Serialization system allows you to save and load the complete sta
 ## Overview
 
 The serialization system captures:
-- Entity positions and rotations
+- Entity positions, rotations, **and scale**
 - Entity tags and sort order
 - Component state (for components implementing `ISerializableComponent`)
 - Entity hierarchies (parent-child relationships)
 - Active/inactive state
+- **Physics state** (velocity, mass, friction, restitution)
 
 ## Quick Start
 
@@ -120,13 +121,14 @@ public class HealthComponent : EntityComponent, ISerializableComponent
 ```xml
 <Entity Id="player_1" Type="PlayerEntity" Rotation="0.785" Sort="10" Active="true">
   <Position X="100" Y="200" />
+  <Scale X="1.5" Y="1.5" />
   <Tags>
     <Tag Name="player" />
     <Tag Name="controllable" />
   </Tags>
   <Components>
-    <Component Type="HealthComponent">
-      <HealthComponentState CurrentHealth="100" MaxHealth="100" />
+    <Component Type="SpriteComponent">
+      <SpriteState ColorR="255" ColorG="255" ColorB="255" ColorA="255" OriginX="0.5" OriginY="0.5" />
     </Component>
   </Components>
   <Children>
@@ -252,12 +254,72 @@ public class SaveGameManager
 ### Components Not Restoring
 - Verify component implements `ISerializableComponent`
 - Check that `SerializeToXml()` and `DeserializeFromXml()` are implemented correctly
-- Ensure component type name is preserved in XML
+- Ensure component type name is preserved in XML (use `GetType().FullName` not `GetType().Name`)
+
+### Physics State Not Persisting
+- Make sure RigidbodyComponent and ColliderComponent are added before saving
+- Velocity is only saved if the physics body has been created (check `IsBodyCreated`)
+- On load, velocity is restored after the body is recreated in `OnStart()`
+
+### Scale Issues After Loading
+- Entity.Scale is now the single source of truth for scale
+- Don't store scale in both Entity and components - SpriteComponent reads from Owner.Scale
+- Check that old save files with Scale in SpriteComponent are migrated
 
 ### Merge Mode Issues
 - Entities with duplicate IDs will be updated, not duplicated
 - Runtime tags are preserved in merge mode
 - New entities from save file will be created
+
+## Built-In Serializable Components
+
+The following components implement `ISerializableComponent` and are automatically saved/loaded:
+
+### SpriteComponent
+Saves visual properties of the sprite.
+```xml
+<SpriteState 
+  ColorR="255" ColorG="0" ColorB="0" ColorA="255"
+  OriginX="0.5" OriginY="0.5"
+  Effects="None" LayerDepth="0" />
+```
+
+**Note:** Scale is now stored on the `Entity` base class, not in SpriteComponent.
+
+### RigidbodyComponent
+Saves physics body properties and velocity.
+```xml
+<RigidbodyState 
+  Type="Dynamic"
+  Mass="1.0" FixedRotation="false"
+  SyncFromPhysics="true"
+  LinearVelocityX="10.5" LinearVelocityY="-20.3"
+  AngularVelocity="0.75" />
+```
+
+### ColliderComponent
+Saves collider shape and material properties.
+```xml
+<ColliderState 
+  ShapeType="Circle"
+  Friction="0.5" Restitution="1.0"
+  OffsetX="0" OffsetY="1"
+  Radius="25" />
+```
+
+## Entity Scale Property
+
+Entity now has a `Scale` property (like `Position` and `Rotation`) that is automatically serialized:
+
+```csharp
+// Set entity scale
+entity.Scale = new Vector2(2.0f, 2.0f);
+
+// Components like SpriteComponent read from Owner.Scale
+// No need to store scale in individual components
+```
+
+This eliminates redundancy - previously each entity stored its own scale, now it's a single source of truth on the Entity base class.
 
 ## Dependencies
 
@@ -269,4 +331,4 @@ public class SaveGameManager
 
 - [Entity System Documentation](EntitySystem.md)
 - [Entity Templates](XMLEntityDefinitions.md)
-- [Component System](ComponentSystem.md)
+- [Physics System](PhysicsSystem.md)
