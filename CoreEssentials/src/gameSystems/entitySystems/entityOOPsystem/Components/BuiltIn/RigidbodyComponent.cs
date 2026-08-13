@@ -48,7 +48,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// Gets the underlying physics body. Returns null until the body is created.
     /// The body is lazily created on first access or when Update is called.
     /// </summary>
-    public IPhysicsBody? Body
+    internal IPhysicsBody? Body
     {
         get
         {
@@ -139,7 +139,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         if (SyncFromPhysics)
         {
             // Physics drives entity
-            Owner.Position = _body.WorldPosition;
+            Owner.Position = _body.Position;
             Owner.Rotation = _body.Rotation;
         }
         else
@@ -158,6 +158,16 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     {
         EnsureBody();
         _body.ApplyImpulse(impulse);
+    }
+
+    /// <summary>
+    /// Gets or sets the linear velocity of the body.
+    /// Setting this directly bypasses physics simulation (useful for restoring saved state).
+    /// </summary>
+    public Vector2 LinearVelocity
+    {
+        get => _body?.LinearVelocity ?? default;
+        set => SetLinearVelocity(value);
     }
 
     /// <summary>
@@ -195,6 +205,25 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     {
         EnsureBody();
         _body.AngularVelocity += angularImpulse;
+    }
+
+    /// <summary>
+    /// Gets or sets the world position of the physics body.
+    /// Setting this directly bypasses physics simulation (useful for teleporting or restoring saved state).
+    /// </summary>
+    public Vector2 Position
+    {
+        get => _body?.Position ?? default;
+        set { if (_body != null) _body.Position = value; }
+    }
+
+    /// <summary>
+    /// Gets or sets the rotation of the physics body in radians.
+    /// </summary>
+    public float Rotation
+    {
+        get => _body?.Rotation ?? 0f;
+        set { if (_body != null) _body.Rotation = value; }
     }
 
     /// <summary>

@@ -102,7 +102,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, position);
 
         // Assert
-        Assert.Equal(position, body.WorldPosition);
+        Assert.Equal(position, body.Position);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Static, Vector2.Zero);
 
         // Assert
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
     }
 
     #endregion
@@ -599,7 +599,7 @@ public class PhysicsBodyTests : IDisposable
         body.Dispose();
 
         // Assert - after dispose, WorldPosition should return default (zero)
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
     }
 
     #endregion

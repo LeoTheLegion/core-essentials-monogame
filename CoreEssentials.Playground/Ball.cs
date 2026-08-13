@@ -142,24 +142,9 @@ public class Ball : Entity
     {
         base.OnDestroy();
 
-        // Destroy physics body through component
-        _rigidbodyComponent.DestroyBody();
-
+        // Cleanup coroutines (component cleanup like DestroyBody is handled by OnDetach in base.OnDestroy())
         _coroutineOwner.StopAllCoroutines();
         _coroutineOwner = null;
-    }
-
-    ~Ball()
-    {
-        if (_rigidbodyComponent.Body != null)
-        {
-            throw new InvalidOperationException("Ball is not destroyed properly. Please call Destroy() method.");
-        }
-
-        if (_coroutineOwner != null)
-        {
-            throw new InvalidOperationException("Coroutine owner is not destroyed properly. Please call StopAllCoroutines() method.");
-        }
     }
 
     /// <summary>
@@ -171,13 +156,12 @@ public class Ball : Entity
         var element = base.SerializeToXml();
 
         // Explicitly add physics state - Ball decides what matters for gameplay
-        if (_rigidbodyComponent?.Body != null)
+        if (_rigidbodyComponent.IsBodyCreated)
         {
-            var body = _rigidbodyComponent.Body;
             element.Add(new XElement("Physics",
-                new XAttribute("LinearVelocityX", body.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
-                new XAttribute("LinearVelocityY", body.LinearVelocity.Y.ToString(CultureInfo.InvariantCulture)),
-                new XAttribute("AngularVelocity", body.AngularVelocity.ToString(CultureInfo.InvariantCulture))
+                new XAttribute("LinearVelocityX", _rigidbodyComponent.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("LinearVelocityY", _rigidbodyComponent.LinearVelocity.Y.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("AngularVelocity", _rigidbodyComponent.AngularVelocity.ToString(CultureInfo.InvariantCulture))
             ));
         }
 
@@ -201,23 +185,27 @@ public class Ball : Entity
         // Restore base state (Position, Scale, Tags, etc.)
         base.RestoreState(element);
 
+        // Sync physics body to restored entity transform before applying velocity
+        // (body was created at 0,0 during OnStart; we need it at the saved position)
+        if (_rigidbodyComponent.IsBodyCreated)
+        {
+            _rigidbodyComponent.Position = Position;
+            _rigidbodyComponent.Rotation = Rotation;
+        }
+
         // Restore physics velocity — body exists since OnStart ran
         var physics = element.Element("Physics");
-        if (physics != null && _rigidbodyComponent?.Body != null)
+        if (physics != null && _rigidbodyComponent.IsBodyCreated)
         {
-            var body = _rigidbodyComponent.Body;
-
             if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
                 float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
             {
-                var targetVelocity = new Vector2(velX, velY);
-                var velocityChange = targetVelocity - body.LinearVelocity;
-                body.ApplyImpulse(velocityChange * body.Mass);
+                _rigidbodyComponent.SetLinearVelocity(new Vector2(velX, velY));
             }
 
             if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
             {
-                body.AngularVelocity = angVel;
+                _rigidbodyComponent.AngularVelocity = angVel;
             }
         }
 

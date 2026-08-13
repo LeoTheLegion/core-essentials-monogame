@@ -67,7 +67,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
 
         foreach (var body in _world.GetBodies())
         {
-            var position = body.WorldPosition;
+            var position = body.Position;
             var rotation = body.Rotation;
 
             foreach (var fixture in body.Colliders)
