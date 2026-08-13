@@ -18,7 +18,6 @@ public class Ball : Entity
     private RigidbodyComponent _rigidbodyComponent;
     private ColliderComponent _colliderComponent;
     private float _radius;
-    private float _scale = 1.0f;
 
     static Random _random = new Random();
 
@@ -29,25 +28,12 @@ public class Ball : Entity
     /// </summary>
     public RigidbodyComponent RigidbodyComponent => _rigidbodyComponent;
 
-    // Add a Scale property
-    public float Scale
-    {
-        get => _scale;
-        set
-        {
-            _scale = value;
-            if (_rigidbodyComponent.Body != null && _colliderComponent.IsColliderCreated)
-            {
-                UpdateCollider();
-            }
-        }
-    }
-
     public Ball(Vector2 position, string? id = null)
     {
         Position = position;
         sort = 0;
-        _scale = (float)(_random.NextDouble() + 0.5f);
+        float randomScale = (float)(_random.NextDouble() + 0.5f);
+        Scale = new Vector2(randomScale, randomScale);
         if (id != null)
             SetId(id);
     }
@@ -59,40 +45,28 @@ public class Ball : Entity
     {
         base.OnStart();
 
-        Console.WriteLine($"[Ball.OnStart] Id={Id}, _hasStarted check passed");
-
         // Add sprite component only if not already present (e.g., from deserialization)
         _spriteComponent = GetComponent<SpriteComponent>();
         if (_spriteComponent == null)
         {
-            Console.WriteLine($"[Ball.OnStart] Creating NEW SpriteComponent for {Id}");
             var sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
             _spriteComponent = new SpriteComponent(sprite);
             AddComponent(_spriteComponent);
-        }
-        else
-        {
-            Console.WriteLine($"[Ball.OnStart] Reusing EXISTING SpriteComponent for {Id}, Sprite={_spriteComponent.Sprite?.Name ?? "null"}, Color=({_spriteComponent.Color.R},{_spriteComponent.Color.G},{_spriteComponent.Color.B})");
-        }
 
-        // Assign sprite if it's null (e.g., component was created during deserialization without a sprite)
-        if (_spriteComponent.Sprite == null)
-        {
-            Console.WriteLine($"[Ball.OnStart] Assigning sprite to existing component for {Id}");
-            _spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
-        }
-        else
-        {
-            // Only set default properties if this is a fresh entity (not loaded from save)
-            Console.WriteLine($"[Ball.OnStart] Setting default properties for {Id}");
-            _spriteComponent.Scale = new Vector2(_scale, _scale);
+            // Set default properties for fresh entities
             _spriteComponent.Origin = new Vector2(0.5f, 0.5f);
             _spriteComponent.Color = Color.White;
             _spriteComponent.Effects = SpriteEffects.None;
             _spriteComponent.LayerDepth = 0f;
         }
-
-        Console.WriteLine($"[Ball.OnStart] Final state for {Id}: Color=({_spriteComponent.Color.R},{_spriteComponent.Color.G},{_spriteComponent.Color.B}), Scale=({_spriteComponent.Scale.X},{_spriteComponent.Scale.Y})");
+        else
+        {
+            // Assign sprite if it's null (e.g., component was created during deserialization without a sprite)
+            if (_spriteComponent.Sprite == null)
+            {
+                _spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+            }
+        }
 
         // Add rigidbody component only if not already present
         _rigidbodyComponent = GetComponent<RigidbodyComponent>();
@@ -103,7 +77,7 @@ public class Ball : Entity
 
             // Configure rigidbody properties (body auto-creates on first access)
             _rigidbodyComponent.FixedRotation = false;
-            _rigidbodyComponent.Mass = 1f * _scale * _scale;
+            _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
         }
 
         RegisterForInstancedRendering(_spriteComponent.Sprite);
@@ -114,7 +88,7 @@ public class Ball : Entity
         _colliderComponent = GetComponent<ColliderComponent>();
         if (_colliderComponent == null)
         {
-            var colliderRadius = _radius * _scale;
+            var colliderRadius = _radius * Scale.X;
             var colliderOffset = new Vector2(0, 1);
             _colliderComponent = new ColliderComponent(colliderRadius, colliderOffset)
             {
@@ -131,10 +105,10 @@ public class Ball : Entity
     private void UpdateCollider()
     {
         // Update collider radius based on new scale
-        _colliderComponent.UpdateCircleRadius(_radius * _scale);
+        _colliderComponent.UpdateCircleRadius(_radius * Scale.X);
 
         // Update mass based on scale
-        _rigidbodyComponent.Mass = 1f * _scale * _scale;
+        _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
     }
 
     // (Update handled by RigidbodyComponent)

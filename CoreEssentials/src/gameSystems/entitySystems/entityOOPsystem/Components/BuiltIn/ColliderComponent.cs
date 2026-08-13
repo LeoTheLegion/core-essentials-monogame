@@ -1,7 +1,9 @@
 using System;
+using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GameSystems.Physics.Types;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
@@ -36,7 +38,7 @@ public enum ColliderShapeType
 /// Component that adds collision detection to an entity by managing an ICollider.
 /// Requires a RigidbodyComponent on the same entity to create the collider on.
 /// </summary>
-public class ColliderComponent : EntityComponent
+public class ColliderComponent : EntityComponent, ISerializableComponent
 {
     private ICollider? _collider;
 
@@ -250,7 +252,7 @@ public class ColliderComponent : EntityComponent
             return;
 
         var rigidbody = Owner.GetComponent<RigidbodyComponent>();
-        rigidbody?.Body?.RemoveCollider(_collider);
+        rigidbody?.RawBody?.RemoveCollider(_collider);
         _collider.Dispose();
         _collider = null;
     }
@@ -281,5 +283,50 @@ public class ColliderComponent : EntityComponent
         Size = newSize;
         DestroyCollider();
         CreateCollider();
+    }
+
+    /// <summary>
+    /// Serializes the collider component's state to an XML element.
+    /// </summary>
+    /// <returns>An XML element containing the component's serialized state.</returns>
+    public XElement SerializeToXml()
+    {
+        return new XElement("ColliderState",
+            new XAttribute("ShapeType", ShapeType.ToString()),
+            new XAttribute("Friction", Friction),
+            new XAttribute("Restitution", Restitution),
+            new XAttribute("OffsetX", Offset.X),
+            new XAttribute("OffsetY", Offset.Y),
+            ShapeType == ColliderShapeType.Circle ? new XAttribute("Radius", Radius) : null,
+            ShapeType == ColliderShapeType.Rectangle ? new XAttribute("SizeX", Size.X) : null,
+            ShapeType == ColliderShapeType.Rectangle ? new XAttribute("SizeY", Size.Y) : null
+        );
+    }
+
+    /// <summary>
+    /// Deserializes the collider component's state from an XML element.
+    /// </summary>
+    /// <param name="element">The XML element containing the component's state.</param>
+    public void DeserializeFromXml(XElement element)
+    {
+        Friction = float.Parse(element.Attribute("Friction")?.Value ?? "0.5");
+        Restitution = float.Parse(element.Attribute("Restitution")?.Value ?? "0.5");
+
+        Offset = new Vector2(
+            float.Parse(element.Attribute("OffsetX")?.Value ?? "0"),
+            float.Parse(element.Attribute("OffsetY")?.Value ?? "0")
+        );
+
+        if (ShapeType == ColliderShapeType.Circle)
+        {
+            Radius = float.Parse(element.Attribute("Radius")?.Value ?? "1");
+        }
+        else if (ShapeType == ColliderShapeType.Rectangle)
+        {
+            Size = new Vector2(
+                float.Parse(element.Attribute("SizeX")?.Value ?? "1"),
+                float.Parse(element.Attribute("SizeY")?.Value ?? "1")
+            );
+        }
     }
 }

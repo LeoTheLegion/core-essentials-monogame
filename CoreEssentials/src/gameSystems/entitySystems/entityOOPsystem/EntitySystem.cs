@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
@@ -212,13 +213,27 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <returns>The newly created entity.</returns>
     public Entity CreateEntity(Type type, params object[] args)
     {
+        Console.WriteLine($"[EntitySystem] CreateEntity<{type.Name}>: instantiating...");
         Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
+        Console.WriteLine($"[EntitySystem]   Instantiated, setting up...");
         entity.SetGameSystem(this);
+        entity.EnsureId();
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
         UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
-        entity.OnStart();
+        Console.WriteLine($"[EntitySystem]   Calling OnStart for {entity.GetType().Name}...");
+        try
+        {
+            entity.OnStart();
+            Console.WriteLine($"[EntitySystem]   OnStart completed for {entity.GetType().Name} (Id={entity.Id})");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[EntitySystem]   ERROR in OnStart for {entity.GetType().Name}: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine($"[EntitySystem]   Stack: {ex.StackTrace?.Split('\n').Take(5).Aggregate((a, b) => a + "\n" + b)}");
+            throw;
+        }
         return entity;
     }
 
@@ -233,6 +248,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     {
         Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
         entity.SetGameSystem(this);
+        entity.EnsureId();
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
         UpdateIdIndexForEntity(entity, true);
@@ -264,6 +280,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         var pool = GetOrCreatePool<T>();
         var entity = pool.Acquire(position);
         entity.SetGameSystem(this);
+        entity.EnsureId();
         _entities.Add(entity);
         UpdateTagIndexForEntity(entity, true);
         UpdateIdIndexForEntity(entity, true);
@@ -534,11 +551,28 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// </summary>
     public void ClearEntities()
     {
+        Console.WriteLine($"[EntitySystem] ClearEntities: destroying {_entities.Count} entities...");
         for (int i = _entities.Count - 1; i >= 0; i--)
         {
-            _entities[i].OnDestroy();
+            var entity = _entities[i];
+            Console.WriteLine($"[EntitySystem]   Destroying [{i}]: {entity.GetType().Name} (Id={entity.Id})");
+            try
+            {
+                entity.OnDestroy();
+                Console.WriteLine($"[EntitySystem]   OnDestroy completed for {entity.GetType().Name}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EntitySystem]   ERROR in OnDestroy for {entity.GetType().Name} (Id={entity.Id}): {ex.GetType().Name}: {ex.Message}");
+                Console.WriteLine($"[EntitySystem]   Stack: {ex.StackTrace?.Split('\n').Take(5).Aggregate((a, b) => a + "\n" + b)}");
+                throw;
+            }
             _entities.RemoveAt(i);
         }
+        // Clear all indexes so saved IDs can be reused on load
+        _idIndex.Clear();
+        _tagIndex.Clear();
+        Console.WriteLine("[EntitySystem] ClearEntities: done (indexes cleared)");
     }
 
     /// <summary>

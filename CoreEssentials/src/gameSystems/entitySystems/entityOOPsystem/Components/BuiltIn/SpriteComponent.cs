@@ -20,11 +20,6 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
     public Sprite? Sprite { get; set; }
 
     /// <summary>
-    /// Gets or sets the scale of the sprite. Default is (1, 1).
-    /// </summary>
-    public Vector2 Scale { get; set; } = Vector2.One;
-
-    /// <summary>
     /// Gets or sets the origin point for rotation and positioning, as a fraction of the sprite size.
     /// (0, 0) = top-left, (0.5, 0.5) = center, (1, 1) = bottom-right.
     /// Default is (0.5, 0.5) for center-origin.
@@ -88,7 +83,7 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             Owner.Position,
             Color,
             Owner.Rotation,
-            Scale,
+            Owner.Scale,
             Effects,
             LayerDepth
         );
@@ -114,8 +109,6 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             new XAttribute("ColorG", Color.G),
             new XAttribute("ColorB", Color.B),
             new XAttribute("ColorA", Color.A),
-            new XAttribute("ScaleX", Scale.X),
-            new XAttribute("ScaleY", Scale.Y),
             new XAttribute("OriginX", Origin.X),
             new XAttribute("OriginY", Origin.Y),
             new XAttribute("Effects", Effects.ToString()),
@@ -131,18 +124,11 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
     /// <param name="element">The XML element containing the component's state.</param>
     public void DeserializeFromXml(XElement element)
     {
-        Console.WriteLine($"[SpriteComponent.DeserializeFromXml] Before: Color=({Color.R},{Color.G},{Color.B},{Color.A}), Scale=({Scale.X},{Scale.Y})");
-
         var colorR = byte.Parse(element.Attribute("ColorR")?.Value ?? "255");
         var colorG = byte.Parse(element.Attribute("ColorG")?.Value ?? "255");
         var colorB = byte.Parse(element.Attribute("ColorB")?.Value ?? "255");
         var colorA = byte.Parse(element.Attribute("ColorA")?.Value ?? "255");
         Color = new Color(colorR, colorG, colorB, colorA);
-
-        Scale = new Vector2(
-            float.Parse(element.Attribute("ScaleX")?.Value ?? "1"),
-            float.Parse(element.Attribute("ScaleY")?.Value ?? "1")
-        );
 
         Origin = new Vector2(
             float.Parse(element.Attribute("OriginX")?.Value ?? "0.5"),
@@ -173,7 +159,5 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
         {
             AnimationFrame = int.Parse(element.Attribute("AnimationFrame").Value);
         }
-
-        Console.WriteLine($"[SpriteComponent.DeserializeFromXml] After: Color=({Color.R},{Color.G},{Color.B},{Color.A}), Scale=({Scale.X},{Scale.Y})");
     }
 }

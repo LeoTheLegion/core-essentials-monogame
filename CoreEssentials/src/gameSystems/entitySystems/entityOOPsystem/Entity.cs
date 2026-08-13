@@ -61,6 +61,20 @@ public abstract class Entity
     }
 
     /// <summary>
+    /// The scale of the entity.
+    /// </summary>
+    protected Vector2 _scale = Vector2.One;
+
+    /// <summary>
+    /// Gets or sets the scale of the entity. Default is (1, 1).
+    /// </summary>
+    public Vector2 Scale
+    {
+        get => _scale;
+        set => _scale = value;
+    }
+
+    /// <summary>
     /// The sort order of the entity, used to determine rendering order.
     /// Higher values are rendered first (further back in the scene).
     /// </summary>

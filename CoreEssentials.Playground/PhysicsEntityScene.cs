@@ -114,7 +114,7 @@ public class PhysicsEntityScene : Scene
             ball.SetId(id);
             
             // Make VIP balls larger and set their unique color
-            ball.Scale = 2.0f;
+            ball.Scale = new Vector2(2.0f, 2.0f);
             var spriteComp = ball.GetComponent<SpriteComponent>();
             if (spriteComp != null)
                 spriteComp.Color = color;
