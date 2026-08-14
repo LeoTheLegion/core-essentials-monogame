@@ -25,7 +25,7 @@ public class SpriteSheet : Asset
     /// <summary>
     /// Gets the origin point for all frames in this sprite sheet.
     /// </summary>
-    public Vector2 FrameOrigin
+    public virtual Vector2 FrameOrigin
     {
         get
         {
@@ -197,7 +197,7 @@ public class SpriteSheet : Asset
     /// Gets the dimensions of a single frame.
     /// </summary>
     /// <returns>A Vector2 containing the width and height of a single frame.</returns>
-    public Vector2 GetFrameSize()
+    public virtual Vector2 GetFrameSize()
     {
         if (_frames == null)
         {
@@ -216,7 +216,7 @@ public class SpriteSheet : Asset
     /// <param name="index">The index of the frame to get.</param>
     /// <returns>The rectangle defining the frame's position in the texture.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the index is out of range.</exception>
-    public Rectangle GetFrame(int index)
+    public virtual Rectangle GetFrame(int index)
     {
         if (_frames == null)
         {

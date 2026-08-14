@@ -105,7 +105,7 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 | 💾 [13](Sprint_13_GameStateSerialization.md) | Game State Serialization | 6 | Not Started | Save/load full entity state |
 | 🎬 [14](Sprint_14_EntityTweening.md) | Entity Tweening | 4 | Not Started | Built-in animation with MonoGame.Extended |
 | 🔍 [15](Sprint_15_DebugVisualization.md) | Debug Visualization | 3 | In Progress | Draw entity metadata in debug mode |
-| 🎞️ [15.5](Sprint_15_5_SpriteConsolidation.md) | Sprite Consolidation & Animation Component | 5.5 | Not Started | Unify `Sprite`/`AnimatedSprite`, add multi-animation `AnimationComponent` |
+| 🎞️ [15.5](Sprint_15_5_SpriteConsolidation.md) | Sprite Consolidation & Animation Component | 5.5 | ✅ Completed | Unify `Sprite`/`AnimatedSprite`, add multi-animation `AnimationComponent` |
 | 🔄 [16](Sprint_16_LifecycleHooks.md) | Entity Lifecycle Hooks | 3 | Not Started | OnEnable, OnDisable, OnPause, OnResume, OnAwake |
 | 🔗 [17](Sprint_17_EntityRelationships.md) | Entity Relationships | 4 | Not Started | Weak-reference relationships between entities |
 | 📜 [18](Sprint_18_ScriptableBehaviors.md) | Scriptable Behaviors | 6 | Not Started | Attach coroutines/scripts declaratively |
