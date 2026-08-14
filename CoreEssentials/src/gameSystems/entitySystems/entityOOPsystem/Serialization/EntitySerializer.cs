@@ -458,7 +458,7 @@ public static class EntitySerializer
 
     private static void LoadComponent(Entity entity, XElement componentElement, IComponentFactory factory)
     {
-        var typeName = componentElement.Attribute("Type")?.Value;
+        string? typeName = componentElement.Attribute("Type")?.Value;
         if (string.IsNullOrWhiteSpace(typeName))
             return;
 
