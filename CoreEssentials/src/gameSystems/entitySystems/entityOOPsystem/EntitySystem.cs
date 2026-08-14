@@ -20,7 +20,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <summary>
     /// The list of all entities managed by this system.
     /// </summary>
-    private List<Entity> _entities = new List<Entity>();
+    private readonly List<Entity> _entities = new();
 
     /// <summary>
     /// Dictionary for O(1) tag-based entity lookups.
@@ -81,46 +81,72 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     public void Update(GameTime gameTime)
     {
         SortEntities();
+        UpdateActiveEntities(gameTime);
+        UpdateSpatialGridPositions();
+        RemoveDestroyedEntities();
+    }
+
+    /// <summary>
+    /// Updates all active entities.
+    /// </summary>
+    private void UpdateActiveEntities(GameTime gameTime)
+    {
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            Entity entity = _entities[i];
+            if (entity.GetActive())
+                entity.Update(gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Auto-updates spatial grid positions for entities that have moved.
+    /// </summary>
+    private void UpdateSpatialGridPositions()
+    {
+        if (!SpatialPartitioningEnabled || _spatialGrid == null)
+            return;
 
         for (int i = 0; i < _entities.Count; i++)
         {
-            if (_entities[i].GetActive())
-                _entities[i].Update(gameTime);
+            Entity entity = _entities[i];
+            if (entity.GetActive())
+                _spatialGrid.UpdatePosition(entity);
         }
+    }
 
-        // Auto-update spatial grid for entities that have moved
-        if (SpatialPartitioningEnabled && _spatialGrid != null)
-        {
-            for (int i = 0; i < _entities.Count; i++)
-            {
-                if (_entities[i].GetActive())
-                    _spatialGrid.UpdatePosition(_entities[i]);
-            }
-        }
-
+    /// <summary>
+    /// Removes destroyed entities from the system, cleaning up indexes and calling OnDestroy.
+    /// </summary>
+    private void RemoveDestroyedEntities()
+    {
         for (int i = _entities.Count - 1; i >= 0; i--)
         {
-            if (_entities[i].Destroyed)
-            {
-                var destroyedEntity = _entities[i];
-                // Check for pending respawn before cleanup
-                if (destroyedEntity.HasPendingRespawn)
-                {
-                    Type entityType = destroyedEntity.GetType();
-                    Vector2? nullableRespawnPos = destroyedEntity._respawnPosition;
-                    Vector2 respawnPos = nullableRespawnPos ?? Vector2.Zero;
-                    TimeSpan? nullableRespawnDelay = destroyedEntity._respawnDelay;
-                    TimeSpan respawnDelay = nullableRespawnDelay ?? TimeSpan.Zero;
-                    CoroutineManager.StartCoroutine(RespawnRoutine(entityType, respawnPos, respawnDelay));
-                }
+            if (!_entities[i].Destroyed)
+                continue;
 
-                UpdateTagIndexForEntity(destroyedEntity, false);
-                UpdateIdIndexForEntity(destroyedEntity, false);
-                UpdateSpatialGridForEntity(destroyedEntity, false);
-                destroyedEntity.OnDestroy();
-                _entities.RemoveAt(i);
-            }
+            var destroyedEntity = _entities[i];
+            HandlePendingRespawn(destroyedEntity);
+            UpdateTagIndexForEntity(destroyedEntity, false);
+            UpdateIdIndexForEntity(destroyedEntity, false);
+            UpdateSpatialGridForEntity(destroyedEntity, false);
+            destroyedEntity.OnDestroy();
+            _entities.RemoveAt(i);
         }
+    }
+
+    /// <summary>
+    /// Checks for and handles pending respawn for a destroyed entity.
+    /// </summary>
+    private void HandlePendingRespawn(Entity destroyedEntity)
+    {
+        if (!destroyedEntity.HasPendingRespawn)
+            return;
+
+        Type entityType = destroyedEntity.GetType();
+        Vector2 respawnPos = destroyedEntity._respawnPosition ?? Vector2.Zero;
+        TimeSpan respawnDelay = destroyedEntity._respawnDelay ?? TimeSpan.Zero;
+        CoroutineManager.StartCoroutine(RespawnRoutine(entityType, respawnPos, respawnDelay));
     }
 
     /// <summary>
@@ -132,65 +158,75 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        var camera = Camera.Camera.MainCamera;
-        var hasCamera = camera != null;
+        var (textureGroups, noTextureEntities) = GroupEntitiesByTexture();
+        RenderNoTextureEntities(noTextureEntities, spriteBatch);
+        RenderTextureGroups(textureGroups, spriteBatch);
+        ResetTextureDirtyFlags();
+    }
 
-        // Group entities by texture asset while preserving sort order
+    /// <summary>
+    /// Groups active entities by their texture asset for efficient batched rendering.
+    /// </summary>
+    private (Dictionary<Texture2DAsset, List<Entity>> textureGroups, List<Entity> noTextureEntities) GroupEntitiesByTexture()
+    {
         var textureGroups = new Dictionary<Texture2DAsset, List<Entity>>();
-        var noTextureEntities = new List<Entity>(); // Group for entities without texture
+        var noTextureEntities = new List<Entity>();
 
         for (int i = 0; i < _entities.Count; i++)
         {
             var entity = _entities[i];
-            if (entity.GetActive())
+            if (!entity.GetActive())
+                continue;
+
+            var texture = entity.BatchTexture;
+            if (texture == null)
             {
-                var texture = entity.BatchTexture;
-                if (texture == null)
-                {
-                    noTextureEntities.Add(entity);
-                }
-                else
-                {
-                    if (!textureGroups.ContainsKey(texture))
-                        textureGroups[texture] = new List<Entity>();
-                    textureGroups[texture].Add(entity);
-                }
+                noTextureEntities.Add(entity);
+            }
+            else
+            {
+                if (!textureGroups.ContainsKey(texture))
+                    textureGroups[texture] = new List<Entity>();
+                textureGroups[texture].Add(entity);
             }
         }
 
-        // Render entities without texture first
-        if (noTextureEntities.Count > 0)
+        return (textureGroups, noTextureEntities);
+    }
+
+    /// <summary>
+    /// Renders entities that don't have an associated texture.
+    /// </summary>
+    private static void RenderNoTextureEntities(List<Entity> noTextureEntities, SpriteBatch spriteBatch)
+    {
+        if (noTextureEntities.Count == 0)
+            return;
+
+        var cameraView = GetCameraViewMatrix();
+        spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+            SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
+            null, cameraView);
+
+        foreach (var entity in noTextureEntities)
         {
-            spriteBatch.Begin(
-                SpriteSortMode.Deferred,
-                BlendState.AlphaBlend,
-                SamplerState.PointClamp,
-                DepthStencilState.None,
-                RasterizerState.CullNone,
-                null,
-                hasCamera ? camera!.ViewMatrix : null
-            );
-
-            foreach (var entity in noTextureEntities)
-            {
-                entity.Render(spriteBatch);
-            }
-
-            spriteBatch.End();
+            entity.Render(spriteBatch);
         }
 
-        // Render each texture group
+        spriteBatch.End();
+    }
+
+    /// <summary>
+    /// Renders each texture group with a single SpriteBatch begin/end pair.
+    /// </summary>
+    private static void RenderTextureGroups(Dictionary<Texture2DAsset, List<Entity>> textureGroups, SpriteBatch spriteBatch)
+    {
+        var cameraView = GetCameraViewMatrix();
+
         foreach (var textureGroup in textureGroups)
         {
-            spriteBatch.Begin(
-                SpriteSortMode.Deferred,
-                BlendState.AlphaBlend,
-                SamplerState.PointClamp,
-                DepthStencilState.None,
-                RasterizerState.CullNone,
-                null,
-                hasCamera ? camera!.ViewMatrix : null
-            );
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+                SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
+                null, cameraView);
 
             foreach (var entity in textureGroup.Value)
             {
@@ -199,8 +235,21 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
 
             spriteBatch.End();
         }
+    }
 
-        // Reset texture changed flags for next frame
+    /// <summary>
+    /// Gets the current camera view matrix or null if no camera is active.
+    /// </summary>
+    private static Matrix? GetCameraViewMatrix()
+    {
+        return Camera.Camera.MainCamera?.ViewMatrix;
+    }
+
+    /// <summary>
+    /// Resets texture changed flags for all entities after rendering.
+    /// </summary>
+    private void ResetTextureDirtyFlags()
+    {
         for (int i = 0; i < _entities.Count; i++)
         {
             _entities[i].BatchTextureDirty = false;
@@ -633,10 +682,25 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
+    }
+
+    /// <summary>
+    /// Releases unmanaged and optionally managed resources.
+    /// </summary>
+    /// <param name="disposing">True to release both managed and unmanaged resources; false to release only unmanaged.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposing)
+            return;
+
         ClearEntities();
-        _entities = null!;
+        _entities.Clear();
         _tagIndex.Clear();
+        _idIndex.Clear();
         _pools.Clear();
+        _templates.Clear();
+        _pendingSpawns.Clear();
         _spatialGrid?.Clear();
     }
 
@@ -725,27 +789,42 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <param name="adding">True to add the entity to the index, false to remove it.</param>
     private void UpdateTagIndexForEntity(Entity entity, bool adding)
     {
+        if (adding)
+            AddEntityTagsToIndex(entity);
+        else
+            RemoveEntityTagsFromIndex(entity);
+    }
+
+    /// <summary>
+    /// Adds all tags of an entity to the tag index.
+    /// </summary>
+    private void AddEntityTagsToIndex(Entity entity)
+    {
         foreach (var tag in entity.Tags.ToList())
         {
-            if (adding)
+            if (!_tagIndex.TryGetValue(tag, out var list))
             {
-                if (!_tagIndex.TryGetValue(tag, out var list))
-                {
-                    list = new List<Entity>();
-                    _tagIndex[tag] = list;
-                }
-                if (!list.Contains(entity))
-                    list.Add(entity);
+                list = new List<Entity>();
+                _tagIndex[tag] = list;
             }
-            else
-            {
-                if (_tagIndex.TryGetValue(tag, out var list))
-                {
-                    list.Remove(entity);
-                    if (list.Count == 0)
-                        _tagIndex.Remove(tag);
-                }
-            }
+            if (!list.Contains(entity))
+                list.Add(entity);
+        }
+    }
+
+    /// <summary>
+    /// Removes all tags of an entity from the tag index.
+    /// </summary>
+    private void RemoveEntityTagsFromIndex(Entity entity)
+    {
+        foreach (var tag in entity.Tags.ToList())
+        {
+            if (!_tagIndex.TryGetValue(tag, out var list))
+                continue;
+
+            list.Remove(entity);
+            if (list.Count == 0)
+                _tagIndex.Remove(tag);
         }
     }
 
