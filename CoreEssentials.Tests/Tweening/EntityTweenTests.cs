@@ -319,4 +319,46 @@ public class EntityTweenTests
         // At halfway: Lerp(0, -50, sin(π/2)) = Lerp(0, -50, 1) = -50
         Assert.Equal(-50f, tween.GetValue(), 2);
     }
+
+    // ===== OnDetach Cleanup Tests =====
+
+    [Fact]
+    public void TweenComponent_OnDetach_CancelsAllTweens()
+    {
+        var component = new TweenComponent();
+        component.TweenToFloat(0f, 100f, 1f);
+        component.TweenToVector2(Vector2.Zero, Vector2.One, 1f);
+
+        // Detach should cancel all active tweens
+        component.OnDetach();
+
+        // No exceptions on update after detach (tweens cleared)
+        var gameTime = new GameTime(TimeSpan.Zero, TimeSpan.FromMilliseconds(16));
+        component.Update(gameTime);
+    }
+
+    [Fact]
+    public void TweenComponent_OnDetach_SafeWhenNoTweens()
+    {
+        var component = new TweenComponent();
+
+        // Detaching with no active tweens should not throw
+        component.OnDetach();
+    }
+
+    [Fact]
+    public void TweenComponent_OnDetach_PreventsLoopingTweensFromContinuing()
+    {
+        var component = new TweenComponent();
+        component.TweenToFloat(0f, 100f, 1f, loop: true);
+
+        // Advance partially so tween is active
+        component.Update(new GameTime(TimeSpan.Zero, TimeSpan.FromMilliseconds(500)));
+
+        // Detach cancels the looping tween
+        component.OnDetach();
+
+        // Update should not advance anything (tweens cleared)
+        component.Update(new GameTime(TimeSpan.Zero, TimeSpan.FromMilliseconds(1000)));
+    }
 }
