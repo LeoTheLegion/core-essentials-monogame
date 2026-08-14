@@ -32,7 +32,7 @@ public class Ball : Entity, ISaveableEntity
     /// <summary>
     /// Gets the rigidbody component for this ball.
     /// </summary>
-    public RigidbodyComponent RigidbodyComponent => _rigidbodyComponent;
+    public RigidbodyComponent? RigidbodyComponent => _rigidbodyComponent;
 
     public Ball(Vector2 position, string? id = null)
     {
@@ -86,9 +86,12 @@ public class Ball : Entity, ISaveableEntity
             _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
         }
 
-        RegisterForInstancedRendering(_spriteComponent!.Sprite!);
-
-        _radius = _spriteComponent.Sprite.GetSize().X / 2;
+        var sprite = _spriteComponent?.Sprite;
+        if (sprite != null)
+        {
+            RegisterForInstancedRendering(sprite);
+            _radius = sprite.GetSize().X / 2;
+        }
 
         // Add collider component only if not already present
         _colliderComponent = GetComponent<ColliderComponent>();
@@ -111,26 +114,29 @@ public class Ball : Entity, ISaveableEntity
     private void UpdateCollider()
     {
         // Update collider radius based on new scale
-        _colliderComponent.UpdateCircleRadius(_radius * Scale.X);
+        _colliderComponent?.UpdateCircleRadius(_radius * Scale.X);
 
         // Update mass based on scale
-        _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
+        if (_rigidbodyComponent != null)
+        {
+            _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
+        }
     }
 
     // (Update handled by RigidbodyComponent)
 
     private IEnumerator RandomMovementCoroutine()
     {
-        while (true)
+        while (!Destroyed)
         {
             float randomX = (float)(_random.NextDouble() * 2 - 1);
             float randomY = (float)(_random.NextDouble() * 2 - 1);
 
             var impulseStrength = 500000f;
-            _rigidbodyComponent.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
+            _rigidbodyComponent?.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
 
             // Add some spin so rotation is visible
-            _rigidbodyComponent.ApplyAngularImpulse((float)_random.NextDouble() * 10 - 5);
+            _rigidbodyComponent?.ApplyAngularImpulse((float)_random.NextDouble() * 10 - 5);
 
             yield return new WaitForSeconds(_random.Next(1, 5));
         }
@@ -158,7 +164,7 @@ public class Ball : Entity, ISaveableEntity
     {
         var element = new XElement("Entity",
             new XAttribute("Id", Id ?? string.Empty),
-            new XAttribute("Type", GetType().FullName),
+            new XAttribute("Type", GetType().FullName ?? string.Empty),
             new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
             new XAttribute("Sort", GetSort()),
             new XAttribute("Active", GetActive()),
@@ -176,7 +182,7 @@ public class Ball : Entity, ISaveableEntity
         );
 
         // Add physics state
-        if (_rigidbodyComponent.IsBodyCreated)
+        if (_rigidbodyComponent != null && _rigidbodyComponent.IsBodyCreated)
         {
             element.Add(new XElement("Physics",
                 new XAttribute("LinearVelocityX", _rigidbodyComponent.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
@@ -264,7 +270,7 @@ public class Ball : Entity, ISaveableEntity
         // Restore physics velocity — body exists since OnStart ran
         // (position/rotation sync happens automatically on first Update via component)
         var physics = element.Element("Physics");
-        if (physics != null && _rigidbodyComponent.IsBodyCreated)
+        if (physics != null && _rigidbodyComponent != null && _rigidbodyComponent.IsBodyCreated)
         {
             if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
                 float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))

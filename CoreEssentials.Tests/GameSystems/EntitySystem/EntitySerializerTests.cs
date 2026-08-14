@@ -28,7 +28,7 @@ public class EntitySerializerTests
         public override void OnStart()
         {
             base.OnStart();
-            Sprite = new SpriteComponent(null)
+            Sprite = new SpriteComponent(default!)
             {
                 Color = Color.White
             };

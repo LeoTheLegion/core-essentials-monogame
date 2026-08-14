@@ -170,9 +170,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             entity3.RegisterForInstancedRendering(textureA);
 
             var entitiesField = typeof(EntitySystem).GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
-            var entities = entitiesField!.GetValue(system) as List<Entity>;
+            var entities = (entitiesField!.GetValue(system) as List<Entity>)!;
 
-            var noTextureCount = entities!.Count(e => e.BatchTexture == null);
+            var noTextureCount = entities.Count(e => e.BatchTexture == null);
             var withTextureCount = entities.Count(e => e.BatchTexture != null);
 
             Assert.Equal(1, noTextureCount);
@@ -222,10 +222,10 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             system.Update(new GameTime());
 
             var entitiesField = typeof(EntitySystem).GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
-            var entities = entitiesField!.GetValue(system) as List<Entity>;
+            var entities = (entitiesField!.GetValue(system) as List<Entity>)!;
 
             // All entities have same texture, so they should be sorted by sort order
-            var textureAEntities = entities!.Where(e => e.BatchTexture == textureA).ToList();
+            var textureAEntities = entities.Where(e => e.BatchTexture == textureA).ToList();
             
             Assert.Equal(3, textureAEntities.Count);
             // Higher sort value first (15, 10, 5)
@@ -248,9 +248,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             entity2.SetActive(false);
 
             var entitiesField = typeof(EntitySystem).GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
-            var entities = entitiesField!.GetValue(system) as List<Entity>;
+            var entities = (entitiesField!.GetValue(system) as List<Entity>)!;
 
-            var activeWithTexture = entities!.Count(e => e.GetActive() && e.BatchTexture == textureA);
+            var activeWithTexture = entities.Count(e => e.GetActive() && e.BatchTexture == textureA);
             var inactiveWithTexture = entities.Count(e => !e.GetActive() && e.BatchTexture == textureA);
 
             Assert.Equal(1, activeWithTexture);
