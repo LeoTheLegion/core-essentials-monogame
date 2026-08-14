@@ -16,6 +16,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization
 public static class EntitySerializer
 {
     private const string MalformedXmlMessage = "Malformed XML or unexpected root element for entity definition.";
+    private const string EntityElement = "EntityDefinition";
 
     /// <summary>
     /// Loads a single entity of the specified type from an XML string and adds it to the given EntitySystem.
@@ -123,7 +124,7 @@ public static class EntitySerializer
         // First pass - create all entities and instantiate templates
         foreach (var element in root.Elements())
         {
-            if (element.Name.LocalName == "EntityDefinition")
+            if (element.Name.LocalName == EntityElement)
             {
                 var entity = LoadEntityFromDefinition(element, system, factory, idToEntity);
                 rootEntities.Add(entity);
@@ -138,7 +139,7 @@ public static class EntitySerializer
         // Second pass - resolve <Reference> links
         foreach (var element in root.Elements())
         {
-            if (element.Name.LocalName == "EntityDefinition")
+            if (element.Name.LocalName == EntityElement)
             {
                 ResolveReferences(element, idToEntity, rootEntities);
             }
@@ -509,17 +510,8 @@ public static class EntitySerializer
         }
     }
 
-    private static EntityComponent? GetExistingComponent(Entity entity, string typeName)
-    {
-        foreach (var component in entity.Components)
-        {
-            if (component.GetType().Name.Equals(typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                return component;
-            }
-        }
-        return null;
-    }
+    private static EntityComponent? GetExistingComponent(Entity entity, string typeName) =>
+        entity.Components.FirstOrDefault(c => c.GetType().Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
     private static void SetProperty(object target, string propertyName, string valueString)
     {

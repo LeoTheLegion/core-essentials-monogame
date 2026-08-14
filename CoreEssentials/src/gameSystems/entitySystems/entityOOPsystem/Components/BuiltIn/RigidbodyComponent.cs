@@ -166,8 +166,8 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="impulse">The impulse to apply.</param>
     public void ApplyImpulse(Vector2 impulse)
     {
-        EnsureBody();
-        _body?.ApplyImpulse(impulse);
+        if (_body == null) return;
+        _body.ApplyImpulse(impulse);
     }
 
     /// <summary>
@@ -186,8 +186,8 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="velocity">The new linear velocity.</param>
     public void SetLinearVelocity(Vector2 velocity)
     {
-        EnsureBody();
-        _body?.SetLinearVelocity(velocity);
+        if (_body == null) return;
+        _body.SetLinearVelocity(velocity);
     }
 
     /// <summary>
@@ -195,14 +195,9 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// </summary>
     public float AngularVelocity
     {
-        get
-        {
-            EnsureBody();
-            return _body?.AngularVelocity ?? 0f;
-        }
+        get => _body?.AngularVelocity ?? 0f;
         set
         {
-            EnsureBody();
             if (_body != null)
             {
                 _body.AngularVelocity = value;
@@ -216,11 +211,8 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="angularImpulse">The angular impulse to apply.</param>
     public void ApplyAngularImpulse(float angularImpulse)
     {
-        EnsureBody();
-        if (_body != null)
-        {
-            _body.AngularVelocity += angularImpulse;
-        }
+        if (_body == null) return;
+        _body.AngularVelocity += angularImpulse;
     }
 
     /// <summary>
