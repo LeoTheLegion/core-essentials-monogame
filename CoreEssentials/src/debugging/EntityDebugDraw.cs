@@ -94,12 +94,16 @@ public class EntityDebugDraw
     }
 
     /// <summary>
-    /// Draws a bounding box around the entity using its position and scale.
+    /// Draws a bounding box around the entity using its position and <see cref="Entity.GetSize"/>.
+    /// Entities that report a zero size (no sprite available) are skipped.
     /// </summary>
     private void DrawBounds(Entity entity, SpriteBatch spriteBatch)
     {
+        var size = entity.GetSize();
+        if (size == Vector2.Zero)
+            return;
+
         var pos = entity.Position;
-        var size = entity.Scale * 64f; // Default entity size estimate
         var bounds = new Rectangle((int)pos.X, (int)pos.Y, (int)size.X, (int)size.Y);
         Debug.Primitives.DrawRectangle(spriteBatch, bounds, _config.BoundsColor, _config.LineThickness);
     }

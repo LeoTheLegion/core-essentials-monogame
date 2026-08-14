@@ -187,6 +187,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         RenderNoTextureEntities(noTextureEntities, spriteBatch);
         RenderTextureGroups(textureGroups, spriteBatch);
         ResetTextureDirtyFlags();
+
+        // Render debug overlays on top of everything
+        if (DebugMode)
+        {
+            DrawDebugOverlays(spriteBatch);
+        }
     }
 
     /// <summary>
@@ -278,12 +284,6 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         for (int i = 0; i < _entities.Count; i++)
         {
             _entities[i].BatchTextureDirty = false;
-        }
-
-        // Render debug overlays on top of everything
-        if (DebugMode)
-        {
-            DrawDebugOverlays(spriteBatch);
         }
     }
 

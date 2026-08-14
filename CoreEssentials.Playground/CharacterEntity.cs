@@ -83,4 +83,21 @@ public class CharacterEntity : Entity
             0f
         );
     }
+    /// <summary>
+    /// Returns the actual rendered size of the character sprite, including scale.
+    /// </summary>
+    public override Vector2 GetSize()
+    {
+        if (_sprite == null)
+            return Vector2.Zero;
+
+        try
+        {
+            return _sprite.GetSize() * Scale;
+        }
+        catch (InvalidOperationException)
+        {
+            return Vector2.Zero;
+        }
+    }
 }

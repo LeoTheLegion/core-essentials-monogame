@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Xunit;
 using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 namespace CoreEssentials.Tests.Debugging;
 
@@ -77,6 +78,38 @@ public class EntityDebugDrawTests
     {
         _config.ShowEntityTags = true;
         Assert.True(_config.ShowEntityTags);
+    }
+
+    // T4.3 - Test Entity.GetSize() default behavior and overrides
+    [Fact]
+    public void GetSize_NoSpriteComponent_ReturnsZero()
+    {
+        var entity = new PlainEntity();
+        Assert.Equal(Vector2.Zero, entity.GetSize());
+    }
+
+    [Fact]
+    public void GetSize_SpriteComponentWithoutSprite_ReturnsZero()
+    {
+        var entity = new PlainEntity();
+        entity.AddComponent(new SpriteComponent());
+        Assert.Equal(Vector2.Zero, entity.GetSize());
+    }
+
+    [Fact]
+    public void GetSize_Override_ReturnsCustomSize()
+    {
+        var entity = new FixedSizeEntity();
+        Assert.Equal(new Vector2(100f, 50f), entity.GetSize());
+    }
+
+    private class PlainEntity : Entity
+    {
+    }
+
+    private class FixedSizeEntity : Entity
+    {
+        public override Vector2 GetSize() => new Vector2(100f, 50f);
     }
 
     [Fact]
