@@ -104,19 +104,21 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 | �🔖 [12](Sprint_12_EntityIDs.md) | Entity IDs & References | 4 | Not Started | Unique identifiers and cross-entity linking |
 | 💾 [13](Sprint_13_GameStateSerialization.md) | Game State Serialization | 6 | Not Started | Save/load full entity state |
 | 🎬 [14](Sprint_14_EntityTweening.md) | Entity Tweening | 4 | Not Started | Built-in animation with MonoGame.Extended |
-| 🔍 [15](Sprint_15_DebugVisualization.md) | Debug Visualization | 3 | Not Started | Draw entity metadata in debug mode |
+| 🔍 [15](Sprint_15_DebugVisualization.md) | Debug Visualization | 3 | In Progress | Draw entity metadata in debug mode |
+| 🎞️ [15.5](Sprint_15_5_SpriteConsolidation.md) | Sprite Consolidation & Animation Component | 5.5 | Not Started | Unify `Sprite`/`AnimatedSprite`, add multi-animation `AnimationComponent` |
 | 🔄 [16](Sprint_16_LifecycleHooks.md) | Entity Lifecycle Hooks | 3 | Not Started | OnEnable, OnDisable, OnPause, OnResume, OnAwake |
 | 🔗 [17](Sprint_17_EntityRelationships.md) | Entity Relationships | 4 | Not Started | Weak-reference relationships between entities |
 | 📜 [18](Sprint_18_ScriptableBehaviors.md) | Scriptable Behaviors | 6 | Not Started | Attach coroutines/scripts declaratively |
 | 💥 [19](Sprint_19_CollisionGroups.md) | Collision Groups | 5 | Not Started | Filtered collision interaction groups |
+| 🎚️ [20](Sprint_20_ZOrderRenderLayers.md) | Z-Order & Render Layers | 5.5 | Not Started | Combine texture batching with z-order layers |
 
 ---
 
 ## Sprint Point Summary
 
-- **Total Points:** 94 points across 20 sprints
-- **Average Per Sprint:** ~4.7 points
-- **Timeline Estimate:** 20 weeks (one sprint per week) or compressed to 10-12 weeks with parallel work on independent sprints
+- **Total Points:** 111 points across 23 sprints
+- **Average Per Sprint:** ~4.8 points
+- **Timeline Estimate:** 23 weeks (one sprint per week) or compressed to 12-14 weeks with parallel work on independent sprints
 
 ---
 
@@ -128,7 +130,7 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 
 **Data-Driven (Sprint 10-13):** XML Definitions, Templates, IDs, Serialization — designer-friendly workflow.
 
-**Polish (Sprint 14-19):** Tweening, Debug Viz, Lifecycle Hooks, Relationships, Scripts, Collision Groups — quality of life and advanced features.
+**Polish (Sprint 14-20):** Tweening, Debug Viz, Sprite Consolidation, Lifecycle Hooks, Relationships, Scripts, Collision Groups, Z-Order Layers — quality of life and advanced features.
 
 ---
 
@@ -144,4 +146,5 @@ Some sprints have dependencies on others:
 | Sprint 13 (Serialization) | Sprint 10, 12 | Save/load needs XML and IDs |
 | Sprint 14 (Tweening) | None | Independent, wraps MonoGame.Extended |
 | Sprint 15 (Debug) | Sprint 0, 16 | Debug needs tags and lifecycle hooks |
+| Sprint 15.5 (Sprite Consolidation) | Sprint 6, 10 | AnimationComponent needs components and XML definitions |
 | Sprint 18 (Scripts) | Sprint 3, 6 | Scripts need events and components |
