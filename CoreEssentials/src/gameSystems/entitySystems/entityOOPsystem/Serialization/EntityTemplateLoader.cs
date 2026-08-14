@@ -41,8 +41,8 @@ public static class EntityTemplateLoader
     }
 
     /// <summary>
-    /// Parses an EntityTemplate from an XML string.
-    /// Expects a root element named 'EntityTemplate'.
+    /// Parses an entity template from an XML string.
+    /// Expects a root element named `EntityTemplate`.
     /// </summary>
     public static EntityTemplate LoadFromXml(string xmlData)
     {
@@ -50,7 +50,7 @@ public static class EntityTemplateLoader
         var root = doc.Root;
 
         if (root == null || !string.Equals(root.Name.LocalName, "EntityTemplate", StringComparison.OrdinalIgnoreCase))
-            throw new FormatException("Root element must be <EntityTemplate>.");
+            throw new FormatException("Root element must be 'EntityTemplate'.");
 
         var template = new EntityTemplate
         {

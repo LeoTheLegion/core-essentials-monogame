@@ -18,8 +18,6 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Playground;
 
-#nullable enable
-
 public class Ball : Entity, ISaveableEntity
 {
     private SpriteComponent? _spriteComponent;

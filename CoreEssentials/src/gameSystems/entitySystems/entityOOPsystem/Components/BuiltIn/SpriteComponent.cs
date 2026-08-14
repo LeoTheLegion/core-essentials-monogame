@@ -135,13 +135,13 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             float.Parse(element.Attribute("OriginY")?.Value ?? "0.5")
         );
 
-        var effectsAttr = element.Attribute("Effects")?.Value;
+        var effectsAttr = element.Attribute("Effects")?.Value ?? string.Empty;
         if (!string.IsNullOrEmpty(effectsAttr) && Enum.TryParse<SpriteEffects>(effectsAttr, out var effects))
         {
             Effects = effects;
         }
 
-        var layerDepthAttr = element.Attribute("LayerDepth")?.Value;
+        var layerDepthAttr = element.Attribute("LayerDepth")?.Value ?? string.Empty;
         if (!string.IsNullOrEmpty(layerDepthAttr))
         {
             LayerDepth = float.Parse(layerDepthAttr);
@@ -157,7 +157,7 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             SortOrderOverride = null;
         }
 
-        var animationFrameAttr = element.Attribute("AnimationFrame")?.Value;
+        var animationFrameAttr = element.Attribute("AnimationFrame")?.Value ?? string.Empty;
         if (!string.IsNullOrEmpty(animationFrameAttr))
         {
             AnimationFrame = int.Parse(animationFrameAttr);

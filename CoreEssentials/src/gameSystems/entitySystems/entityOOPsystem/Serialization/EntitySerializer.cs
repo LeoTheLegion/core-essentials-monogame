@@ -139,11 +139,7 @@ public static class EntitySerializer
         // Second pass - resolve <Reference> links
         foreach (var element in root.Elements())
         {
-            if (element.Name.LocalName == EntityElement)
-            {
-                ResolveReferences(element, idToEntity, rootEntities);
-            }
-            else if (element.Name.LocalName == "Template")
+            if (element.Name.LocalName == EntityElement || element.Name.LocalName == "Template")
             {
                 ResolveReferences(element, idToEntity, rootEntities);
             }

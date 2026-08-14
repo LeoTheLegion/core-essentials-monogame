@@ -14,7 +14,9 @@ public class TweenVector2
     private readonly Func<float, float> _easingFunction;
     private bool _reversed;
 
-    /// <summary>Creates a tween with the specified easing function.</summary>
+    /// <summary>
+    /// Creates a Vector2 tween with the specified easing function.
+    /// </summary>
     /// <param name="startValue">The starting vector value.</param>
     /// <param name="endValue">The target vector value.</param>
     /// <param name="duration">The duration of the tween in seconds.</param>
@@ -85,7 +87,7 @@ public class TweenVector2
             : Vector2.Lerp(_startValue, _endValue, t);
     }
 
-    /// <summary>Returns a string representation of the tween.</summary>
+    /// <summary>Returns a string representation of the Vector2 tween.</summary>
     /// <returns>A string describing the tween's start, end, duration, and elapsed time.</returns>
     public override string ToString() => $"TweenVector2({_startValue} -> {_endValue}, {Duration}s, {Elapsed}s elapsed)";
 }
@@ -101,7 +103,9 @@ public class TweenFloat
     private readonly Func<float, float> _easingFunction;
     private bool _reversed;
 
-    /// <summary>Creates a tween with the specified easing function.</summary>
+    /// <summary>
+    /// Creates a float tween with the specified easing function.
+    /// </summary>
     /// <param name="startValue">The starting float value.</param>
     /// <param name="endValue">The target float value.</param>
     /// <param name="duration">The duration of the tween in seconds.</param>
@@ -172,6 +176,7 @@ public class TweenFloat
             : MathHelper.Lerp(_startValue, _endValue, t);
     }
 
-    /// <summary>Returns a string representation of the tween.</summary>
+    /// <summary>Returns a string representation of the float tween.</summary>
+    /// <returns>A string describing the tween's start, end, duration, and elapsed time.</returns>
     public override string ToString() => $"TweenFloat({_startValue} -> {_endValue}, {Duration}s, {Elapsed}s elapsed)";
 }

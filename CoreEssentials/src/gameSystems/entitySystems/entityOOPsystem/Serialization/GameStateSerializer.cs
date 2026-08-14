@@ -148,6 +148,7 @@ public static class GameStateSerializer
             catch (Exception ex)
             {
                 var id = entityElement.Attribute("Id")?.Value ?? "unknown";
+                if (id == null) id = "unknown";
                 throw new InvalidOperationException($"Error loading entity '{id}': {ex.Message}", ex);
             }
         }
@@ -298,12 +299,9 @@ public static class GameStateSerializer
         if (entity.Children.Any())
         {
             var childrenElement = new XElement(ChildrenElement);
-            foreach (var child in entity.Children)
+            foreach (var child in entity.Children.Where(c => c is ISaveableEntity))
             {
-                if (child is ISaveableEntity)
-                {
-                    childrenElement.Add(CreateEntityElement(child));
-                }
+                childrenElement.Add(CreateEntityElement(child));
             }
             element.Add(childrenElement);
         }

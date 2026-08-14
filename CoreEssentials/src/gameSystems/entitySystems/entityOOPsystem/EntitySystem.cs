@@ -107,8 +107,10 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 if (destroyedEntity.HasPendingRespawn)
                 {
                     Type entityType = destroyedEntity.GetType();
-                    Vector2 respawnPos = destroyedEntity._respawnPosition ?? Vector2.Zero;
-                    TimeSpan respawnDelay = destroyedEntity._respawnDelay ?? TimeSpan.Zero;
+                    Vector2? nullableRespawnPos = destroyedEntity._respawnPosition;
+                    Vector2 respawnPos = nullableRespawnPos ?? Vector2.Zero;
+                    TimeSpan? nullableRespawnDelay = destroyedEntity._respawnDelay;
+                    TimeSpan respawnDelay = nullableRespawnDelay ?? TimeSpan.Zero;
                     CoroutineManager.StartCoroutine(RespawnRoutine(entityType, respawnPos, respawnDelay));
                 }
 
@@ -238,6 +240,17 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     }
 
     /// <summary>
+    /// Creates and initializes a new entity of the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of entity to create.</typeparam>
+    /// <param name="args">Constructor arguments for the entity.</param>
+    /// <returns>The newly created entity.</returns>
+    public T CreateEntity<T>(params object[] args) where T : Entity
+    {
+        return (T)CreateEntity(typeof(T), args);
+    }
+
+    /// <summary>
     /// Creates a new entity without calling OnStart(). Use when you need to configure the entity before initialization (e.g., templates).
     /// Call <see cref="Entity.OnStart"/> manually after configuration is complete.
     /// </summary>
@@ -254,17 +267,6 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
         return entity;
-    }
-
-    /// <summary>
-    /// Creates and initializes a new entity of the specified type.
-    /// </summary>
-    /// <typeparam name="T">The type of entity to create.</typeparam>
-    /// <param name="args">Constructor arguments for the entity.</param>
-    /// <returns>The newly created entity.</returns>
-    public T CreateEntity<T>(params object[] args) where T : Entity
-    {
-        return (T)CreateEntity(typeof(T), args);
     }
 
     /// <summary>
@@ -444,13 +446,19 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     public List<Entity> FindNearby(Vector2 position, float radius)
     {
         var squaredRadius = radius * radius;
-        var results = new List<Entity>();
-        foreach (var entity in _entities)
-        {
-            if (entity.GetActive() && Vector2.DistanceSquared(entity.Position, position) <= squaredRadius)
-                results.Add(entity);
-        }
-        return results;
+        return _entities.Where(e => e.GetActive() && Vector2.DistanceSquared(e.Position, position) <= squaredRadius).ToList();
+    }
+
+    /// <summary>
+    /// Finds all active entities of the specified type within the specified radius.
+    /// </summary>
+    /// <typeparam name="T">The type of entity to find.</typeparam>
+    /// <param name="position">The center position to search around.</param>
+    /// <param name="radius">The search radius.</param>
+    /// <returns>A list of all active entities of type T within the radius.</returns>
+    public List<T> FindNearby<T>(Vector2 position, float radius) where T : Entity
+    {
+        return FindNearby(position, radius).OfType<T>().ToList();
     }
 
     /// <summary>
@@ -525,25 +533,6 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         }
 
         return closest;
-    }
-
-    /// <summary>
-    /// Finds all active entities of the specified type within the specified radius of a position.
-    /// </summary>
-    /// <typeparam name="T">The type of entity to find.</typeparam>
-    /// <param name="position">The center position to search around.</param>
-    /// <param name="radius">The search radius.</param>
-    /// <returns>A list of all active entities of type T within the radius.</returns>
-    public List<T> FindNearby<T>(Vector2 position, float radius) where T : Entity
-    {
-        var squaredRadius = radius * radius;
-        var results = new List<T>();
-        foreach (var entity in _entities)
-        {
-            if (entity is T typed && entity.GetActive() && Vector2.DistanceSquared(entity.Position, position) <= squaredRadius)
-                results.Add(typed);
-        }
-        return results;
     }
 
     /// <summary>
