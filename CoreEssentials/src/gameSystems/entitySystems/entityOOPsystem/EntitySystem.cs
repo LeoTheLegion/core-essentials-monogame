@@ -238,6 +238,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
 
     /// <summary>
     /// Renders debug overlays for all active entities.
+    /// Opens its own SpriteBatch scope since entity rendering batches are already closed.
     /// </summary>
     private void DrawDebugOverlays(SpriteBatch spriteBatch)
     {
@@ -248,7 +249,25 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 activeEntities.Add(_entities[i]);
         }
 
+        if (activeEntities.Count == 0)
+            return;
+
+        var camera = Camera.Camera.MainCamera;
+        var hasCamera = camera != null;
+
+        spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.AlphaBlend,
+            SamplerState.PointClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone,
+            null,
+            hasCamera ? camera!.ViewMatrix : null
+        );
+
         DebugDraw.DrawOverlays(activeEntities, spriteBatch, DebugFont);
+
+        spriteBatch.End();
     }
 
     /// <summary>
