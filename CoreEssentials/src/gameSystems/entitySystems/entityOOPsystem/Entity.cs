@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
 using CoreEssentials.Coroutines;
 
@@ -341,6 +342,31 @@ public abstract class Entity
     /// </summary>
     /// <param name="_spriteBatch">The SpriteBatch used for drawing.</param>
     public virtual void Render(SpriteBatch _spriteBatch) { }
+
+    /// <summary>
+    /// Gets the logical size of the entity in pixels, including the current <see cref="Scale"/>.
+    /// By default this reads the size of the attached <see cref="SpriteComponent"/> (if any).
+    /// Entities that render their own sprite (OOP-style, without a <see cref="SpriteComponent"/>)
+    /// should override this method to return their actual rendered size.
+    /// </summary>
+    /// <returns>The entity size in pixels, or <see cref="Vector2.Zero"/> when no sprite is available.</returns>
+    public virtual Vector2 GetSize()
+    {
+        if (TryGetComponent<SpriteComponent>(out var spriteComponent)
+            && spriteComponent?.Sprite != null)
+        {
+            try
+            {
+                return spriteComponent.Sprite.GetSize() * Scale;
+            }
+            catch (InvalidOperationException)
+            {
+                // Sprite metadata not loaded yet; fall through to the zero size.
+            }
+        }
+
+        return Vector2.Zero;
+    }
 
     /// <summary>
     /// Marks the entity for destruction.

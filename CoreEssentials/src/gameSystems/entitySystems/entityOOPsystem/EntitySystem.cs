@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.Camera;
+using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Spatial;
 using CoreEssentials.Coroutines;
 
@@ -66,6 +67,30 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// Gets the cell size used by the spatial grid (default: 100).
     /// </summary>
     public float SpatialCellSize { get; set; } = 100f;
+
+    /// <summary>
+    /// Gets or sets whether debug mode is enabled.
+    /// When enabled, debug overlays are rendered after entity drawing.
+    /// </summary>
+    public bool DebugMode { get; set; }
+
+    /// <summary>
+    /// Gets the debug configuration for controlling which overlays are displayed.
+    /// </summary>
+    public DebugConfig DebugConfig { get; } = new DebugConfig();
+
+    /// <summary>
+    /// Gets or sets the optional font asset used for rendering text debug overlays.
+    /// If null, text overlays (IDs, tags) will be skipped.
+    /// </summary>
+    public FontAsset? DebugFont { get; set; }
+
+    private EntityDebugDraw? _debugDraw;
+
+    /// <summary>
+    /// Gets the entity debug draw helper (lazy-initialized when debug mode is enabled).
+    /// </summary>
+    private EntityDebugDraw DebugDraw => _debugDraw ??= new EntityDebugDraw(DebugConfig);
 
     /// <summary>
     /// Initializes a new instance of the EntitySystem class.
@@ -162,6 +187,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         RenderNoTextureEntities(noTextureEntities, spriteBatch);
         RenderTextureGroups(textureGroups, spriteBatch);
         ResetTextureDirtyFlags();
+
+        // Render debug overlays on top of everything
+        if (DebugMode)
+        {
+            DrawDebugOverlays(spriteBatch);
+        }
     }
 
     /// <summary>
@@ -254,6 +285,40 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         {
             _entities[i].BatchTextureDirty = false;
         }
+    }
+
+    /// <summary>
+    /// Renders debug overlays for all active entities.
+    /// Opens its own SpriteBatch scope since entity rendering batches are already closed.
+    /// </summary>
+    private void DrawDebugOverlays(SpriteBatch spriteBatch)
+    {
+        var activeEntities = new List<Entity>();
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            if (_entities[i].GetActive())
+                activeEntities.Add(_entities[i]);
+        }
+
+        if (activeEntities.Count == 0)
+            return;
+
+        var camera = Camera.Camera.MainCamera;
+        var hasCamera = camera != null;
+
+        spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.AlphaBlend,
+            SamplerState.PointClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone,
+            null,
+            hasCamera ? camera!.ViewMatrix : null
+        );
+
+        DebugDraw.DrawOverlays(activeEntities, spriteBatch, DebugFont);
+
+        spriteBatch.End();
     }
 
     /// <summary>

@@ -66,6 +66,17 @@ namespace CoreEssentials.Playground
             );
         }
 
+        /// <summary>
+        /// Returns the actual rendered size of the current animation frame, including scale.
+        /// </summary>
+        public override Vector2 GetSize()
+        {
+            if (_animatedSprite == null)
+                return Vector2.Zero;
+
+            return _animatedSprite.SpriteSize * Scale;
+        }
+
         public override void OnDestroy()
         {
             base.OnDestroy();

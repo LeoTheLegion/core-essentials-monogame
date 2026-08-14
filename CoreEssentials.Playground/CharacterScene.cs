@@ -99,8 +99,17 @@ public class CharacterScene : Scene
         Input.Keyboard.KeyReleased += Reset();
         Input.Keyboard.KeyReleased += PlaySound();
 
+        // Setup debug visualization — toggle with F3
+        entitySystem.DebugMode = true;
+        entitySystem.DebugConfig.ShowEntityBounds = true;
+        entitySystem.DebugConfig.ShowEntityIds = true;
+        entitySystem.DebugConfig.ShowEntityTags = true;
+        entitySystem.DebugConfig.ShowEntityHierarchy = true;
+        entitySystem.DebugConfig.ShowEntityPosition = true;
+        entitySystem.DebugFont = AssetManager.LoadAsset<FontAsset>("base");
+
         UpdateLoadingProgress(1.0f, "Scene ready!");
-        Console.WriteLine($"Character scene loaded with {entities.Count} entities from XML!");
+        Console.WriteLine($"Character scene loaded with {entities.Count} entities from XML! (Debug mode ON — press F3 to toggle)");
 
         songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
@@ -125,7 +134,7 @@ public class CharacterScene : Scene
         };
     }
 
-    private static EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
+    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
     {
         return (sender, args) =>
         {
@@ -160,6 +169,13 @@ public class CharacterScene : Scene
             {
                 AudioManager.Instance.SetMasterVolume(1.0f);
                 Console.WriteLine("Volume set to 100%");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.F3)
+            {
+                var entitySystem = GetGameSystem<EntitySystem>();
+                entitySystem.DebugMode = !entitySystem.DebugMode;
+                Console.WriteLine($"Debug mode: {(entitySystem.DebugMode ? "ON" : "OFF")}");
             }
         };
     }
