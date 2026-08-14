@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -301,3 +302,4 @@ public class EntityIdTests
         public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
     }
 }
+#nullable enable

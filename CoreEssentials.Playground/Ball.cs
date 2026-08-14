@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Globalization;
 using System.Linq;
@@ -6,6 +5,7 @@ using System.Xml.Linq;
 using CoreEssentials.Assets;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Debugging;
+using CoreEssentials.Utils;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
@@ -14,29 +14,28 @@ using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+#nullable enable
+
 namespace CoreEssentials.Playground;
 
 public class Ball : Entity, ISaveableEntity
 {
-    private SpriteComponent _spriteComponent;
-    private RigidbodyComponent _rigidbodyComponent;
-    private ColliderComponent _colliderComponent;
+    private SpriteComponent? _spriteComponent;
+    private RigidbodyComponent? _rigidbodyComponent;
     private float _radius;
 
-    static Random _random = new Random();
-
-    private CoroutineOwner _coroutineOwner;
+    private CoroutineOwner? _coroutineOwner;
 
     /// <summary>
     /// Gets the rigidbody component for this ball.
     /// </summary>
-    public RigidbodyComponent RigidbodyComponent => _rigidbodyComponent;
+    public RigidbodyComponent? RigidbodyComponent => _rigidbodyComponent;
 
     public Ball(Vector2 position, string? id = null)
     {
         Position = position;
         sort = 0;
-        float randomScale = (float)(_random.NextDouble() + 0.5f);
+        float randomScale = GameRandom.NextFloat(0.5f, 1.5f);
         Scale = new Vector2(randomScale, randomScale);
         if (id != null)
             SetId(id);
@@ -84,21 +83,25 @@ public class Ball : Entity, ISaveableEntity
             _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
         }
 
-        RegisterForInstancedRendering(_spriteComponent.Sprite);
-
-        _radius = _spriteComponent.Sprite.GetSize().X / 2;
+        // Register sprite for instanced rendering if available
+        var renderSprite = _spriteComponent?.Sprite;
+        if (renderSprite != null)
+        {
+            RegisterForInstancedRendering(renderSprite);
+            _radius = renderSprite.GetSize().X / 2;
+        }
 
         // Add collider component only if not already present
-        _colliderComponent = GetComponent<ColliderComponent>();
-        if (_colliderComponent == null)
+        var colliderComponent = GetComponent<ColliderComponent>();
+        if (colliderComponent == null)
         {
             var colliderRadius = _radius * Scale.X;
             var colliderOffset = new Vector2(0, 1);
-            _colliderComponent = new ColliderComponent(colliderRadius, colliderOffset)
+            colliderComponent = new ColliderComponent(colliderRadius, colliderOffset)
             {
                 Restitution = 1f
             };
-            AddComponent(_colliderComponent);
+            AddComponent(colliderComponent);
         }
 
         // Start movement coroutine (base.OnStart() double-start guard prevents this from running twice on loaded entities)
@@ -106,38 +109,30 @@ public class Ball : Entity, ISaveableEntity
         _coroutineOwner.StartCoroutine(RandomMovementCoroutine());
     }
 
-    private void UpdateCollider()
-    {
-        // Update collider radius based on new scale
-        _colliderComponent.UpdateCircleRadius(_radius * Scale.X);
-
-        // Update mass based on scale
-        _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
-    }
-
     // (Update handled by RigidbodyComponent)
 
     private IEnumerator RandomMovementCoroutine()
     {
-        while (true)
+        while (!Destroyed)
         {
-            float randomX = (float)(_random.NextDouble() * 2 - 1);
-            float randomY = (float)(_random.NextDouble() * 2 - 1);
+            var direction = GameRandom.RandomVector2();
+            float randomX = direction.X;
+            float randomY = direction.Y;
 
             var impulseStrength = 500000f;
-            _rigidbodyComponent.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
+            _rigidbodyComponent?.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
 
             // Add some spin so rotation is visible
-            _rigidbodyComponent.ApplyAngularImpulse((float)_random.NextDouble() * 10 - 5);
+            _rigidbodyComponent?.ApplyAngularImpulse(GameRandom.NextSignedFloat() * 5f);
 
-            yield return new WaitForSeconds(_random.Next(1, 5));
+            yield return new WaitForSeconds(GameRandom.Next(1, 5));
         }
     }
 
-    public override void Render(SpriteBatch spriteBatch)
+    public override void Render(SpriteBatch _spriteBatch)
     {
         if (_spriteComponent == null) return;
-        _spriteComponent.Draw(spriteBatch);
+        _spriteComponent.Draw(_spriteBatch);
     }
 
     public override void OnDestroy()
@@ -145,7 +140,7 @@ public class Ball : Entity, ISaveableEntity
         base.OnDestroy();
 
         // Cleanup coroutines (component cleanup like DestroyBody is handled by OnDetach in base.OnDestroy())
-        _coroutineOwner.StopAllCoroutines();
+        _coroutineOwner?.StopAllCoroutines();
         _coroutineOwner = null;
     }
 
@@ -156,7 +151,7 @@ public class Ball : Entity, ISaveableEntity
     {
         var element = new XElement("Entity",
             new XAttribute("Id", Id ?? string.Empty),
-            new XAttribute("Type", GetType().FullName),
+            new XAttribute("Type", GetType().FullName ?? string.Empty),
             new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
             new XAttribute("Sort", GetSort()),
             new XAttribute("Active", GetActive()),
@@ -174,7 +169,7 @@ public class Ball : Entity, ISaveableEntity
         );
 
         // Add physics state
-        if (_rigidbodyComponent.IsBodyCreated)
+        if (_rigidbodyComponent != null && _rigidbodyComponent.IsBodyCreated)
         {
             element.Add(new XElement("Physics",
                 new XAttribute("LinearVelocityX", _rigidbodyComponent.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
@@ -200,91 +195,108 @@ public class Ball : Entity, ISaveableEntity
     /// </summary>
     public void LoadState(XElement element)
     {
-        // Restore position
-        var positionElement = element.Element("Position");
-        if (positionElement != null)
-        {
-            if (float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-                float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-            {
-                Position = new Vector2(x, y);
-            }
-        }
+        RestorePosition(element);
+        RestoreRotation(element);
+        RestoreScale(element);
+        RestoreSortOrder(element);
+        RestoreActiveState(element);
+        RestoreTags(element);
+        RestorePhysicsVelocity(element);
+        RestoreSpriteColor(element);
+    }
 
-        // Restore rotation
+    private void RestorePosition(XElement element)
+    {
+        var positionElement = element.Element("Position");
+        if (positionElement != null &&
+            float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+            float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+        {
+            Position = new Vector2(x, y);
+        }
+    }
+
+    private void RestoreRotation(XElement element)
+    {
         if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
         {
             Rotation = rotation;
         }
+    }
 
-        // Restore scale
+    private void RestoreScale(XElement element)
+    {
         var scaleElement = element.Element("Scale");
-        if (scaleElement != null)
+        if (scaleElement != null &&
+            float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+            float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
         {
-            if (float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
-                float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
-            {
-                Scale = new Vector2(scaleX, scaleY);
-            }
+            Scale = new Vector2(scaleX, scaleY);
         }
+    }
 
-        // Restore sort order
+    private void RestoreSortOrder(XElement element)
+    {
         if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sortOrder))
         {
             SetSort(sortOrder);
         }
+    }
 
-        // Restore active state
+    private void RestoreActiveState(XElement element)
+    {
         if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
         {
             SetActive(active);
         }
+    }
 
-        // Restore tags
+    private void RestoreTags(XElement element)
+    {
         var tagsElement = element.Element("Tags");
-        if (tagsElement != null)
-        {
-            foreach (var tag in Tags.ToList())
-            {
-                RemoveTag(tag);
-            }
+        if (tagsElement == null) return;
 
-            foreach (var tagElement in tagsElement.Elements("Tag"))
-            {
-                var tagName = tagElement.Attribute("Name")?.Value;
-                if (!string.IsNullOrWhiteSpace(tagName))
-                {
-                    SetTag(tagName);
-                }
-            }
+        foreach (var tag in Tags.ToList())
+        {
+            RemoveTag(tag);
         }
 
-        // Restore physics velocity — body exists since OnStart ran
-        // (position/rotation sync happens automatically on first Update via component)
+        foreach (var tagElement in tagsElement.Elements("Tag"))
+        {
+            var tagName = tagElement.Attribute("Name")?.Value;
+            if (!string.IsNullOrWhiteSpace(tagName))
+            {
+                SetTag(tagName);
+            }
+        }
+    }
+
+    private void RestorePhysicsVelocity(XElement element)
+    {
         var physics = element.Element("Physics");
-        if (physics != null && _rigidbodyComponent.IsBodyCreated)
-        {
-            if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
-                float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
-            {
-                _rigidbodyComponent.SetLinearVelocity(new Vector2(velX, velY));
-            }
+        if (physics == null || _rigidbodyComponent == null || !_rigidbodyComponent.IsBodyCreated) return;
 
-            if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
-            {
-                _rigidbodyComponent.AngularVelocity = angVel;
-            }
+        if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
+            float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
+        {
+            _rigidbodyComponent.SetLinearVelocity(new Vector2(velX, velY));
         }
 
-        // Restore sprite color — component exists since OnStart ran
-        var sprite = element.Element("Sprite");
-        if (sprite != null && _spriteComponent != null)
+        if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
         {
-            var colorAttr = sprite.Attribute("Color")?.Value;
-            if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
-            {
-                _spriteComponent.Color = new Microsoft.Xna.Framework.Color(argb);
-            }
+            _rigidbodyComponent.AngularVelocity = angVel;
+        }
+    }
+
+    private void RestoreSpriteColor(XElement element)
+    {
+        var sprite = element.Element("Sprite");
+        if (sprite == null || _spriteComponent == null) return;
+
+        var colorAttr = sprite.Attribute("Color")?.Value;
+        if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
+        {
+            _spriteComponent.Color = new Microsoft.Xna.Framework.Color(argb);
         }
     }
 }

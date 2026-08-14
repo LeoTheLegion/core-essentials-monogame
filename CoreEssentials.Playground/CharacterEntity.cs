@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
+#nullable enable
+
 namespace CoreEssentials.Playground;
 
 /// <summary>
@@ -12,8 +14,7 @@ namespace CoreEssentials.Playground;
 /// </summary>
 public class CharacterEntity : Entity
 {
-    private Sprite _sprite;
-    private TweenComponent? _tweenComponent;
+    private Sprite? _sprite;
     private TweenFloat? _yOffsetTween;
     private float _originalY;
     private bool _initialized;
@@ -36,11 +37,11 @@ public class CharacterEntity : Entity
         _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
         
         // Add tween component for animations
-        _tweenComponent = AddComponent(new TweenComponent());
+        var tweenComponent = AddComponent(new TweenComponent());
         
         // Start a Y offset tween: bounce up and down (looping with ease)
         // Note: XML position is applied AFTER OnStart, so we capture it on first Update
-        _yOffsetTween = _tweenComponent.TweenToFloat(
+        _yOffsetTween = tweenComponent.TweenToFloat(
             0f, -50f, 1.5f,
             EasingFunctions.InOutSine, // Smooth slow-in/slow-out bounce
             loop: true, reverse: true  // Ping-pong: go up, come back down, repeat
@@ -70,11 +71,11 @@ public class CharacterEntity : Entity
         }
     }
     
-    public override void Render(SpriteBatch spriteBatch)
+    public override void Render(SpriteBatch _spriteBatch)
     {
         // Draw the character with the current frame
-        _sprite.Draw(
-            spriteBatch, 
+        _sprite?.Draw(
+            _spriteBatch,
             _position, 
             Color.White, 
             0f, 

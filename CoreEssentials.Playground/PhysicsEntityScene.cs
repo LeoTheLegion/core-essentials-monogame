@@ -134,12 +134,11 @@ public class PhysicsEntityScene : Scene
         UpdateLoadingProgress(0.95f, "Setting up world border...");
         yield return new WaitForSeconds(0.1f);
 
-        // Create a world border
-        var worldBorder = entitySystem.CreateEntity<WorldBorder>(
+        // Create a world border (ID auto-generated on creation)
+        entitySystem.CreateEntity<WorldBorder>(
             new Vector2(0, 0), 
             new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight)
         );
-        // ID auto-generated on creation
         
         // Create save/load buttons
         CreateSaveLoadButtons();

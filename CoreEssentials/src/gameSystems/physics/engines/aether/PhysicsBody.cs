@@ -72,9 +72,6 @@ public class PhysicsBody : IPhysicsBody
         }
     }
 
-    [Obsolete("Use Position instead.")]
-    public Vector2 WorldPosition => Position;
-
     /// <inheritdoc/>
     public float Rotation
     {

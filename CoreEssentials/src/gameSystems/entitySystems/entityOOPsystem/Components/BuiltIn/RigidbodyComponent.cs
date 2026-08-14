@@ -155,7 +155,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         else
         {
             // Entity drives physics
-            var pos = Owner.Position;
+            _body.Position = Owner.Position;
             _body.Rotation = Owner.Rotation;
         }
     }
@@ -166,8 +166,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="impulse">The impulse to apply.</param>
     public void ApplyImpulse(Vector2 impulse)
     {
-        EnsureBody();
-        _body.ApplyImpulse(impulse);
+        Body?.ApplyImpulse(impulse);
     }
 
     /// <summary>
@@ -186,8 +185,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="velocity">The new linear velocity.</param>
     public void SetLinearVelocity(Vector2 velocity)
     {
-        EnsureBody();
-        _body.SetLinearVelocity(velocity);
+        Body?.SetLinearVelocity(velocity);
     }
 
     /// <summary>
@@ -195,16 +193,8 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// </summary>
     public float AngularVelocity
     {
-        get
-        {
-            EnsureBody();
-            return _body.AngularVelocity;
-        }
-        set
-        {
-            EnsureBody();
-            _body.AngularVelocity = value;
-        }
+        get => Body?.AngularVelocity ?? 0f;
+        set => Body!.AngularVelocity = value;
     }
 
     /// <summary>
@@ -213,8 +203,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="angularImpulse">The angular impulse to apply.</param>
     public void ApplyAngularImpulse(float angularImpulse)
     {
-        EnsureBody();
-        _body.AngularVelocity += angularImpulse;
+        Body!.AngularVelocity += angularImpulse;
     }
 
     /// <summary>
@@ -224,9 +213,12 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// </summary>
     public void SyncBodyFromEntity()
     {
-        if (_body == null) return;
-        _body.Position = Owner.Position;
-        _body.Rotation = Owner.Rotation;
+        var body = Body;
+        if (body != null)
+        {
+            body.Position = Owner.Position;
+            body.Rotation = Owner.Rotation;
+        }
     }
 
     /// <summary>

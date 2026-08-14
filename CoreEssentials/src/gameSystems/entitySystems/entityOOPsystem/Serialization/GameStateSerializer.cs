@@ -67,91 +67,138 @@ public static class GameStateSerializer
             throw new ArgumentNullException(nameof(system));
 
         var document = XDocument.Parse(xmlData);
-        var root = document.Root;
+        ValidateRootElement(document.Root);
 
-        if (root == null || !string.Equals(root.Name.LocalName, GameStateRootElement, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new FormatException($"Root element must be <{GameStateRootElement}>.");
-        }
-
-        var entitiesElement = root.Element(EntitiesElement);
+        var entitiesElement = document.Root?.Element(EntitiesElement);
         if (entitiesElement == null)
         {
             return;
         }
 
-        // Collect all IDs from the save file (including nested children) for cleanup later
+        // Collect all IDs from the save file for cleanup later
+        var loadedIds = CollectLoadedEntityIds(entitiesElement);
+
+        // Build ID mapping and process entities
+        var idToEntity = new Dictionary<string, Entity>(StringComparer.OrdinalIgnoreCase);
+        ProcessRootEntities(entitiesElement, system, idToEntity);
+
+        // Remove entities that weren't in the saved state
+        RemoveUnsavedEntities(system, loadedIds);
+    }
+
+    /// <summary>
+    /// Validates that the XML document root is the expected GameState element.
+    /// </summary>
+    private static void ValidateRootElement(XElement? root)
+    {
+        if (root == null || !string.Equals(root.Name.LocalName, GameStateRootElement, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new FormatException($"Root element must be <{GameStateRootElement}>.");
+        }
+    }
+
+    /// <summary>
+    /// Collects all entity IDs from the save file, including nested children.
+    /// </summary>
+    private static HashSet<string> CollectLoadedEntityIds(XElement entitiesElement)
+    {
         var loadedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var entityElement in entitiesElement.Elements(EntityElement))
         {
-            var id = entityElement.Attribute("Id")?.Value;
-            if (!string.IsNullOrWhiteSpace(id))
-            {
-                loadedIds.Add(id);
-            }
+            AddEntityIdToSet(entityElement, loadedIds);
 
             var childrenElement = entityElement.Element(ChildrenElement);
             if (childrenElement != null)
             {
                 foreach (var childElement in childrenElement.Elements(EntityElement))
                 {
-                    var childId = childElement.Attribute("Id")?.Value;
-                    if (!string.IsNullOrWhiteSpace(childId))
-                    {
-                        loadedIds.Add(childId);
-                    }
+                    AddEntityIdToSet(childElement, loadedIds);
                 }
             }
         }
 
-        // Build ID mapping for cross-entity references
-        var idToEntity = new Dictionary<string, Entity>(StringComparer.OrdinalIgnoreCase);
+        return loadedIds;
+    }
 
+    /// <summary>
+    /// Adds the entity ID from an XML element to the loaded IDs set if it's not null or empty.
+    /// </summary>
+    private static void AddEntityIdToSet(XElement element, HashSet<string> loadedIds)
+    {
+        var id = element.Attribute("Id")?.Value;
+        if (!string.IsNullOrWhiteSpace(id))
+        {
+            loadedIds.Add(id);
+        }
+    }
+
+    /// <summary>
+    /// Processes all root-level entity elements, resolving or creating entities and loading their state.
+    /// </summary>
+    private static void ProcessRootEntities(XElement entitiesElement, EntitySystem system, Dictionary<string, Entity> idToEntity)
+    {
         foreach (var entityElement in entitiesElement.Elements(EntityElement))
         {
             try
             {
-                // Resolve or create the entity by ID
                 var entity = ResolveOrCreateEntity(entityElement, system, idToEntity);
-                if (entity is ISaveableEntity saveable)
-                {
-                    // Load state into the entity (existing or newly created)
-                    saveable.LoadState(entityElement);
-
-                    // Handle children
-                    var childrenElement = entityElement.Element(ChildrenElement);
-                    if (childrenElement != null)
-                    {
-                        foreach (var childElement in childrenElement.Elements(EntityElement))
-                        {
-                            var childEntity = ResolveOrCreateEntity(childElement, system, idToEntity);
-                            if (childEntity is ISaveableEntity childSaveable)
-                            {
-                                childSaveable.LoadState(childElement);
-                            }
-                            entity.AddChild(childEntity);
-                        }
-                    }
-                }
+                LoadEntityAndChildrenState(entity, entityElement, system, idToEntity);
             }
             catch (Exception ex)
             {
                 var id = entityElement.Attribute("Id")?.Value ?? "unknown";
-                throw new Exception($"Error loading entity '{id}': {ex.Message}", ex);
+                throw new InvalidOperationException($"Error loading entity '{id}': {ex.Message}", ex);
             }
         }
+    }
 
-        // Remove ISaveableEntity instances that weren't in the saved state
-        var currentSaveables = system.GetEntities()
-            .Where(e => e is ISaveableEntity && !string.IsNullOrWhiteSpace(e.Id))
+    /// <summary>
+    /// Loads state into a saveable entity and its children.
+    /// </summary>
+    private static void LoadEntityAndChildrenState(Entity entity, XElement entityElement, EntitySystem system, Dictionary<string, Entity> idToEntity)
+    {
+        if (entity is not ISaveableEntity saveable)
+        {
+            return;
+        }
+
+        saveable.LoadState(entityElement);
+
+        var childrenElement = entityElement.Element(ChildrenElement);
+        if (childrenElement == null)
+        {
+            return;
+        }
+
+        foreach (var childElement in childrenElement.Elements(EntityElement))
+        {
+            var childEntity = ResolveOrCreateEntity(childElement, system, idToEntity);
+            if (childEntity is ISaveableEntity childSaveable)
+            {
+                childSaveable.LoadState(childElement);
+            }
+            entity.AddChild(childEntity);
+        }
+    }
+
+    /// <summary>
+    /// Removes entities from the system that were not present in the saved state.
+    /// </summary>
+    private static void RemoveUnsavedEntities(EntitySystem system, HashSet<string> loadedIds)
+    {
+        var unsavedEntities = system.GetEntities()
+            .Where(e => e is ISaveableEntity)
+            .Where(e =>
+            {
+                var id = e.Id;
+                return !string.IsNullOrWhiteSpace(id) && !loadedIds.Contains(id);
+            })
             .ToList();
 
-        foreach (var entity in currentSaveables)
+        foreach (var entity in unsavedEntities)
         {
-            if (!loadedIds.Contains(entity.Id))
-            {
-                system.RemoveEntity(entity);
-            }
+            system.RemoveEntity(entity);
         }
     }
 
@@ -211,7 +258,7 @@ public static class GameStateSerializer
         }
         catch (Exception ex) when (ex is not FormatException)
         {
-            throw new Exception($"Error creating entity of type '{typeName}': {ex.Message}", ex);
+            throw new InvalidOperationException($"Error creating entity of type '{typeName}': {ex.Message}", ex);
         }
     }
 
@@ -223,7 +270,10 @@ public static class GameStateSerializer
             .ToList();
 
         // Enforce: ISaveableEntity instances must have an ID
-        var missingId = system.GetEntities().Where(e => e is ISaveableEntity && string.IsNullOrWhiteSpace(e.Id));
+        var missingId = system.GetEntities()
+            .Where(e => e is ISaveableEntity && string.IsNullOrWhiteSpace(e.Id))
+            .ToList();
+
         if (missingId.Any())
         {
             var types = string.Join(", ", missingId.Select(e => e.GetType().Name));
@@ -253,12 +303,9 @@ public static class GameStateSerializer
         if (entity.Children.Any())
         {
             var childrenElement = new XElement(ChildrenElement);
-            foreach (var child in entity.Children)
+            foreach (var child in entity.Children.Where(c => c is ISaveableEntity))
             {
-                if (child is ISaveableEntity)
-                {
-                    childrenElement.Add(CreateEntityElement(child));
-                }
+                childrenElement.Add(CreateEntityElement(child));
             }
             element.Add(childrenElement);
         }
