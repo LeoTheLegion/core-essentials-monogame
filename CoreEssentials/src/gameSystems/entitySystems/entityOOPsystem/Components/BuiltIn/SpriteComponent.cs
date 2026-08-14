@@ -135,19 +135,19 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             float.Parse(element.Attribute("OriginY")?.Value ?? "0.5")
         );
 
-        var effectsAttr = element.Attribute("Effects")?.Value ?? string.Empty;
+        string effectsAttr = GetAttribute(element, "Effects");
         if (!string.IsNullOrEmpty(effectsAttr) && Enum.TryParse<SpriteEffects>(effectsAttr, out var effects))
         {
             Effects = effects;
         }
 
-        var layerDepthAttr = element.Attribute("LayerDepth")?.Value ?? string.Empty;
+        string layerDepthAttr = GetAttribute(element, "LayerDepth");
         if (!string.IsNullOrEmpty(layerDepthAttr))
         {
             LayerDepth = float.Parse(layerDepthAttr);
         }
 
-        var sortOrderValue = element.Attribute("SortOrderOverride")?.Value ?? "-1";
+        string sortOrderValue = GetAttribute(element, "SortOrderOverride", "-1");
         if (int.TryParse(sortOrderValue, out int sortOrder) && sortOrder >= 0)
         {
             SortOrderOverride = sortOrder;
@@ -157,10 +157,16 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             SortOrderOverride = null;
         }
 
-        var animationFrameAttr = element.Attribute("AnimationFrame")?.Value ?? string.Empty;
+        string animationFrameAttr = GetAttribute(element, "AnimationFrame");
         if (!string.IsNullOrEmpty(animationFrameAttr))
         {
             AnimationFrame = int.Parse(animationFrameAttr);
         }
+    }
+
+    /// <summary>Gets the attribute value or a default fallback.</summary>
+    private static string GetAttribute(XElement element, string name, string @default = "")
+    {
+        return element.Attribute(name)?.Value ?? @default;
     }
 }

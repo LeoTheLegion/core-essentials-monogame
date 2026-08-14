@@ -166,9 +166,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="impulse">The impulse to apply.</param>
     public void ApplyImpulse(Vector2 impulse)
     {
-        var body = _body;
-        if (body == null) return;
-        body.ApplyImpulse(impulse);
+        Body?.ApplyImpulse(impulse);
     }
 
     /// <summary>
@@ -187,9 +185,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="velocity">The new linear velocity.</param>
     public void SetLinearVelocity(Vector2 velocity)
     {
-        var body = _body;
-        if (body == null) return;
-        body.SetLinearVelocity(velocity);
+        Body?.SetLinearVelocity(velocity);
     }
 
     /// <summary>
@@ -197,15 +193,8 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// </summary>
     public float AngularVelocity
     {
-        get => _body?.AngularVelocity ?? 0f;
-        set
-        {
-            var body = _body;
-            if (body != null)
-            {
-                body.AngularVelocity = value;
-            }
-        }
+        get => Body?.AngularVelocity ?? 0f;
+        set => Body!.AngularVelocity = value;
     }
 
     /// <summary>
@@ -214,9 +203,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// <param name="angularImpulse">The angular impulse to apply.</param>
     public void ApplyAngularImpulse(float angularImpulse)
     {
-        var body = _body;
-        if (body == null) return;
-        body.AngularVelocity += angularImpulse;
+        Body!.AngularVelocity += angularImpulse;
     }
 
     /// <summary>
@@ -226,10 +213,12 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     /// </summary>
     public void SyncBodyFromEntity()
     {
-        var body = _body;
-        if (body == null) return;
-        body.Position = Owner.Position;
-        body.Rotation = Owner.Rotation;
+        var body = Body;
+        if (body != null)
+        {
+            body.Position = Owner.Position;
+            body.Rotation = Owner.Rotation;
+        }
     }
 
     /// <summary>
