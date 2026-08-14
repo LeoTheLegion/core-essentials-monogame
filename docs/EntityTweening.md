@@ -30,7 +30,10 @@ Interpolates a `Vector2` from start to end over time.
 var tween = component.TweenToVector2(
     Vector2.Zero,              // Start
     new Vector2(100, 200),    // End
-    1f                         // Duration (seconds)
+    1f,                        // Duration (seconds)
+    EasingFunctions.InQuad,   // Easing (optional, defaults to linear)
+    loop: true,               // Repeat on completion (default: false)
+    reverse: true             // Ping-pong (default: false)
 );
 // Returns: TweenVector2
 ```
@@ -43,7 +46,10 @@ Interpolates a `float` from start to end over time. Useful for rotation, scale, 
 var tween = component.TweenToFloat(
     0f,                        // Start
     MathHelper.PiOver2,        // End (90 degrees)
-    0.5f                       // Duration (seconds)
+    0.5f,                      // Duration (seconds)
+    EasingFunctions.OutCubic,  // Easing (optional, defaults to linear)
+    loop: false,               // Repeat on completion (default: false)
+    reverse: false             // Ping-pong (default: false)
 );
 // Returns: TweenFloat
 ```
@@ -61,21 +67,32 @@ var tween = component.TweenToFloat(
 
 ## Looping
 
-Set `Loop = true` to repeat the animation when it completes. The tween resets to the start and plays again.
+Set `loop: true` to repeat the animation when it completes. The tween resets to the start and plays again.
 
 ```csharp
-var bounceTween = component.TweenToFloat(0f, -50f, 1f, t => (float)Math.Sin(t * Math.PI));
+// One-liner with loop parameter
+var bounceTween = component.TweenToFloat(0f, -50f, 1f, EasingFunctions.InOutSine, loop: true);
+
+// Or set after creation
 bounceTween.Loop = true; // Repeats forever
 ```
 
 ## Reverse (Ping-Pong)
 
-Set both `Loop` and `Reverse` to smoothly reverse direction instead of snapping back:
+Set both `loop: true` and `reverse: true` to smoothly reverse direction instead of snapping back:
 
 ```csharp
-var slideTween = component.TweenToVector2(Vector2.Zero, new Vector2(200, 0), 1f);
+// One-liner with loop and reverse parameters
+var slideTween = component.TweenToVector2(
+    Vector2.Zero, new Vector2(200, 0), 1f,
+    EasingFunctions.InOutQuad,
+    loop: true, reverse: true
+);
+// start → end → start → end...
+
+// Or set after creation
 slideTween.Loop = true;
-slideTween.Reverse = true; // start → end → start → end...
+slideTween.Reverse = true;
 ```
 
 > **Note:** Reverse works best with monotonic easings (linear, in-out quad). Half-sine waves like `sin(t * π)` already do a round trip within one pass — use `Loop` alone for those.
