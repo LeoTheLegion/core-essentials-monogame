@@ -76,23 +76,9 @@ public class TweenComponent : EntityComponent
     /// <param name="endValue">The end value.</param>
     /// <param name="duration">Duration of the tween in seconds.</param>
     /// <param name="easingFunction">The easing function to apply. Defaults to linear.</param>
-    public TweenVector2 TweenToVector2(Vector2 startValue, Vector2 endValue, float duration, Func<float, float>? easingFunction = null)
-    {
-        var tween = new TweenVector2(startValue, endValue, duration, easingFunction ?? (t => t));
-        _vectorTweens.Add(tween);
-        return tween;
-    }
-
-    /// <summary>
-    /// Creates a tween that interpolates a Vector2 value from <paramref name="startValue"/> to <paramref name="endValue"/> over <paramref name="duration"/> seconds.
-    /// </summary>
-    /// <param name="startValue">The starting value.</param>
-    /// <param name="endValue">The end value.</param>
-    /// <param name="duration">Duration of the tween in seconds.</param>
-    /// <param name="easingFunction">The easing function to apply. Defaults to linear.</param>
     /// <param name="loop">Whether the tween repeats on completion.</param>
     /// <param name="reverse">Whether the tween reverses direction each cycle (ping-pong). Requires <paramref name="loop"/> to be true.</param>
-    public TweenVector2 TweenToVector2(Vector2 startValue, Vector2 endValue, float duration, Func<float, float>? easingFunction, bool loop, bool reverse)
+    public TweenVector2 TweenToVector2(Vector2 startValue, Vector2 endValue, float duration, Func<float, float>? easingFunction = null, bool loop = false, bool reverse = false)
     {
         var tween = new TweenVector2(startValue, endValue, duration, easingFunction ?? (t => t));
         tween.Loop = loop;
@@ -109,23 +95,9 @@ public class TweenComponent : EntityComponent
     /// <param name="endValue">The end value.</param>
     /// <param name="duration">Duration of the tween in seconds.</param>
     /// <param name="easingFunction">The easing function to apply. Defaults to linear.</param>
-    public TweenFloat TweenToFloat(float startValue, float endValue, float duration, Func<float, float>? easingFunction = null)
-    {
-        var tween = new TweenFloat(startValue, endValue, duration, easingFunction ?? (t => t));
-        _floatTweens.Add(tween);
-        return tween;
-    }
-
-    /// <summary>
-    /// Creates a tween that interpolates a float value from <paramref name="startValue"/> to <paramref name="endValue"/> over <paramref name="duration"/> seconds.
-    /// </summary>
-    /// <param name="startValue">The starting value.</param>
-    /// <param name="endValue">The end value.</param>
-    /// <param name="duration">Duration of the tween in seconds.</param>
-    /// <param name="easingFunction">The easing function to apply. Defaults to linear.</param>
     /// <param name="loop">Whether the tween repeats on completion.</param>
     /// <param name="reverse">Whether the tween reverses direction each cycle (ping-pong). Requires <paramref name="loop"/> to be true.</param>
-    public TweenFloat TweenToFloat(float startValue, float endValue, float duration, Func<float, float>? easingFunction, bool loop, bool reverse)
+    public TweenFloat TweenToFloat(float startValue, float endValue, float duration, Func<float, float>? easingFunction = null, bool loop = false, bool reverse = false)
     {
         var tween = new TweenFloat(startValue, endValue, duration, easingFunction ?? (t => t));
         tween.Loop = loop;
