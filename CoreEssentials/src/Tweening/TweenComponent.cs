@@ -19,44 +19,36 @@ public class TweenComponent : EntityComponent
     public override void Update(GameTime gameTime)
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        UpdateTweens(_vectorTweens, dt);
+        UpdateTweens(_floatTweens, dt);
+    }
 
-        for (int i = _vectorTweens.Count - 1; i >= 0; i--)
+    /// <summary>Updates all tweens in the list, handling completion and looping.</summary>
+    private static void UpdateTweens<T>(IList<T> tweens, float deltaTime) where T : ITween
+    {
+        for (int i = tweens.Count - 1; i >= 0; i--)
         {
-            _vectorTweens[i].Advance(dt);
-            if (_vectorTweens[i].IsComplete)
-            {
-                if (_vectorTweens[i].Loop)
-                {
-                    if (_vectorTweens[i].Reverse)
-                        _vectorTweens[i].ToggleDirection();
-                    else
-                        _vectorTweens[i].Reset();
-                }
-                else
-                {
-                    _vectorTweens.RemoveAt(i);
-                }
-            }
+            tweens[i].Advance(deltaTime);
+            if (!tweens[i].IsComplete)
+                continue;
+
+            HandleTweenCompletion(tweens, i);
+        }
+    }
+
+    /// <summary>Handles a completed tween by either looping/reversing or removing it.</summary>
+    private static void HandleTweenCompletion<T>(IList<T> tweens, int index) where T : ITween
+    {
+        if (!tweens[index].Loop)
+        {
+            tweens.RemoveAt(index);
+            return;
         }
 
-        for (int i = _floatTweens.Count - 1; i >= 0; i--)
-        {
-            _floatTweens[i].Advance(dt);
-            if (_floatTweens[i].IsComplete)
-            {
-                if (_floatTweens[i].Loop)
-                {
-                    if (_floatTweens[i].Reverse)
-                        _floatTweens[i].ToggleDirection();
-                    else
-                        _floatTweens[i].Reset();
-                }
-                else
-                {
-                    _floatTweens.RemoveAt(i);
-                }
-            }
-        }
+        if (tweens[index].Reverse)
+            tweens[index].ToggleDirection();
+        else
+            tweens[index].Reset();
     }
 
     /// <inheritdoc/>

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -13,7 +14,7 @@ public class EntitySerializerTests
 {
     private class TestEntity : Entity
     {
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     /// <summary>
@@ -27,7 +28,7 @@ public class EntitySerializerTests
         public override void OnStart()
         {
             base.OnStart();
-            Sprite = new SpriteComponent(null)
+            Sprite = new SpriteComponent(default!)
             {
                 Color = Color.White
             };
@@ -36,10 +37,10 @@ public class EntitySerializerTests
             Scale = new Vector2(1f, 1f);
         }
 
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
-    private EntitySystem CreateEntitySystem()
+    private static EntitySystem CreateEntitySystem()
     {
         return new EntitySystem();
     }
@@ -664,3 +665,4 @@ public class EntitySerializerTests
 
     #endregion
 }
+#nullable enable

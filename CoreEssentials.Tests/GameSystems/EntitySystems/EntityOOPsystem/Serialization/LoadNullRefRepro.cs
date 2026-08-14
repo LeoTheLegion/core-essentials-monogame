@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Globalization;
 using System.IO;
@@ -31,7 +32,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             {
                 return new XElement("Entity",
                     new XAttribute("Id", Id ?? string.Empty),
-                    new XAttribute("Type", GetType().FullName),
+                    new XAttribute("Type", GetType().FullName ?? string.Empty),
                     new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
                     new XAttribute("Sort", GetSort()),
                     new XAttribute("Active", GetActive()),
@@ -97,7 +98,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var newSystem = new EntitySystem();
                 GameStateSerializer.LoadState(newSystem, tempFile);
                 
-                var loaded = newSystem.GetEntities().First();
+                var loaded = newSystem.GetEntities()[0];
                 
                 // Verify entity loaded correctly
                 Assert.Equal("ball1", loaded.Id);
@@ -107,7 +108,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 // Verify OnStart was called and component created
                 var ball = Assert.IsType<BallLikeEntity>(loaded);
                 Assert.NotNull(ball.SpriteComp);
-                Assert.Same(loaded, ball.SpriteComp!.Owner);
+                Assert.Same(loaded, ball.SpriteComp.Owner);
                 
                 // Component should exist
                 var spriteComp = loaded.GetComponent<SpriteComponent>();
@@ -136,7 +137,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var newSystem = new EntitySystem();
                 // Simulate loading XML with component data
                 // Create a simple XML with component
-                var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                // var xml is defined below for reference but not used directly
+                _ = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <GameState Version=""1.0"">
   <Entities>
     <Entity Id=""test"" Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Serialization.LoadNullRefRepro+BallLikeEntity"" Rotation=""0"" Sort=""0"" Active=""true"">
@@ -150,11 +152,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 // Actually use proper save/load
                 GameStateSerializer.LoadState(newSystem, tempFile);
                 
-                var loaded = newSystem.GetEntities().First();
+                var loaded = newSystem.GetEntities()[0];
                 var spriteComp = loaded.GetComponent<SpriteComponent>();
                 Assert.NotNull(spriteComp);
                 // Owner should be set
-                Assert.Same(loaded, spriteComp!.Owner);
+                Assert.Same(loaded, spriteComp.Owner);
             }
             finally
             {
@@ -163,3 +165,4 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
     }
 }
+#nullable enable

@@ -16,6 +16,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization
 public static class EntitySerializer
 {
     private const string MalformedXmlMessage = "Malformed XML or unexpected root element for entity definition.";
+    private const string EntityElement = "EntityDefinition";
 
     /// <summary>
     /// Loads a single entity of the specified type from an XML string and adds it to the given EntitySystem.
@@ -123,7 +124,7 @@ public static class EntitySerializer
         // First pass - create all entities and instantiate templates
         foreach (var element in root.Elements())
         {
-            if (element.Name.LocalName == "EntityDefinition")
+            if (element.Name.LocalName == EntityElement)
             {
                 var entity = LoadEntityFromDefinition(element, system, factory, idToEntity);
                 rootEntities.Add(entity);
@@ -138,11 +139,7 @@ public static class EntitySerializer
         // Second pass - resolve <Reference> links
         foreach (var element in root.Elements())
         {
-            if (element.Name.LocalName == "EntityDefinition")
-            {
-                ResolveReferences(element, idToEntity, rootEntities);
-            }
-            else if (element.Name.LocalName == "Template")
+            if (element.Name.LocalName == EntityElement || element.Name.LocalName == "Template")
             {
                 ResolveReferences(element, idToEntity, rootEntities);
             }
@@ -461,65 +458,64 @@ public static class EntitySerializer
 
     private static void LoadComponent(Entity entity, XElement componentElement, IComponentFactory factory)
     {
-        var typeName = componentElement.Attribute("Type")?.Value;
+        string? typeName = componentElement.Attribute("Type")?.Value;
         if (string.IsNullOrWhiteSpace(typeName))
             return;
 
-        // Check if entity already has this component type - if so, modify existing instead of adding new
         var existingComponent = GetExistingComponent(entity, typeName);
-        EntityComponent component = existingComponent ?? factory.Create(typeName);
+        EntityComponent? component = existingComponent ?? factory.Create(typeName);
         
         if (component == null)
             return;
 
-        // Apply <Properties><Property Name="..." Value="..."/></Properties> elements
-        var propertiesElement = componentElement.Element("Properties");
-        if (propertiesElement != null)
-        {
-            foreach (var propertyElement in propertiesElement.Elements("Property"))
-            {
-                var propertyName = propertyElement.Attribute("Name")?.Value;
-                var propertyValue = propertyElement.Attribute("Value")?.Value;
+        ApplyProperties(entity, component, componentElement);
 
-                if (string.IsNullOrWhiteSpace(propertyName) || string.IsNullOrWhiteSpace(propertyValue))
-                    continue;
-
-                // Scale is now on Entity, not SpriteComponent - handle migration
-                if (propertyName == "Scale" && component is Components.BuiltIn.SpriteComponent)
-                {
-                    // Parse "X,Y" format
-                    var parts = propertyValue.Split(',');
-                    if (parts.Length == 2 && 
-                        float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
-                        float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
-                    {
-                        entity.Scale = new Vector2(scaleX, scaleY);
-                    }
-                    continue;
-                }
-
-                SetProperty(component, propertyName, propertyValue);
-            }
-        }
-
-        // Only add to entity if it's a new component (not already existing)
         if (existingComponent == null)
         {
             entity.AddComponent(component);
         }
     }
 
-    private static EntityComponent? GetExistingComponent(Entity entity, string typeName)
+    /// <summary>Applies all Property elements from the XML to the component or entity.</summary>
+    private static void ApplyProperties(Entity entity, EntityComponent component, XElement componentElement)
     {
-        foreach (var component in entity.Components)
+        var propertiesElement = componentElement.Element("Properties");
+        if (propertiesElement == null)
+            return;
+
+        foreach (var propertyElement in propertiesElement.Elements("Property"))
         {
-            if (component.GetType().Name.Equals(typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                return component;
-            }
+            var propertyName = propertyElement.Attribute("Name")?.Value;
+            var propertyValue = propertyElement.Attribute("Value")?.Value;
+
+            if (string.IsNullOrWhiteSpace(propertyName) || string.IsNullOrWhiteSpace(propertyValue))
+                continue;
+
+            HandleSpecialProperties(entity, component, propertyName, propertyValue);
+            SetProperty(component, propertyName, propertyValue);
         }
-        return null;
     }
+
+    /// <summary>Handles properties that have special migration logic (e.g., Scale moved from SpriteComponent to Entity).</summary>
+    private static void HandleSpecialProperties(Entity entity, EntityComponent component, string propertyName, string propertyValue)
+    {
+        if (propertyName != "Scale" || component is not Components.BuiltIn.SpriteComponent)
+            return;
+
+        var parts = propertyValue.Split(',');
+        if (parts.Length != 2)
+            return;
+
+        if (!float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX))
+            return;
+        if (!float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
+            return;
+
+        entity.Scale = new Vector2(scaleX, scaleY);
+    }
+
+    private static EntityComponent? GetExistingComponent(Entity entity, string typeName) =>
+        entity.Components.FirstOrDefault(c => c.GetType().Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
 
     private static void SetProperty(object target, string propertyName, string valueString)
     {

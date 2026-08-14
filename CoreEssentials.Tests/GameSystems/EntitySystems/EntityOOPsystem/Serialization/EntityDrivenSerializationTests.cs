@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Globalization;
 using System.IO;
@@ -26,7 +27,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             {
                 var element = new XElement("Entity",
                     new XAttribute("Id", Id ?? string.Empty),
-                    new XAttribute("Type", GetType().FullName),
+                    new XAttribute("Type", GetType().FullName ?? string.Empty),
                     new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
                     new XAttribute("Sort", GetSort()),
                     new XAttribute("Active", GetActive()),
@@ -136,7 +137,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             {
                 var element = new XElement("Entity",
                     new XAttribute("Id", Id ?? string.Empty),
-                    new XAttribute("Type", GetType().FullName),
+                    new XAttribute("Type", GetType().FullName ?? string.Empty),
                     new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
                     new XAttribute("Sort", GetSort()),
                     new XAttribute("Active", GetActive()),
@@ -354,3 +355,4 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
     }
 }
+#nullable enable
