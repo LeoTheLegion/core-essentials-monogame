@@ -42,7 +42,7 @@ public static class EntityTemplateLoader
 
     /// <summary>
     /// Parses an entity template from an XML string.
-    /// Expects a root element named `EntityTemplate`.
+    /// Expects a root element named 'EntityTemplate'.
     /// </summary>
     public static EntityTemplate LoadFromXml(string xmlData)
     {
@@ -60,52 +60,9 @@ public static class EntityTemplateLoader
             Active = bool.Parse(root.Attribute("Active")?.Value ?? "true")
         };
 
-        // Tags
-        var tagsElement = root.Element("Tags");
-        if (tagsElement != null)
-        {
-            template.Tags = tagsElement.Elements("Tag")
-                .Select(t => t.Attribute("Name")?.Value)
-                .Where(v => v != null)
-                .ToList()!;
-        }
-
-        // Components
-        var componentsElement = root.Element("Components");
-        if (componentsElement != null)
-        {
-            foreach (var compElem in componentsElement.Elements("Component"))
-            {
-                var typeName = compElem.Attribute("Type")?.Value;
-                if (string.IsNullOrWhiteSpace(typeName)) continue;
-
-                var compDef = new EntityTemplate.ComponentDefinition { Type = typeName };
-                var propsElem = compElem.Element("Properties");
-                if (propsElem != null)
-                {
-                    foreach (var propElem in propsElem.Elements("Property"))
-                    {
-                        var name = propElem.Attribute("Name")?.Value;
-                        var val = propElem.Attribute("Value")?.Value;
-                        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(val))
-                            compDef.Properties[name] = val;
-                    }
-                }
-                template.Components.Add(compDef);
-            }
-        }
-
-        // Children templates
-        var childrenElement = root.Element("Children");
-        if (childrenElement != null)
-        {
-            foreach (var childElem in childrenElement.Elements("EntityTemplate"))
-            {
-                // Note: This is a simplified recursive load. 
-                // For full consistency we'd use LoadFromXml on the inner XML string.
-                template.Children.Add(ParseTemplateElement(childElem));
-            }
-        }
+        ParseTags(root, template);
+        ParseComponents(root, template);
+        ParseChildren(root, template);
 
         return template;
     }
@@ -120,49 +77,78 @@ public static class EntityTemplateLoader
             Active = bool.Parse(element.Attribute("Active")?.Value ?? "true")
         };
 
-        var tagsElement = element.Element("Tags");
-        if (tagsElement != null)
-        {
-            template.Tags = tagsElement.Elements("Tag")
-                .Select(t => t.Attribute("Name")?.Value)
-                .Where(v => v != null)
-                .ToList()!;
-        }
-
-        var componentsElement = element.Element("Components");
-        if (componentsElement != null)
-        {
-            foreach (var compElem in componentsElement.Elements("Component"))
-            {
-                var typeName = compElem.Attribute("Type")?.Value;
-                if (string.IsNullOrWhiteSpace(typeName)) continue;
-
-                var compDef = new EntityTemplate.ComponentDefinition { Type = typeName };
-                var propsElem = compElem.Element("Properties");
-                if (propsElem != null)
-                {
-                    foreach (var propElem in propsElem.Elements("Property"))
-                    {
-                        var name = propElem.Attribute("Name")?.Value;
-                        var val = propElem.Attribute("Value")?.Value;
-                        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(val))
-                            compDef.Properties[name] = val;
-                    }
-                }
-                template.Components.Add(compDef);
-            }
-        }
-
-        var childrenElement = element.Element("Children");
-        if (childrenElement != null)
-        {
-            foreach (var childElem in childrenElement.Elements("EntityTemplate"))
-            {
-                template.Children.Add(ParseTemplateElement(childElem));
-            }
-        }
+        ParseTags(element, template);
+        ParseComponents(element, template);
+        ParseChildren(element, template);
 
         return template;
+    }
+
+    /// <summary>Parses the Tags element and populates the template's tags list.</summary>
+    private static void ParseTags(XElement element, EntityTemplate template)
+    {
+        var tagsElement = element.Element("Tags");
+        if (tagsElement == null)
+            return;
+
+        template.Tags = tagsElement.Elements("Tag")
+            .Select(t => t.Attribute("Name")?.Value)
+            .Where(v => v != null)
+            .ToList()!;
+    }
+
+    /// <summary>Parses the Components element and populates the template's components list.</summary>
+    private static void ParseComponents(XElement element, EntityTemplate template)
+    {
+        var componentsElement = element.Element("Components");
+        if (componentsElement == null)
+            return;
+
+        foreach (var compElem in componentsElement.Elements("Component"))
+        {
+            var typeName = compElem.Attribute("Type")?.Value;
+            if (string.IsNullOrWhiteSpace(typeName))
+                continue;
+
+            var compDef = ParseComponentDefinition(compElem);
+            template.Components.Add(compDef);
+        }
+    }
+
+    /// <summary>Parses a single Component element into a ComponentDefinition.</summary>
+    private static EntityTemplate.ComponentDefinition ParseComponentDefinition(XElement compElem)
+    {
+        var compDef = new EntityTemplate.ComponentDefinition
+        {
+            Type = compElem.Attribute("Type")?.Value ?? string.Empty
+        };
+
+        var propsElem = compElem.Element("Properties");
+        if (propsElem == null)
+            return compDef;
+
+        foreach (var propElem in propsElem.Elements("Property"))
+        {
+            var name = propElem.Attribute("Name")?.Value;
+            var val = propElem.Attribute("Value")?.Value;
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(val))
+                compDef.Properties[name] = val;
+        }
+
+        return compDef;
+    }
+
+    /// <summary>Parses the Children element and recursively populates nested templates.</summary>
+    private static void ParseChildren(XElement element, EntityTemplate template)
+    {
+        var childrenElement = element.Element("Children");
+        if (childrenElement == null)
+            return;
+
+        foreach (var childElem in childrenElement.Elements("EntityTemplate"))
+        {
+            template.Children.Add(ParseTemplateElement(childElem));
+        }
     }
 
     /// <summary>
