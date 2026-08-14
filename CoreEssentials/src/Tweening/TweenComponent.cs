@@ -59,6 +59,13 @@ public class TweenComponent : EntityComponent
         }
     }
 
+    /// <inheritdoc/>
+    public override void OnDetach()
+    {
+        // Cancel all active tweens when the component is detached from an entity
+        CancelAll();
+    }
+
     /// <summary>
     /// Cancels all active tweens.
     /// </summary>
