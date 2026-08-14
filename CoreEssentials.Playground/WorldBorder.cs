@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
@@ -7,6 +5,7 @@ using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+#nullable enable
 
 namespace CoreEssentials.Playground;
 
