@@ -3,11 +3,33 @@ using Microsoft.Xna.Framework;
 
 namespace CoreEssentials.Tweening;
 
+/// <summary>Represents a tweenable animation with advance, completion, loop, and reset capabilities.</summary>
+public interface ITween
+{
+    /// <summary>Gets whether the tween has completed.</summary>
+    bool IsComplete { get; }
+
+    /// <summary>Whether the tween should loop back to the start when it completes.</summary>
+    bool Loop { get; set; }
+
+    /// <summary>When true and Loop is enabled, the tween smoothly reverses direction instead of snapping back.</summary>
+    bool Reverse { get; set; }
+
+    /// <summary>Advances the tween by the specified delta time.</summary>
+    void Advance(float deltaTime);
+
+    /// <summary>Resets the tween elapsed time to 0 (full restart).</summary>
+    void Reset();
+
+    /// <summary>Toggles direction for reverse looping and resets elapsed.</summary>
+    void ToggleDirection();
+}
+
 /// <summary>
 /// A single-value tween that interpolates a Vector2 from a start value to an end value over time using an easing function.
 /// The owning <see cref="TweenComponent"/> updates elapsed time each frame; call <see cref="GetValue"/> to get the current eased value.
 /// </summary>
-public class TweenVector2
+public class TweenVector2 : ITween
 {
     private readonly Vector2 _startValue;
     private readonly Vector2 _endValue;
@@ -58,21 +80,21 @@ public class TweenVector2
     public bool Reverse { get; set; }
 
     /// <summary>Resets the tween elapsed time to 0 and un-reverses direction (full restart).</summary>
-    internal void Reset()
+    public void Reset()
     {
         Elapsed = 0f;
         _reversed = false;
     }
 
     /// <summary>Toggles direction for reverse looping — flips start/end and resets elapsed.</summary>
-    internal void ToggleDirection()
+    public void ToggleDirection()
     {
         _reversed = !_reversed;
         Elapsed = 0f;
     }
 
     /// <summary>Advances the tween by the specified delta time. Called automatically by TweenComponent.Update().</summary>
-    internal void Advance(float deltaTime)
+    public void Advance(float deltaTime)
     {
         Elapsed = Math.Min(Elapsed + deltaTime, Duration);
     }
@@ -96,7 +118,7 @@ public class TweenVector2
 /// A single-value tween that interpolates a float from a start value to an end value over time using an easing function.
 /// The owning <see cref="TweenComponent"/> updates elapsed time each frame; call <see cref="GetValue"/> to get the current eased value.
 /// </summary>
-public class TweenFloat
+public class TweenFloat : ITween
 {
     private readonly float _startValue;
     private readonly float _endValue;
@@ -147,21 +169,21 @@ public class TweenFloat
     public bool Reverse { get; set; }
 
     /// <summary>Resets the tween elapsed time to 0 and un-reverses direction (full restart).</summary>
-    internal void Reset()
+    public void Reset()
     {
         Elapsed = 0f;
         _reversed = false;
     }
 
     /// <summary>Toggles direction for reverse looping — flips start/end and resets elapsed.</summary>
-    internal void ToggleDirection()
+    public void ToggleDirection()
     {
         _reversed = !_reversed;
         Elapsed = 0f;
     }
 
     /// <summary>Advances the tween by the specified delta time. Called automatically by TweenComponent.Update().</summary>
-    internal void Advance(float deltaTime)
+    public void Advance(float deltaTime)
     {
         Elapsed = Math.Min(Elapsed + deltaTime, Duration);
     }
