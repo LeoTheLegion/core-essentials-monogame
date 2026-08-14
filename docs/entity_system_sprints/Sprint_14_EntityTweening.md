@@ -9,6 +9,7 @@
 **Architecture:** Simple value interpolation — no expressions, no reflection, no MonoGame.Extended Tweener dependency:
 - **`TweenVector2`** — interpolates a Vector2 from start to end over time using an easing function. Call `.GetValue()` each frame for the current eased value. Supports `.Loop` (repeat) and `.Reverse` (ping-pong).
 - **`TweenFloat`** — interpolates a float from start to end over time using an easing function. Call `.GetValue()` each frame for the current eased value. Supports `.Loop` (repeat) and `.Reverse` (ping-pong).
+- **`EasingFunctions`** — static helper class with 30+ standard easing curves (Linear, Quad, Cubic, Quart, Quint, Sine, Expo, Circ, Elastic, Back, Bounce — each with In/Out/InOut variants). Drop-in replacement for MonoGame.Extended easing API.
 - **`TweenComponent`** — entity component that manages multiple active tweens. Auto-advances them each frame, auto-removes completed ones, and handles loop/reverse logic. Exposes `.TweenToVector2()` and `.TweenToFloat()` to create tweens.
 
 **Existing Entity Properties (from Sprint 13):**
@@ -44,7 +45,7 @@
   - No static manager or game system required
 
 - [X] **T4: Write unit tests (1 pt)** 🔁 Validation ✅ COMPLETE
-  - Test tween interpolation (start → end over time) — 24 tests total
+  - Test tween interpolation (start → end over time) — 43 tests total
   - Test easing functions apply correctly (InQuad, sine wave)
   - Test TweenComponent manages multiple tweens
   - Test loop behavior (reset on complete)
@@ -79,8 +80,10 @@
 | File | Type | Visibility | Notes |
 |------|------|------------|-------|
 | `Tweening/Tween.cs` | New | ⭐ PUBLIC | TweenVector2 and TweenFloat interpolation classes |
+| `Tweening/EasingFunctions.cs` | New | ⭐ PUBLIC | 30+ standard easing curves (In/Out/InOut variants) |
 | `Tweening/TweenComponent.cs` | New | ⭐ PUBLIC | Entity component managing active tweens |
-| `EntityTweenTests.cs` | New | 🔒 Internal | Unit tests for tweening |
+| `EntityTweenTests.cs` | New | 🔒 Internal | Unit tests for tween interpolation and component |
+| `EasingFunctionsTests.cs` | New | 🔒 Internal | Unit tests for easing function boundaries |
 | `docs/EntityTweening.md` | New | ⭐ PUBLIC | User guide for entity tweening |
 
 ---

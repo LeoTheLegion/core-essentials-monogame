@@ -84,22 +84,27 @@ slideTween.Reverse = true; // start → end → start → end...
 
 Any `Func<float, float>` works as an easing function. If none is provided, the tween uses linear interpolation.
 
-### Built-in easings (from MonoGame.Extended)
+### Built-in easings (`CoreEssentials.Tweening.EasingFunctions`)
+
+The `EasingFunctions` static class provides 30+ standard easing curves:
+
+| Family | In | Out | InOut |
+|--------|----|-----|-------|
+| Linear | `Linear` | — | — |
+| Quad | `InQuad` | `OutQuad` | `InOutQuad` |
+| Cubic | `InCubic` | `OutCubic` | `InOutCubic` |
+| Quart | `InQuart` | `OutQuart` | `InOutQuart` |
+| Quint | `InQuint` | `OutQuint` | `InOutQuint` |
+| Sine | `InSine` | `OutSine` | `InOutSine` |
+| Expo | `InExpo` | `OutExpo` | `InOutExpo` |
+| Circ | `InCirc` | `OutCirc` | `InOutCirc` |
+| Elastic | `InElastic` | `OutElastic` | `InOutElastic` |
+| Back | `InBack` | `OutBack` | `InOutBack` |
+| Bounce | `InBounce` | `OutBounce` | `InOutBounce` |
 
 ```csharp
-// Accelerating
-EasingFunctions.InQuad
-EasingFunctions.InCubic
-EasingFunctions.InElastic
-
-// Decelerating
-EasingFunctions.OutQuad
-EasingFunctions.OutCubic
-EasingFunctions.OutElastic
-
-// Both
-EasingFunctions.InOutQuad
-EasingFunctions.InOutCubic
+// Example usage
+var tween = component.TweenToVector2(Vector2.Zero, new Vector2(100, 100), 1f, EasingFunctions.InOutSine);
 ```
 
 ### Custom easing
@@ -147,8 +152,9 @@ private bool _initialized;
 public override void OnStart()
 {
     var component = AddComponent(new TweenComponent());
-    _yOffsetTween = component.TweenToFloat(0f, -50f, 1f, t => (float)Math.Sin(t * Math.PI));
+    _yOffsetTween = component.TweenToFloat(0f, -50f, 1.5f, EasingFunctions.InOutSine);
     _yOffsetTween.Loop = true;
+    _yOffsetTween.Reverse = true; // Ping-pong: up and down smoothly
 }
 
 public override void Update(GameTime gameTime)
