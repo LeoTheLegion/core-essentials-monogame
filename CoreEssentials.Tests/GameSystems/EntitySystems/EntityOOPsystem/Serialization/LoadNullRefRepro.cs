@@ -98,7 +98,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var newSystem = new EntitySystem();
                 GameStateSerializer.LoadState(newSystem, tempFile);
                 
-                var loaded = newSystem.GetEntities().First();
+                var loaded = newSystem.GetEntities()[0];
                 
                 // Verify entity loaded correctly
                 Assert.Equal("ball1", loaded.Id);
@@ -152,7 +152,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 // Actually use proper save/load
                 GameStateSerializer.LoadState(newSystem, tempFile);
                 
-                var loaded = newSystem.GetEntities().First();
+                var loaded = newSystem.GetEntities()[0];
                 var spriteComp = loaded.GetComponent<SpriteComponent>();
                 Assert.NotNull(spriteComp);
                 // Owner should be set

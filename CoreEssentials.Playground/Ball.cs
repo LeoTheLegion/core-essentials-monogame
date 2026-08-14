@@ -18,6 +18,8 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Playground;
 
+#nullable enable
+
 public class Ball : Entity, ISaveableEntity
 {
     private SpriteComponent? _spriteComponent;
@@ -86,11 +88,12 @@ public class Ball : Entity, ISaveableEntity
             _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
         }
 
-        var sprite = _spriteComponent?.Sprite;
-        if (sprite != null)
+        // Register sprite for instanced rendering if available
+        var renderSprite = _spriteComponent?.Sprite;
+        if (renderSprite != null)
         {
-            RegisterForInstancedRendering(sprite);
-            _radius = sprite.GetSize().X / 2;
+            RegisterForInstancedRendering(renderSprite);
+            _radius = renderSprite.GetSize().X / 2;
         }
 
         // Add collider component only if not already present
@@ -109,18 +112,6 @@ public class Ball : Entity, ISaveableEntity
         // Start movement coroutine (base.OnStart() double-start guard prevents this from running twice on loaded entities)
         _coroutineOwner ??= new CoroutineOwner();
         _coroutineOwner.StartCoroutine(RandomMovementCoroutine());
-    }
-
-    private void UpdateCollider()
-    {
-        // Update collider radius based on new scale
-        _colliderComponent?.UpdateCircleRadius(_radius * Scale.X);
-
-        // Update mass based on scale
-        if (_rigidbodyComponent != null)
-        {
-            _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
-        }
     }
 
     // (Update handled by RigidbodyComponent)

@@ -42,7 +42,7 @@ public static class EntityTemplateLoader
 
     /// <summary>
     /// Parses an EntityTemplate from an XML string.
-    /// Expects a root element of &lt;EntityTemplate&gt;.
+    /// Expects a root element named 'EntityTemplate'.
     /// </summary>
     public static EntityTemplate LoadFromXml(string xmlData)
     {
@@ -191,7 +191,10 @@ public static class EntityTemplateLoader
                     type = candidates.FirstOrDefault();
                 }
             }
-            catch (ReflectionTypeLoadException) { }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine($"[Template] Failed to load types from assembly: {ex.Message}");
+            }
         }
 
         if (type == null) 
@@ -305,7 +308,10 @@ public static class EntityTemplateLoader
                 var type = candidates.FirstOrDefault();
                 if (type != null) return type;
             }
-            catch (ReflectionTypeLoadException) { }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine($"[Template] Failed to load types from assembly: {ex.Message}");
+            }
         }
 
         Console.WriteLine($"[Template] Could not resolve component type '{typeName}'.");

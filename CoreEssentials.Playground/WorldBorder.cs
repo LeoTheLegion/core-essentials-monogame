@@ -12,8 +12,6 @@ namespace CoreEssentials.Playground;
 
 public class WorldBorder : Entity
 {
-    private IPhysicsBody[]? _borderBodies;
-
     /// <summary>
     /// Gets or sets the size of the world border.
     /// Must be set before OnStart() for proper initialization.
@@ -52,21 +50,19 @@ public class WorldBorder : Entity
         var borders = new IPhysicsBody[4];
 
         // Create the left border
-        borders[0] = physicsEngine.CreateStatic(new Vector2(Position.X, Position.Y + Size.Y / 2))!;
+        borders[0] = physicsEngine.CreateStatic(new Vector2(Position.X, Position.Y + Size.Y / 2));
         borders[0].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero);
 
         // Create the right border
-        borders[1] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X, Position.Y + Size.Y / 2))!;
+        borders[1] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X, Position.Y + Size.Y / 2));
         borders[1].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero);
 
         // Create the top border
-        borders[2] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X / 2, Position.Y))!;
+        borders[2] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X / 2, Position.Y));
         borders[2].CreateRectangleCollider(new Vector2(Size.X, 1), Vector2.Zero);
 
         // Create the bottom border
-        borders[3] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X / 2, Position.Y + Size.Y))!;
+        borders[3] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X / 2, Position.Y + Size.Y));
         borders[3].CreateRectangleCollider(new Vector2(Size.X, 1), Vector2.Zero);
-
-        _borderBodies = borders;
     }
 }

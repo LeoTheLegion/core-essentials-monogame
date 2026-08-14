@@ -37,7 +37,7 @@ public class EntitySerializerTests
             Scale = new Vector2(1f, 1f);
         }
 
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     private EntitySystem CreateEntitySystem()
