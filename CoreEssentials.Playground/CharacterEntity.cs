@@ -41,13 +41,10 @@ public class CharacterEntity : Entity
         // Start a Y offset tween: bounce up and down (looping with ease)
         // Note: XML position is applied AFTER OnStart, so we capture it on first Update
         _yOffsetTween = _tweenComponent.TweenToFloat(
-            0f,
-            -50f,
-            1.5f,
-            EasingFunctions.InOutSine // Smooth slow-in/slow-out bounce
+            0f, -50f, 1.5f,
+            EasingFunctions.InOutSine, // Smooth slow-in/slow-out bounce
+            loop: true, reverse: true  // Ping-pong: go up, come back down, repeat
         );
-        _yOffsetTween.Loop = true;
-        _yOffsetTween.Reverse = true; // Ping-pong: go up, come back down, repeat
         
         Console.WriteLine("Character entity created!");
     }
