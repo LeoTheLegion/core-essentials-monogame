@@ -86,6 +86,7 @@ public class TweenVector2
     }
 
     /// <summary>Returns a string representation of the tween.</summary>
+    /// <returns>A string describing the tween's start, end, duration, and elapsed time.</returns>
     public override string ToString() => $"TweenVector2({_startValue} -> {_endValue}, {Duration}s, {Elapsed}s elapsed)";
 }
 
@@ -101,6 +102,10 @@ public class TweenFloat
     private bool _reversed;
 
     /// <summary>Creates a tween with the specified easing function.</summary>
+    /// <param name="startValue">The starting float value.</param>
+    /// <param name="endValue">The target float value.</param>
+    /// <param name="duration">The duration of the tween in seconds.</param>
+    /// <param name="easingFunction">The easing function to apply.</param>
     public TweenFloat(float startValue, float endValue, float duration, Func<float, float> easingFunction)
     {
         _startValue = startValue;
