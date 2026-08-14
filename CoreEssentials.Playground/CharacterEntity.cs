@@ -38,15 +38,16 @@ public class CharacterEntity : Entity
         // Add tween component for animations
         _tweenComponent = AddComponent(new TweenComponent());
         
-        // Start a Y offset tween: bounce up and down (looping)
+        // Start a Y offset tween: bounce up and down (looping with ease)
         // Note: XML position is applied AFTER OnStart, so we capture it on first Update
         _yOffsetTween = _tweenComponent.TweenToFloat(
-            0f, 
-            -50f, 
-            1f, 
-            t => (float)Math.Sin(t * Math.PI) // Half sine wave: already slow-in/slow-out round trip
+            0f,
+            -50f,
+            1.5f,
+            EasingFunctions.InOutSine // Smooth slow-in/slow-out bounce
         );
-        _yOffsetTween.Loop = true; // Smooth loop since sine easing returns to start at t=1
+        _yOffsetTween.Loop = true;
+        _yOffsetTween.Reverse = true; // Ping-pong: go up, come back down, repeat
         
         Console.WriteLine("Character entity created!");
     }
