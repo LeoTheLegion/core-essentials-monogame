@@ -135,14 +135,16 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             float.Parse(element.Attribute("OriginY")?.Value ?? "0.5")
         );
 
-        if (element.Attribute("Effects")?.Value != null && Enum.TryParse<SpriteEffects>(element.Attribute("Effects").Value, out var effects))
+        var effectsAttr = element.Attribute("Effects")?.Value;
+        if (effectsAttr != null && Enum.TryParse<SpriteEffects>(effectsAttr, out var effects))
         {
             Effects = effects;
         }
 
-        if (element.Attribute("LayerDepth")?.Value != null)
+        var layerDepthAttr = element.Attribute("LayerDepth")?.Value;
+        if (layerDepthAttr != null)
         {
-            LayerDepth = float.Parse(element.Attribute("LayerDepth").Value);
+            LayerDepth = float.Parse(layerDepthAttr);
         }
 
         var sortOrderValue = element.Attribute("SortOrderOverride")?.Value ?? "-1";
@@ -155,9 +157,10 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
             SortOrderOverride = null;
         }
 
-        if (element.Attribute("AnimationFrame")?.Value != null)
+        var animationFrameAttr = element.Attribute("AnimationFrame")?.Value;
+        if (animationFrameAttr != null)
         {
-            AnimationFrame = int.Parse(element.Attribute("AnimationFrame").Value);
+            AnimationFrame = int.Parse(animationFrameAttr);
         }
     }
 }

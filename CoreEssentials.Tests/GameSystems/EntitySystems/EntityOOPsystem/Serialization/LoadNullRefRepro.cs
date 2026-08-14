@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Globalization;
 using System.IO;
@@ -136,7 +137,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var newSystem = new EntitySystem();
                 // Simulate loading XML with component data
                 // Create a simple XML with component
-                var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+                // var xml is defined below for reference but not used directly
+                _ = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <GameState Version=""1.0"">
   <Entities>
     <Entity Id=""test"" Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Serialization.LoadNullRefRepro+BallLikeEntity"" Rotation=""0"" Sort=""0"" Active=""true"">
@@ -163,3 +165,4 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
     }
 }
+#nullable enable

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
@@ -47,7 +49,7 @@ public class WorldBorder : Entity
         _borderBodies = new IPhysicsBody[4];
 
         // Create the left border
-        _borderBodies[0] = physicsEngine.CreateStatic(new Vector2(Position.X, Position.Y + Size.Y / 2));
+        _borderBodies[0] = physicsEngine!.CreateStatic(new Vector2(Position.X, Position.Y + Size.Y / 2));
         _borderBodies[0].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero);
 
         // Create the right border

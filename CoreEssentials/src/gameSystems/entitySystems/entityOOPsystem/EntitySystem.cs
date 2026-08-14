@@ -26,7 +26,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// Dictionary for O(1) tag-based entity lookups.
     /// Maps tag names to lists of entities with that tag.
     /// </summary>
-    private Dictionary<string, List<Entity>> _tagIndex = new Dictionary<string, List<Entity>>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<Entity>> _tagIndex = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Dictionary for O(1) ID-based entity lookups.
@@ -37,7 +37,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     /// <summary>
     /// Dictionary of entity pools, keyed by type name.
     /// </summary>
-    private Dictionary<Type, object> _pools = new Dictionary<Type, object>();
+    private readonly Dictionary<Type, object> _pools = new();
 
     /// <summary>
     /// Cache of registered entity templates for fast instantiation.
@@ -107,8 +107,8 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
                 if (destroyedEntity.HasPendingRespawn)
                 {
                     Type entityType = destroyedEntity.GetType();
-                    Vector2 respawnPos = destroyedEntity._respawnPosition.Value;
-                    TimeSpan respawnDelay = destroyedEntity._respawnDelay.Value;
+                    Vector2 respawnPos = destroyedEntity._respawnPosition ?? Vector2.Zero;
+                    TimeSpan respawnDelay = destroyedEntity._respawnDelay ?? TimeSpan.Zero;
                     CoroutineManager.StartCoroutine(RespawnRoutine(entityType, respawnPos, respawnDelay));
                 }
 

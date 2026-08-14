@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
@@ -281,3 +282,4 @@ public class EntityComponentTests
         }
     }
 }
+#nullable enable

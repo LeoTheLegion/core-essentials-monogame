@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Globalization;
@@ -18,14 +20,14 @@ namespace CoreEssentials.Playground;
 
 public class Ball : Entity, ISaveableEntity
 {
-    private SpriteComponent _spriteComponent;
-    private RigidbodyComponent _rigidbodyComponent;
-    private ColliderComponent _colliderComponent;
+    private SpriteComponent? _spriteComponent;
+    private RigidbodyComponent? _rigidbodyComponent;
+    private ColliderComponent? _colliderComponent;
     private float _radius;
 
     static Random _random = new Random();
 
-    private CoroutineOwner _coroutineOwner;
+    private CoroutineOwner? _coroutineOwner;
 
     /// <summary>
     /// Gets the rigidbody component for this ball.
@@ -84,7 +86,7 @@ public class Ball : Entity, ISaveableEntity
             _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
         }
 
-        RegisterForInstancedRendering(_spriteComponent.Sprite);
+        RegisterForInstancedRendering(_spriteComponent!.Sprite!);
 
         _radius = _spriteComponent.Sprite.GetSize().X / 2;
 
@@ -145,7 +147,7 @@ public class Ball : Entity, ISaveableEntity
         base.OnDestroy();
 
         // Cleanup coroutines (component cleanup like DestroyBody is handled by OnDetach in base.OnDestroy())
-        _coroutineOwner.StopAllCoroutines();
+        _coroutineOwner?.StopAllCoroutines();
         _coroutineOwner = null;
     }
 

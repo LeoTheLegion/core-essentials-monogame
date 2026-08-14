@@ -1,3 +1,5 @@
+#nullable enable
+
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.Tweening;
@@ -12,7 +14,7 @@ namespace CoreEssentials.Playground;
 /// </summary>
 public class CharacterEntity : Entity
 {
-    private Sprite _sprite;
+    private Sprite? _sprite;
     private TweenComponent? _tweenComponent;
     private TweenFloat? _yOffsetTween;
     private float _originalY;
@@ -73,7 +75,7 @@ public class CharacterEntity : Entity
     public override void Render(SpriteBatch spriteBatch)
     {
         // Draw the character with the current frame
-        _sprite.Draw(
+        _sprite?.Draw(
             spriteBatch, 
             _position, 
             Color.White, 

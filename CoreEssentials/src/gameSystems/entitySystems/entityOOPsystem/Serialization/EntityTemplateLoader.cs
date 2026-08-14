@@ -42,7 +42,7 @@ public static class EntityTemplateLoader
 
     /// <summary>
     /// Parses an EntityTemplate from an XML string.
-    /// Expects a root element of <EntityTemplate>.
+    /// Expects a root element of &lt;EntityTemplate&gt;.
     /// </summary>
     public static EntityTemplate LoadFromXml(string xmlData)
     {

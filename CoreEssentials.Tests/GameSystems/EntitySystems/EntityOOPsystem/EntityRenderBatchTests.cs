@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -281,3 +282,4 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         }
     }
 }
+#nullable enable

@@ -155,7 +155,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         else
         {
             // Entity drives physics
-            var pos = Owner.Position;
+            _body.Position = Owner.Position;
             _body.Rotation = Owner.Rotation;
         }
     }
@@ -167,7 +167,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     public void ApplyImpulse(Vector2 impulse)
     {
         EnsureBody();
-        _body.ApplyImpulse(impulse);
+        _body?.ApplyImpulse(impulse);
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     public void SetLinearVelocity(Vector2 velocity)
     {
         EnsureBody();
-        _body.SetLinearVelocity(velocity);
+        _body?.SetLinearVelocity(velocity);
     }
 
     /// <summary>
@@ -198,12 +198,15 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         get
         {
             EnsureBody();
-            return _body.AngularVelocity;
+            return _body?.AngularVelocity ?? 0f;
         }
         set
         {
             EnsureBody();
-            _body.AngularVelocity = value;
+            if (_body != null)
+            {
+                _body.AngularVelocity = value;
+            }
         }
     }
 
@@ -214,7 +217,10 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
     public void ApplyAngularImpulse(float angularImpulse)
     {
         EnsureBody();
-        _body.AngularVelocity += angularImpulse;
+        if (_body != null)
+        {
+            _body.AngularVelocity += angularImpulse;
+        }
     }
 
     /// <summary>

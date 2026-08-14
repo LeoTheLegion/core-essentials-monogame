@@ -467,7 +467,7 @@ public static class EntitySerializer
 
         // Check if entity already has this component type - if so, modify existing instead of adding new
         var existingComponent = GetExistingComponent(entity, typeName);
-        EntityComponent component = existingComponent ?? factory.Create(typeName);
+        EntityComponent? component = existingComponent ?? factory.Create(typeName);
         
         if (component == null)
             return;

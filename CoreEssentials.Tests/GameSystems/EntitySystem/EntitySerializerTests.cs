@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -664,3 +665,4 @@ public class EntitySerializerTests
 
     #endregion
 }
+#nullable enable
