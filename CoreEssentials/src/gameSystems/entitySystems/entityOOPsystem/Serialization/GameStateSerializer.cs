@@ -188,7 +188,7 @@ public static class GameStateSerializer
     private static void RemoveUnsavedEntities(EntitySystem system, HashSet<string> loadedIds)
     {
         var unsavedEntities = system.GetEntities()
-            .Where(e => e is ISaveableEntity && !string.IsNullOrWhiteSpace(e.Id) && !loadedIds.Contains(e.Id!))
+            .Where(e => e is ISaveableEntity && !string.IsNullOrWhiteSpace(e.Id) && !loadedIds.Contains(e.Id))
             .ToList();
 
         foreach (var entity in unsavedEntities)

@@ -15,6 +15,10 @@ public class TweenVector2
     private bool _reversed;
 
     /// <summary>Creates a tween with the specified easing function.</summary>
+    /// <param name="startValue">The starting vector value.</param>
+    /// <param name="endValue">The target vector value.</param>
+    /// <param name="duration">The duration of the tween in seconds.</param>
+    /// <param name="easingFunction">The easing function to apply.</param>
     public TweenVector2(Vector2 startValue, Vector2 endValue, float duration, Func<float, float> easingFunction)
     {
         _startValue = startValue;

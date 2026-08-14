@@ -108,7 +108,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 // Verify OnStart was called and component created
                 var ball = Assert.IsType<BallLikeEntity>(loaded);
                 Assert.NotNull(ball.SpriteComp);
-                Assert.Same(loaded, ball.SpriteComp!.Owner);
+                Assert.Same(loaded, ball.SpriteComp.Owner);
                 
                 // Component should exist
                 var spriteComp = loaded.GetComponent<SpriteComponent>();
@@ -156,7 +156,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var spriteComp = loaded.GetComponent<SpriteComponent>();
                 Assert.NotNull(spriteComp);
                 // Owner should be set
-                Assert.Same(loaded, spriteComp!.Owner);
+                Assert.Same(loaded, spriteComp.Owner);
             }
             finally
             {

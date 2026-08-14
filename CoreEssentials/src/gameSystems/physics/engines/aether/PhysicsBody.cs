@@ -72,7 +72,7 @@ public class PhysicsBody : IPhysicsBody
         }
     }
 
-    /// <summary>The world position of the physics body (deprecated, use Position instead).</summary>
+    /// <summary>The world position of the physics body. Deprecated - use <see cref="Position"/> instead.</summary>
     [Obsolete("Use Position instead.")]
     public Vector2 WorldPosition => Position;
 

@@ -13,7 +13,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     public class EntityRenderBatchTests
     {
-        private EntitySystem CreateSystem() => new EntitySystem();
+        private static EntitySystem CreateSystem() => new EntitySystem();
 
         // ===== Texture Tracking (T1) =====
 
@@ -162,7 +162,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var textureA = new MockTexture2DAsset("textureA");
 
             var entity1 = system.CreateEntity<TestEntity>();
-            var entity2 = system.CreateEntity<TestEntity>();
+            _ = system.CreateEntity<TestEntity>(); // entity without texture
             var entity3 = system.CreateEntity<TestEntity>();
 
             entity1.RegisterForInstancedRendering(textureA);
@@ -278,7 +278,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 
         private class TestEntity : Entity
         {
-            public override void Render(SpriteBatch spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
     }
 }
