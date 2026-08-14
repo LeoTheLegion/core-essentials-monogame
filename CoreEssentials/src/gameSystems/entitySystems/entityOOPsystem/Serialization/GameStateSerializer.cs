@@ -148,7 +148,6 @@ public static class GameStateSerializer
             catch (Exception ex)
             {
                 var id = entityElement.Attribute("Id")?.Value ?? "unknown";
-                if (id == null) id = "unknown";
                 throw new InvalidOperationException($"Error loading entity '{id}': {ex.Message}", ex);
             }
         }
@@ -189,7 +188,12 @@ public static class GameStateSerializer
     private static void RemoveUnsavedEntities(EntitySystem system, HashSet<string> loadedIds)
     {
         var unsavedEntities = system.GetEntities()
-            .Where(e => e is ISaveableEntity && !string.IsNullOrWhiteSpace(e.Id) && !loadedIds.Contains(e.Id))
+            .Where(e => e is ISaveableEntity)
+            .Where(e =>
+            {
+                var id = e.Id;
+                return !string.IsNullOrWhiteSpace(id) && !loadedIds.Contains(id);
+            })
             .ToList();
 
         foreach (var entity in unsavedEntities)
