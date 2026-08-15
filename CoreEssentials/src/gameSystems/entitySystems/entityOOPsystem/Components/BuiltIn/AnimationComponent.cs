@@ -6,18 +6,18 @@ using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 /// <summary>
 /// Drives one or more named animations on an entity.
 /// Each animation is an <see cref="AnimationState"/> backed by a unified <see cref="Sprite"/>.
-/// The component advances playing states each frame and pushes the current frame into the
-/// entity's <see cref="SpriteComponent"/> (when present). If no <see cref="SpriteComponent"/> is
-/// attached, the component renders the current frame directly as a fallback.
+/// This is a pure controller: it advances playing states each frame and pushes the current
+/// frame into the entity's <see cref="SpriteComponent"/>, which owns all rendering and geometry
+/// (<see cref="Entity.GetSize"/>, <see cref="Entity.GetOrigin"/>). An entity that uses this
+/// component must also attach a <see cref="SpriteComponent"/>.
 /// </summary>
-public class AnimationComponent : EntityComponent, ISerializableComponent, IDrawableComponent
+public class AnimationComponent : EntityComponent, ISerializableComponent
 {
     private readonly Dictionary<string, AnimationState> _animations = new();
     private readonly Dictionary<string, Sprite> _sprites = new();
@@ -169,7 +169,7 @@ public class AnimationComponent : EntityComponent, ISerializableComponent, IDraw
 
     /// <summary>
     /// Advances all playing animations and pushes the current frame into the entity's
-    /// <see cref="SpriteComponent"/> (if present).
+    /// <see cref="SpriteComponent"/>.
     /// </summary>
     public override void Update(GameTime gameTime)
     {
@@ -187,46 +187,6 @@ public class AnimationComponent : EntityComponent, ISerializableComponent, IDraw
             if (sprite != null && sprite.FrameCount > 0)
                 frame = MathHelper.Clamp(frame, 0, sprite.FrameCount - 1);
             spriteComponent.AnimationFrame = frame;
-        }
-    }
-
-    /// <summary>
-    /// Draws the current animation frame.
-    /// If the entity has a <see cref="SpriteComponent"/>, that component is responsible for
-    /// rendering (driven by <see cref="Update"/>), so this method does nothing to avoid
-    /// double-drawing. Otherwise it renders the current frame directly as a fallback.
-    /// </summary>
-    public void Draw(SpriteBatch spriteBatch)
-    {
-        if (Owner == null)
-            return;
-
-        if (Owner.TryGetComponent<SpriteComponent>(out var spriteComponent) && spriteComponent != null)
-            return;
-
-        var current = CurrentAnimationState;
-        if (current == null)
-            return;
-
-        current.Draw(spriteBatch, Owner.Position, Color.White, Owner.Rotation, SpriteEffects.None, 0f);
-    }
-
-    /// <summary>
-    /// Gets the size of the current animation frame, scaled by the owning entity.
-    /// </summary>
-    public Vector2 GetSize()
-    {
-        var current = CurrentAnimationState;
-        if (current == null || current.Sprite == null)
-            return Vector2.Zero;
-
-        try
-        {
-            return current.Sprite.GetSize() * (Owner?.Scale ?? Vector2.One);
-        }
-        catch (InvalidOperationException)
-        {
-            return Vector2.Zero;
         }
     }
 

@@ -19,7 +19,7 @@ This guide covers the **breaking changes** introduced by consolidating `Sprite` 
 | `AnimatedSprite.DrawFrame(...)` | `Sprite.DrawFrame(...)` |
 | Red debug outline on every sprite draw | **Removed** |
 | — | New `AnimationComponent` (multi-animation) |
-| — | `Entity.GetSize()` fallback: `SpriteComponent` → `AnimationComponent` → `Vector2.Zero` |
+| — | `Entity.GetSize()`/`GetOrigin()` resolve from the `SpriteComponent` (single source of truth) |
 
 ## 1. Type Rename: `AnimatedSprite` → `Sprite`
 
@@ -140,13 +140,14 @@ public override void OnStart()
 {
     base.OnStart();
     var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
-    var animation = AddComponent(new AnimationComponent());
+    AddComponent(new SpriteComponent(sprite));      // owns rendering + geometry
+    var animation = AddComponent(new AnimationComponent()); // pure controller
     animation.AddAnimation("walk", sprite);
     animation.Play("walk");
 }
 ```
 
-The `Update`, `Render`, and `GetSize` overrides are gone — the base `Entity` handles all three through the components.
+The `Update`, `Render`, and `GetSize` overrides are gone — the base `Entity` handles all three through the components. Note that the `AnimationComponent` is a **pure controller**: it drives the frames, but the `SpriteComponent` owns rendering and geometry, so both must be attached.
 
 A static-sprite entity (`CharacterEntity`) likewise drops its `Render`/`GetSize` overrides in favor of a `SpriteComponent`:
 

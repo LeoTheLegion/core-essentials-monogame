@@ -48,24 +48,24 @@ Both are "a drawable backed by a sheet with N frames". A static sprite is just a
   - `AddAnimation(name, Sprite)`, `Play(name)`, `Stop(name?)`, `SetSpeed(name, speed)`
   - `CurrentAnimation`, `Animations` (names)
   - `Update()` advances playing states and pushes the current frame into the entity's `SpriteComponent`
-  - `Draw()` fallback: render the current frame directly if no `SpriteComponent` present
-  - `GetSize()` → current frame size × `Owner.Scale`
+  - Pure controller: no `Draw()`/`GetSize()`/`GetOrigin()` of its own — the `SpriteComponent` owns rendering + geometry (entity must attach both)
   - `ISerializableComponent`: persist animation names + asset names, current name, speed/loop state
 
-- [x] **T4: Wire `Entity.GetSize()` fallback chain (0.5 pt)** 🔒 Internal
-  - `SpriteComponent` → `AnimationComponent` → `Vector2.Zero`
+- [x] **T4: Wire `Entity.GetSize()`/`GetOrigin()` (0.5 pt)** 🔒 Internal
+  - Resolve from the `SpriteComponent` (single source of truth) → `Vector2.Zero`
+  - `GetOrigin()` added so the debug bounds box is anchored at `Position - origin` (centered on the sprite)
 
 - [x] **T5: Register `AnimationComponent` in `EntitySerializer` (0.25 pt)** 🔒 Internal
   - `Register<AnimationComponent>("AnimationComponent")`
 
 - [x] **T6: Refactor playground entities to components (0.5 pt)** ⭐ User-facing
   - `CharacterEntity` → uses `SpriteComponent` (drop `Render`/`GetSize` overrides)
-  - `AnimatedCharacterEntity` → uses `AnimationComponent` (drop `Render`/`GetSize`/`Update` overrides)
+  - `AnimatedCharacterEntity` → uses `SpriteComponent` + `AnimationComponent` (drop `Render`/`GetSize`/`Update` overrides)
 
 - [x] **T7: Write unit tests (0.5 pt)** 🔁 Validation
   - `Sprite` unified: texture2d single-frame + spritesheet N-frame `GetSize`/`Draw`
-  - `AnimationComponent`: add/play/stop, frame advance, `GetSize` × scale
-  - Base `Entity.GetSize()` via both components
+  - `AnimationComponent`: add/play/stop, frame advance
+  - Base `Entity.GetSize()` via the `SpriteComponent` (strict controller)
   - `AnimationComponent` serialization round-trip
   - No stray debug rectangle on draw
 
@@ -98,7 +98,7 @@ Both are "a drawable backed by a sheet with N frames". A static sprite is just a
 | `Assets/AnimatedSprite.cs` | Removed | ⭐ PUBLIC | Renamed to `Sprite` |
 | `Components/BuiltIn/AnimationComponent.cs` | New | ⭐ PUBLIC | Multi-animation component |
 | `Components/BuiltIn/SpriteComponent.cs` | Modified | ⭐ PUBLIC | Holds unified `Sprite` |
-| `Entity.cs` | Modified | ⭐ PUBLIC | `GetSize()` fallback chain |
+| `Entity.cs` | Modified | ⭐ PUBLIC | `GetSize()`/`GetOrigin()` via `SpriteComponent` |
 | `Serialization/EntitySerializer.cs` | Modified | 🔒 Internal | Register `AnimationComponent` |
 | `Content/*.xml` | Modified | ⭐ PUBLIC | Unified sprite XML schema |
 | `UnifiedSpriteTests.cs` / `AnimationComponentTests.cs` | New | 🔒 Internal | Unit tests |

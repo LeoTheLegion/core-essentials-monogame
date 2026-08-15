@@ -94,7 +94,10 @@ public class EntityDebugDraw
     }
 
     /// <summary>
-    /// Draws a bounding box around the entity using its position and <see cref="Entity.GetSize"/>.
+    /// Draws a bounding box around the entity using its position, size, and sprite origin.
+    /// The entity's <see cref="Entity.Position"/> is where the sprite's origin (pivot) sits, so the
+    /// top-left corner of the rendered sprite is at <c>Position - GetOrigin()</c>. Offsetting the
+    /// box by the origin keeps it centered on the sprite instead of anchored at its local (0,0).
     /// Entities that report a zero size (no sprite available) are skipped.
     /// </summary>
     private void DrawBounds(Entity entity, SpriteBatch spriteBatch)
@@ -103,8 +106,9 @@ public class EntityDebugDraw
         if (size == Vector2.Zero)
             return;
 
-        var pos = entity.Position;
-        var bounds = new Rectangle((int)pos.X, (int)pos.Y, (int)size.X, (int)size.Y);
+        var origin = entity.GetOrigin();
+        var topLeft = entity.Position - origin;
+        var bounds = new Rectangle((int)topLeft.X, (int)topLeft.Y, (int)size.X, (int)size.Y);
         Debug.Primitives.DrawRectangle(spriteBatch, bounds, _config.BoundsColor, _config.LineThickness);
     }
 

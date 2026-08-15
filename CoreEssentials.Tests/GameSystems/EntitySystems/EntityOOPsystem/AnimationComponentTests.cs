@@ -11,8 +11,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     /// <summary>
     /// Tests for the <see cref="AnimationComponent"/> (Sprint 15.5).
-    /// Covers multi-animation add/play/stop, frame advance, GetSize × scale, the base
-    /// Entity.GetSize() fallback chain, and serialization round-trip.
+    /// Covers multi-animation add/play/stop, frame advance, the base Entity.GetSize()
+    /// resolution via the SpriteComponent (strict controller), and serialization round-trip.
     /// </summary>
     public class AnimationComponentTests
     {
@@ -127,67 +127,37 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Equal(1, entity.GetComponent<SpriteComponent>()!.AnimationFrame);
         }
 
-        // ===== GetSize × scale =====
+        // ===== Entity.GetSize() via SpriteComponent (strict controller) =====
+        // The AnimationComponent is a pure controller; rendering + geometry live on the
+        // SpriteComponent. So the entity's size resolves from its SpriteComponent.
 
         [Fact]
-        public void GetSize_MultipliesByOwnerScale()
+        public void EntityGetSize_UsesSpriteComponentDrivenByAnimation()
         {
             var entity = new TestEntity();
             entity.Scale = new Vector2(2, 2);
+
+            var sprite = CreateWalkSprite(); // 32x32 frame
+            entity.AddComponent(new SpriteComponent(sprite));
             var comp = new AnimationComponent();
             entity.AddComponent(comp);
-            comp.AddAnimation("walk", CreateWalkSprite()); // 32x32 frame
-            comp.Play("walk");
-
-            Assert.Equal(new Vector2(64, 64), comp.GetSize());
-        }
-
-        [Fact]
-        public void GetSize_NoCurrentAnimation_ReturnsZero()
-        {
-            var comp = new AnimationComponent();
-            comp.AddAnimation("walk", CreateWalkSprite());
-
-            Assert.Equal(Vector2.Zero, comp.GetSize());
-        }
-
-        // ===== Base Entity.GetSize() fallback chain =====
-
-        [Fact]
-        public void EntityGetSize_FallsBackToAnimationComponent()
-        {
-            var entity = new TestEntity();
-            entity.Scale = new Vector2(2, 2);
-            var comp = new AnimationComponent();
-            entity.AddComponent(comp);
-            comp.AddAnimation("walk", CreateWalkSprite()); // 32x32
+            comp.AddAnimation("walk", sprite);
             comp.Play("walk");
 
             Assert.Equal(new Vector2(64, 64), entity.GetSize());
         }
 
         [Fact]
-        public void EntityGetSize_SpriteComponentTakesPrecedence()
+        public void EntityGetSize_NoSpriteComponent_ReturnsZero()
         {
+            // An AnimationComponent without a SpriteComponent provides no geometry.
             var entity = new TestEntity();
-            entity.Scale = Vector2.One;
-
-            // SpriteComponent sprite: 64x64 (metadata size).
-            var staticSprite = new Sprite("ball.xml");
-            staticSprite.TestMetaData = new Sprite.SpriteMeta
-            {
-                SourceType = "texture2d",
-                Size = new Sprite.Size { Width = 64, Height = 64 }
-            };
-            entity.AddComponent(new SpriteComponent(staticSprite));
-
-            // AnimationComponent sprite: 32x32.
             var comp = new AnimationComponent();
             entity.AddComponent(comp);
             comp.AddAnimation("walk", CreateWalkSprite());
             comp.Play("walk");
 
-            Assert.Equal(new Vector2(64, 64), entity.GetSize());
+            Assert.Equal(Vector2.Zero, entity.GetSize());
         }
 
         // ===== Serialization round-trip =====

@@ -1,8 +1,10 @@
 # Animation Component
 
-`AnimationComponent` drives one or more **named animations** on an entity. Each animation is an `AnimationState` backed by a unified `Sprite` (a `spritesheet` frame sequence). The component advances playing animations each frame and pushes the current frame into the entity's `SpriteComponent` (when one is present).
+`AnimationComponent` drives one or more **named animations** on an entity. Each animation is an `AnimationState` backed by a unified `Sprite` (a `spritesheet` frame sequence). The component advances playing animations each frame and pushes the current frame into the entity's `SpriteComponent`.
 
-It replaces the old pattern of hand-rolling an `AnimatedSprite` + `AnimationState` inside an entity and overriding `Update`/`Render`/`GetSize`. With `AnimationComponent`, an animated entity needs **no overrides** — the base `Entity` handles updating, rendering, and sizing.
+It is a **pure controller**: it owns *which* frame is showing, but all **rendering and geometry** (drawing, `GetSize()`, `GetOrigin()`) live on the `SpriteComponent`. An entity that uses `AnimationComponent` **must** also attach a `SpriteComponent`.
+
+It replaces the old pattern of hand-rolling an `AnimatedSprite` + `AnimationState` inside an entity and overriding `Update`/`Render`/`GetSize`. With `AnimationComponent` + `SpriteComponent`, an animated entity needs **no overrides** — the base `Entity` handles updating, rendering, and sizing.
 
 ## Quick Start
 
@@ -14,7 +16,8 @@ public class AnimatedCharacterEntity : Entity
         base.OnStart();
 
         var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
-        var animation = AddComponent(new AnimationComponent());
+        AddComponent(new SpriteComponent(sprite));      // owns rendering + geometry
+        var animation = AddComponent(new AnimationComponent()); // pure controller
         animation.AddAnimation("walk", sprite);
         animation.Play("walk");
     }
@@ -22,9 +25,9 @@ public class AnimatedCharacterEntity : Entity
 ```
 
 That's it. No `Render`, `Update`, or `GetSize` overrides. The base `Entity`:
-- calls `AnimationComponent.Update` every frame (advances the animation),
-- renders the current frame (via the `SpriteComponent`, or directly as a fallback),
-- resolves `GetSize()` through the `AnimationComponent`.
+- calls `AnimationComponent.Update` every frame (advances the animation and pushes the frame),
+- renders the current frame via the `SpriteComponent`,
+- resolves `GetSize()` / `GetOrigin()` through the `SpriteComponent`.
 
 ## API
 
@@ -39,7 +42,6 @@ That's it. No `Render`, `Update`, or `GetSize` overrides. The base `Entity`:
 | `CurrentAnimation` | The name of the active animation (get/set). |
 | `CurrentAnimationState` | The `AnimationState` of the current animation, or `null`. |
 | `Sprite` | The `Sprite` backing the current animation, or `null`. |
-| `GetSize()` | The current frame size × the owning entity's `Scale`. |
 
 ### Switching Animations
 
@@ -60,11 +62,10 @@ animation.SetSpeed("walk", 2f);   // play the walk animation at 2× speed
 
 ## How It Renders
 
-- **With a `SpriteComponent`:** `AnimationComponent.Update` writes the current frame into `SpriteComponent.AnimationFrame`, and the `SpriteComponent` draws it. The component does **not** draw directly (to avoid double-drawing).
-- **Without a `SpriteComponent`:** the component draws the current frame directly as a fallback.
+`AnimationComponent` never draws itself. `AnimationComponent.Update` writes the current frame into `SpriteComponent.AnimationFrame`, and the `SpriteComponent` (the sole `IDrawableComponent`) draws it. This keeps a single render path and enables instanced rendering.
 
 ```csharp
-// Animated entity with a SpriteComponent (preferred — enables instanced rendering)
+// Animated entity: SpriteComponent renders, AnimationComponent drives the frames.
 AddComponent(new SpriteComponent(sprite));
 var animation = AddComponent(new AnimationComponent());
 animation.AddAnimation("walk", sprite);
@@ -73,13 +74,7 @@ animation.Play("walk");
 
 ## Entity Sizing
 
-The base `Entity.GetSize()` resolves size through a fallback chain:
-
-```
-SpriteComponent → AnimationComponent → Vector2.Zero
-```
-
-So an animated entity reports its current frame size × `Scale` with no override.
+The base `Entity.GetSize()` / `Entity.GetOrigin()` resolve from the entity's `SpriteComponent` (the single source of truth for geometry). So an animated entity reports its current frame size/origin × `Scale` with no override.
 
 ```csharp
 entity.Scale = new Vector2(2, 2);

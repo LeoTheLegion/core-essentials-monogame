@@ -26,8 +26,10 @@ namespace CoreEssentials.Playground
         {
             base.OnStart();
 
-            // Load the animated sprite and drive it via an AnimationComponent.
+            // Load the animated sprite. The SpriteComponent owns rendering + geometry;
+            // the AnimationComponent is a pure controller that drives its frames.
             var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
+            AddComponent(new SpriteComponent(sprite));
             var animation = AddComponent(new AnimationComponent());
             animation.AddAnimation("walk", sprite);
             animation.Play("walk");

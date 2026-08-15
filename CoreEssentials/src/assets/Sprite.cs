@@ -258,6 +258,29 @@ public class Sprite : Asset
     }
 
     /// <summary>
+    /// Gets the pixel origin (pivot) of a single frame of this sprite.
+    /// This is the point that is placed at the draw position, so the top-left corner of the
+    /// rendered sprite sits at <c>position - origin * scale</c>.
+    /// </summary>
+    /// <returns>A Vector2 containing the origin in pixels, or <see cref="Vector2.Zero"/> when no origin is defined.</returns>
+    public virtual Vector2 GetOrigin()
+    {
+        if (_metaData == null)
+        {
+            throw new InvalidOperationException("Sprite metadata is not loaded.");
+        }
+        if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
+        {
+            return _spriteSheet.FrameOrigin;
+        }
+        if (_metaData.Origin == null)
+        {
+            return Vector2.Zero;
+        }
+        return new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
+    }
+
+    /// <summary>
     /// Loads the sprite asset, including its metadata and associated texture or sprite sheet.
     /// </summary>
     /// <param name="contentManager">The content manager to use for loading.</param>
