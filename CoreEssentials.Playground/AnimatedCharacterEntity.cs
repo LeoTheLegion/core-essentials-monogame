@@ -1,23 +1,17 @@
 using System;
-using System.Collections;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.Inputs;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using MonoGame.Extended.Input.InputListeners;
 
 namespace CoreEssentials.Playground
 {
     /// <summary>
-    /// A simple character entity that demonstrates animated sprite functionality.
+    /// A character entity that demonstrates animated sprite functionality.
+    /// Animation is driven entirely by an <see cref="AnimationComponent"/> (no Render/GetSize/Update overrides).
     /// </summary>
     public class AnimatedCharacterEntity : Entity
     {
-        private AnimatedSprite _animatedSprite;
-        private AnimationState _animationState;
-
         // Parameterless constructor for XML-based entity loading
         public AnimatedCharacterEntity()
         {
@@ -32,49 +26,16 @@ namespace CoreEssentials.Playground
         {
             base.OnStart();
 
-            // Load the animated sprite
-            _animatedSprite = (AnimatedSprite)AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
+            // Load the animated sprite. The SpriteComponent owns rendering + geometry;
+            // the AnimationComponent is a pure controller that drives its frames.
+            var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
+            AddComponent(new SpriteComponent(sprite));
+            var animation = AddComponent(new AnimationComponent());
+            animation.AddAnimation("walk", sprite);
+            animation.Play("walk");
 
-            // Create animation state for this instance
-            _animationState = new AnimationState(_animatedSprite);
-
-            Console.WriteLine($"Animation has {_animatedSprite.FrameCount} frames with base frame rate of {_animatedSprite.FrameRate}s per frame");
-            Console.WriteLine($"Effective frame time with speed {_animationState.Speed}: {_animationState.EffectiveFrameTime}s per frame");
+            Console.WriteLine($"Animation has {sprite.FrameCount} frames with base frame rate of {sprite.FrameRate}s per frame");
             Console.WriteLine("Animated character entity created!");
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            base.Update(gameTime);
-
-            // Update the animation
-            _animationState.Update(gameTime);
-        }
-
-        public override void Render(SpriteBatch spriteBatch)
-        {
-            SpriteEffects effects = SpriteEffects.None;
-
-            // Draw the animated character using the current animation state
-            _animationState.Draw(
-                spriteBatch,
-                _position,
-                Color.White,
-                0f,
-                effects,
-                0f
-            );
-        }
-
-        /// <summary>
-        /// Returns the actual rendered size of the current animation frame, including scale.
-        /// </summary>
-        public override Vector2 GetSize()
-        {
-            if (_animatedSprite == null)
-                return Vector2.Zero;
-
-            return _animatedSprite.SpriteSize * Scale;
         }
 
         public override void OnDestroy()

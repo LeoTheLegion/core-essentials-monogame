@@ -615,6 +615,9 @@ public class DefaultComponentFactory : IComponentFactory
         // SpriteComponent has a parameterless constructor
         Register<Components.BuiltIn.SpriteComponent>("SpriteComponent");
 
+        // AnimationComponent has a parameterless constructor
+        Register<Components.BuiltIn.AnimationComponent>("AnimationComponent");
+
         // RigidbodyComponent requires a type param, use factory function with default Dynamic
         Register("RigidbodyComponent", () => new Components.BuiltIn.RigidbodyComponent());
 

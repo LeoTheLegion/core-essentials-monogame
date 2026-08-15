@@ -1,5 +1,6 @@
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.Tweening;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,10 +12,10 @@ namespace CoreEssentials.Playground;
 
 /// <summary>
 /// A simple entity that displays a character from a sprite sheet.
+/// Rendering is handled entirely by a <see cref="SpriteComponent"/> (no Render/GetSize overrides).
 /// </summary>
 public class CharacterEntity : Entity
 {
-    private Sprite? _sprite;
     private TweenFloat? _yOffsetTween;
     private float _originalY;
     private bool _initialized;
@@ -33,8 +34,9 @@ public class CharacterEntity : Entity
     {
         base.OnStart();
         
-        // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
+        // Load the character sprite and render it via a SpriteComponent.
+        var sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
+        AddComponent(new SpriteComponent(sprite));
         
         // Add tween component for animations
         var tweenComponent = AddComponent(new TweenComponent());
@@ -68,36 +70,6 @@ public class CharacterEntity : Entity
                 Position.X,
                 _originalY + _yOffsetTween.GetValue()
             );
-        }
-    }
-    
-    public override void Render(SpriteBatch _spriteBatch)
-    {
-        // Draw the character with the current frame
-        _sprite?.Draw(
-            _spriteBatch,
-            _position, 
-            Color.White, 
-            0f, 
-            SpriteEffects.None, 
-            0f
-        );
-    }
-    /// <summary>
-    /// Returns the actual rendered size of the character sprite, including scale.
-    /// </summary>
-    public override Vector2 GetSize()
-    {
-        if (_sprite == null)
-            return Vector2.Zero;
-
-        try
-        {
-            return _sprite.GetSize() * Scale;
-        }
-        catch (InvalidOperationException)
-        {
-            return Vector2.Zero;
         }
     }
 }

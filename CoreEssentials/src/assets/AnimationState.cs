@@ -10,7 +10,7 @@ namespace CoreEssentials.Assets;
 /// </summary>
 public class AnimationState
 {
-    private AnimatedSprite _animatedSprite;
+    private Sprite _animatedSprite;
     private int _currentFrame;
     private float _animationTimer;
     private float _speed = 1.0f; // Default speed multiplier
@@ -57,9 +57,9 @@ public class AnimationState
     public int CurrentFrame => _currentFrame;
     
     /// <summary>
-    /// Gets the animated sprite used by this animation state.
+    /// Gets the sprite used by this animation state.
     /// </summary>
-    public AnimatedSprite AnimatedSprite => _animatedSprite;
+    public Sprite Sprite => _animatedSprite;
     
     /// <summary>
     /// Gets the effective frame time in seconds, accounting for the speed multiplier.
@@ -86,17 +86,27 @@ public class AnimationState
     }
     
     /// <summary>
-    /// Initializes a new instance of the AnimationState class with the specified AnimatedSprite.
+    /// Initializes a new instance of the AnimationState class with the specified sprite.
     /// </summary>
-    /// <param name="animatedSprite">The AnimatedSprite to use for this animation state.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the animatedSprite parameter is null.</exception>
-    public AnimationState(AnimatedSprite animatedSprite)
+    /// <param name="sprite">The sprite to use for this animation state.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the sprite parameter is null.</exception>
+    public AnimationState(Sprite sprite)
     {
-        _animatedSprite = animatedSprite ?? throw new ArgumentNullException(nameof(animatedSprite));
+        _animatedSprite = sprite ?? throw new ArgumentNullException(nameof(sprite));
         _currentFrame = 0;
         _animationTimer = 0;
     }
     
+    /// <summary>
+    /// Replaces the sprite backing this animation state, preserving the current frame and timing.
+    /// Used when restoring a deserialized state after the sprite asset has been reloaded.
+    /// </summary>
+    /// <param name="sprite">The sprite to use for this animation state.</param>
+    public void SetSprite(Sprite sprite)
+    {
+        _animatedSprite = sprite ?? throw new ArgumentNullException(nameof(sprite));
+    }
+
     /// <summary>
     /// Updates the animation state.
     /// </summary>

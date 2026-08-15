@@ -1,48 +1,68 @@
 using System;
 using System.Xml.Serialization;
 using System.IO;
-using CoreEssentials.Debugging;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Assets;
 
 /// <summary>
-/// Represents a drawable sprite asset with metadata for rendering.
-/// The Sprite class loads and manages sprite data including source texture, size, and origin.
+/// Represents a unified drawable sprite asset backed by either a single texture
+/// (<c>texture2d</c> source, one frame) or a sprite sheet (<c>spritesheet</c> source, N frames).
+/// A static sprite is simply a one-frame sprite; an animated sprite is an N-frame sprite with a
+/// frame sequence and frame rate. Per-entity playback is handled by
+/// <see cref="AnimationState"/> / <c>AnimationComponent</c>.
 /// </summary>
 public class Sprite : Asset
 {
     private Texture2DAsset? _texture;
     private SpriteSheet? _spriteSheet;
     private SpriteMeta? _metaData;
-    private int _defaultFrame; // Default frame for sprite sheet rendering
+    private int[]? _frames;
+    private float _frameRate = 1f / 10f; // Default: 10 FPS (seconds per frame)
 
     /// <summary>
     /// Gets the underlying texture asset for this sprite.
-    /// Returns null if this sprite uses a SpriteSheet instead.
+    /// Returns null when this sprite uses a SpriteSheet (sheet textures are not batched directly).
     /// Used for instanced rendering/batching optimization.
     /// </summary>
     public Texture2DAsset? Texture => _texture;
 
     /// <summary>
-    /// Initializes a new instance of the Sprite class.
-    /// Loads sprite metadata from an XML file and the associated texture.
+    /// Gets the underlying SpriteSheet used by this sprite, or null for a <c>texture2d</c> sprite.
     /// </summary>
-    /// <param name="name">The name of the sprite asset to load.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the asset name or data is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when metadata deserialization fails or the source type is unknown.</exception>
-    public Sprite(string name) : base(name)
-    {
-
-    }
+    public SpriteSheet? SpriteSheet => _spriteSheet;
 
     /// <summary>
-    /// Loads sprite metadata from an XML file and initializes the associated texture or sprite sheet.
+    /// Gets the total number of frames in this sprite's sequence.
+    /// A <c>texture2d</c> sprite has a single frame.
     /// </summary>
-    /// <param name="name">The name of the XML asset containing sprite metadata.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the XML asset is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when metadata deserialization fails or the source type is unknown.</exception>
+    public int FrameCount => _frames?.Length ?? 0;
+
+    /// <summary>
+    /// Gets the frame rate in seconds per frame (i.e. 1 / frames-per-second).
+    /// </summary>
+    public float FrameRate => _frameRate;
+
+    /// <summary>
+    /// Gets the array of sprite-sheet frame indices used by this sprite's sequence.
+    /// </summary>
+    public int[]? Frames => _frames;
+
+    /// <summary>
+    /// Gets the size of a single frame of this sprite.
+    /// </summary>
+    public Vector2 SpriteSize => GetSize();
+
+    /// <summary>
+    /// Initializes a new instance of the Sprite class.
+    /// </summary>
+    /// <param name="name">The name of the sprite asset to load.</param>
+    public Sprite(string name) : base(name)
+    {
+    }
+
     private void LoadFromXml(string name)
     {
         var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
@@ -54,7 +74,7 @@ public class Sprite : Asset
         try
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SpriteDataXml), "http://schemas.coreessentials.monogame/2025/sprite");
-            if (xml == null || xml.XMLContent == null)
+            if (xml.XMLContent == null)
                 throw new InvalidOperationException("XML content is missing.");
 
             using (StringReader reader = new StringReader(xml.XMLContent))
@@ -81,6 +101,8 @@ public class Sprite : Asset
                         X = 0,
                         Y = 0
                     },
+                    Frames = xmlData.Frames,
+                    FrameRate = xmlData.FrameRate,
                     Frame = xmlData.Frame
                 };
             }
@@ -89,40 +111,65 @@ public class Sprite : Asset
         {
             throw new InvalidOperationException($"Failed to deserialize XML sprite metadata: {ex.Message}", ex);
         }
-    }    /// <summary>
-         /// Draws the sprite at the specified position with the given parameters.
-         /// Also draws a debug outline around the sprite bounds.
-         /// </summary>
-         /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
-         /// <param name="position">The position to draw the sprite at.</param>
-         /// <param name="color">The color to tint the sprite with.</param>
-         /// <param name="rotation">The rotation angle of the sprite in radians.</param>
-         /// <param name="effects">Sprite effects like flipping horizontally or vertically.</param>
-         /// <param name="layerDepth">The layer depth to draw the sprite at (0 to 1).</param>
-         /// <exception cref="InvalidOperationException">Thrown when the source type is unknown.</exception>
+    }
+
+    /// <summary>
+    /// Draws the first frame of the sprite at the specified position.
+    /// </summary>
     public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, SpriteEffects effects, float layerDepth)
     {
-        // Use the default scale of 1.0f (no scaling)
         Draw(spriteBatch, position, color, rotation, Vector2.One, effects, layerDepth);
     }
 
     /// <summary>
-    /// Draws the sprite at the specified position with the given parameters including scale.
-    /// Also draws a debug outline around the sprite bounds.
+    /// Draws the first frame of the sprite at the specified position with the given scale.
+    /// </summary>
+    public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects effects, float layerDepth)
+    {
+        DrawFrame(spriteBatch, position, 0, color, rotation, scale, effects, layerDepth);
+    }
+
+    /// <summary>
+    /// Draws the first frame of the sprite at the specified position with a uniform scale.
+    /// </summary>
+    public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, float scale, SpriteEffects effects, float layerDepth)
+    {
+        Draw(spriteBatch, position, color, rotation, new Vector2(scale, scale), effects, layerDepth);
+    }
+
+    /// <summary>
+    /// Draws a specific frame of the sprite at the specified position.
+    /// For a <c>texture2d</c> sprite the frame index is ignored (single frame).
     /// </summary>
     /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
     /// <param name="position">The position to draw the sprite at.</param>
+    /// <param name="frameIndex">The index of the frame in the sprite's sequence to draw.</param>
     /// <param name="color">The color to tint the sprite with.</param>
     /// <param name="rotation">The rotation angle of the sprite in radians.</param>
-    /// <param name="scale">The scale to apply to the sprite (Vector2.One for no scaling).</param>
     /// <param name="effects">Sprite effects like flipping horizontally or vertically.</param>
     /// <param name="layerDepth">The layer depth to draw the sprite at (0 to 1).</param>
-    /// <exception cref="InvalidOperationException">Thrown when the source type is unknown.</exception>
-    public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects effects, float layerDepth)
+    public void DrawFrame(SpriteBatch spriteBatch, Vector2 position, int frameIndex, Color color,
+                        float rotation = 0f, SpriteEffects effects = SpriteEffects.None, float layerDepth = 0f)
     {
-        // Handle drawing based on source type
-        Rectangle targetRectangle;
+        DrawFrame(spriteBatch, position, frameIndex, color, rotation, Vector2.One, effects, layerDepth);
+    }
 
+    /// <summary>
+    /// Draws a specific frame of the sprite at the specified position with the given scale.
+    /// </summary>
+    /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+    /// <param name="position">The position to draw the sprite at.</param>
+    /// <param name="frameIndex">The index of the frame in the sprite's sequence to draw.</param>
+    /// <param name="color">The color to tint the sprite with.</param>
+    /// <param name="rotation">The rotation angle of the sprite in radians.</param>
+    /// <param name="scale">The scale to apply to the sprite.</param>
+    /// <param name="effects">Sprite effects like flipping horizontally or vertically.</param>
+    /// <param name="layerDepth">The layer depth to draw the sprite at (0 to 1).</param>
+    /// <exception cref="InvalidOperationException">Thrown when metadata is not loaded or the source is unknown.</exception>
+    /// <exception cref="IndexOutOfRangeException">Thrown when the frame index is out of range.</exception>
+    public void DrawFrame(SpriteBatch spriteBatch, Vector2 position, int frameIndex, Color color,
+                        float rotation, Vector2 scale, SpriteEffects effects, float layerDepth)
+    {
         if (_metaData == null)
         {
             throw new InvalidOperationException("Sprite metadata is not loaded.");
@@ -132,60 +179,44 @@ public class Sprite : Asset
         {
             case "texture2d":
                 if (_texture == null)
-                {
                     throw new InvalidOperationException("Texture2D is null");
-                }
                 if (_metaData.Size == null)
-                {
                     throw new InvalidOperationException("Sprite metadata size is null");
-                }
-                Vector2 TextureScale = new Vector2(_metaData.Size.Width / _texture.Width,
-                                      _metaData.Size.Height / _texture.Height);
 
-                // Apply the additional scale factor
-                TextureScale *= scale;
+                Vector2 textureScale = new Vector2(_metaData.Size.Width / _texture.Width,
+                                      _metaData.Size.Height / _texture.Height);
+                textureScale *= scale;
 
                 if (_metaData.Origin == null)
-                {
                     throw new InvalidOperationException("Sprite metadata origin is null");
-                }
                 float xFactor = _metaData.Origin.X / _metaData.Size.Width;
                 float yFactor = _metaData.Origin.Y / _metaData.Size.Height;
 
-                Vector2 TextureOrigin = new Vector2(
+                Vector2 textureOrigin = new Vector2(
                     _texture.Width * xFactor,
                     _texture.Height * yFactor
                 );
 
                 spriteBatch.Draw(_texture.Texture,
-                position,
-                null,
-                color,
-                rotation,
-                TextureOrigin,
-                TextureScale,
-                effects,
-                layerDepth);
-
-                targetRectangle = new Rectangle(
-                    (int)(position.X - _metaData.Origin.X * scale.X),
-                    (int)(position.Y - _metaData.Origin.Y * scale.Y),
-                    (int)(GetSize().X * scale.X),
-                    (int)(GetSize().Y * scale.Y)
-                );
+                    position,
+                    null,
+                    color,
+                    rotation,
+                    textureOrigin,
+                    textureScale,
+                    effects,
+                    layerDepth);
                 break;
 
             case "spritesheet":
-                // Use the default frame for spritesheet
                 if (_spriteSheet == null)
-                {
                     throw new InvalidOperationException("SpriteSheet is null");
-                }
+                if (_frames == null || _frames.Length == 0)
+                    throw new InvalidOperationException("Sprite frames array is empty");
+                if (frameIndex < 0 || frameIndex >= _frames.Length)
+                    throw new IndexOutOfRangeException($"Frame index {frameIndex} is out of range (0-{_frames.Length - 1})");
 
-                // Get the default frame rectangle
-                Rectangle sourceRect = _spriteSheet.GetFrame(_defaultFrame);
-
-                // Use origin from metadata
+                Rectangle sourceRect = _spriteSheet.GetFrame(_frames[frameIndex]);
                 Vector2 origin = _spriteSheet.FrameOrigin;
 
                 spriteBatch.Draw(
@@ -197,43 +228,19 @@ public class Sprite : Asset
                     origin,
                     scale,
                     effects,
-                    layerDepth
-                );
-
-                targetRectangle = new Rectangle(
-                    (int)(position.X - origin.X * scale.X),
-                    (int)(position.Y - origin.Y * scale.Y),
-                    (int)(sourceRect.Width * scale.X),
-                    (int)(sourceRect.Height * scale.Y)
-                );
+                    layerDepth);
                 break;
 
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
         }
-
-        Debug.Primitives.DrawRectangle(spriteBatch, targetRectangle, Color.Red, 1f);
-    }    /// <summary>
-         /// Draws the sprite at the specified position with the given parameters including a uniform scale.
-         /// Also draws a debug outline around the sprite bounds.
-         /// </summary>
-         /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
-         /// <param name="position">The position to draw the sprite at.</param>
-         /// <param name="color">The color to tint the sprite with.</param>
-         /// <param name="rotation">The rotation angle of the sprite in radians.</param>
-         /// <param name="scale">The uniform scale to apply to both width and height (1.0f for no scaling).</param>
-         /// <param name="effects">Sprite effects like flipping horizontally or vertically.</param>
-         /// <param name="layerDepth">The layer depth to draw the sprite at (0 to 1).</param>
-    public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, float scale, SpriteEffects effects, float layerDepth)
-    {
-        Draw(spriteBatch, position, color, rotation, new Vector2(scale, scale), effects, layerDepth);
     }
 
     /// <summary>
-    /// Gets the size of the sprite.
+    /// Gets the size of a single frame of the sprite.
     /// </summary>
     /// <returns>A Vector2 containing the width and height of the sprite in pixels.</returns>
-    public Vector2 GetSize()
+    public virtual Vector2 GetSize()
     {
         if (_metaData == null)
         {
@@ -241,22 +248,42 @@ public class Sprite : Asset
         }
         if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
         {
-            Vector2 frameSize = _spriteSheet.GetFrameSize();
-            return frameSize;
+            return _spriteSheet.GetFrameSize();
         }
         if (_metaData.Size == null)
         {
             throw new InvalidOperationException("Sprite metadata size is null");
         }
-        Vector2 size = new Vector2(_metaData.Size.Width, _metaData.Size.Height);
-        return size;
+        return new Vector2(_metaData.Size.Width, _metaData.Size.Height);
+    }
+
+    /// <summary>
+    /// Gets the pixel origin (pivot) of a single frame of this sprite.
+    /// This is the point that is placed at the draw position, so the top-left corner of the
+    /// rendered sprite sits at <c>position - origin * scale</c>.
+    /// </summary>
+    /// <returns>A Vector2 containing the origin in pixels, or <see cref="Vector2.Zero"/> when no origin is defined.</returns>
+    public virtual Vector2 GetOrigin()
+    {
+        if (_metaData == null)
+        {
+            throw new InvalidOperationException("Sprite metadata is not loaded.");
+        }
+        if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
+        {
+            return _spriteSheet.FrameOrigin;
+        }
+        if (_metaData.Origin == null)
+        {
+            return Vector2.Zero;
+        }
+        return new Vector2(_metaData.Origin.X, _metaData.Origin.Y);
     }
 
     /// <summary>
     /// Loads the sprite asset, including its metadata and associated texture or sprite sheet.
     /// </summary>
     /// <param name="contentManager">The content manager to use for loading.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the content manager is null.</exception>
     public override void Load(IContentManager contentManager)
     {
         if (contentManager == null)
@@ -283,32 +310,73 @@ public class Sprite : Asset
             throw new InvalidOperationException("Sprite metadata source type cannot be null.");
         }
 
+        // Build the frame sequence and frame rate before loading the source.
+        BuildFrameSequence();
+
         switch (_metaData.SourceType)
         {
             case "texture2d":
                 if (_metaData.Source == null)
-                {
                     throw new InvalidOperationException("Sprite metadata source cannot be null for texture2d.");
-                }
                 _texture = (Texture2DAsset)AssetManager.LoadAsset<Texture2DAsset>(_metaData.Source);
                 break;
             case "spritesheet":
                 if (_metaData.Source == null)
-                {
                     throw new InvalidOperationException("Sprite metadata source cannot be null for spritesheet.");
-                }
                 _spriteSheet = (SpriteSheet)AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
-                _defaultFrame = _metaData.Frame ?? 0; // Use specified frame or default to 0
                 break;
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
         }
     }
-    /// <summary> 
+
+    /// <summary>
+    /// Builds the frame sequence and frame rate from the loaded metadata.
+    /// <list type="bullet">
+    /// <item><c>texture2d</c> → single frame (index 0).</item>
+    /// <item><c>spritesheet</c> → explicit <c>Frames</c> list, else a single <c>Frame</c>, else frame 0.</item>
+    /// </list>
+    /// </summary>
+    private void BuildFrameSequence()
+    {
+        // Frame rate: XML stores frames-per-second; store seconds-per-frame.
+        float fps = 10f;
+        if (_metaData!.FrameRate != null)
+        {
+            if (float.TryParse(_metaData.FrameRate, out float parsed) && parsed > 0)
+                fps = parsed;
+        }
+        _frameRate = 1f / fps;
+
+        if (_metaData.SourceType == "texture2d")
+        {
+            _frames = new int[] { 0 };
+            return;
+        }
+
+        // spritesheet
+        List<int> framesList = new List<int>();
+        if (!string.IsNullOrEmpty(_metaData.Frames))
+        {
+            foreach (var frameString in _metaData.Frames.Split(','))
+            {
+                if (int.TryParse(frameString.Trim(), out int frameIndex))
+                    framesList.Add(frameIndex);
+            }
+        }
+
+        if (framesList.Count == 0)
+        {
+            // Fall back to a single explicit frame, or frame 0.
+            framesList.Add(_metaData.Frame ?? 0);
+        }
+
+        _frames = framesList.ToArray();
+    }
+
+    /// <summary>
     /// Unloads the sprite asset, including its associated texture or sprite sheet.
     /// </summary>
-    /// <param name="contentManager">The content manager to use for unloading.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the content manager is null.</exception>
     public override void Unload(IContentManager contentManager)
     {
         if (_texture != null)
@@ -322,130 +390,99 @@ public class Sprite : Asset
             AssetManager.UnloadAsset<SpriteSheet>(_spriteSheet.Name);
             _spriteSheet = null;
         }
+
+        _metaData = null;
+        _frames = null;
     }
+
+    // Test seams: internal accessors so the test project (via InternalsVisibleTo) can drive a
+    // Sprite without a GraphicsDevice or the AssetManager. Not part of the public API.
+    internal SpriteMeta? TestMetaData { get => _metaData; set => _metaData = value; }
+    internal int[]? TestFrames { get => _frames; set => _frames = value; }
+    internal Texture2DAsset? TestTexture { get => _texture; set => _texture = value; }
+    internal SpriteSheet? TestSpriteSheet { get => _spriteSheet; set => _spriteSheet = value; }
+    internal float TestFrameRate { get => _frameRate; set => _frameRate = value; }
+    internal void TestBuildFrameSequence() => BuildFrameSequence();
 
     /// <summary>
     /// Represents the size dimensions of a sprite.
     /// </summary>
-    private class Size
+    internal class Size
     {
-        /// <summary>
-        /// Gets or sets the width of the sprite in pixels.
-        /// </summary>
         public float Width { get; set; }
-
-        /// <summary>
-        /// Gets or sets the height of the sprite in pixels.
-        /// </summary>
         public float Height { get; set; }
     }
 
     /// <summary>
     /// Represents the origin point of a sprite (the pivot point for rotation and positioning).
     /// </summary>
-    private class Origin
+    internal class Origin
     {
-        /// <summary>
-        /// Gets or sets the X coordinate of the origin point.
-        /// </summary>
         public float X { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Y coordinate of the origin point.
-        /// </summary>
         public float Y { get; set; }
     }
 
     /// <summary>
     /// Contains metadata about a sprite, loaded from XML.
     /// </summary>
-    private class SpriteMeta
+    internal class SpriteMeta
     {
-        /// <summary>
-        /// Gets or sets the type of source for the sprite (e.g., "texture2d").
-        /// </summary>
         public string? SourceType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the source asset name.
-        /// </summary>
         public string? Source { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size of the sprite.
-        /// </summary>
         public Size? Size { get; set; }
-
-        /// <summary>
-        /// Gets or sets the origin point of the sprite.
-        /// </summary>
         public Origin? Origin { get; set; }
-
-        /// <summary>
-        /// Gets or sets the initial frame for sprite sheet animations.
-        /// </summary>
+        public string? Frames { get; set; }
+        public string? FrameRate { get; set; }
         public int? Frame { get; set; }
     }
 
     /// <summary>
-    /// XML serializable class for sprite data
+    /// XML serializable class for the unified sprite data.
+    /// Supports both <c>texture2d</c> (single frame) and <c>spritesheet</c> (N frame) sources.
     /// </summary>
     [XmlRoot("SpriteData", Namespace = "http://schemas.coreessentials.monogame/2025/sprite")]
     public class SpriteDataXml
     {
-        /// <summary>
-        /// Gets or sets the source type of the sprite (e.g., "texture2d" or "spritesheet").
-        /// </summary>
+        /// <summary>The source type of the sprite ("texture2d" or "spritesheet").</summary>
         public string? SourceType { get; set; }
-        /// <summary>
-        /// Gets or sets the source asset name for the sprite.
-        /// </summary>
+
+        /// <summary>The source asset name (a texture for texture2d, a sprite sheet for spritesheet).</summary>
         public string? Source { get; set; }
-        /// <summary>
-        /// Gets or sets the size of the sprite.
-        /// </summary>
+
+        /// <summary>The size of the sprite (required for texture2d; informational for spritesheet).</summary>
         public SizeXml? Size { get; set; }
-        
-        /// <summary>
-        /// Gets or sets the origin of the sprite.
-        /// </summary>
+
+        /// <summary>The origin of the sprite (required for texture2d).</summary>
         [XmlElement(IsNullable = true)]
         public OriginXml? Origin { get; set; }
 
-        /// <summary>
-        /// Gets or sets the initial frame for sprite sheet animations.
-        /// </summary>
+        /// <summary>A comma-separated list of sprite-sheet frame indices for the animation sequence.</summary>
+        public string? Frames { get; set; }
+
+        /// <summary>The animation speed in frames per second (default 10).</summary>
+        public string? FrameRate { get; set; }
+
+        /// <summary>The single frame to use when no <c>Frames</c> list is provided.</summary>
         [XmlElement(IsNullable = true)]
         public int? Frame { get; set; }
 
-        /// <summary>
-        /// XML serializable class for size data
-        /// </summary>
+        /// <summary>XML serializable class for size data.</summary>
         public class SizeXml
-        {   
-            /// <summary>
-            /// Gets or sets the width of the sprite in pixels.
-            /// </summary>
+        {
+            /// <summary>Gets or sets the width in pixels.</summary>
             public float Width { get; set; }
-            /// <summary>
-            /// Gets or sets the height of the sprite in pixels.
-            /// </summary>
+
+            /// <summary>Gets or sets the height in pixels.</summary>
             public float Height { get; set; }
         }
 
-        /// <summary>
-        /// XML serializable class for origin data
-        /// </summary>
+        /// <summary>XML serializable class for origin data.</summary>
         public class OriginXml
         {
-            /// <summary>
-            /// Gets or sets the X coordinate of the origin point.
-            /// </summary>
+            /// <summary>Gets or sets the X coordinate of the origin.</summary>
             public float X { get; set; }
 
-            /// <summary>
-            /// Gets or sets the Y coordinate of the origin point.
-            /// </summary>
+            /// <summary>Gets or sets the Y coordinate of the origin.</summary>
             public float Y { get; set; }
         }
     }

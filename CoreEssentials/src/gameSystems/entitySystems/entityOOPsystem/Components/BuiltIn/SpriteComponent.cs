@@ -12,7 +12,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.Bu
 /// In the hybrid rendering model, this component provides an additional draw path
 /// alongside the existing Entity.Render() method.
 /// </summary>
-public class SpriteComponent : EntityComponent, ISerializableComponent
+public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawableComponent
 {
     /// <summary>
     /// Gets or sets the sprite to render.
@@ -78,9 +78,11 @@ public class SpriteComponent : EntityComponent, ISerializableComponent
         if (Sprite == null || Owner == null)
             return;
 
-        Sprite.Draw(
+        // Draw the current animation frame (frame 0 for single-frame texture2d sprites).
+        Sprite.DrawFrame(
             spriteBatch,
             Owner.Position,
+            AnimationFrame,
             Color,
             Owner.Rotation,
             Owner.Scale,

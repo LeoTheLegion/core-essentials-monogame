@@ -339,13 +339,24 @@ public abstract class Entity
     /// <summary>
     /// Renders the entity.
     /// Called once per frame for active entities during the draw phase.
+    /// By default this draws every attached component that implements
+    /// <see cref="Components.IDrawableComponent"/>, so entities can render purely from
+    /// components (e.g. a <see cref="SpriteComponent"/>) without an override.
     /// </summary>
     /// <param name="_spriteBatch">The SpriteBatch used for drawing.</param>
-    public virtual void Render(SpriteBatch _spriteBatch) { }
+    public virtual void Render(SpriteBatch _spriteBatch)
+    {
+        foreach (var component in _components.Values)
+        {
+            if (component is Components.IDrawableComponent drawable)
+                drawable.Draw(_spriteBatch);
+        }
+    }
 
     /// <summary>
     /// Gets the logical size of the entity in pixels, including the current <see cref="Scale"/>.
-    /// By default this reads the size of the attached <see cref="SpriteComponent"/> (if any).
+    /// Resolves the size from the entity's <see cref="SpriteComponent"/> (the single source of
+    /// truth for rendering, whether static or driven by an <see cref="AnimationComponent"/>).
     /// Entities that render their own sprite (OOP-style, without a <see cref="SpriteComponent"/>)
     /// should override this method to return their actual rendered size.
     /// </summary>
@@ -361,7 +372,32 @@ public abstract class Entity
             }
             catch (InvalidOperationException)
             {
-                // Sprite metadata not loaded yet; fall through to the zero size.
+                // Sprite metadata not loaded yet.
+            }
+        }
+
+        return Vector2.Zero;
+    }
+
+    /// <summary>
+    /// Gets the pixel origin (pivot) of the entity's rendered sprite, including the current <see cref="Scale"/>.
+    /// This is the point that is placed at <see cref="Position"/>, so the top-left corner of the
+    /// rendered sprite sits at <c>Position - GetOrigin()</c>.
+    /// Resolves the origin from the entity's <see cref="SpriteComponent"/>, mirroring <see cref="GetSize"/>.
+    /// </summary>
+    /// <returns>The entity origin in pixels, or <see cref="Vector2.Zero"/> when no sprite is available.</returns>
+    public virtual Vector2 GetOrigin()
+    {
+        if (TryGetComponent<SpriteComponent>(out var spriteComponent)
+            && spriteComponent?.Sprite != null)
+        {
+            try
+            {
+                return spriteComponent.Sprite.GetOrigin() * Scale;
+            }
+            catch (InvalidOperationException)
+            {
+                // Sprite metadata not loaded yet.
             }
         }
 

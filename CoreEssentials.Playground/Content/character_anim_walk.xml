@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<AnimatedSpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+<SpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
   <SourceType>spritesheet</SourceType>
   <Source>character_sheet.xml</Source>
   <Size>
@@ -8,4 +8,4 @@
   </Size>
   <Frames>36,37,38,39,40,41,42,43</Frames>
   <FrameRate>11</FrameRate>
-</AnimatedSpriteData>
+</SpriteData>
