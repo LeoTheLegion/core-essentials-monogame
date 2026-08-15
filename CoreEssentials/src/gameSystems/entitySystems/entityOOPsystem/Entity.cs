@@ -93,6 +93,12 @@ public abstract class Entity
     protected bool _hasStarted = false;
 
     /// <summary>
+    /// Flag indicating whether the entity has awoken (OnAwake has been called).
+    /// Guards against double-awake when an entity is re-added to a system.
+    /// </summary>
+    protected bool _hasAwoken = false;
+
+    /// <summary>
     /// The identifier for the delayed destroy coroutine, if one is active.
     /// </summary>
     private Guid? _destroyCoroutineId;
@@ -312,6 +318,19 @@ public abstract class Entity
     }
 
     /// <summary>
+    /// Called once when the entity is added to its <see cref="EntitySystem"/>.
+    /// Override this method for one-time initialization that must happen before <see cref="OnStart"/>.
+    /// This method guards against double-awake — if the entity has already awoken, it returns immediately.
+    /// <see cref="OnEnable"/> is fired by the <see cref="EntitySystem"/> after this method fully
+    /// completes, so the derived body runs before OnEnable (matching Unity's Awake -> OnEnable order).
+    /// </summary>
+    public virtual void OnAwake()
+    {
+        if (_hasAwoken) return;
+        _hasAwoken = true;
+    }
+
+    /// <summary>
     /// Called when the entity is first created.
     /// Override this method to initialize entity-specific data.
     /// This method guards against double-starts — if the entity has already started, it returns immediately.
@@ -320,6 +339,56 @@ public abstract class Entity
     {
         if (_hasStarted) return;
         _hasStarted = true;
+    }
+
+    /// <summary>
+    /// Called when the entity transitions from inactive to active (via <see cref="SetActive"/>).
+    /// Override this method to perform work when the entity becomes active.
+    /// Only fires on real state transitions — calling <see cref="SetActive"/> with the
+    /// current state does not re-trigger this hook.
+    /// </summary>
+    public virtual void OnEnable()
+    {
+    }
+
+    /// <summary>
+    /// Called when the entity transitions from active to inactive (via <see cref="SetActive"/>).
+    /// Override this method to perform cleanup when the entity becomes inactive.
+    /// Only fires on real state transitions — calling <see cref="SetActive"/> with the
+    /// current state does not re-trigger this hook.
+    /// </summary>
+    public virtual void OnDisable()
+    {
+    }
+
+    /// <summary>
+    /// Called after <see cref="Update"/> on every frame, for active entities.
+    /// Override this method for logic that must run after all regular updates
+    /// (e.g. camera follow, end-of-frame corrections).
+    /// </summary>
+    /// <param name="gameTime">Provides timing information.</param>
+    public virtual void OnLateUpdate(GameTime gameTime)
+    {
+    }
+
+    /// <summary>
+    /// Called on the fixed timestep for active entities.
+    /// Override this method for logic that must run at a consistent rate
+    /// regardless of frame rate (e.g. physics-adjacent movement).
+    /// </summary>
+    /// <param name="gameTime">Provides timing information.</param>
+    public virtual void OnFixedUpdate(GameTime gameTime)
+    {
+    }
+
+    /// <summary>
+    /// Called app-wide when the application loses or regains focus.
+    /// Override this method to pause or resume entity-specific behavior
+    /// (e.g. stopping timers, saving state) when the game is backgrounded.
+    /// </summary>
+    /// <param name="paused">True when the application is being paused, false when resuming.</param>
+    public virtual void OnApplicationPause(bool paused)
+    {
     }
 
     /// <summary>
@@ -547,11 +616,28 @@ public abstract class Entity
 
     /// <summary>
     /// Sets whether the entity is active.
+    /// Fires <see cref="OnEnable"/> when transitioning to active and <see cref="OnDisable"/>
+    /// when transitioning to inactive. No-op calls (setting the current state) do not fire hooks.
     /// </summary>
     /// <param name="active">True to activate, false to deactivate.</param>
     public virtual void SetActive(bool active)
     {
+        if (_active == active)
+            return;
+
         _active = active;
+
+        // Fire lifecycle hooks on the real transition, but only once the entity is awake.
+        // This keeps pooled entities (which toggle active during pool acquire before OnAwake)
+        // in the correct order: Awake -> Enable -> Start.
+        if (_hasAwoken)
+        {
+            if (active)
+                OnEnable();
+            else
+                OnDisable();
+        }
+
         // Propagate activation state to all children
         foreach (var child in Children)
         {

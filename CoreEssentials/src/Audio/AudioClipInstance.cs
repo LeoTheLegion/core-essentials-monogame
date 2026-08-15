@@ -76,6 +76,15 @@ public class AudioClipInstance
     }
 
     /// <summary>
+    /// Pauses playback of the audio clip without releasing the underlying sound effect instance.
+    /// A paused instance can later be resumed with <see cref="Play"/>.
+    /// </summary>
+    public void Pause()
+    {
+        soundEffectInstance?.Pause();
+    }
+
+    /// <summary>
     /// Stops playback of the audio clip and releases the underlying sound effect instance.
     /// </summary>
     public virtual void Stop()

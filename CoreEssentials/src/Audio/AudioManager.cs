@@ -127,6 +127,53 @@ public class AudioManager
     }
 
     /// <summary>
+    /// Pauses all active audio instances without releasing them.
+    /// Paused instances can be resumed with <see cref="ResumeAll"/>.
+    /// </summary>
+    public void PauseAll()
+    {
+        foreach (var instance in _audioClipInstances.Values)
+        {
+            instance.Pause();
+        }
+    }
+
+    /// <summary>
+    /// Resumes all paused audio instances.
+    /// </summary>
+    public void ResumeAll()
+    {
+        foreach (var instance in _audioClipInstances.Values)
+        {
+            instance.Play(_masterVolume);
+        }
+    }
+
+    /// <summary>
+    /// Pauses the active audio instance associated with the specified identifier.
+    /// </summary>
+    /// <param name="soundName">The unique identifier returned by a <c>Play</c> method.</param>
+    public void PauseSound(string soundName)
+    {
+        if (_audioClipInstances.TryGetValue(soundName, out var instance))
+        {
+            instance.Pause();
+        }
+    }
+
+    /// <summary>
+    /// Resumes the paused audio instance associated with the specified identifier.
+    /// </summary>
+    /// <param name="soundName">The unique identifier returned by a <c>Play</c> method.</param>
+    public void ResumeSound(string soundName)
+    {
+        if (_audioClipInstances.TryGetValue(soundName, out var instance))
+        {
+            instance.Play(_masterVolume);
+        }
+    }
+
+    /// <summary>
     /// Sets the master volume applied to all active audio instances.
     /// </summary>
     /// <param name="volume">The master volume, clamped between 0.0 and 1.0.</param>

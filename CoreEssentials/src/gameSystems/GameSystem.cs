@@ -107,4 +107,18 @@ namespace CoreEssentials.GameSystems
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         void FixedUpdate(GameTime gameTime);
     }
+
+    /// <summary>
+    /// Interface for game systems that need to respond to application pause/resume events.
+    /// Implement this interface when a system should be notified when the application
+    /// loses or regains focus (e.g. to pause timers, save state, or suspend background work).
+    /// </summary>
+    public interface IPausableGameSystem
+    {
+        /// <summary>
+        /// Called when the application is paused or resumed.
+        /// </summary>
+        /// <param name="paused">True when the application is being paused, false when resuming.</param>
+        void OnApplicationPause(bool paused);
+    }
 }

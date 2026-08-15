@@ -44,5 +44,18 @@ namespace CoreEssentials.Playground
 
             Console.WriteLine("Animated character entity destroyed!");
         }
+
+        /// <summary>
+        /// Demonstrates the app-wide <see cref="Entity.OnApplicationPause"/> hook.
+        /// Fires when the game window loses or regains focus (click away and back).
+        /// Scales the entity up while paused so the transition is visible.
+        /// </summary>
+        public override void OnApplicationPause(bool paused)
+        {
+            base.OnApplicationPause(paused);
+            Scale = paused ? new Vector2(1.5f, 1.5f) : Vector2.One;
+            string state = paused ? "PAUSED" : "RESUMED";
+            Console.WriteLine($"[AnimatedCharacterEntity] OnApplicationPause: {state}");
+        }
     }
 }

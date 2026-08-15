@@ -46,7 +46,12 @@ public abstract class Scene
     /// Array of game systems that implement the IFixedUpdateGameSystem interface.
     /// </summary>
     private IFixedUpdateGameSystem[] _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
-    
+
+    /// <summary>
+    /// Array of game systems that implement the IPausableGameSystem interface.
+    /// </summary>
+    private IPausableGameSystem[] _pausableSystems = Array.Empty<IPausableGameSystem>();
+
     /// <summary>
     /// Tracks the current loading progress of the scene, from 0.0 to 1.0
     /// </summary>
@@ -185,6 +190,7 @@ public abstract class Scene
         _updateSystems = systems.OfType<IUpdateGameSystem>().ToArray();
         _drawSystems = systems.OfType<IDrawGameSystem>().ToArray();
         _fixedUpdateSystems = systems.OfType<IFixedUpdateGameSystem>().ToArray();
+        _pausableSystems = systems.OfType<IPausableGameSystem>().ToArray();
 
         Console.WriteLine("Loaded Update Systems: " + _updateSystems.Length.ToString());
         Console.WriteLine("Loaded Fixed Update Systems: " + _fixedUpdateSystems.Length.ToString());
@@ -295,6 +301,26 @@ public abstract class Scene
     }
 
     /// <summary>
+    /// Notifies all game systems that implement the IPausableGameSystem interface
+    /// that the application has been paused or resumed.
+    /// Scenes that own audio or other pausable resources should override this method
+    /// and call <c>base.OnApplicationPause(paused)</c> to propagate to game systems.
+    /// </summary>
+    /// <param name="paused">True when the application is being paused, false when resuming.</param>
+    public virtual void OnApplicationPause(bool paused)
+    {
+        // Don't notify if scene isn't loaded yet
+        if (!IsLoaded)
+            return;
+
+        // Notify all game systems that implement IPausableGameSystem
+        for (int i = 0; i < _pausableSystems.Length; i++)
+        {
+            _pausableSystems[i].OnApplicationPause(paused);
+        }
+    }
+
+    /// <summary>
     /// Draws all game systems that implement the IDrawGameSystem interface.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
@@ -333,6 +359,7 @@ public abstract class Scene
         _updateSystems = Array.Empty<IUpdateGameSystem>();
         _drawSystems = Array.Empty<IDrawGameSystem>();
         _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
+        _pausableSystems = Array.Empty<IPausableGameSystem>();
         
         IsLoaded = false;
         IsLoading = false;

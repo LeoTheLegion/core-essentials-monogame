@@ -16,7 +16,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 /// Manages game entities in an object-oriented architecture.
 /// Handles the creation, updating, rendering, and destruction of entities.
 /// </summary>
-public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDisposable
+public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFixedUpdateGameSystem, IPausableGameSystem, IDisposable
 {
     /// <summary>
     /// The list of all entities managed by this system.
@@ -107,6 +107,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
     {
         SortEntities();
         UpdateActiveEntities(gameTime);
+        UpdateLateActiveEntities(gameTime);
         UpdateSpatialGridPositions();
         RemoveDestroyedEntities();
     }
@@ -121,6 +122,50 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
             Entity entity = _entities[i];
             if (entity.GetActive())
                 entity.Update(gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Updates all active entities on the fixed timestep, calling <see cref="Entity.OnFixedUpdate"/>.
+    /// </summary>
+    /// <param name="gameTime">Provides a snapshot of timing values.</param>
+    public void FixedUpdate(GameTime gameTime)
+    {
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            Entity entity = _entities[i];
+            if (entity.GetActive())
+                entity.OnFixedUpdate(gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Updates all active entities' late-update hook, calling <see cref="Entity.OnLateUpdate"/>.
+    /// Runs after the regular update pass so late-update logic sees the final state of the frame.
+    /// </summary>
+    /// <param name="gameTime">Provides a snapshot of timing values.</param>
+    private void UpdateLateActiveEntities(GameTime gameTime)
+    {
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            Entity entity = _entities[i];
+            if (entity.GetActive())
+                entity.OnLateUpdate(gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Called app-wide when the application is paused or resumed (e.g. window loses/regains focus).
+    /// Forwards the call to <see cref="Entity.OnApplicationPause"/> on every active entity.
+    /// </summary>
+    /// <param name="paused">True when the application is being paused, false when resuming.</param>
+    public void OnApplicationPause(bool paused)
+    {
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            Entity entity = _entities[i];
+            if (entity.GetActive())
+                entity.OnApplicationPause(paused);
         }
     }
 
@@ -338,6 +383,8 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         UpdateTagIndexForEntity(entity, true);
         UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
+        entity.OnAwake();
+        NotifyAwoken(entity);
         Console.WriteLine($"[EntitySystem]   Calling OnStart for {entity.GetType().Name}...");
         try
         {
@@ -380,6 +427,8 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         UpdateTagIndexForEntity(entity, true);
         UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
+        entity.OnAwake();
+        NotifyAwoken(entity);
         return entity;
     }
 
@@ -401,8 +450,23 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IDis
         UpdateTagIndexForEntity(entity, true);
         UpdateIdIndexForEntity(entity, true);
         UpdateSpatialGridForEntity(entity, true);
+        entity.OnAwake();
+        NotifyAwoken(entity);
         entity.OnStart();
         return entity;
+    }
+
+    /// <summary>
+    /// Establishes the initial enabled state for an entity that has just awoken.
+    /// If the entity is active, <see cref="Entity.OnEnable"/> is fired. This is called
+    /// after <see cref="Entity.OnAwake"/> completes so the derived OnAwake body runs first,
+    /// matching Unity's Awake -> OnEnable order.
+    /// </summary>
+    /// <param name="entity">The entity that has just awoken.</param>
+    private void NotifyAwoken(Entity entity)
+    {
+        if (entity.GetActive())
+            entity.OnEnable();
     }
 
     /// <summary>
