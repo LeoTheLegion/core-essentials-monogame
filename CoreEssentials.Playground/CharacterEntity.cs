@@ -1,5 +1,4 @@
 using CoreEssentials.Assets;
-using CoreEssentials.Audio;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.Tweening;
@@ -77,18 +76,12 @@ public class CharacterEntity : Entity
     /// <summary>
     /// Demonstrates the app-wide <see cref="Entity.OnApplicationPause"/> hook.
     /// Fires when the game window loses or regains focus (click away and back).
-    /// The entity pauses/resumes the shared background song and scales up while paused,
-    /// so both the audio stop and the transition are visible.
+    /// The entity scales up while paused so the visual transition is visible.
     /// </summary>
     public override void OnApplicationPause(bool paused)
     {
         base.OnApplicationPause(paused);
         Scale = paused ? new Vector2(1.5f, 1.5f) : Vector2.One;
-
-        if (paused)
-            AudioManager.Instance.PauseAll();
-        else
-            AudioManager.Instance.ResumeAll();
 
         string state = paused ? "PAUSED" : "RESUMED";
         Console.WriteLine($"[CharacterEntity] OnApplicationPause: {state}");

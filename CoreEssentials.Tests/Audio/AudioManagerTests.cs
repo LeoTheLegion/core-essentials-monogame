@@ -219,8 +219,88 @@ namespace CoreEssentials.Tests.Audio
             Assert.Equal(1, mockSoundEffectInstance.PlayCallCount);
         }
         
+        [Fact]
+        public void PauseSound_PausesTheNamedInstanceOnly()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var mockSoundEffect = new MockSoundEffect();
+            var mockSoundEffectInstance = new MockSoundEffectInstance();
+            mockSoundEffect.LastCreatedInstance = mockSoundEffectInstance;
+
+            var audioClip = new MockAudioClip("test.xml") { SoundEffect = mockSoundEffect };
+            var id = mockManager.PlaySound(audioClip);
+
+            var instances = GetInstances(mockManager);
+            var instance = instances[id];
+            var field = typeof(AudioClipInstance).GetField("soundEffectInstance",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            field.SetValue(instance, mockSoundEffectInstance);
+
+            // Act
+            mockManager.PauseSound(id);
+
+            // Assert
+            Assert.Equal(1, mockSoundEffectInstance.PauseCallCount);
+            Assert.Equal(SoundState.Paused, mockSoundEffectInstance.State);
+        }
+
+        [Fact]
+        public void PauseSound_WithUnknownId_DoesNothing()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+
+            // Act / Assert - should not throw
+            mockManager.PauseSound("does-not-exist");
+        }
+
+        [Fact]
+        public void ResumeSound_PlaysTheNamedInstanceOnly()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+            var mockSoundEffect = new MockSoundEffect();
+            var mockSoundEffectInstance = new MockSoundEffectInstance();
+            mockSoundEffect.LastCreatedInstance = mockSoundEffectInstance;
+
+            var audioClip = new MockAudioClip("test.xml") { SoundEffect = mockSoundEffect };
+            var id = mockManager.PlaySound(audioClip);
+
+            var instances = GetInstances(mockManager);
+            var instance = instances[id];
+            var field = typeof(AudioClipInstance).GetField("soundEffectInstance",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            field.SetValue(instance, mockSoundEffectInstance);
+            mockSoundEffectInstance.SetState(SoundState.Paused);
+
+            // Act
+            mockManager.ResumeSound(id);
+
+            // Assert
+            Assert.Equal(1, mockSoundEffectInstance.PlayCallCount);
+            Assert.Equal(SoundState.Playing, mockSoundEffectInstance.State);
+        }
+
+        [Fact]
+        public void ResumeSound_WithUnknownId_DoesNothing()
+        {
+            // Arrange
+            var mockManager = new MockAudioManager();
+
+            // Act / Assert - should not throw
+            mockManager.ResumeSound("does-not-exist");
+        }
+
         #region Helper Methods
-        
+
+        private static Dictionary<string, AudioClipInstance> GetInstances(MockAudioManager manager)
+        {
+            var instancesField = typeof(AudioManager).GetField("_audioClipInstances",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return (Dictionary<string, AudioClipInstance>)instancesField.GetValue(manager)!;
+        }
+
         private void SetupAssetManagerToReturnMock(MockAudioClip audioClip)
         {
             // Add mock to the asset dictionary - requires reflection

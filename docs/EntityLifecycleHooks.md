@@ -132,7 +132,7 @@ public override void OnFixedUpdate(GameTime gameTime)
 
 Called app-wide when the application loses or regains focus. Use to pause or resume entity-specific behavior (timers, background work, saving state).
 
-> **Pausing audio:** `OnApplicationPause` is the place to pause or resume any audio an entity is responsible for. `AudioManager` exposes `PauseAll()` / `ResumeAll()` (and per-clip `AudioClipInstance.Pause()`) for this. Entities that own sound — e.g. a character with a looping voice or a scene's background music — should call these inside their `OnApplicationPause` override so audio stops and resumes with the app.
+> **Pausing audio:** `OnApplicationPause` is the place to pause or resume any audio the owner is responsible for. `AudioManager` exposes per-sound `PauseSound(id)` / `ResumeSound(id)` (as well as `PauseAll()` / `ResumeAll()` and per-clip `AudioClipInstance.Pause()`). Because a scene's background music is *scene-owned*, a scene should override `Scene.OnApplicationPause` (now `virtual`) and pause/resume its own track there — see `CharacterScene` for an example. Entities that own their own sound should do the same inside their `OnApplicationPause` override.
 
 ```csharp
 public virtual void OnApplicationPause(bool paused)

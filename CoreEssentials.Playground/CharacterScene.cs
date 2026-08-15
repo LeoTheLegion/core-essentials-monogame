@@ -114,6 +114,22 @@ public class CharacterScene : Scene
         songID = AudioManager.Instance.PlaySound("song1_sound.xml");
     }
 
+    /// <summary>
+    /// Pauses or resumes this scene's background music when the application loses or regains focus.
+    /// </summary>
+    public override void OnApplicationPause(bool paused)
+    {
+        base.OnApplicationPause(paused);
+
+        if (string.IsNullOrEmpty(songID))
+            return;
+
+        if (paused)
+            AudioManager.Instance.PauseSound(songID);
+        else
+            AudioManager.Instance.ResumeSound(songID);
+    }
+
     public override void Unload()
     {
         base.Unload();

@@ -303,9 +303,11 @@ public abstract class Scene
     /// <summary>
     /// Notifies all game systems that implement the IPausableGameSystem interface
     /// that the application has been paused or resumed.
+    /// Scenes that own audio or other pausable resources should override this method
+    /// and call <c>base.OnApplicationPause(paused)</c> to propagate to game systems.
     /// </summary>
     /// <param name="paused">True when the application is being paused, false when resuming.</param>
-    public void OnApplicationPause(bool paused)
+    public virtual void OnApplicationPause(bool paused)
     {
         // Don't notify if scene isn't loaded yet
         if (!IsLoaded)
