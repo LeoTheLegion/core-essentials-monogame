@@ -256,6 +256,16 @@ public class SceneManager
     }
 
     /// <summary>
+    /// Notifies the current scene that the application has been paused or resumed.
+    /// The scene forwards the call to all registered <see cref="CoreEssentials.GameSystems.IPausableGameSystem"/> instances.
+    /// </summary>
+    /// <param name="paused">True when the application is being paused, false when resuming.</param>
+    public void OnApplicationPause(bool paused)
+    {
+        _currentScene?.OnApplicationPause(paused);
+    }
+
+    /// <summary>
     /// Draws the current scene.
     /// This method should be called in the game's draw loop.
     /// </summary>

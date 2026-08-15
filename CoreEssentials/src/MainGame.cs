@@ -82,6 +82,30 @@ namespace CoreEssentials
         }
 
         /// <summary>
+        /// Called when the game window loses focus.
+        /// Fires app-wide pause so all <see cref="IPausableGameSystem"/> instances can suspend work.
+        /// </summary>
+        /// <param name="sender">The game instance.</param>
+        /// <param name="args">The event arguments.</param>
+        protected override void OnDeactivated(object sender, EventArgs args)
+        {
+            base.OnDeactivated(sender, args);
+            SceneManager.OnApplicationPause(true);
+        }
+
+        /// <summary>
+        /// Called when the game window regains focus.
+        /// Fires app-wide resume so all <see cref="IPausableGameSystem"/> instances can resume work.
+        /// </summary>
+        /// <param name="sender">The game instance.</param>
+        /// <param name="args">The event arguments.</param>
+        protected override void OnActivated(object sender, EventArgs args)
+        {
+            base.OnActivated(sender, args);
+            SceneManager.OnApplicationPause(false);
+        }
+
+        /// <summary>
         /// Loads game content and initializes systems. 
         /// This includes setting up the SpriteBatch, AssetManager, GUI, debugging tools, and game systems.
         /// </summary>
