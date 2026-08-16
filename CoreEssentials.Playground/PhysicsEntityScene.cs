@@ -25,16 +25,16 @@ public class PhysicsEntityScene : Scene
     private IButton _saveButton;
     private IButton _loadButton;
     private PhysicsDebugRenderer _physicsDebugRenderer;
+    private PhysicsConfig _physicsConfig;
     private const string SaveFilePath = "PhysicsScene_Save.xml";
-
-    // Downward gravity for the balls. In MonoGame +Y is down on screen, so a
-    // positive Y value pulls the balls toward the bottom border.
-    private static readonly Vector2 Gravity = new Vector2(0f, 1000f);
 
     protected override GameSystem[] LoadGameSystems()
     {
         // Load all the game systems you want to use in your game here.
-        PhysicsEngine physicsEngine = new PhysicsEngine(Gravity);
+        // Physics settings (gravity, solver iterations) and named collision categories
+        // come from a declarative Content/PhysicsConfig.xml file.
+        _physicsConfig = PhysicsConfig.LoadFromAsset("PhysicsConfig.xml");
+        PhysicsEngine physicsEngine = new PhysicsEngine(_physicsConfig);
         // Aether-backed debug renderer (toggle with F1). Content is loaded lazily
         // in OnStartCoroutine once the graphics device exists.
         _physicsDebugRenderer = new PhysicsDebugRenderer(physicsEngine);
@@ -88,8 +88,9 @@ public class PhysicsEntityScene : Scene
 
             Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", new Vector2(x, y));
             // ID auto-generated on creation
-            // Sprint 19 demo: regular balls only collide with other regular balls (Cat1).
-            SetBallCollisionFilter(ball, CollisionCategory.Cat1, CollisionCategory.Cat1);
+            // Sprint 19 demo: regular balls only collide with other regular balls.
+            // The "Player" category name is resolved from PhysicsConfig.xml.
+            SetBallCollisionFilter(ball, _physicsConfig.Resolve("Player"), _physicsConfig.Resolve("Player"));
             // add Random force to the ball
             ball.GetComponent<RigidbodyComponent>().ApplyImpulse(new Vector2(
                 (float)(_random.NextDouble() * 10 - 5), 
@@ -128,8 +129,9 @@ public class PhysicsEntityScene : Scene
             Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", pos);
             ball.SetId(id);
 
-            // Sprint 19 demo: VIP balls only collide with other VIP balls (Cat2).
-            SetBallCollisionFilter(ball, CollisionCategory.Cat2, CollisionCategory.Cat2);
+            // Sprint 19 demo: VIP balls only collide with other VIP balls.
+            // The "Vip" category name is resolved from PhysicsConfig.xml.
+            SetBallCollisionFilter(ball, _physicsConfig.Resolve("Vip"), _physicsConfig.Resolve("Vip"));
 
             // Make VIP balls larger and set their unique color.
             // The ColliderComponent auto-sizes its circle collider to the (now larger)

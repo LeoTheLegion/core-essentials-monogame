@@ -72,6 +72,9 @@
 #begin CharacterTemplate.xml
 /copy:CharacterTemplate.xml
 
+#begin PhysicsConfig.xml
+/copy:PhysicsConfig.xml
+
 #begin SoundButtonTemplate.xml
 /copy:SoundButtonTemplate.xml
 

@@ -40,6 +40,13 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
     /// </summary>
     public int PositionIterations { get; set; } = 3;
 
+    /// <summary>
+    /// Gets the declarative configuration this engine was created from, if any.
+    /// Exposes the named collision-category map so scenes can resolve friendly names
+    /// (e.g. <c>config.Resolve("Player")</c>) to <see cref="CollisionCategory"/> bits.
+    /// </summary>
+    public PhysicsConfig? Config { get; }
+
     // Cache of PhysicsBody wrappers keyed by Aether Body — prevents duplicate wrappers.
     private readonly Dictionary<Body, PhysicsBody> _physicsBodies = new();
 
@@ -67,6 +74,23 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
     public PhysicsEngine(Vector2 gravity)
     {
         _world = new World(gravity);
+        WireContactManager();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PhysicsEngine"/> class from a declarative
+    /// <see cref="PhysicsConfig"/>. Applies the configured gravity and solver iterations, and
+    /// exposes the config (for named collision-category resolution) via <see cref="Config"/>.
+    /// </summary>
+    /// <param name="config">The physics configuration loaded from XML.</param>
+    public PhysicsEngine(PhysicsConfig config)
+    {
+        if (config == null) throw new ArgumentNullException(nameof(config));
+
+        Config = config;
+        _world = new World(config.Gravity);
+        VelocityIterations = config.VelocityIterations;
+        PositionIterations = config.PositionIterations;
         WireContactManager();
     }
 

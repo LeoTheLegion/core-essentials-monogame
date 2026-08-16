@@ -46,8 +46,10 @@ public class WorldBorder : Entity
         if (physicsEngineResult == null) return;
         PhysicsEngine physicsEngine = physicsEngineResult;
 
-        // Sprint 19 demo: the border must contain BOTH regular (Cat1) and VIP (Cat2) balls.
-        const CollisionCategory allBalls = CollisionCategory.Cat1 | CollisionCategory.Cat2;
+        // Sprint 19 demo: the border must contain BOTH regular ("Player") and VIP ("Vip") balls.
+        // The category names are resolved from the engine's PhysicsConfig (Content/PhysicsConfig.xml).
+        var config = physicsEngine.Config ?? PhysicsConfig.CreateDefault();
+        var allBalls = config.ResolveMask("Player|Vip");
 
         ICollider Configure(ICollider collider)
         {

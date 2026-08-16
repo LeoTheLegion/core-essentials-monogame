@@ -46,6 +46,64 @@ CollisionCategory.All                              // accepts every category
 
 ---
 
+## Named Categories (via `PhysicsConfig`)
+
+`Cat1`/`Cat2` are just raw bit names. For anything beyond a toy scene, give your categories **meaningful names** in a dedicated `PhysicsConfig.xml` and resolve them in code. This keeps the physics layer declarative and engine-agnostic — you never hardcode `Cat2` when you mean "Vip".
+
+### 1. Define the config
+
+Create `Content/PhysicsConfig.xml` (and add a `/copy:PhysicsConfig.xml` line to your `Content.mgcb` so it reaches the output):
+
+```xml
+<PhysicsConfig>
+    <!-- Global gravity. In MonoGame +Y is down on screen. -->
+    <Gravity X="0" Y="1000" />
+
+    <!-- Solver tuning. -->
+    <Solver VelocityIterations="8" PositionIterations="3" />
+
+    <!-- Friendly name -> bit (1-31). -->
+    <Categories>
+        <Category Name="Player" Bit="1" />
+        <Category Name="Vip"    Bit="2" />
+        <Category Name="Wall"   Bit="3" />
+    </Categories>
+</PhysicsConfig>
+```
+
+### 2. Load it and build the engine
+
+Load the config in your scene and pass it to the `PhysicsEngine` constructor (which applies gravity + solver settings and exposes the config for name resolution):
+
+```csharp
+var config = PhysicsConfig.LoadFromAsset("PhysicsConfig.xml");
+var physicsEngine = new PhysicsEngine(config);
+```
+
+### 3. Resolve names in code
+
+```csharp
+config.Resolve("Player");              // CollisionCategory.Cat1
+config.ResolveMask("Player|Vip");      // Cat1 | Cat2
+config.TryResolve("Ghost", out var c); // false (unknown name)
+config.GetCategoryName(CollisionCategory.Cat2); // "Vip"
+```
+
+So the earlier example becomes self-documenting:
+
+```csharp
+collider.Categories   = config.Resolve("Player");
+collider.CollidesWith = config.ResolveMask("Player|Wall");
+```
+
+### Validation
+
+The parser rejects duplicate names, duplicate bits, and out-of-range bits (1–31), throwing a `FormatException` with a descriptive message. A missing `Gravity`/`Solver` element falls back to defaults (`Vector2.Zero`, 8, 3).
+
+> **Tip:** the engine also exposes the config via `PhysicsEngine.Config`, so any system that already holds the engine can resolve names without re-loading the file.
+
+---
+
 ## Usage
 
 ### 1. Via `ColliderComponent` (recommended)
