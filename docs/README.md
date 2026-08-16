@@ -71,6 +71,7 @@ namespace YourGame
   - [XML Entity Definitions](./XMLEntityDefinitions.md)
   - [Event System](./EventSystem.md)
   - [Animation Component](./AnimationComponent.md)
+  - [Z-Order Render Layers](./ZOrderRenderLayers.md)
 - [Sprite System](./SpriteSystem.md)
   - [Sprite Scaling](./SpriteScaling.md)
   - [Migration Guide: Sprite Consolidation](./Migration_Guide_SpriteConsolidation.md)

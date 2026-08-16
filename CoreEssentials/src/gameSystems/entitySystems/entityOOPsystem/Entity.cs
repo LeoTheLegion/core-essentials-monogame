@@ -76,6 +76,14 @@ public abstract class Entity
     protected int sort;
 
     /// <summary>
+    /// The z-order layer of the entity, used for render batching across textures.
+    /// Entities are rendered layer-by-layer from low to high z-layer (back to front).
+    /// Within a single z-layer, entities are batched by texture and ordered by <see cref="sort"/>.
+    /// Defaults to 0 to preserve backward compatibility with texture-only batching.
+    /// </summary>
+    protected int zLayer;
+
+    /// <summary>
     /// Flag indicating whether the entity has been destroyed.
     /// </summary>
     protected bool _destroyed;
@@ -613,6 +621,35 @@ public abstract class Entity
     /// </summary>
     /// <returns>The sort order value.</returns>
     public virtual int GetSort() { return sort; }
+
+    /// <summary>
+    /// Gets or sets the z-order layer of the entity.
+    /// Entities are rendered layer-by-layer from low to high z-layer (back to front).
+    /// Within a single z-layer, entities are batched by texture and ordered by sort order.
+    /// Defaults to 0 to preserve backward compatibility with texture-only batching.
+    /// </summary>
+    public virtual int ZLayer
+    {
+        get => zLayer;
+        set => zLayer = value;
+    }
+
+    /// <summary>
+    /// Sets the z-order layer of the entity.
+    /// </summary>
+    /// <param name="layer">The z-order layer value.</param>
+    /// <returns>The current entity instance.</returns>
+    public virtual Entity SetZLayer(int layer)
+    {
+        zLayer = layer;
+        return this;
+    }
+
+    /// <summary>
+    /// Gets the current z-order layer of the entity.
+    /// </summary>
+    /// <returns>The z-order layer value.</returns>
+    public virtual int GetZLayer() { return zLayer; }
 
     /// <summary>
     /// Sets whether the entity is active.
