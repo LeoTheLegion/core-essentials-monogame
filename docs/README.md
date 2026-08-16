@@ -75,6 +75,7 @@ namespace YourGame
   - [Sprite Scaling](./SpriteScaling.md)
   - [Migration Guide: Sprite Consolidation](./Migration_Guide_SpriteConsolidation.md)
 - [Physics System](./PhysicsSystem.md)
+  - [Collision Groups & Filtering](./CollisionGroups.md)
   - [Migration Guide: Legacy → New Physics API](./Migration_Guide_Physics.md)
 - [GUI System](./GUISystem.md)
   - [Migration Guide: Myra → Abstraction Layer](./GUI_Migration_Guide.md)

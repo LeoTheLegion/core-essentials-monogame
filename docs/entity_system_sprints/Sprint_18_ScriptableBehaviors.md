@@ -1,8 +1,15 @@
 # Sprint 18 — Scriptable Behaviors 📜
 
 **Points:** 6.5  
-**Status:** Not Started  
+**Status:** Won't Do ❌  
 **Sprint Goal:** Attach coroutines or scripts declaratively via XML or API.
+
+> ## ❌ Won't Do (2026-08-15)
+> A "script" is just a **component with an update loop**. The existing systems already provide declarative behavior attachment:
+> - **Behavior as state + update** → Sprint 6 (Lightweight Components)
+> - **Declarative XML attachment** → Sprint 10 (XML Entity Definitions, `<Components>` section)
+>
+> `ScriptRegistry` would be a thin wrapper over the existing `IComponentFactory`. Redundant with 6 + 10.
 
 **Dependencies:** Sprint 3 (Event System), Sprint 6 (Components)
 

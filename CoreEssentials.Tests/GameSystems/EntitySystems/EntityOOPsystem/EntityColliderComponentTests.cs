@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Microsoft.Xna.Framework;
 using Xunit;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
@@ -472,6 +473,103 @@ public class ColliderComponentTests : IDisposable
         // Assert - physics body should be destroyed by component lifecycle, not manually
         Assert.False(rigidbody.IsBodyCreated);
         Assert.Empty(entity.Components);
+    }
+
+    // ===== Per-frame auto-sizing Tests =====
+    // A circle collider derives its radius from the owner's rendered sprite each frame
+    // (spriteSize * scale / 2) and only rebuilds the Aether fixture when that value changes.
+
+    private static Sprite CreateTextureSprite(int width, int height)
+    {
+        var sprite = new Sprite("auto.xml");
+        sprite.TestMetaData = new Sprite.SpriteMeta
+        {
+            SourceType = "texture2d",
+            Size = new Sprite.Size { Width = width, Height = height }
+        };
+        return sprite;
+    }
+
+    [Fact]
+    public void Update_AutoSizing_ScalesCircleColliderToSprite()
+    {
+        // Arrange: 64x64 sprite, entity scale 2x -> expected radius = 64 * 2 / 2 = 64
+        var entity = _entitySystem.CreateEntity<TestEntity>();
+        entity.AddComponent(new RigidbodyComponent(RigidbodyType.Dynamic));
+        entity.AddComponent(new SpriteComponent(CreateTextureSprite(64, 64)));
+        entity.Scale = new Vector2(2f, 2f);
+        var component = new ColliderComponent(1.0f);
+        entity.AddComponent(component);
+
+        // Act (TestEntity.Update is a no-op override, so drive the component directly.)
+        component.Update(new GameTime());
+
+        // Assert
+        Assert.Equal(64.0f, component.Collider!.Shape!.Radius, precision: 3);
+    }
+
+    [Fact]
+    public void Update_AutoSizing_RebuildsOnlyWhenScaleChanges()
+    {
+        // Arrange: 64x64 sprite, scale 1x -> radius 32
+        var entity = _entitySystem.CreateEntity<TestEntity>();
+        entity.AddComponent(new RigidbodyComponent(RigidbodyType.Dynamic));
+        entity.AddComponent(new SpriteComponent(CreateTextureSprite(64, 64)));
+        entity.Scale = new Vector2(1f, 1f);
+        var component = new ColliderComponent(1.0f);
+        entity.AddComponent(component);
+
+        // Act (TestEntity.Update is a no-op override, so drive the component directly.)
+        component.Update(new GameTime());
+        float firstRadius = component.Collider!.Shape!.Radius;
+        Assert.Equal(32.0f, firstRadius, precision: 3);
+
+        // Act: no scale change -> radius stays, and the fixture is NOT rebuilt.
+        component.Update(new GameTime());
+
+        // Assert
+        Assert.Equal(32.0f, component.Collider.Shape.Radius, precision: 3);
+
+        // Act: scale up to 2x -> radius should grow to 64.
+        entity.Scale = new Vector2(2f, 2f);
+        component.Update(new GameTime());
+
+        // Assert
+        Assert.Equal(64.0f, component.Collider.Shape.Radius, precision: 3);
+    }
+
+    [Fact]
+    public void Update_AutoSizing_NoSpriteComponent_LeavesRadiusUntouched()
+    {
+        // Arrange: circle collider with no sprite on the entity
+        var entity = _entitySystem.CreateEntity<TestEntity>();
+        entity.AddComponent(new RigidbodyComponent(RigidbodyType.Dynamic));
+        var component = new ColliderComponent(5.0f);
+        entity.AddComponent(component);
+
+        // Act
+        component.Update(new GameTime());
+
+        // Assert: radius unchanged
+        Assert.Equal(5.0f, component.Collider!.Shape!.Radius, precision: 3);
+    }
+
+    [Fact]
+    public void Update_AutoSizing_RectangleCollider_IsIgnored()
+    {
+        // Arrange: rectangle collider should never be auto-resized
+        var entity = _entitySystem.CreateEntity<TestEntity>();
+        entity.AddComponent(new RigidbodyComponent(RigidbodyType.Dynamic));
+        entity.AddComponent(new SpriteComponent(CreateTextureSprite(64, 64)));
+        entity.Scale = new Vector2(2f, 2f);
+        var component = new ColliderComponent(new Vector2(3f, 5f));
+        entity.AddComponent(component);
+
+        // Act
+        component.Update(new GameTime());
+
+        // Assert: rectangle size unchanged
+        Assert.Equal(new Vector2(3f, 5f), component.Size);
     }
 }
 

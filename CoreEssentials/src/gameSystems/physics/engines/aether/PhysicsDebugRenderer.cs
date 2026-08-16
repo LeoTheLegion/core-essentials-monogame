@@ -1,28 +1,43 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems.Physics.Types;
+using nkast.Aether.Physics2D.Diagnostics;
 
 namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 
 /// <summary>
-/// Debug renderer for physics bodies that visualizes physics shapes and colliders.
-/// Provides visual representation of the physics entities in the game world using our abstraction layer.
+/// Debug renderer for physics bodies.
+/// <para>
+/// This is the Aether-specific implementation of <see cref="IPhysicsDebugRenderer"/>.
+/// It delegates to Aether's built-in <see cref="DebugView"/>, which can visualize
+/// shapes (colored by body type), joints, contact points, broad-phase AABBs,
+/// controllers, center-of-mass axes, a live performance graph, and a stats panel.
+/// </para>
+/// <para>
+/// The public API stays engine-agnostic: consumers only see <see cref="IsEnabled"/>
+/// and <see cref="Draw"/>. The richer Aether features (per-category flags, colors,
+/// panels) are exposed on this concrete type for callers that want them.
+/// </para>
 /// </summary>
 public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
 {
-    private readonly IPhysicsWorld _world;
+    private readonly PhysicsEngine _engine;
+    private DebugView? _debugView;
+    private bool _contentLoaded;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the PhysicsDebugRenderer class.
     /// </summary>
-    /// <param name="world">The physics world containing the bodies to debug render.</param>
-    public PhysicsDebugRenderer(IPhysicsWorld world)
+    /// <param name="engine">The Aether-backed physics engine whose world will be visualized.</param>
+    public PhysicsDebugRenderer(PhysicsEngine engine)
     {
-        _world = world ?? throw new ArgumentNullException(nameof(world));
+        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        _debugView = new DebugView(_engine.AetherWorld);
+        // Sensible defaults: show shapes, joints, and contact points.
+        _debugView.AppendFlags(DebugViewFlags.ContactPoints);
     }
-
-    private bool _disposed;
 
     #region IDisposable (inherited from IPhysicsDebugRenderer)
 
@@ -43,7 +58,8 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
 
         if (disposing)
         {
-            // No managed resources to dispose.
+            _debugView?.Dispose();
+            _debugView = null;
         }
 
         _disposed = true;
@@ -55,108 +71,56 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     public bool IsEnabled { get; set; }
 
     /// <summary>
-    /// Draws debug visualizations for all physics bodies.
+    /// Gets the underlying Aether <see cref="DebugView"/> for advanced configuration
+    /// (colors, panel positions, per-category flags).
     /// </summary>
-    /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
+    public DebugView DebugView => _debugView!;
+
+    /// <summary>
+    /// Gets or sets which categories of debug data to render (shapes, joints, AABBs,
+    /// contact points, performance graph, etc.).
+    /// </summary>
+    public DebugViewFlags Flags
+    {
+        get => _debugView!.Flags;
+        set => _debugView!.Flags = value;
+    }
+
+    /// <summary>
+    /// Loads the renderer's content (Aether's <c>DiagnosticsFont</c>) from the game's
+    /// <see cref="Game.Content"/>. Safe to call multiple times; it only loads once.
+    /// Must be called after the graphics device exists (e.g. during scene start).
+    /// </summary>
+    public void LoadContent()
+    {
+        if (_contentLoaded) return;
+
+        var game = Game;
+        if (game == null)
+            throw new InvalidOperationException("Cannot load debug renderer content before the scene is attached.");
+
+        _debugView!.LoadContent(game.Graphics.GraphicsDevice, game.Content);
+        _contentLoaded = true;
+    }
+
+    /// <summary>
+    /// Draws debug visualizations for all physics bodies using Aether's DebugView.
+    /// </summary>
+    /// <param name="spriteBatch">The SpriteBatch used for drawing (unused by the Aether primitive batch, kept for interface compatibility).</param>
     public void Draw(SpriteBatch spriteBatch)
     {
-        if (!IsEnabled)
+        if (!IsEnabled || _debugView == null)
             return;
 
-        spriteBatch.Begin();
+        if (!_contentLoaded)
+            LoadContent();
 
-        foreach (var body in _world.GetBodies())
-        {
-            var position = body.Position;
-            var rotation = body.Rotation;
+        // The physics world uses screen-pixel coordinates, so map world (x, y)
+        // straight onto the viewport with an identity view/world matrix.
+        var viewport = Game!.Graphics.GraphicsDevice.Viewport;
+        var projection = Matrix.CreateOrthographicOffCenter(
+            0f, viewport.Width, viewport.Height, 0f, 0f, 1f);
 
-            foreach (var fixture in body.Colliders)
-            {
-                if (!fixture.IsActive)
-                    continue;
-
-                DrawFixture(spriteBatch, fixture, position, rotation);
-            }
-        }
-
-        spriteBatch.End();
-    }
-
-    /// <summary>
-    /// Draws a physics fixture based on its shape type.
-    /// </summary>
-    private static void DrawFixture(SpriteBatch spriteBatch, ICollider fixture, Vector2 position, float rotation)
-    {
-        var shape = fixture.Shape;
-        if (shape == null)
-            return;
-
-        switch (shape.GetShapeType())
-        {
-            case ShapeType.Polygon:
-            case ShapeType.Rectangle:
-                DrawPolygon(spriteBatch, shape, position, rotation);
-                break;
-            case ShapeType.Circle:
-                DrawCircle(spriteBatch, shape, position, rotation);
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Draws a circular physics shape.
-    /// </summary>
-    private static void DrawCircle(SpriteBatch spriteBatch, IShape shape, Vector2 bodyPosition, float rotation)
-    {
-        var center = bodyPosition + RotateVector(shape.Center, rotation);
-        var radius = shape.Radius;
-
-        // Apply world scale (default 16x for pixel conversion)
-        const float scale = 16f;
-        center *= scale;
-        radius *= scale;
-
-        Debug.Primitives.DrawCircle(spriteBatch, center, radius, Color.Green, 16);
-    }
-
-    /// <summary>
-    /// Draws a polygon or rectangle physics shape.
-    /// </summary>
-    private static void DrawPolygon(SpriteBatch spriteBatch, IShape shape, Vector2 bodyPosition, float rotation)
-    {
-        var vertices = shape.Vertices;
-
-        if (vertices.Count < 3)
-            return;
-
-        // Transform and scale all vertices
-        var transformedVertices = new Vector2[vertices.Count];
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            transformedVertices[i] = bodyPosition + RotateVector(vertices[i], rotation);
-        }
-
-        float f_scale = 16f; // Default scale - should be configurable
-
-        for (int j = 0; j < vertices.Count; j++)
-        {
-            var v1 = transformedVertices[j] * f_scale;
-            var v2 = transformedVertices[(j + 1) % vertices.Count] * f_scale;
-
-            Debug.Primitives.DrawLine(spriteBatch, v1, v2, Color.Green, 2);
-        }
-    }
-
-    /// <summary>
-    /// Rotates a vector by the given angle in radians.
-    /// </summary>
-    private static Vector2 RotateVector(Vector2 vector, float angle)
-    {
-        float cos = MathF.Cos(angle);
-        float sin = MathF.Sin(angle);
-        return new Vector2(
-            vector.X * cos - vector.Y * sin,
-            vector.X * sin + vector.Y * cos
-        );
+        _debugView.RenderDebugData(projection, Matrix.Identity, Matrix.Identity);
     }
 }

@@ -1,0 +1,16 @@
+<PhysicsConfig>
+    <!-- Global gravity. In MonoGame +Y is down on screen, so a positive Y pulls objects toward the bottom. -->
+    <Gravity X="0" Y="1000" />
+
+    <!-- Solver tuning: higher values = more accurate but cost more CPU. -->
+    <Solver VelocityIterations="8" PositionIterations="3" />
+
+    <!-- Named collision categories. The bit is assigned by ORDER:
+         first Category = bit 1, second = bit 2, and so on (up to 31).
+         Use these names in code via PhysicsEngine.Config.Resolve("Player"). -->
+    <Categories>
+        <Category Name="Player" />
+        <Category Name="Vip" />
+        <Category Name="Wall" />
+    </Categories>
+</PhysicsConfig>

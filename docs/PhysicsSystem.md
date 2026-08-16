@@ -195,6 +195,33 @@ collider.Deactivate(); // Disable collision detection
 
 ---
 
+## Auto-Sized Circle Colliders 📏
+
+A `ColliderComponent` with a **circle** shape automatically keeps its radius in sync with the entity's rendered sprite. Every frame it derives the radius from the owner's `SpriteComponent`:
+
+```
+radius = spriteWidth * entityScale.X / 2
+```
+
+This means you can scale an entity (e.g. a "VIP" ball drawn at 2×) and the collider follows automatically — the physics shape always hugs what is drawn. No manual `UpdateCircleRadius` call is required.
+
+```csharp
+// The collider tracks the sprite automatically.
+ball.Scale = new Vector2(2.0f, 2.0f);   // collider grows to match on the next frame
+```
+
+### How it stays cheap
+
+Aether fixtures are **immutable** — a fixture's shape cannot be resized in place, so changing the radius requires destroying the old fixture and creating a new one. To avoid doing that every frame, the component **only rebuilds the fixture when the computed radius actually changes** (a simple float comparison with a small epsilon). In steady state — where the scale is constant — it is a single comparison per frame with no fixture churn.
+
+### Scope
+
+- Applies to **circle** colliders only. Rectangle, polygon, and convex-hull colliders are left untouched (their geometry is not derived from the sprite).
+- Requires a `SpriteComponent` with a loaded sprite on the same entity. Without one, the radius is left as-is.
+- The radius is derived from the sprite's **width** (assumes a square sprite; for non-square sprites the X dimension is used).
+
+---
+
 ## World Management
 
 ```csharp

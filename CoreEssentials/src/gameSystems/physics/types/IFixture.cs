@@ -33,6 +33,19 @@ public interface ICollider : IDisposable
     float Restitution { get; set; }
 
     /// <summary>
+    /// Gets or sets the collision categories this fixture belongs to.
+    /// A fixture can only collide with another fixture if their categories/masks are compatible.
+    /// Defaults to <see cref="CollisionCategory.Cat1"/>.
+    /// </summary>
+    CollisionCategory Categories { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mask of categories this fixture is willing to collide with.
+    /// Defaults to <see cref="CollisionCategory.All"/> (collides with every category).
+    /// </summary>
+    CollisionCategory CollidesWith { get; set; }
+
+    /// <summary>
     /// Activates this fixture so it participates in collision detection.
     /// </summary>
     void Activate();

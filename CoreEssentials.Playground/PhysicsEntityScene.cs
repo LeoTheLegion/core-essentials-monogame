@@ -5,6 +5,7 @@ using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
+using CoreEssentials.GameSystems.Physics.Types;
 using CoreEssentials.Inputs;
 using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
@@ -12,6 +13,7 @@ using CoreEssentials.GUI;
 using CoreEssentials.GUI.Factory;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
@@ -22,13 +24,21 @@ public class PhysicsEntityScene : Scene
     private readonly Random _random = new();
     private IButton _saveButton;
     private IButton _loadButton;
+    private PhysicsDebugRenderer _physicsDebugRenderer;
+    private PhysicsConfig _physicsConfig;
     private const string SaveFilePath = "PhysicsScene_Save.xml";
-    
+
     protected override GameSystem[] LoadGameSystems()
     {
         // Load all the game systems you want to use in your game here.
-        PhysicsEngine physicsEngine = new PhysicsEngine();
-        PhysicsDebugRenderer physicsDebugRenderer = new PhysicsDebugRenderer(physicsEngine);
+        // Physics settings (gravity, solver iterations) and named collision categories
+        // come from a declarative Content/PhysicsConfig.xml file.
+        _physicsConfig = PhysicsConfig.LoadFromAsset("PhysicsConfig.xml");
+        PhysicsEngine physicsEngine = new PhysicsEngine(_physicsConfig);
+        // Aether-backed debug renderer (toggle with F1). Content is loaded lazily
+        // in OnStartCoroutine once the graphics device exists.
+        _physicsDebugRenderer = new PhysicsDebugRenderer(physicsEngine);
+        PhysicsDebugRenderer physicsDebugRenderer = _physicsDebugRenderer;
         EntitySystem entitySystem = new EntitySystem();
 
         GameSystem[] systems = new GameSystem[]
@@ -54,7 +64,10 @@ public class PhysicsEntityScene : Scene
         graphics.PreferredBackBufferWidth = 1280;
         graphics.PreferredBackBufferHeight = 720;
         graphics.ApplyChanges();
-        
+
+        // Load the physics debug renderer's font now that the graphics device exists.
+        _physicsDebugRenderer?.LoadContent();
+
         UpdateLoadingProgress(0.55f, "Setting up entities...");
         
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
@@ -75,6 +88,9 @@ public class PhysicsEntityScene : Scene
 
             Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", new Vector2(x, y));
             // ID auto-generated on creation
+            // Sprint 19 demo: regular balls only collide with other regular balls.
+            // The "Player" category name is resolved from PhysicsConfig.xml.
+            SetBallCollisionFilter(ball, _physicsConfig.Resolve("Player"), _physicsConfig.Resolve("Player"));
             // add Random force to the ball
             ball.GetComponent<RigidbodyComponent>().ApplyImpulse(new Vector2(
                 (float)(_random.NextDouble() * 10 - 5), 
@@ -112,8 +128,14 @@ public class PhysicsEntityScene : Scene
         {
             Ball ball = (Ball)entitySystem.Instantiate("BallPrefab", pos);
             ball.SetId(id);
-            
-            // Make VIP balls larger and set their unique color
+
+            // Sprint 19 demo: VIP balls only collide with other VIP balls.
+            // The "Vip" category name is resolved from PhysicsConfig.xml.
+            SetBallCollisionFilter(ball, _physicsConfig.Resolve("Vip"), _physicsConfig.Resolve("Vip"));
+
+            // Make VIP balls larger and set their unique color.
+            // The ColliderComponent auto-sizes its circle collider to the (now larger)
+            // sprite on the next frame, so no manual collider update is needed here.
             ball.Scale = new Vector2(2.0f, 2.0f);
             var spriteComp = ball.GetComponent<SpriteComponent>();
             if (spriteComp != null)
@@ -150,6 +172,29 @@ public class PhysicsEntityScene : Scene
         UpdateLoadingProgress(1.0f, "Scene ready!");
         
         Console.WriteLine("Physics entity scene initialization complete!");
+    }
+
+    /// <summary>
+    /// Applies a collision filter to a ball's collider (Sprint 19 demo).
+    /// The collider is created during Instantiate, so we set the live ICollider here.
+    /// </summary>
+    private static void SetBallCollisionFilter(Ball ball, CollisionCategory categories, CollisionCategory collidesWith)
+    {
+        var colliderComponent = ball.GetComponent<ColliderComponent>();
+        if (colliderComponent?.Collider == null)
+        {
+            Console.WriteLine($"[CollisionFilter] Ball {ball.Id} has no collider — skipping filter");
+            return;
+        }
+
+        // Keep the component's stored values in sync so save/load round-trips the filter.
+        colliderComponent.Categories = categories;
+        colliderComponent.CollidesWith = collidesWith;
+
+        colliderComponent.Collider.Categories = categories;
+        colliderComponent.Collider.CollidesWith = collidesWith;
+
+        Console.WriteLine($"[CollisionFilter] Ball {ball.Id}: Categories={categories}, CollidesWith={collidesWith}");
     }
 
     public override void Unload()
@@ -235,11 +280,33 @@ public class PhysicsEntityScene : Scene
     {
         return (sender, args) =>
         {
+            if (args.Key == Keys.F1)
+            {
+                // Toggle physics debug visualization (collider outlines).
+                if (_physicsDebugRenderer != null)
+                {
+                    _physicsDebugRenderer.IsEnabled = !_physicsDebugRenderer.IsEnabled;
+                    Console.WriteLine($"[PhysicsDebug] Enabled = {_physicsDebugRenderer.IsEnabled}");
+                }
+                return;
+            }
+
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.Add || args.Key == Keys.OemPlus)
             {
                 // Use SceneManager property directly here to get the current reference at the time of the event
                 SceneManager.LoadScene(new CameraScene());
             }
         };
+    }
+
+    /// <summary>
+    /// Draws the scene, then overlays the physics debug visualization when enabled (F1).
+    /// </summary>
+    public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+    {
+        base.Draw(gameTime, spriteBatch);
+
+        if (_physicsDebugRenderer != null && _physicsDebugRenderer.IsEnabled)
+            _physicsDebugRenderer.Draw(spriteBatch);
     }
 }
