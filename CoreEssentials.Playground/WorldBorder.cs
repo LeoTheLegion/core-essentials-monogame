@@ -46,22 +46,32 @@ public class WorldBorder : Entity
         if (physicsEngineResult == null) return;
         PhysicsEngine physicsEngine = physicsEngineResult;
 
+        // Sprint 19 demo: the border must contain BOTH regular (Cat1) and VIP (Cat2) balls.
+        const CollisionCategory allBalls = CollisionCategory.Cat1 | CollisionCategory.Cat2;
+
+        ICollider Configure(ICollider collider)
+        {
+            collider.Categories = allBalls;
+            collider.CollidesWith = allBalls;
+            return collider;
+        }
+
         var borders = new IPhysicsBody[4];
 
         // Create the left border
         borders[0] = physicsEngine.CreateStatic(new Vector2(Position.X, Position.Y + Size.Y / 2));
-        borders[0].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero);
+        Configure(borders[0].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero));
 
         // Create the right border
         borders[1] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X, Position.Y + Size.Y / 2));
-        borders[1].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero);
+        Configure(borders[1].CreateRectangleCollider(new Vector2(1, Size.Y), Vector2.Zero));
 
         // Create the top border
         borders[2] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X / 2, Position.Y));
-        borders[2].CreateRectangleCollider(new Vector2(Size.X, 1), Vector2.Zero);
+        Configure(borders[2].CreateRectangleCollider(new Vector2(Size.X, 1), Vector2.Zero));
 
         // Create the bottom border
         borders[3] = physicsEngine.CreateStatic(new Vector2(Position.X + Size.X / 2, Position.Y + Size.Y));
-        borders[3].CreateRectangleCollider(new Vector2(Size.X, 1), Vector2.Zero);
+        Configure(borders[3].CreateRectangleCollider(new Vector2(Size.X, 1), Vector2.Zero));
     }
 }

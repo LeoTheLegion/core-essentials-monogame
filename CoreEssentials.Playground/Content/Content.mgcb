@@ -38,6 +38,13 @@
 /processorParam:TextureFormat=Compressed
 /build:base.spritefont
 
+#begin DiagnosticsFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:DiagnosticsFont.spritefont
+
 #begin character_anim_walk.xml
 /copy:character_anim_walk.xml
 

@@ -68,6 +68,18 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
     public float Restitution { get; set; }
 
     /// <summary>
+    /// Gets or sets the collision categories this collider belongs to.
+    /// Defaults to <see cref="CollisionCategory.Cat1"/>. Applied to the underlying collider when it is created.
+    /// </summary>
+    public CollisionCategory Categories { get; set; } = CollisionCategory.Cat1;
+
+    /// <summary>
+    /// Gets or sets the mask of categories this collider is willing to collide with.
+    /// Defaults to <see cref="CollisionCategory.All"/>. Applied to the underlying collider when it is created.
+    /// </summary>
+    public CollisionCategory CollidesWith { get; set; } = CollisionCategory.All;
+
+    /// <summary>
     /// Gets or sets the local offset from the body's center.
     /// </summary>
     public Vector2 Offset { get; set; }
@@ -190,6 +202,36 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
         DestroyCollider();
     }
 
+    /// <inheritdoc/>
+    public override void Update(GameTime gameTime)
+    {
+        // Auto-size circle colliders to hug the owner's rendered sprite. The radius is
+        // derived from the sprite size scaled by the entity transform, so the collider
+        // always matches what is drawn. Aether fixtures are immutable, so we only
+        // destroy + recreate the collider when the computed radius actually changes —
+        // the dirty-check below keeps this a cheap no-op in steady state.
+        if (ShapeType != ColliderShapeType.Circle || _collider == null || Owner == null)
+            return;
+
+        if (!Owner.TryGetComponent<SpriteComponent>(out var spriteComponent) || spriteComponent?.Sprite == null)
+            return;
+
+        Vector2 spriteSize;
+        try
+        {
+            spriteSize = spriteComponent.Sprite.GetSize();
+        }
+        catch (InvalidOperationException)
+        {
+            return; // Sprite metadata not loaded yet.
+        }
+
+        float targetRadius = spriteSize.X / 2f * Owner.Scale.X;
+        float currentRadius = _collider.Shape?.Radius ?? Radius;
+        if (Math.Abs(targetRadius - currentRadius) > 0.0001f)
+            UpdateCircleRadius(targetRadius);
+    }
+
     /// <summary>
     /// Creates the collider on the RigidbodyComponent's body.
     /// Must be called after the RigidbodyComponent has created its body.
@@ -241,6 +283,8 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
 
         _collider.Friction = Friction;
         _collider.Restitution = Restitution;
+        _collider.Categories = Categories;
+        _collider.CollidesWith = CollidesWith;
     }
 
     /// <summary>
@@ -295,6 +339,8 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
             new XAttribute("ShapeType", ShapeType.ToString()),
             new XAttribute("Friction", Friction),
             new XAttribute("Restitution", Restitution),
+            new XAttribute("Categories", Categories.ToString()),
+            new XAttribute("CollidesWith", CollidesWith.ToString()),
             new XAttribute("OffsetX", Offset.X),
             new XAttribute("OffsetY", Offset.Y),
             ShapeType == ColliderShapeType.Circle ? new XAttribute("Radius", Radius) : null,
@@ -311,6 +357,8 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
     {
         Friction = float.Parse(element.Attribute("Friction")?.Value ?? "0.5");
         Restitution = float.Parse(element.Attribute("Restitution")?.Value ?? "0.5");
+        Categories = ParseCategory(element.Attribute("Categories")?.Value, CollisionCategory.Cat1);
+        CollidesWith = ParseCategory(element.Attribute("CollidesWith")?.Value, CollisionCategory.All);
 
         Offset = new Vector2(
             float.Parse(element.Attribute("OffsetX")?.Value ?? "0"),
@@ -328,5 +376,18 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
                 float.Parse(element.Attribute("SizeY")?.Value ?? "1")
             );
         }
+    }
+
+    /// <summary>
+    /// Parses a flags-enum category value from a string, falling back to <paramref name="fallback"/> on any parse failure.
+    /// </summary>
+    /// <param name="value">The category string (e.g. "Cat1" or "Cat1, Cat2").</param>
+    /// <param name="fallback">The value to return when <paramref name="value"/> is null, empty, or unparseable.</param>
+    private static CollisionCategory ParseCategory(string? value, CollisionCategory fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return fallback;
+
+        return Enum.TryParse<CollisionCategory>(value, ignoreCase: true, out var parsed) ? parsed : fallback;
     }
 }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Diagnostics font used by Aether.Physics2D's built-in DebugView.
+Aether's DebugView.LoadContent hard-codes: content.Load<SpriteFont>("DiagnosticsFont").
+We provide our own font under that asset name so no external package font is required.
+-->
+<XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
+  <Asset Type="Graphics:FontDescription">
+
+    <FontName>Arial</FontName>
+
+    <!-- Slightly larger than the UI font for readable debug panels/labels. -->
+    <Size>14</Size>
+
+    <Spacing>0</Spacing>
+
+    <UseKerning>true</UseKerning>
+
+    <Style>Regular</Style>
+
+    <CharacterRegions>
+      <CharacterRegion>
+        <Start>&#32;</Start>
+        <End>&#126;</End>
+      </CharacterRegion>
+    </CharacterRegions>
+  </Asset>
+</XnaContent>

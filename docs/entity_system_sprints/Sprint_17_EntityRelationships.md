@@ -1,8 +1,17 @@
 # Sprint 17 — Entity Relationships 🔗
 
 **Points:** 4.5  
-**Status:** Not Started  
+**Status:** Won't Do ❌  
 **Sprint Goal:** Weak-reference relationships between entities (target, owner, follower, etc.).
+
+> ## ❌ Won't Do (2026-08-15)
+> A generic "named reference bag" is a game-design convenience, not a library primitive. Every real use case is already covered by existing sprints:
+> - **Structural links** → Sprint 4 (Parent-Child Hierarchy)
+> - **Decoupling** → Sprint 3 (Event System)
+> - **Scene-time linking** → Sprint 10 (XML `<References>`)
+> - **Cleanup on destroy** → Sprint 16 (Lifecycle Hooks — subscribe to `OnDestroy`)
+>
+> A homing missile can simply hold `Entity target` and check `target.IsDestroyed`. This sprint would reinvent what 3 + 4 + 10 + 16 already provide.
 
 ---
 
