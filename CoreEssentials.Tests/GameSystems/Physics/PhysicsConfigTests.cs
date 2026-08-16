@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 #nullable enable
@@ -18,9 +19,9 @@ public class PhysicsConfigTests
     <Gravity X=""0"" Y=""1000"" />
     <Solver VelocityIterations=""10"" PositionIterations=""4"" />
     <Categories>
-        <Category Name=""Player"" Bit=""1"" />
-        <Category Name=""Vip"" Bit=""2"" />
-        <Category Name=""Wall"" Bit=""3"" />
+        <Category Name=""Player"" />
+        <Category Name=""Vip"" />
+        <Category Name=""Wall"" />
     </Categories>
 </PhysicsConfig>";
 
@@ -56,7 +57,7 @@ public class PhysicsConfigTests
     [Fact]
     public void LoadFromXml_MissingGravity_UsesZero()
     {
-        var xml = "<PhysicsConfig><Categories><Category Name=\"A\" Bit=\"1\" /></Categories></PhysicsConfig>";
+        var xml = "<PhysicsConfig><Categories><Category Name=\"A\" /></Categories></PhysicsConfig>";
         var config = PhysicsConfig.LoadFromXml(xml);
 
         Assert.Equal(Vector2.Zero, config.Gravity);
@@ -206,7 +207,7 @@ public class PhysicsConfigTests
     public void LoadFromXml_DuplicateName_Throws()
     {
         var xml = "<PhysicsConfig><Categories>" +
-                  "<Category Name=\"A\" Bit=\"1\" /><Category Name=\"A\" Bit=\"2\" />" +
+                  "<Category Name=\"A\" /><Category Name=\"A\" />" +
                   "</Categories></PhysicsConfig>";
 
         var ex = Assert.Throws<FormatException>(() => PhysicsConfig.LoadFromXml(xml));
@@ -214,45 +215,21 @@ public class PhysicsConfigTests
     }
 
     [Fact]
-    public void LoadFromXml_DuplicateBit_Throws()
+    public void LoadFromXml_TooManyCategories_Throws()
     {
-        var xml = "<PhysicsConfig><Categories>" +
-                  "<Category Name=\"A\" Bit=\"1\" /><Category Name=\"B\" Bit=\"1\" />" +
-                  "</Categories></PhysicsConfig>";
+        // Order-based bits: the 32nd category would need bit 32, which doesn't exist.
+        var categories = string.Concat(
+            Enumerable.Range(1, 32).Select(i => $"<Category Name=\"C{i}\" />"));
+        var xml = $"<PhysicsConfig><Categories>{categories}</Categories></PhysicsConfig>";
 
         var ex = Assert.Throws<FormatException>(() => PhysicsConfig.LoadFromXml(xml));
-        Assert.Contains("Duplicate bit", ex.Message);
-    }
-
-    [Fact]
-    public void LoadFromXml_OutOfRangeBit_Throws()
-    {
-        var xml = "<PhysicsConfig><Categories><Category Name=\"A\" Bit=\"32\" /></Categories></PhysicsConfig>";
-
-        var ex = Assert.Throws<FormatException>(() => PhysicsConfig.LoadFromXml(xml));
-        Assert.Contains("out-of-range", ex.Message);
-    }
-
-    [Fact]
-    public void LoadFromXml_ZeroBit_Throws()
-    {
-        var xml = "<PhysicsConfig><Categories><Category Name=\"A\" Bit=\"0\" /></Categories></PhysicsConfig>";
-
-        Assert.Throws<FormatException>(() => PhysicsConfig.LoadFromXml(xml));
-    }
-
-    [Fact]
-    public void LoadFromXml_MissingBit_Throws()
-    {
-        var xml = "<PhysicsConfig><Categories><Category Name=\"A\" /></Categories></PhysicsConfig>";
-
-        Assert.Throws<FormatException>(() => PhysicsConfig.LoadFromXml(xml));
+        Assert.Contains("Too many categories", ex.Message);
     }
 
     [Fact]
     public void LoadFromXml_MissingName_Throws()
     {
-        var xml = "<PhysicsConfig><Categories><Category Bit=\"1\" /></Categories></PhysicsConfig>";
+        var xml = "<PhysicsConfig><Categories><Category /></Categories></PhysicsConfig>";
 
         Assert.Throws<FormatException>(() => PhysicsConfig.LoadFromXml(xml));
     }
@@ -271,11 +248,15 @@ public class PhysicsConfigTests
     }
 
     [Fact]
-    public void ResolveMask_HighBit_31_Works()
+    public void LoadFromXml_Max31Categories_Works()
     {
-        var xml = "<PhysicsConfig><Categories><Category Name=\"Top\" Bit=\"31\" /></Categories></PhysicsConfig>";
+        // Order-based bits: the 31st category is bit 31 (the maximum).
+        var categories = string.Concat(
+            Enumerable.Range(1, 31).Select(i => $"<Category Name=\"C{i}\" />"));
+        var xml = $"<PhysicsConfig><Categories>{categories}</Categories></PhysicsConfig>";
         var config = PhysicsConfig.LoadFromXml(xml);
 
-        Assert.Equal(CollisionCategory.Cat31, config.Resolve("Top"));
+        Assert.Equal(31, config.Categories.Count);
+        Assert.Equal(CollisionCategory.Cat31, config.Resolve("C31"));
     }
 }

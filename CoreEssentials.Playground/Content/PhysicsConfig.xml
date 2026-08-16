@@ -5,11 +5,12 @@
     <!-- Solver tuning: higher values = more accurate but cost more CPU. -->
     <Solver VelocityIterations="8" PositionIterations="3" />
 
-    <!-- Named collision categories. Each maps a friendly name to a 1-31 bit.
+    <!-- Named collision categories. The bit is assigned by ORDER:
+         first Category = bit 1, second = bit 2, and so on (up to 31).
          Use these names in code via PhysicsEngine.Config.Resolve("Player"). -->
     <Categories>
-        <Category Name="Player" Bit="1" />
-        <Category Name="Vip" Bit="2" />
-        <Category Name="Wall" Bit="3" />
+        <Category Name="Player" />
+        <Category Name="Vip" />
+        <Category Name="Wall" />
     </Categories>
 </PhysicsConfig>

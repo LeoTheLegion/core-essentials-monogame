@@ -21,15 +21,20 @@ namespace CoreEssentials.GameSystems.Physics.Types;
 /// values and plain settings, so the underlying physics engine can be swapped without
 /// changing configuration.
 /// </para>
+/// <para>
+/// Categories are assigned bits by their <b>order of appearance</b> — the first
+/// <c>Category</c> is bit 1, the second is bit 2, and so on (up to 31). No
+/// explicit bit value is needed.
+/// </para>
 /// Example XML:
 /// <code>
 /// &lt;PhysicsConfig&gt;
 ///     &lt;Gravity X="0" Y="1000" /&gt;
 ///     &lt;Solver VelocityIterations="8" PositionIterations="3" /&gt;
 ///     &lt;Categories&gt;
-///         &lt;Category Name="Player" Bit="1" /&gt;
-///         &lt;Category Name="Vip" Bit="2" /&gt;
-///         &lt;Category Name="Wall" Bit="3" /&gt;
+///         &lt;Category Name="Player" /&gt;
+///         &lt;Category Name="Vip" /&gt;
+///         &lt;Category Name="Wall" /&gt;
 ///     &lt;/Categories&gt;
 /// &lt;/PhysicsConfig&gt;
 /// </code>
@@ -124,10 +129,13 @@ public sealed class PhysicsConfig
         var categoriesElement = FindChild(root, "Categories");
         if (categoriesElement != null)
         {
+            // Bits are assigned by order of appearance: first Category = bit 1, second = bit 2, etc.
+            int bit = 1;
             foreach (var categoryElement in categoriesElement.Elements()
                          .Where(e => string.Equals(e.Name.LocalName, "Category", StringComparison.OrdinalIgnoreCase)))
             {
-                config.AddCategory(categoryElement);
+                config.AddCategory(categoryElement, bit);
+                bit++;
             }
         }
 
@@ -169,31 +177,20 @@ public sealed class PhysicsConfig
             out var value) ? value : fallback;
     }
 
-    private void AddCategory(XElement categoryElement)
+    private void AddCategory(XElement categoryElement, int bit)
     {
         var name = categoryElement.Attribute("Name")?.Value;
         if (string.IsNullOrWhiteSpace(name))
             throw new FormatException("Category element is missing a 'Name' attribute.");
 
-        if (!int.TryParse(
-                categoryElement.Attribute("Bit")?.Value,
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int bit))
-        {
-            throw new FormatException($"Category '{name}' has a missing or invalid 'Bit' attribute.");
-        }
-
-        if (bit < 1 || bit > 31)
-            throw new FormatException($"Category '{name}' has an out-of-range bit ({bit}); valid range is 1-31.");
+        // Bits are assigned by order (1-based). There are only 31 usable bits.
+        if (bit > 31)
+            throw new FormatException($"Too many categories: only 31 are supported, but '{name}' would be bit {bit}.");
 
         var category = (CollisionCategory)(1 << (bit - 1));
 
         if (_nameToCategory.ContainsKey(name))
             throw new FormatException($"Duplicate category name '{name}'.");
-
-        if (_categoryToName.ContainsKey(category))
-            throw new FormatException($"Duplicate bit {bit}: already used by category '{_categoryToName[category]}'.");
 
         _nameToCategory[name] = category;
         _categoryToName[category] = name;

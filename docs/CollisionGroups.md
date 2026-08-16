@@ -62,11 +62,12 @@ Create `Content/PhysicsConfig.xml` (and add a `/copy:PhysicsConfig.xml` line to 
     <!-- Solver tuning. -->
     <Solver VelocityIterations="8" PositionIterations="3" />
 
-    <!-- Friendly name -> bit (1-31). -->
+    <!-- Friendly names. The bit is assigned by ORDER of appearance:
+         first Category = bit 1, second = bit 2, and so on (up to 31). -->
     <Categories>
-        <Category Name="Player" Bit="1" />
-        <Category Name="Vip"    Bit="2" />
-        <Category Name="Wall"   Bit="3" />
+        <Category Name="Player" />
+        <Category Name="Vip" />
+        <Category Name="Wall" />
     </Categories>
 </PhysicsConfig>
 ```
@@ -98,7 +99,7 @@ collider.CollidesWith = config.ResolveMask("Player|Wall");
 
 ### Validation
 
-The parser rejects duplicate names, duplicate bits, and out-of-range bits (1–31), throwing a `FormatException` with a descriptive message. A missing `Gravity`/`Solver` element falls back to defaults (`Vector2.Zero`, 8, 3).
+The bit for each category is assigned **by order of appearance** (first `<Category>` = bit 1 / `Cat1`, second = bit 2 / `Cat2`, …). The parser rejects duplicate names and more than 31 categories, throwing a `FormatException` with a descriptive message. A missing `Gravity`/`Solver` element falls back to defaults (`Vector2.Zero`, 8, 3).
 
 > **Tip:** the engine also exposes the config via `PhysicsEngine.Config`, so any system that already holds the engine can resolve names without re-loading the file.
 
