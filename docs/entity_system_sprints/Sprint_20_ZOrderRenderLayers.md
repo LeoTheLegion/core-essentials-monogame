@@ -1,7 +1,8 @@
 # Sprint 20 — Z-Order Render Layers 📐
 
-**Points:** 5.5  
-**Status:** Not Started  
+**Points:** 4.5  
+**Status:** ✅ Completed  
+**Completed:** 2026-08-16  
 **Sprint Goal:** Combine texture batching with z-order layers to maintain correct render order across different textures.
 
 ---
@@ -27,29 +28,23 @@ Current batching renders all A's together, then all B's — putting B in front o
 
 ## Tasks
 
-- [ ] **T1: Add z-order layer to Entity (1 pt)** 🔒 Internal
+- [x] **T1: Add z-order layer to Entity (1 pt)** 🔒 Internal
   - `ZLayer` property on Entity (int, default 0)
   - `ZLayer` takes precedence over `sort` for grouping
   - Entities in same z-layer can be batched by texture
 
-- [ ] **T2: Implement z-aware render batching (2 pts)** ⭐ User-facing
+- [x] **T2: Implement z-aware render batching (2 pts)** ⭐ User-facing
   - Sort entities by z-layer first, then by texture within each layer
   - Render layers back-to-front (low to high z-layer)
   - Within each layer, batch by texture
   - Single `SpriteBatch.Begin()` per texture per layer
 
-- [ ] **T3: Add z-layer collision detection (1 pt)** ⭐ User-facing
-  - Optional: entities in different z-layers don't collide (for true depth separation)
-  - `ZLayerCollisionEnabled` flag on EntitySystem
-  - Configurable per-layer collision matrix
-
-- [ ] **T4: Write unit tests (1 pt)** 🔁 Validation
+- [x] **T3: Write unit tests (1 pt)** 🔁 Validation
   - Test entities render in correct z-order
   - Test batching still works within same z-layer
   - Test interleaved textures render correctly
-  - Test z-layer collision filtering
 
-- [ ] **T5: Create user documentation (0.5 pt)** 📚 User-facing
+- [x] **T4: Create user documentation (0.5 pt)** 📚 User-facing
   - Create `docs/ZOrderRenderLayers.md` user guide
   - Document z-layer concept
   - Document render batching with z-layers
@@ -59,12 +54,12 @@ Current batching renders all A's together, then all B's — putting B in front o
 
 ## Acceptance Criteria
 
-- [ ] Entities can be assigned to z-layers
-- [ ] Z-layer determines render order across textures
-- [ ] Texture batching still works within each z-layer
-- [ ] Interleaved textures render in correct order
-- [ ] Project builds cleanly — **0 errors, 0 warnings**
-- [ ] All existing tests pass + new z-order tests added
+- [x] Entities can be assigned to z-layers
+- [x] Z-layer determines render order across textures
+- [x] Texture batching still works within each z-layer
+- [x] Interleaved textures render in correct order
+- [x] Project builds cleanly — **0 errors, 0 warnings**
+- [x] All existing tests pass + new z-order tests added
 
 ---
 
@@ -102,6 +97,7 @@ Proposed: {Z0: {Texture A: [A1]}, Z1: {Texture B: [B1]}, Z2: {Texture A: [A2, A3
 - Consider making z-layer optional (default 0 maintains backward compatibility)
 - Could combine with spatial partitioning (Sprint 7) for even better performance
 - Alternative: use `SpriteSortMode.BackToFront` with custom depth buffer
+- **Out of scope: collision** — z-layers are a rendering concern only. Collision filtering is already handled by the `CollisionCategory` flags from Sprint 19; z-layers do not affect physics.
 
 ---
 

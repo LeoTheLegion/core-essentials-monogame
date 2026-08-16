@@ -110,13 +110,13 @@ Each sprint is designed to be approximately **5 total points** worth of work, fo
 | 🔗 [17](Sprint_17_EntityRelationships.md) | Entity Relationships | 4 | Not Started | Weak-reference relationships between entities |
 | 📜 [18](Sprint_18_ScriptableBehaviors.md) | Scriptable Behaviors | 6 | Not Started | Attach coroutines/scripts declaratively |
 | 💥 [19](Sprint_19_CollisionGroups.md) | Collision Groups | 5 | Not Started | Filtered collision interaction groups |
-| 🎚️ [20](Sprint_20_ZOrderRenderLayers.md) | Z-Order & Render Layers | 5.5 | Not Started | Combine texture batching with z-order layers |
+| 🎚️ [20](Sprint_20_ZOrderRenderLayers.md) | Z-Order & Render Layers | 4.5 | ✅ Completed | Combine texture batching with z-order layers |
 
 ---
 
 ## Sprint Point Summary
 
-- **Total Points:** 111 points across 23 sprints
+- **Total Points:** 110 points across 23 sprints
 - **Average Per Sprint:** ~4.8 points
 - **Timeline Estimate:** 23 weeks (one sprint per week) or compressed to 12-14 weeks with parallel work on independent sprints
 

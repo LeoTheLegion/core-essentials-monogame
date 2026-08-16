@@ -220,17 +220,19 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Renders all active entities using texture-based batching.
-    /// Entities are grouped by their active texture asset to minimize SpriteBatch begin/end calls.
-    /// Within each texture group, entities maintain their sort order.
+    /// Renders all active entities using z-aware texture batching.
+    /// Entities are grouped by z-layer first, then by texture within each layer,
+    /// to minimize SpriteBatch begin/end calls while preserving correct render order.
+    /// Layers are rendered back-to-front (low to high z-layer); within each layer,
+    /// entities sharing a texture are batched together and maintain their sort order.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        var (textureGroups, noTextureEntities) = GroupEntitiesByTexture();
+        var (zLayers, noTextureEntities) = GroupEntitiesByZLayer();
         RenderNoTextureEntities(noTextureEntities, spriteBatch);
-        RenderTextureGroups(textureGroups, spriteBatch);
+        RenderZLayers(zLayers, spriteBatch);
         ResetTextureDirtyFlags();
 
         // Render debug overlays on top of everything
@@ -241,11 +243,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Groups active entities by their texture asset for efficient batched rendering.
+    /// Groups active entities by z-layer and, within each layer, by texture asset
+    /// for efficient batched rendering. Layers are returned in ascending order
+    /// (back-to-front) so they can be rendered in the correct sequence.
     /// </summary>
-    private (Dictionary<Texture2DAsset, List<Entity>> textureGroups, List<Entity> noTextureEntities) GroupEntitiesByTexture()
+    private (List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>> zLayers, List<Entity> noTextureEntities) GroupEntitiesByZLayer()
     {
-        var textureGroups = new Dictionary<Texture2DAsset, List<Entity>>();
+        var layerMap = new SortedDictionary<int, Dictionary<Texture2DAsset, List<Entity>>>();
         var noTextureEntities = new List<Entity>();
 
         for (int i = 0; i < _entities.Count; i++)
@@ -258,16 +262,26 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             if (texture == null)
             {
                 noTextureEntities.Add(entity);
+                continue;
             }
-            else
+
+            int layer = entity.GetZLayer();
+            if (!layerMap.TryGetValue(layer, out var textureGroups))
             {
-                if (!textureGroups.ContainsKey(texture))
-                    textureGroups[texture] = new List<Entity>();
-                textureGroups[texture].Add(entity);
+                textureGroups = new Dictionary<Texture2DAsset, List<Entity>>();
+                layerMap[layer] = textureGroups;
             }
+
+            if (!textureGroups.ContainsKey(texture))
+                textureGroups[texture] = new List<Entity>();
+            textureGroups[texture].Add(entity);
         }
 
-        return (textureGroups, noTextureEntities);
+        var zLayers = new List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>>();
+        foreach (var layer in layerMap)
+            zLayers.Add(layer);
+
+        return (zLayers, noTextureEntities);
     }
 
     /// <summary>
@@ -292,24 +306,32 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Renders each texture group with a single SpriteBatch begin/end pair.
+    /// Renders each z-layer back-to-front (low to high). Within a layer, each texture
+    /// group is rendered with a single SpriteBatch begin/end pair, preserving batching
+    /// while maintaining correct interleaving of textures across z-layers.
     /// </summary>
-    private static void RenderTextureGroups(Dictionary<Texture2DAsset, List<Entity>> textureGroups, SpriteBatch spriteBatch)
+    private static void RenderZLayers(List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>> zLayers, SpriteBatch spriteBatch)
     {
+        if (zLayers.Count == 0)
+            return;
+
         var cameraView = GetCameraViewMatrix();
 
-        foreach (var textureGroup in textureGroups)
+        foreach (var layer in zLayers)
         {
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
-                SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
-                null, cameraView);
-
-            foreach (var entity in textureGroup.Value)
+            foreach (var textureGroup in layer.Value)
             {
-                entity.Render(spriteBatch);
-            }
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+                    SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
+                    null, cameraView);
 
-            spriteBatch.End();
+                foreach (var entity in textureGroup.Value)
+                {
+                    entity.Render(spriteBatch);
+                }
+
+                spriteBatch.End();
+            }
         }
     }
 
