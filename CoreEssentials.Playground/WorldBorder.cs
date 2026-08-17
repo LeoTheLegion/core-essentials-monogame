@@ -51,11 +51,10 @@ public class WorldBorder : Entity
         var config = physicsEngine.Config ?? PhysicsConfig.CreateDefault();
         var allBalls = config.ResolveMask("Player|Vip");
 
-        ICollider Configure(ICollider collider)
+        void Configure(ICollider collider)
         {
             collider.Categories = allBalls;
             collider.CollidesWith = allBalls;
-            return collider;
         }
 
         var borders = new IPhysicsBody[4];

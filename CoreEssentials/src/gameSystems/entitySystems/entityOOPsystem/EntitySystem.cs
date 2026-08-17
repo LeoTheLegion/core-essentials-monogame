@@ -485,7 +485,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// matching Unity's Awake -> OnEnable order.
     /// </summary>
     /// <param name="entity">The entity that has just awoken.</param>
-    private void NotifyAwoken(Entity entity)
+    private static void NotifyAwoken(Entity entity)
     {
         if (entity.GetActive())
             entity.OnEnable();

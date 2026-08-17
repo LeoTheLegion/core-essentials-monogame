@@ -22,7 +22,6 @@ namespace CoreEssentials.GameSystems.Physics.Engines.Aether;
 /// </summary>
 public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
 {
-    private readonly PhysicsEngine _engine;
     private DebugView? _debugView;
     private bool _contentLoaded;
     private bool _disposed;
@@ -33,8 +32,9 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     /// <param name="engine">The Aether-backed physics engine whose world will be visualized.</param>
     public PhysicsDebugRenderer(PhysicsEngine engine)
     {
-        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
-        _debugView = new DebugView(_engine.AetherWorld);
+        if (engine == null)
+            throw new ArgumentNullException(nameof(engine));
+        _debugView = new DebugView(engine.AetherWorld);
         // Sensible defaults: show shapes, joints, and contact points.
         _debugView.AppendFlags(DebugViewFlags.ContactPoints);
     }
