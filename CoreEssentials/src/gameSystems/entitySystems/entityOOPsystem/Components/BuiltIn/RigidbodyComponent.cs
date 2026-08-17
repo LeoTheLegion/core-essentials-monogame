@@ -107,7 +107,21 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
 
     private float _mass = 1.0f;
     private bool _fixedRotation;
-    private bool _needsInitialSync;
+
+    /// <summary>
+    /// Tolerance for treating two transforms as "the same" when detecting external moves.
+    /// </summary>
+    private const float PositionEpsilon = 0.0001f;
+    private const float RotationEpsilon = 0.0001f;
+
+    /// <summary>
+    /// The entity transform last written by this component during a body → entity sync.
+    /// In <see cref="SyncFromPhysics"/> mode only this component and external code
+    /// (save/load, teleport, debug) write the entity transform, so comparing the entity's
+    /// current transform against this snapshot tells us whether external code moved it.
+    /// </summary>
+    private Vector2 _lastEntityPosition;
+    private float _lastEntityRotation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RigidbodyComponent"/> class.
@@ -137,27 +151,43 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         if (_body == null)
             return;
 
-        // First frame after body creation: sync entity → body so physics starts at the right position.
-        // This handles the case where RestoreState() changed entity Position/Rotation after OnStart().
-        if (_needsInitialSync)
-        {
-            _body.Position = Owner.Position;
-            _body.Rotation = Owner.Rotation;
-            _needsInitialSync = false;
-        }
-
         if (SyncFromPhysics)
         {
-            // Physics drives entity
+            // Physics drives the entity. But if external code (save/load, teleport, debug) moved
+            // the entity since the last sync, the entity transform is the new source of truth —
+            // adopt it so physics integrates from there instead of snapping the entity back.
+            if (EntityMovedExternally())
+            {
+                _body.Position = Owner.Position;
+                _body.Rotation = Owner.Rotation;
+                _lastEntityPosition = Owner.Position;
+                _lastEntityRotation = Owner.Rotation;
+                return;
+            }
+
             Owner.Position = _body.Position;
             Owner.Rotation = _body.Rotation;
+            _lastEntityPosition = Owner.Position;
+            _lastEntityRotation = Owner.Rotation;
         }
         else
         {
-            // Entity drives physics
+            // Entity drives physics.
             _body.Position = Owner.Position;
             _body.Rotation = Owner.Rotation;
         }
+    }
+
+    /// <summary>
+    /// In <see cref="SyncFromPhysics"/> mode, returns true when the entity's transform differs from
+    /// the transform this component last wrote, meaning external code moved the entity.
+    /// </summary>
+    private bool EntityMovedExternally()
+    {
+        var positionMoved = System.Math.Abs(Owner.Position.X - _lastEntityPosition.X) > PositionEpsilon ||
+                            System.Math.Abs(Owner.Position.Y - _lastEntityPosition.Y) > PositionEpsilon;
+        var rotationMoved = System.Math.Abs(Owner.Rotation - _lastEntityRotation) > RotationEpsilon;
+        return positionMoved || rotationMoved;
     }
 
     /// <summary>
@@ -247,8 +277,13 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         _body.Mass = _mass;
         _body.FixedRotation = _fixedRotation;
 
+        // The body was just created at the entity's current transform, so seed the snapshot
+        // with it. This prevents the first Update from mistaking the initial (matching)
+        // transform for an external move.
+        _lastEntityPosition = Owner.Position;
+        _lastEntityRotation = Owner.Rotation;
+
         _bodyCreated = true;
-        _needsInitialSync = true;
     }
 
     /// <summary>

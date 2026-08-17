@@ -201,6 +201,10 @@ public class Ball : Entity, ISaveableEntity
         RestoreSortOrder(element);
         RestoreActiveState(element);
         RestoreTags(element);
+
+        // Restoring the entity transform is enough: RigidbodyComponent detects that the entity
+        // moved externally (save/load) and adopts it as the physics source of truth on the next
+        // Update, so the body integrates from the saved position. No explicit sync needed here.
         RestorePhysicsVelocity(element);
         RestoreSpriteColor(element);
     }
