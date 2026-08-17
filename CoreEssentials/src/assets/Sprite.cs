@@ -22,6 +22,9 @@ public class Sprite : Asset
     private int[]? _frames;
     private float _frameRate = 1f / 10f; // Default: 10 FPS (seconds per frame)
 
+    private const string SourceTypeSpriteSheet = "spritesheet";
+    private const string MetadataNotLoadedMessage = "Sprite metadata is not loaded.";
+
     /// <summary>
     /// Gets the underlying texture asset for this sprite.
     /// Returns null when this sprite uses a SpriteSheet (sheet textures are not batched directly).
@@ -65,10 +68,10 @@ public class Sprite : Asset
 
     private void LoadFromXml(string name)
     {
-        var xml = (XMLAsset)AssetManager.LoadAsset<XMLAsset>(name);
+        var xml = AssetManager.LoadAsset<XMLAsset>(name);
         if (xml == null)
         {
-            throw new ArgumentNullException("xml", "XML data cannot be null.");
+            throw new ArgumentNullException(nameof(name), "XML data cannot be null.");
         }
 
         try
@@ -172,68 +175,86 @@ public class Sprite : Asset
     {
         if (_metaData == null)
         {
-            throw new InvalidOperationException("Sprite metadata is not loaded.");
+            throw new InvalidOperationException(MetadataNotLoadedMessage);
         }
 
         switch (_metaData.SourceType)
         {
             case "texture2d":
-                if (_texture == null)
-                    throw new InvalidOperationException("Texture2D is null");
-                if (_metaData.Size == null)
-                    throw new InvalidOperationException("Sprite metadata size is null");
-
-                Vector2 textureScale = new Vector2(_metaData.Size.Width / _texture.Width,
-                                      _metaData.Size.Height / _texture.Height);
-                textureScale *= scale;
-
-                if (_metaData.Origin == null)
-                    throw new InvalidOperationException("Sprite metadata origin is null");
-                float xFactor = _metaData.Origin.X / _metaData.Size.Width;
-                float yFactor = _metaData.Origin.Y / _metaData.Size.Height;
-
-                Vector2 textureOrigin = new Vector2(
-                    _texture.Width * xFactor,
-                    _texture.Height * yFactor
-                );
-
-                spriteBatch.Draw(_texture.Texture,
-                    position,
-                    null,
-                    color,
-                    rotation,
-                    textureOrigin,
-                    textureScale,
-                    effects,
-                    layerDepth);
+                DrawTexture2DFrame(spriteBatch, position, color, rotation, scale, effects, layerDepth);
                 break;
 
-            case "spritesheet":
-                if (_spriteSheet == null)
-                    throw new InvalidOperationException("SpriteSheet is null");
-                if (_frames == null || _frames.Length == 0)
-                    throw new InvalidOperationException("Sprite frames array is empty");
-                if (frameIndex < 0 || frameIndex >= _frames.Length)
-                    throw new IndexOutOfRangeException($"Frame index {frameIndex} is out of range (0-{_frames.Length - 1})");
-
-                Rectangle sourceRect = _spriteSheet.GetFrame(_frames[frameIndex]);
-                Vector2 origin = _spriteSheet.FrameOrigin;
-
-                spriteBatch.Draw(
-                    _spriteSheet.Texture,
-                    position,
-                    sourceRect,
-                    color,
-                    rotation,
-                    origin,
-                    scale,
-                    effects,
-                    layerDepth);
+            case SourceTypeSpriteSheet:
+                DrawSpriteSheetFrame(spriteBatch, position, frameIndex, color, rotation, scale, effects, layerDepth);
                 break;
 
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
         }
+    }
+
+    /// <summary>
+    /// Draws the single texture2d frame.
+    /// </summary>
+    private void DrawTexture2DFrame(SpriteBatch spriteBatch, Vector2 position, Color color,
+        float rotation, Vector2 scale, SpriteEffects effects, float layerDepth)
+    {
+        if (_texture == null)
+            throw new InvalidOperationException("Texture2D is null");
+        if (_metaData!.Size == null)
+            throw new InvalidOperationException("Sprite metadata size is null");
+
+        Vector2 textureScale = new Vector2(_metaData.Size.Width / _texture.Width,
+                              _metaData.Size.Height / _texture.Height);
+        textureScale *= scale;
+
+        if (_metaData.Origin == null)
+            throw new InvalidOperationException("Sprite metadata origin is null");
+        float xFactor = _metaData.Origin.X / _metaData.Size.Width;
+        float yFactor = _metaData.Origin.Y / _metaData.Size.Height;
+
+        Vector2 textureOrigin = new Vector2(
+            _texture.Width * xFactor,
+            _texture.Height * yFactor
+        );
+
+        spriteBatch.Draw(_texture.Texture,
+            position,
+            null,
+            color,
+            rotation,
+            textureOrigin,
+            textureScale,
+            effects,
+            layerDepth);
+    }
+
+    /// <summary>
+    /// Draws a specific frame from the sprite sheet.
+    /// </summary>
+    private void DrawSpriteSheetFrame(SpriteBatch spriteBatch, Vector2 position, int frameIndex, Color color,
+        float rotation, Vector2 scale, SpriteEffects effects, float layerDepth)
+    {
+        if (_spriteSheet == null)
+            throw new InvalidOperationException("SpriteSheet is null");
+        if (_frames == null || _frames.Length == 0)
+            throw new InvalidOperationException("Sprite frames array is empty");
+        if (frameIndex < 0 || frameIndex >= _frames.Length)
+            throw new IndexOutOfRangeException($"Frame index {frameIndex} is out of range (0-{_frames.Length - 1})");
+
+        Rectangle sourceRect = _spriteSheet.GetFrame(_frames[frameIndex]);
+        Vector2 origin = _spriteSheet.FrameOrigin;
+
+        spriteBatch.Draw(
+            _spriteSheet.Texture,
+            position,
+            sourceRect,
+            color,
+            rotation,
+            origin,
+            scale,
+            effects,
+            layerDepth);
     }
 
     /// <summary>
@@ -244,9 +265,9 @@ public class Sprite : Asset
     {
         if (_metaData == null)
         {
-            throw new InvalidOperationException("Sprite metadata is not loaded.");
+            throw new InvalidOperationException(MetadataNotLoadedMessage);
         }
-        if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
+        if (_metaData.SourceType == SourceTypeSpriteSheet && _spriteSheet != null)
         {
             return _spriteSheet.GetFrameSize();
         }
@@ -267,9 +288,9 @@ public class Sprite : Asset
     {
         if (_metaData == null)
         {
-            throw new InvalidOperationException("Sprite metadata is not loaded.");
+            throw new InvalidOperationException(MetadataNotLoadedMessage);
         }
-        if (_metaData.SourceType == "spritesheet" && _spriteSheet != null)
+        if (_metaData.SourceType == SourceTypeSpriteSheet && _spriteSheet != null)
         {
             return _spriteSheet.FrameOrigin;
         }
@@ -303,7 +324,7 @@ public class Sprite : Asset
 
         if (_metaData == null)
         {
-            throw new InvalidOperationException("Sprite metadata is not loaded.");
+            throw new InvalidOperationException(MetadataNotLoadedMessage);
         }
         if (_metaData.SourceType == null)
         {
@@ -318,12 +339,12 @@ public class Sprite : Asset
             case "texture2d":
                 if (_metaData.Source == null)
                     throw new InvalidOperationException("Sprite metadata source cannot be null for texture2d.");
-                _texture = (Texture2DAsset)AssetManager.LoadAsset<Texture2DAsset>(_metaData.Source);
+                _texture = AssetManager.LoadAsset<Texture2DAsset>(_metaData.Source);
                 break;
-            case "spritesheet":
+            case SourceTypeSpriteSheet:
                 if (_metaData.Source == null)
                     throw new InvalidOperationException("Sprite metadata source cannot be null for spritesheet.");
-                _spriteSheet = (SpriteSheet)AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
+                _spriteSheet = AssetManager.LoadAsset<SpriteSheet>(_metaData.Source);
                 break;
             default:
                 throw new InvalidOperationException($"Unknown source type: {_metaData.SourceType}");
@@ -341,10 +362,9 @@ public class Sprite : Asset
     {
         // Frame rate: XML stores frames-per-second; store seconds-per-frame.
         float fps = 10f;
-        if (_metaData!.FrameRate != null)
+        if (_metaData!.FrameRate != null && float.TryParse(_metaData.FrameRate, out float parsed) && parsed > 0)
         {
-            if (float.TryParse(_metaData.FrameRate, out float parsed) && parsed > 0)
-                fps = parsed;
+            fps = parsed;
         }
         _frameRate = 1f / fps;
 
