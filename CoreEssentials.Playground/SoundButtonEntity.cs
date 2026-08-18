@@ -1,9 +1,9 @@
+using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GUI;
 using CoreEssentials.Audio;
 using CoreEssentials.GUI.Factory;
 using Microsoft.Xna.Framework;
-using System;
 
 namespace CoreEssentials.Playground;
 
@@ -15,15 +15,26 @@ public class SoundButtonEntity : Entity
     private Canvas _canvas;
     private string _soundAssetName;
     private string _buttonText;
-    
+
+    // Parameterless constructor for XML/template loading
+    public SoundButtonEntity()
+    {
+        _canvas = new Canvas();
+    }
+
     public SoundButtonEntity(Vector2 position, string soundAssetName, string buttonText)
     {
         _position = position;
+        Configure(soundAssetName, buttonText);
+    }
+
+    /// <summary>
+    /// Configures the button with sound asset and text.
+    /// </summary>
+    public void Configure(string soundAssetName, string buttonText)
+    {
         _soundAssetName = soundAssetName;
         _buttonText = buttonText;
-        
-        // Create canvas for UI components
-        _canvas = new Canvas();
         
         // Create a button for playing the sound via factory (returns IButton interface)
         var button = WidgetFactory.CreateTextButton(_buttonText);

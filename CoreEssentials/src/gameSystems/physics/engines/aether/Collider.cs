@@ -127,6 +127,26 @@ public class Collider : ICollider
     }
 
     /// <summary>
+    /// Gets or sets the collision categories this fixture belongs to.
+    /// Forwards to Aether's <c>Fixture.CollisionCategories</c>; the engine re-filters contacts automatically.
+    /// </summary>
+    public CollisionCategory Categories
+    {
+        get => (CollisionCategory)_aetherFixture.CollisionCategories;
+        set => _aetherFixture.CollisionCategories = (nkast.Aether.Physics2D.Dynamics.Category)value;
+    }
+
+    /// <summary>
+    /// Gets or sets the mask of categories this fixture is willing to collide with.
+    /// Forwards to Aether's <c>Fixture.CollidesWith</c>; the engine re-filters contacts automatically.
+    /// </summary>
+    public CollisionCategory CollidesWith
+    {
+        get => (CollisionCategory)_aetherFixture.CollidesWith;
+        set => _aetherFixture.CollidesWith = (nkast.Aether.Physics2D.Dynamics.Category)value;
+    }
+
+    /// <summary>
     /// Activates this Collider so it participates in collision detection.
     /// Re-creates proxies on the broad-phase using reflection to access internal Aether method.
     /// Uses reflection to call non-public CreateProxies and access _xf field — these are necessary

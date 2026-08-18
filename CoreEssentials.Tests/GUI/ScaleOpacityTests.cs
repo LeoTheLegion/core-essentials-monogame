@@ -1,3 +1,5 @@
+using System;
+using CoreEssentials.GUI;
 using CoreEssentials.GUI.Factory;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
@@ -9,8 +11,27 @@ namespace CoreEssentials.Tests.GUI;
 /// Tests for Scale and Opacity properties on IWidget interface.
 /// These tests verify Issue #29: Add Scale and Opacity to ILabel/IWidget interface.
 /// </summary>
-public class ScaleOpacityTests
+public class ScaleOpacityTests : IDisposable
 {
+    private readonly Game1 _mockGame;
+    private bool _disposed = false;
+
+    public ScaleOpacityTests()
+    {
+        _mockGame = new Game1();
+        GUIManager.Init(_mockGame, 800, 600);
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _mockGame?.Dispose();
+            var engine = CoreEssentials.GUI.Internal.EngineResolver.GetEngine();
+            engine.Shutdown();
+            _disposed = true;
+        }
+    }
     /// <summary>
     /// Verifies that Scale defaults to Vector2.One (1, 1) — no scaling.
     /// </summary>

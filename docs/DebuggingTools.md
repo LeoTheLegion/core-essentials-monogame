@@ -9,7 +9,7 @@ The `StickyLog` feature allows you to display persistent information on the scre
 ```csharp
 // Create a sticky log entry that persists across frames
 Debug.StickyLog.Log("FPS", $"{1 / gameTime.ElapsedGameTime.TotalSeconds:F1}");
-Debug.StickyLog.Log("Entities", $"{entitySystem.EntityCount}");
+Debug.StickyLog.Log("Entities", $"{entitySystem.GetEntities().Count}");
 Debug.StickyLog.Log("Memory", $"{GC.GetTotalMemory(false) / 1024 / 1024:F1} MB");
 
 // Toggle visibility
@@ -72,7 +72,7 @@ protected override GameSystem[] LoadGameSystems()
 
 // Toggle debug rendering visibility
 PhysicsDebugRenderer debugRenderer = GetGameSystem<PhysicsDebugRenderer>();
-debugRenderer.IsVisible = !debugRenderer.IsVisible;
+debugRenderer.IsEnabled = !debugRenderer.IsEnabled;
 ```
 
 ## Primitive Drawing
@@ -81,44 +81,46 @@ The `Primitives` class allows you to draw simple shapes for debugging purposes:
 
 ```csharp
 // Draw a debug circle
-Primitives.DrawCircle(spriteBatch, position, radius, Color.Red);
+Debug.Primitives.DrawCircle(spriteBatch, position, radius, Color.Red);
 
 // Draw a debug rectangle
-Primitives.DrawRectangle(spriteBatch, new Rectangle(x, y, width, height), Color.Yellow);
+Debug.Primitives.DrawRectangle(spriteBatch, new Rectangle(x, y, width, height), Color.Yellow);
 
 // Draw a debug line
-Primitives.DrawLine(spriteBatch, startPoint, endPoint, Color.Blue);
-
-// Draw debug text
-Primitives.DrawString(spriteBatch, "Debug Message", position, Color.White);
+Debug.Primitives.DrawLine(spriteBatch, startPoint, endPoint, Color.Blue);
 ```
+
+> **Note:** `Primitives` draws shapes only. For debug text, use `Debug.StickyLog.Log(key, value)`
+> or draw a `SpriteFont` yourself via `SpriteBatch.DrawString`.
 
 ## Game Diagnostics
 
-The `BaseGameDiagnostics` class provides performance monitoring and diagnostic information:
+The `BaseGameDiagnostics` class provides performance monitoring and diagnostic information. It is created automatically by the `Debug` class and writes its metrics to the `StickyLog`. Bracket each phase of your game loop with the matching `Begin`/`End` calls:
 
 ```csharp
-// Create a diagnostics instance in your game
-private BaseGameDiagnostics _diagnostics;
+// Access the shared diagnostics instance (created by the Debug static constructor)
+var diagnostics = Debug.baseGameDiagnostics;
 
-protected override void Initialize()
-{
-    base.Initialize();
-    _diagnostics = new BaseGameDiagnostics(this);
-}
-
+// In your Update loop
 protected override void Update(GameTime gameTime)
 {
     base.Update(gameTime);
-    _diagnostics.Update(gameTime);
+    diagnostics.UpdateBegin();
+    // ...your update logic...
+    diagnostics.UpdateEnd();
 }
 
+// In your Draw loop
 protected override void Draw(GameTime gameTime)
 {
     base.Draw(gameTime);
-    _diagnostics.Draw(gameTime);
+    diagnostics.DrawBegin();
+    // ...your draw logic...
+    diagnostics.DrawEnd();
 }
 ```
+
+The diagnostics expose rolling averages you can read at any time: `UpdateAvg`, `DrawAvg`, and `FixedUpdateAvg` (in milliseconds).
 
 ## Debug Shortcuts
 
@@ -137,24 +139,18 @@ private EventHandler<KeyboardEventArgs> ToggleDebugFeatures()
 {
     return (sender, args) =>
     {
-        if (args.Key == Keys.F1)
-        {
-            // Toggle console visibility
-            Debug.Console.IsVisible = !Debug.Console.IsVisible;
-        }
-        
         if (args.Key == Keys.F2)
         {
             // Toggle physics debug rendering
             PhysicsDebugRenderer debugRenderer = GetGameSystem<PhysicsDebugRenderer>();
             if (debugRenderer != null)
-                debugRenderer.IsVisible = !debugRenderer.IsVisible;
+                debugRenderer.IsEnabled = !debugRenderer.IsEnabled;
         }
         
         if (args.Key == Keys.F3)
         {
             // Toggle StickyLog visibility
-            StickyLog.IsVisible = !StickyLog.IsVisible;
+            Debug.StickyLog.IsVisible = !Debug.StickyLog.IsVisible;
         }
     };
 }

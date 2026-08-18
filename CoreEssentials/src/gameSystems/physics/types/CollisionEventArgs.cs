@@ -1,6 +1,14 @@
 namespace CoreEssentials.GameSystems.Physics.Types;
 
 /// <summary>
+/// An unordered pair of physics bodies that are currently in active contact.
+/// Returned by <c>PhysicsEngine.GetActiveContacts()</c>.
+/// </summary>
+/// <param name="BodyA">The first body in the pair.</param>
+/// <param name="BodyB">The second body in the pair.</param>
+public record BodyContactPair(IPhysicsBody BodyA, IPhysicsBody BodyB);
+
+/// <summary>
 /// Arguments for body-level collision events.
 /// </summary>
 public record BodyCollisionEventArgs(IPhysicsBody BodyA, IPhysicsBody BodyB);

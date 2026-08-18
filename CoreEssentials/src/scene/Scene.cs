@@ -4,6 +4,9 @@ using System.Linq;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.Coroutines;
+using CoreEssentials.Assets;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -43,7 +46,12 @@ public abstract class Scene
     /// Array of game systems that implement the IFixedUpdateGameSystem interface.
     /// </summary>
     private IFixedUpdateGameSystem[] _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
-    
+
+    /// <summary>
+    /// Array of game systems that implement the IPausableGameSystem interface.
+    /// </summary>
+    private IPausableGameSystem[] _pausableSystems = Array.Empty<IPausableGameSystem>();
+
     /// <summary>
     /// Tracks the current loading progress of the scene, from 0.0 to 1.0
     /// </summary>
@@ -182,6 +190,7 @@ public abstract class Scene
         _updateSystems = systems.OfType<IUpdateGameSystem>().ToArray();
         _drawSystems = systems.OfType<IDrawGameSystem>().ToArray();
         _fixedUpdateSystems = systems.OfType<IFixedUpdateGameSystem>().ToArray();
+        _pausableSystems = systems.OfType<IPausableGameSystem>().ToArray();
 
         Console.WriteLine("Loaded Update Systems: " + _updateSystems.Length.ToString());
         Console.WriteLine("Loaded Fixed Update Systems: " + _fixedUpdateSystems.Length.ToString());
@@ -232,6 +241,31 @@ public abstract class Scene
     }
 
     /// <summary>
+    /// Loads entities from an XML scene definition file by asset name.
+    /// Uses <see cref="EntitySerializer.LoadSceneFromXml"/> for two-pass loading with reference resolution.
+    /// </summary>
+    /// <param name="xmlAssetName">The name/key of the XML asset in the AssetManager (e.g., "MyScene.xml").</param>
+    /// <param name="entitySystem">The EntitySystem to create entities in.</param>
+    /// <returns>A list of all root entities loaded from the scene.</returns>
+    protected List<Entity> LoadEntitiesFromXml(string xmlAssetName, EntitySystem entitySystem)
+    {
+        var sceneAsset = AssetManager.LoadAsset<XMLAsset>(xmlAssetName);
+        return LoadEntitiesFromXml(sceneAsset, entitySystem);
+    }
+
+    /// <summary>
+    /// Loads entities from an already-loaded <see cref="XMLAsset"/>.
+    /// Uses <see cref="EntitySerializer.LoadSceneFromXml"/> for two-pass loading with reference resolution.
+    /// </summary>
+    /// <param name="xmlAsset">The XML asset containing the scene definition.</param>
+    /// <param name="entitySystem">The EntitySystem to create entities in.</param>
+    /// <returns>A list of all root entities loaded from the scene.</returns>
+    protected List<Entity> LoadEntitiesFromXml(XMLAsset xmlAsset, EntitySystem entitySystem)
+    {
+        return EntitySerializer.LoadSceneFromXml(xmlAsset.XMLContent!, entitySystem);
+    }
+
+    /// <summary>
     /// Updates all game systems that implement the IUpdateGameSystem interface.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
@@ -263,6 +297,26 @@ public abstract class Scene
         for (int i = 0; i < _fixedUpdateSystems.Length; i++)
         {
             _fixedUpdateSystems[i].FixedUpdate(gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Notifies all game systems that implement the IPausableGameSystem interface
+    /// that the application has been paused or resumed.
+    /// Scenes that own audio or other pausable resources should override this method
+    /// and call <c>base.OnApplicationPause(paused)</c> to propagate to game systems.
+    /// </summary>
+    /// <param name="paused">True when the application is being paused, false when resuming.</param>
+    public virtual void OnApplicationPause(bool paused)
+    {
+        // Don't notify if scene isn't loaded yet
+        if (!IsLoaded)
+            return;
+
+        // Notify all game systems that implement IPausableGameSystem
+        for (int i = 0; i < _pausableSystems.Length; i++)
+        {
+            _pausableSystems[i].OnApplicationPause(paused);
         }
     }
 
@@ -305,6 +359,7 @@ public abstract class Scene
         _updateSystems = Array.Empty<IUpdateGameSystem>();
         _drawSystems = Array.Empty<IDrawGameSystem>();
         _fixedUpdateSystems = Array.Empty<IFixedUpdateGameSystem>();
+        _pausableSystems = Array.Empty<IPausableGameSystem>();
         
         IsLoaded = false;
         IsLoading = false;

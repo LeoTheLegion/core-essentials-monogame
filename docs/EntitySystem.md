@@ -2,6 +2,22 @@
 
 The Entity System in CoreEssentials-MonoGame provides an object-oriented approach to managing game objects. It allows you to define, create, and manage entities in your game scenes.
 
+## Feature Overview
+
+The Entity System includes several advanced features:
+
+| Feature | Documentation | Description |
+|---------|---------------|-------------|
+| **Entity Tags** | [EntityTags.md](./EntityTags.md) | Categorize entities with tags for flexible querying |
+| **Query API** | [EntityQueryAPI.md](./EntityQueryAPI.md) | Find entities by type, position, and spatial queries |
+| **Entity Pooling** | [EntityPooling.md](./EntityPooling.md) | Reuse entities to reduce garbage collection |
+| **Hierarchy** | [EntityHierarchy.md](./EntityHierarchy.md) | Parent-child relationships with transform inheritance |
+| **Spatial Partitioning** | [SpatialPartitioning.md](./SpatialPartitioning.md) | Grid-based optimization for spatial queries |
+| **Lifecycle** | [EntityLifecycle.md](./EntityLifecycle.md) | Delayed destruction, spawning, and respawning |
+| **Templates** | [EntityTemplates.md](./EntityTemplates.md) | Reusable entity blueprints from XML |
+| **XML Definitions** | [XMLEntityDefinitions.md](./XMLEntityDefinitions.md) | Load entities from XML files |
+| **Event System** | [EventSystem.md](./EventSystem.md) | Decoupled entity communication |
+
 ## Key Components
 
 ### EntitySystem
@@ -15,8 +31,8 @@ EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 // Create an entity at a specific position
 YourEntity entity = entitySystem.CreateEntity<YourEntity>(new Vector2(100, 100));
 
-// Get all entities of a specific type
-IEnumerable<YourEntity> entities = entitySystem.GetEntitiesOfType<YourEntity>();
+// Get all active entities of a specific type
+List<YourEntity> entities = entitySystem.FindByType<YourEntity>();
 ```
 
 ### Entity Class
@@ -32,10 +48,17 @@ public class YourEntity : Entity
         Position = position; // Public Position property
     }
     
-    // Called when the entity is created
-    public override void Initialize()
+    // Called once when the entity is added to the EntitySystem
+    public override void OnAwake()
     {
-        base.Initialize();
+        base.OnAwake();
+        // One-time setup before the entity is active
+    }
+
+    // Called once when the entity first becomes active
+    public override void OnStart()
+    {
+        base.OnStart();
         // Initialize your entity
     }
 
@@ -47,9 +70,9 @@ public class YourEntity : Entity
     }
 
     // Called every frame for rendering
-    public override void Draw(SpriteBatch spriteBatch)
+    public override void Render(SpriteBatch spriteBatch)
     {
-        base.Draw(spriteBatch);
+        base.Render(spriteBatch);
         // Draw your entity
     }
 }
@@ -65,10 +88,11 @@ The Entity class provides these key properties and methods:
 ## Entity Lifecycle
 
 1. **Creation**: Use `entitySystem.CreateEntity<T>()` to instantiate an entity
-2. **Initialization**: The entity's `Initialize()` method is called
-3. **Updates**: The entity's `Update()` method is called each frame
-4. **Rendering**: The entity's `Draw()` method is called each frame
-5. **Destruction**: Call `entity.Destroy()` to remove the entity
+2. **Awake**: The entity's `OnAwake()` method is called when it is added to the system
+3. **Start**: The entity's `OnStart()` method is called once when it first becomes active
+4. **Updates**: The entity's `Update()` method is called each frame
+5. **Rendering**: The entity's `Render()` method is called each frame
+6. **Destruction**: Call `entity.Destroy()` to remove the entity (fires `OnDestroy()`)
 
 ## Example from Playground
 
@@ -100,27 +124,26 @@ When combined with the Physics System, entities can interact with the physical w
 ```csharp
 public class PhysicsEntity : Entity
 {
-    public Body Body { get; private set; }
+    private RigidbodyComponent _rigidbody;
     
-    public override void Initialize()
+    public override void OnStart()
     {
-        base.Initialize();
+        base.OnStart();
         
-        // Access the physics engine
-        PhysicsEngine physics = Scene.GetGameSystem<PhysicsEngine>();
+        // Add a dynamic rigidbody component (creates the physics body lazily)
+        _rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
+        AddComponent(_rigidbody);
         
-        // Create a physics body
-        Body = physics.CreateCircle(Position, 1.0f, 1.0f);
-        Body.BodyType = BodyType.Dynamic;
+        // Add a circle collider
+        AddComponent(new ColliderComponent(radius: 1.0f));
     }
     
     public override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
         
-        // Update entity position based on physics body
-        Position = Body.Position;
-        Rotation = Body.Rotation;
+        // Position/Rotation are synced from the physics body automatically
+        // by the RigidbodyComponent (SyncFromPhysics is on by default for Dynamic).
     }
 }
 ```
@@ -132,3 +155,19 @@ public class PhysicsEntity : Entity
 - Use the entity system to manage entity creation and retrieval
 - Clean up physics bodies when destroying entities
 - Group similar entities under common base classes for shared behavior
+- Use tags for flexible categorization instead of deep inheritance
+- Use pooling for high-frequency entities like bullets and particles
+- Use spatial queries for performance-critical operations
+- Use templates for reusable entity definitions
+
+## See Also
+
+- [Entity Tags](./EntityTags.md) — Tag-based entity categorization
+- [Entity Query API](./EntityQueryAPI.md) — Finding entities
+- [Entity Pooling](./EntityPooling.md) — Object pooling
+- [Entity Hierarchy](./EntityHierarchy.md) — Parent-child relationships
+- [Spatial Partitioning](./SpatialPartitioning.md) — Grid-based optimization
+- [Entity Lifecycle](./EntityLifecycle.md) — Delayed operations
+- [Entity Templates](./EntityTemplates.md) — Reusable blueprints
+- [XML Entity Definitions](./XMLEntityDefinitions.md) — XML loading
+- [Event System](./EventSystem.md) — Entity communication

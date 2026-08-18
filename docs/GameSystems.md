@@ -25,40 +25,32 @@ public class YourGameSystem : GameSystem
         var graphics = game.GraphicsDevice;
     }
     
-    // Called when the system is initialized by the Scene
-    // This is now primarily for internal setup before OnStart
-    // public override void Initialize() // This method might be obsolete or repurposed
-    // {
-    //     base.Initialize();
-    //     // Initialize your system
-    // }
-
     /// <summary>
     /// Called after all game systems in a scene have been loaded and registered.
     /// Override this method to perform any setup that requires access to other
     /// game systems or when all systems are guaranteed to be available.
     /// </summary>
-    public virtual void OnStart()
+    public override void OnStart()
     {
-        // Default implementation does nothing.
-        // Example: OtherSystem otherSystem = Scene.GetGameSystem<OtherSystem>();
+        base.OnStart();
+        // Example: OtherSystem otherSystem = GetGameSystem<OtherSystem>();
     }
 
-    // Called every frame for logic updates
-    public override void Update(GameTime gameTime)
+    // Implement IUpdateGameSystem to run every frame
+    public void Update(GameTime gameTime)
     {
-        base.Update(gameTime);
         // Update your system
     }
 
-    // Called every frame for rendering
-    public override void Draw(GameTime gameTime)
+    // Implement IDrawGameSystem to render every frame
+    public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        base.Draw(gameTime);
         // Draw your system
     }
 }
 ```
+
+> **Note:** per-frame callbacks are opt-in. A `GameSystem` only receives `Update`, `Draw`, or `FixedUpdate` if it implements the corresponding interface (`IUpdateGameSystem`, `IDrawGameSystem`, `IFixedUpdateGameSystem`).
 
 ## Using Game Systems in Scenes
 
@@ -112,21 +104,16 @@ public class YourGameSystem : GameSystem
 Game systems can communicate with each other through the scene:
 
 ```csharp
-public class YourGameSystem : GameSystem
+public class YourGameSystem : GameSystem, IUpdateGameSystem
 {
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime)
     {
-        base.Update(gameTime);
-        
         // Get another system
-        EntitySystem entitySystem = Scene.GetGameSystem<EntitySystem>();
+        EntitySystem entitySystem = GetGameSystem<EntitySystem>();
         
         // Interact with it
-        if (entitySystem != null)
-        {
-            var entities = entitySystem.GetEntitiesOfType<YourEntity>();
-            // Do something with the entities
-        }
+        var entities = entitySystem.FindByType<YourEntity>();
+        // Do something with the entities
     }
 }
 ```
@@ -145,10 +132,10 @@ EntitySystem entitySystem = GetGameSystem<EntitySystem>();
 YourEntity entity = entitySystem.CreateEntity<YourEntity>(new Vector2(100, 100));
 
 // Query entities
-IEnumerable<YourEntity> entities = entitySystem.GetEntitiesOfType<YourEntity>();
+List<YourEntity> entities = entitySystem.FindByType<YourEntity>();
 
 // Count entities
-int entityCount = entitySystem.EntityCount;
+int entityCount = entitySystem.GetEntities().Count;
 ```
 
 ### PhysicsEngine
@@ -159,8 +146,11 @@ Provides 2D physics simulation using Aether.Physics2D:
 PhysicsEngine physics = GetGameSystem<PhysicsEngine>();
 
 // Create physics bodies
-Body circleBody = physics.CreateCircle(position, radius, density);
-Body rectangleBody = physics.CreateRectangle(position, width, height, density);
+IPhysicsBody dynamicBody = physics.CreateDynamic(position);
+dynamicBody.CreateCircleCollider(radius);
+
+IPhysicsBody staticBody = physics.CreateStatic(position);
+staticBody.CreateRectangleCollider(new Vector2(width, height));
 ```
 
 ### PhysicsDebugRenderer
@@ -172,20 +162,22 @@ PhysicsEngine physics = new PhysicsEngine();
 PhysicsDebugRenderer debugRenderer = new PhysicsDebugRenderer(physics);
 
 // Toggle visibility
-debugRenderer.IsVisible = true;
+debugRenderer.IsEnabled = true;
 ```
 
 ### GUIManager
 
-Manages user interface elements:
+Manages user interface elements (static API):
 
 ```csharp
-GUIManager guiManager = GetGameSystem<GUIManager>();
+// Initialize once with the game and canvas size
+GUIManager.Init(game, width, height);
 
-// Set up a UI desktop
-Desktop desktop = new Desktop();
-desktop.Root = yourRootUIElement;
-guiManager.SetDesktop(desktop);
+// Add and remove widgets
+GUIManager.AddWidget(yourWidget);
+GUIManager.RemoveWidget(yourWidget);
+
+// Draw is called automatically by the game loop
 ```
 
 ## Creating Custom Game Systems
@@ -193,20 +185,18 @@ guiManager.SetDesktop(desktop);
 You can create custom game systems to encapsulate specific functionality:
 
 ```csharp
-public class AISystem : GameSystem
+public class AISystem : GameSystem, IUpdateGameSystem
 {
     private List<AIAgent> _agents = new List<AIAgent>();
     
-    public override void Initialize()
+    public override void OnStart()
     {
-        base.Initialize();
+        base.OnStart();
         // Set up the AI system
     }
     
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime)
     {
-        base.Update(gameTime);
-        
         // Update all AI agents
         foreach (var agent in _agents)
         {

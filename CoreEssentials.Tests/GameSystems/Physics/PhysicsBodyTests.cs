@@ -102,7 +102,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Dynamic, position);
 
         // Assert
-        Assert.Equal(position, body.WorldPosition);
+        Assert.Equal(position, body.Position);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class PhysicsBodyTests : IDisposable
         var body = CreateTestBody(BodyType.Static, Vector2.Zero);
 
         // Assert
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
     }
 
     #endregion
@@ -561,6 +561,41 @@ public class PhysicsBodyTests : IDisposable
         Assert.Null(ex);
     }
 
+    [Fact]
+    public void RemoveCollider_RemovesUnderlyingAetherFixture()
+    {
+        // Arrange
+        var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
+        var fixture = (Collider)body.CreateCircleCollider(1f);
+        var aetherBody = body._body!;
+
+        Assert.Contains(fixture._aetherFixture, aetherBody.FixtureList);
+
+        // Act
+        body.RemoveCollider(fixture);
+
+        // Assert: removed from both the wrapper list and the Aether body.
+        Assert.Empty(body.Colliders);
+        Assert.DoesNotContain(fixture._aetherFixture, aetherBody.FixtureList);
+    }
+
+    [Fact]
+    public void RemoveCollider_ThenRecreate_LeavesExactlyOneFixture()
+    {
+        // Arrange
+        var body = CreateTestBody(BodyType.Dynamic, Vector2.Zero);
+        body.CreateCircleCollider(1f);
+
+        // Act: simulate the recreate path used when a collider is resized.
+        var old = body.Colliders[0];
+        body.RemoveCollider(old);
+        body.CreateCircleCollider(2f);
+
+        // Assert: only the new fixture remains on the Aether body.
+        Assert.Single(body.Colliders);
+        Assert.Single(body._body!.FixtureList);
+    }
+
     #endregion
 
     #region Disposal Tests
@@ -599,7 +634,7 @@ public class PhysicsBodyTests : IDisposable
         body.Dispose();
 
         // Assert - after dispose, WorldPosition should return default (zero)
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
     }
 
     #endregion

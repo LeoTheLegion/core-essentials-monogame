@@ -11,7 +11,7 @@ game.Graphics.ApplyChanges();
 
 // Create a loading screen with custom colors
 LoadingScene loadingScene = new LoadingScene(
-    "Loading Character Demo...", 
+    "Loading Physics Scene...", 
     Color.Black, 
     Color.LightBlue, 
     Color.White

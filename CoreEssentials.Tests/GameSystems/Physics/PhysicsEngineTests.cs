@@ -202,7 +202,7 @@ public class PhysicsEngineTests : IDisposable
         Assert.True(body.IsDynamic);
         Assert.False(body.IsStatic);
         Assert.False(body.IsKinematic);
-        Assert.Equal(position, body.WorldPosition);
+        Assert.Equal(position, body.Position);
 
         engine.Dispose();
     }
@@ -222,7 +222,7 @@ public class PhysicsEngineTests : IDisposable
         Assert.True(body.IsStatic);
         Assert.False(body.IsDynamic);
         Assert.False(body.IsKinematic);
-        Assert.Equal(position, body.WorldPosition);
+        Assert.Equal(position, body.Position);
 
         engine.Dispose();
     }
@@ -242,7 +242,7 @@ public class PhysicsEngineTests : IDisposable
         Assert.True(body.IsKinematic);
         Assert.False(body.IsDynamic);
         Assert.False(body.IsStatic);
-        Assert.Equal(position, body.WorldPosition);
+        Assert.Equal(position, body.Position);
 
         engine.Dispose();
     }
@@ -261,8 +261,8 @@ public class PhysicsEngineTests : IDisposable
 
         // Assert
         Assert.NotSame(body1, body2);
-        Assert.Equal(pos1, body1.WorldPosition);
-        Assert.Equal(pos2, body2.WorldPosition);
+        Assert.Equal(pos1, body1.Position);
+        Assert.Equal(pos2, body2.Position);
 
         engine.Dispose();
     }
@@ -303,7 +303,7 @@ public class PhysicsEngineTests : IDisposable
         engine.Destroy(body);
 
         // Assert - after destroy, WorldPosition returns default (zero) because _body is nulled
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
 
         engine.Dispose();
     }
@@ -349,7 +349,7 @@ public class PhysicsEngineTests : IDisposable
 
         // Assert - after destroy, _body is nulled so IsDynamic returns false (null check)
         Assert.False(body.IsDynamic);
-        Assert.Equal(Vector2.Zero, body.WorldPosition); // Position also defaults to zero
+        Assert.Equal(Vector2.Zero, body.Position); // Position also defaults to zero
 
         engine.Dispose();
     }
@@ -454,7 +454,7 @@ public class PhysicsEngineTests : IDisposable
         // Act - Set position via Aether body directly (through our wrapper)
         // Note: Our wrapper doesn't have a Position setter yet, only WorldPosition getter
         // So we verify the initial state is correct
-        Assert.Equal(new Vector2(0, 0), body.WorldPosition);
+        Assert.Equal(new Vector2(0, 0), body.Position);
 
         engine.Dispose();
     }
@@ -516,7 +516,7 @@ public class PhysicsEngineTests : IDisposable
         // Assert — body2 should be a fresh wrapper but use the same underlying Aether Body instance (recycled).
         // We verify recycling by checking that body2 has no fixtures (they were removed on destroy).
         Assert.NotNull(body2);
-        Assert.Equal(new Vector2(30, 40), body2.WorldPosition);
+        Assert.Equal(new Vector2(30, 40), body2.Position);
         Assert.True(body2.IsDynamic);
 
         engine.Dispose();
@@ -543,7 +543,7 @@ public class PhysicsEngineTests : IDisposable
 
         // Assert — all recycled bodies are at correct positions.
         for (int i = 0; i < reusedBodies.Count; i++)
-            Assert.Equal(new Vector2(i * 10 + 1, i * 10 + 1), reusedBodies[i].WorldPosition);
+            Assert.Equal(new Vector2(i * 10 + 1, i * 10 + 1), reusedBodies[i].Position);
 
         engine.Dispose();
     }
@@ -559,12 +559,12 @@ public class PhysicsEngineTests : IDisposable
         engine.Destroy(body);
 
         // Assert — after destroy, body is unusable (_body is nulled).
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
         Assert.False(body.IsDynamic);
 
         // Now create a fresh body and verify it starts clean.
         var freshBody = engine.CreateDynamic(new Vector2(0, 0));
-        Assert.Equal(Vector2.Zero, freshBody.WorldPosition);
+        Assert.Equal(Vector2.Zero, freshBody.Position);
         Assert.True(freshBody.IsDynamic);
 
         engine.Dispose();
@@ -583,7 +583,7 @@ public class PhysicsEngineTests : IDisposable
         engine.Destroy(body);
 
         // Assert — body is now unusable (fixtures were removed).
-        Assert.Equal(Vector2.Zero, body.WorldPosition);
+        Assert.Equal(Vector2.Zero, body.Position);
 
         // Create a new recycled body and verify it has no fixtures initially.
         var newBody = engine.CreateDynamic(new Vector2(5, 5));
@@ -614,13 +614,13 @@ public class PhysicsEngineTests : IDisposable
 
         // Assert — each recycled body has correct type and position.
         Assert.True(newDynamic.IsDynamic);
-        Assert.Equal(new Vector2(100, 100), newDynamic.WorldPosition);
+        Assert.Equal(new Vector2(100, 100), newDynamic.Position);
 
         Assert.True(newStatic.IsStatic);
-        Assert.Equal(new Vector2(200, 200), newStatic.WorldPosition);
+        Assert.Equal(new Vector2(200, 200), newStatic.Position);
 
         Assert.True(newKinematic.IsKinematic);
-        Assert.Equal(new Vector2(300, 300), newKinematic.WorldPosition);
+        Assert.Equal(new Vector2(300, 300), newKinematic.Position);
 
         engine.Dispose();
     }

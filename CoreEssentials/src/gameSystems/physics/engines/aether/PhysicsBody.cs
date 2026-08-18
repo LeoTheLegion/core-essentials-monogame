@@ -61,7 +61,16 @@ public class PhysicsBody : IPhysicsBody
     #region Position & Rotation
 
     /// <inheritdoc/>
-    public Vector2 WorldPosition => _body?.Position ?? default;
+    public Vector2 Position
+    {
+        get => _body?.Position ?? default;
+        set
+        {
+            if (_body == null) return;
+            var rot = _body.Rotation;
+            _body.SetTransform(ref value, rot);
+        }
+    }
 
     /// <inheritdoc/>
     public float Rotation
@@ -70,7 +79,7 @@ public class PhysicsBody : IPhysicsBody
         set
         {
             if (_body == null) return;
-            var pos = _body.Position;
+            var pos = Position;
             _body.SetTransform(ref pos, value);
         }
     }
@@ -184,7 +193,20 @@ public class PhysicsBody : IPhysicsBody
     public void AddCollider(ICollider fixture) => _colliders.Add(fixture);
 
     /// <inheritdoc/>
-    public void RemoveCollider(ICollider fixture) => _colliders.Remove(fixture);
+    public void RemoveCollider(ICollider fixture)
+    {
+        _colliders.Remove(fixture);
+
+        // Destroy the underlying Aether fixture so it no longer participates in the
+        // simulation. Without this, recreating a collider (e.g. after a scale change)
+        // would leave the old fixture attached, producing duplicate colliders.
+        if (fixture is Collider aetherCollider && _body != null)
+        {
+            var aetherFixture = aetherCollider._aetherFixture;
+            if (aetherFixture != null && aetherFixture.Body == _body)
+                _body.Remove(aetherFixture);
+        }
+    }
 
     #endregion
 

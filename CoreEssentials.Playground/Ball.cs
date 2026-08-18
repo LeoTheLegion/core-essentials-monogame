@@ -1,153 +1,306 @@
-using System;
 using System.Collections;
+using System.Globalization;
+using System.Linq;
+using System.Xml.Linq;
 using CoreEssentials.Assets;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Debugging;
+using CoreEssentials.Utils;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GameSystems.Physics.Types;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+#nullable enable
+
 namespace CoreEssentials.Playground;
 
-public class Ball : Entity
-{    private Sprite _sprite;
-    private IPhysicsBody _body;
-    private ICollider _collisionFixture;
+public class Ball : Entity, ISaveableEntity
+{
+    private SpriteComponent? _spriteComponent;
+    private RigidbodyComponent? _rigidbodyComponent;
     private float _radius;
-    private float _scale = 1.0f; // Add a scale field
 
-    static Random _random = new Random();
+    private CoroutineOwner? _coroutineOwner;
 
-    private CoroutineOwner _coroutineOwner;
+    /// <summary>
+    /// Gets the rigidbody component for this ball.
+    /// </summary>
+    public RigidbodyComponent? RigidbodyComponent => _rigidbodyComponent;
 
-    public IPhysicsBody Body => _body;    
-
-    // Add a Scale property
-    public float Scale
-    {
-        get => _scale;
-        set
-        {
-            _scale = value;
-            if (_body != null && _collisionFixture != null)
-            {
-                // Update the physics body when scale changes
-                UpdatePhysicsBody();
-            }
-        }
-    }
-
-    public Ball(Vector2 position)
+    public Ball(Vector2 position, string? id = null)
     {
         Position = position;
         sort = 0;
-        
-        // Randomize the scale between 0.5 and 1.5
-        _scale = (float)(_random.NextDouble() + 0.5f);
-    }    public override void OnStart()
+        float randomScale = GameRandom.NextFloat(0.5f, 1.5f);
+        Scale = new Vector2(randomScale, randomScale);
+        if (id != null)
+            SetId(id);
+    }
+
+    // Parameterless constructor for XML serialization (Sprint 10)
+    public Ball() : this(Vector2.Zero) { }
+
+    public override void OnStart()
     {
         base.OnStart();
 
-        this._sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+        // Add sprite component only if not already present (e.g., from deserialization)
+        _spriteComponent = GetComponent<SpriteComponent>();
+        if (_spriteComponent == null)
+        {
+            var sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+            _spriteComponent = new SpriteComponent(sprite);
+            AddComponent(_spriteComponent);
 
-        // I hate this but I have to do it this way for now
-        _radius = this._sprite.GetSize().X / 2; // Assuming the sprite is a circle, use half the width as the radius
+            // Set default properties for fresh entities
+            _spriteComponent.Origin = new Vector2(0.5f, 0.5f);
+            _spriteComponent.Color = Color.White;
+            _spriteComponent.Effects = SpriteEffects.None;
+            _spriteComponent.LayerDepth = 0f;
+        }
+        else
+        {
+            // Assign sprite if it's null (e.g., component was created during deserialization without a sprite)
+            if (_spriteComponent.Sprite == null)
+            {
+                _spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+            }
+        }
 
-        PhysicsEngine physicsEngine = EntitySystem.GetGameSystem<PhysicsEngine>();
-        
-        // Create the physics body with appropriate scale
-        CreatePhysicsBody(physicsEngine);
+        // Add rigidbody component only if not already present
+        _rigidbodyComponent = GetComponent<RigidbodyComponent>();
+        if (_rigidbodyComponent == null)
+        {
+            _rigidbodyComponent = new RigidbodyComponent(RigidbodyType.Dynamic);
+            AddComponent(_rigidbodyComponent);
 
-        _coroutineOwner = new CoroutineOwner();
+            // Configure rigidbody properties (body auto-creates on first access)
+            _rigidbodyComponent.FixedRotation = false;
+            _rigidbodyComponent.Mass = 1f * Scale.X * Scale.X;
+        }
+
+        // Register sprite for instanced rendering if available
+        var renderSprite = _spriteComponent?.Sprite;
+        if (renderSprite != null)
+        {
+            RegisterForInstancedRendering(renderSprite);
+            _radius = renderSprite.GetSize().X / 2;
+        }
+
+        // Add collider component only if not already present
+        var colliderComponent = GetComponent<ColliderComponent>();
+        if (colliderComponent == null)
+        {
+            var colliderRadius = _radius * Scale.X;
+            var colliderOffset = new Vector2(0, 1);
+            colliderComponent = new ColliderComponent(colliderRadius, colliderOffset)
+            {
+                Restitution = 1f
+            };
+            AddComponent(colliderComponent);
+        }
+
+        // Start movement coroutine (base.OnStart() double-start guard prevents this from running twice on loaded entities)
+        _coroutineOwner ??= new CoroutineOwner();
         _coroutineOwner.StartCoroutine(RandomMovementCoroutine());
     }
 
-    private void CreatePhysicsBody(PhysicsEngine physicsEngine)
-    {
-        this._body = physicsEngine.CreateDynamic(Position);
-        this._body.FixedRotation = false; // Allow rotation
-        this._body.Mass = 1f * _scale * _scale; // Scale the mass proportionally to the area (scale squared)
-
-        // Create a circle fixture with the scaled radius
-        Vector2 offset = new Vector2(0, 1); // Note: API takes offset as second param for CreateCircle
-        _collisionFixture = this._body.CreateCircleCollider(_radius * _scale, offset);
-        _collisionFixture.Restitution = 1f; // Bounciness
-    }
-
-    private void UpdatePhysicsBody()
-    {
-        if (_body != null && _collisionFixture != null)
-        {
-            // Remove the old fixture and create new one with updated scale
-            _body.RemoveCollider(_collisionFixture);
-            
-            // Create a new fixture with the updated scale
-            Vector2 offset = new Vector2(0, 1);
-            _collisionFixture = _body.CreateCircleCollider(_radius * _scale, offset);
-            _collisionFixture.Restitution = 1f;
-            
-            // Update mass based on scale
-            _body.Mass = 1f * _scale * _scale;
-        }
-    }
-
-    public override void Update(GameTime gameTime)
-    {
-        if (_body != null)
-        {
-            Position = _body.WorldPosition;
-            Rotation = _body.Rotation;
-        }
-    }
+    // (Update handled by RigidbodyComponent)
 
     private IEnumerator RandomMovementCoroutine()
     {
-        while (true)
+        while (!Destroyed)
         {
-            // Generate random force
-            float randomX = (float)(_random.NextDouble() * 2 - 1); // Random value between -1 and 1
-            float randomY = (float)(_random.NextDouble() * 2 - 1); // Random value between -1 and 1
+            var direction = GameRandom.RandomVector2();
+            float randomX = direction.X;
+            float randomY = direction.Y;
 
-            // Apply the random impulse to the body (center of mass)
             var impulseStrength = 500000f;
-            _body.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
+            _rigidbodyComponent?.ApplyImpulse(new Vector2(randomX, randomY) * impulseStrength);
 
-            // Wait for a short duration before applying the next force
-            yield return new WaitForSeconds(_random.Next(1, 5)); // Random wait time between 1 and 5 seconds
+            // Add some spin so rotation is visible
+            _rigidbodyComponent?.ApplyAngularImpulse(GameRandom.NextSignedFloat() * 5f);
+
+            yield return new WaitForSeconds(GameRandom.Next(1, 5));
         }
-    }    public override void Render(SpriteBatch _spriteBatch)
+    }
+
+    public override void Render(SpriteBatch _spriteBatch)
     {
-        float rotation = _body.Rotation; // Get the rotation from the physics body
-        
-        // Use the new Draw method with scale
-        _sprite.Draw(_spriteBatch, Position, Color.White, rotation, _scale, SpriteEffects.None, 0f);
+        if (_spriteComponent == null) return;
+        _spriteComponent.Draw(_spriteBatch);
     }
 
     public override void OnDestroy()
     {
         base.OnDestroy();
 
-        PhysicsEngine physicsEngine = EntitySystem.GetGameSystem<PhysicsEngine>();
-        physicsEngine.Destroy(_body);
-        _body = null; // Set to null to avoid dangling reference
-
-        _coroutineOwner.StopAllCoroutines();
-        _coroutineOwner = null; // Clean up the coroutine owner
+        // Cleanup coroutines (component cleanup like DestroyBody is handled by OnDetach in base.OnDestroy())
+        _coroutineOwner?.StopAllCoroutines();
+        _coroutineOwner = null;
     }
 
-    ~ Ball()
+    /// <summary>
+    /// Saves this ball's state including position, transform, tags, physics velocity, and sprite color.
+    /// </summary>
+    public XElement SaveState()
     {
-        // Destructor to clean up resources if needed
-        if (_body != null)
+        var element = new XElement("Entity",
+            new XAttribute("Id", Id ?? string.Empty),
+            new XAttribute("Type", GetType().FullName ?? string.Empty),
+            new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
+            new XAttribute("Sort", GetSort()),
+            new XAttribute("Active", GetActive()),
+            new XElement("Position",
+                new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))
+            ),
+            new XElement("Scale",
+                new XAttribute("X", Scale.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Scale.Y.ToString(CultureInfo.InvariantCulture))
+            ),
+            new XElement("Tags",
+                Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
+            )
+        );
+
+        // Add physics state
+        if (_rigidbodyComponent != null && _rigidbodyComponent.IsBodyCreated)
         {
-            throw new InvalidOperationException("Ball is not destroyed properly. Please call Destroy() method.");
+            element.Add(new XElement("Physics",
+                new XAttribute("LinearVelocityX", _rigidbodyComponent.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("LinearVelocityY", _rigidbodyComponent.LinearVelocity.Y.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("AngularVelocity", _rigidbodyComponent.AngularVelocity.ToString(CultureInfo.InvariantCulture))
+            ));
         }
 
-        if (_coroutineOwner != null)
+        // Save sprite color so it survives save/load round-trips
+        if (_spriteComponent != null)
         {
-            throw new InvalidOperationException("Coroutine owner is not destroyed properly. Please call StopAllCoroutines() method.");
+            element.Add(new XElement("Sprite",
+                new XAttribute("Color", _spriteComponent.Color.PackedValue.ToString())
+            ));
+        }
+
+        return element;
+    }
+
+    /// <summary>
+    /// Restores this ball's state from XML including position, transform, tags, physics velocity, and sprite color.
+    /// Called by GameStateSerializer after OnStart() so components are guaranteed to exist.
+    /// </summary>
+    public void LoadState(XElement element)
+    {
+        RestorePosition(element);
+        RestoreRotation(element);
+        RestoreScale(element);
+        RestoreSortOrder(element);
+        RestoreActiveState(element);
+        RestoreTags(element);
+
+        // Restoring the entity transform is enough: RigidbodyComponent detects that the entity
+        // moved externally (save/load) and adopts it as the physics source of truth on the next
+        // Update, so the body integrates from the saved position. No explicit sync needed here.
+        RestorePhysicsVelocity(element);
+        RestoreSpriteColor(element);
+    }
+
+    private void RestorePosition(XElement element)
+    {
+        var positionElement = element.Element("Position");
+        if (positionElement != null &&
+            float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+            float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
+        {
+            Position = new Vector2(x, y);
+        }
+    }
+
+    private void RestoreRotation(XElement element)
+    {
+        if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
+        {
+            Rotation = rotation;
+        }
+    }
+
+    private void RestoreScale(XElement element)
+    {
+        var scaleElement = element.Element("Scale");
+        if (scaleElement != null &&
+            float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+            float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
+        {
+            Scale = new Vector2(scaleX, scaleY);
+        }
+    }
+
+    private void RestoreSortOrder(XElement element)
+    {
+        if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sortOrder))
+        {
+            SetSort(sortOrder);
+        }
+    }
+
+    private void RestoreActiveState(XElement element)
+    {
+        if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
+        {
+            SetActive(active);
+        }
+    }
+
+    private void RestoreTags(XElement element)
+    {
+        var tagsElement = element.Element("Tags");
+        if (tagsElement == null) return;
+
+        foreach (var tag in Tags.ToList())
+        {
+            RemoveTag(tag);
+        }
+
+        foreach (var tagElement in tagsElement.Elements("Tag"))
+        {
+            var tagName = tagElement.Attribute("Name")?.Value;
+            if (!string.IsNullOrWhiteSpace(tagName))
+            {
+                SetTag(tagName);
+            }
+        }
+    }
+
+    private void RestorePhysicsVelocity(XElement element)
+    {
+        var physics = element.Element("Physics");
+        if (physics == null || _rigidbodyComponent == null || !_rigidbodyComponent.IsBodyCreated) return;
+
+        if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
+            float.TryParse(physics.Attribute("LinearVelocityY")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
+        {
+            _rigidbodyComponent.SetLinearVelocity(new Vector2(velX, velY));
+        }
+
+        if (float.TryParse(physics.Attribute("AngularVelocity")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
+        {
+            _rigidbodyComponent.AngularVelocity = angVel;
+        }
+    }
+
+    private void RestoreSpriteColor(XElement element)
+    {
+        var sprite = element.Element("Sprite");
+        if (sprite == null || _spriteComponent == null) return;
+
+        var colorAttr = sprite.Attribute("Color")?.Value;
+        if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
+        {
+            _spriteComponent.Color = new Microsoft.Xna.Framework.Color(argb);
         }
     }
 }

@@ -338,7 +338,7 @@ _grid.Background = Color.Black.WithAlpha(100).AsBrush(); // opacity still set im
 
 The XML layout file (`StickyLogLayout.xml`) defines the static container structure — dimensions, spacing, visibility. Runtime-dynamic elements (individual log entries added via `CreateNewLabel()`) remain imperative, which is correct: **XML for static structure, code for dynamic content**.
 
-See `docs/gui_refactor_sprints/Sprint_7_StickyLog_XML_Refactor.md` for the full migration details.
+See `sprints/gui_refactor_sprints/Sprint_7_StickyLog_XML_Refactor.md` for the full migration details.
 
 ---
 

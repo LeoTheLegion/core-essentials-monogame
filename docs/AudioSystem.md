@@ -36,15 +36,16 @@ AudioManager.Instance.ResumeSound(musicId);
 
 ### Volume Control
 
-Control volume levels globally or for individual sounds:
+Control the global volume applied to all active sounds:
 
 ```csharp
-// Set the master volume (0.0f to 1.0f)
+// Set the master volume (0.0f to 1.0f) — applies to all currently playing sounds
 AudioManager.Instance.SetMasterVolume(0.8f);
-
-// Set the volume for a specific sound
-AudioManager.Instance.SetSoundVolume(soundId, 0.5f);
 ```
+
+> **Note:** Volume is controlled at the master level only. There is no per-sound volume API.
+> To change a sound's loudness, adjust the `<Volume>` value in its XML asset definition, or
+> use `SetMasterVolume` to scale everything globally.
 
 ### Audio Assets
 

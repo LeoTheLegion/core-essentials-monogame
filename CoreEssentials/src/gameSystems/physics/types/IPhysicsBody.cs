@@ -11,9 +11,10 @@ public interface IPhysicsBody : IDisposable
     // ─── Position & Rotation ─────────────────────────────────────────────
 
     /// <summary>
-    /// Gets the current world position of this body.
+    /// Gets or sets the world position of this body.
+    /// Setting this directly bypasses physics simulation (useful for teleporting or restoring saved state).
     /// </summary>
-    Vector2 WorldPosition { get; }
+    Vector2 Position { get; set; }
 
     /// <summary>
     /// Gets or sets the rotation of this body in radians.

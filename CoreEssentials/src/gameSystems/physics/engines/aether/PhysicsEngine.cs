@@ -40,11 +40,22 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
     /// </summary>
     public int PositionIterations { get; set; } = 3;
 
+    /// <summary>
+    /// Gets the declarative configuration this engine was created from, if any.
+    /// Exposes the named collision-category map so scenes can resolve friendly names
+    /// (e.g. <c>config.Resolve("Player")</c>) to <see cref="CollisionCategory"/> bits.
+    /// </summary>
+    public PhysicsConfig? Config { get; }
+
     // Cache of PhysicsBody wrappers keyed by Aether Body — prevents duplicate wrappers.
     private readonly Dictionary<Body, PhysicsBody> _physicsBodies = new();
 
     // Pool of recycled bodies to reduce GC pressure on frequent create/destroy cycles.
     private readonly Queue<Body> _bodyPool = new();
+
+    // Tracks body pairs currently in active contact (reference-counted to handle
+    // multiple simultaneous contacts between the same two bodies). Used by GetActiveContacts().
+    private readonly Dictionary<ContactKey, int> _activeContacts = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PhysicsEngine"/> class with default gravity (0, -9.81).
@@ -63,6 +74,23 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
     public PhysicsEngine(Vector2 gravity)
     {
         _world = new World(gravity);
+        WireContactManager();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PhysicsEngine"/> class from a declarative
+    /// <see cref="PhysicsConfig"/>. Applies the configured gravity and solver iterations, and
+    /// exposes the config (for named collision-category resolution) via <see cref="Config"/>.
+    /// </summary>
+    /// <param name="config">The physics configuration loaded from XML.</param>
+    public PhysicsEngine(PhysicsConfig config)
+    {
+        if (config == null) throw new ArgumentNullException(nameof(config));
+
+        Config = config;
+        _world = new World(config.Gravity);
+        VelocityIterations = config.VelocityIterations;
+        PositionIterations = config.PositionIterations;
         WireContactManager();
     }
 
@@ -98,6 +126,7 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
             // Clear all bodies, joints, and fixtures from the world.
             _world.Clear();
             _physicsBodies.Clear();
+            _activeContacts.Clear();
         }
 
         _disposed = true;
@@ -150,8 +179,13 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         }
 
         // If any handler (body or collider) returned false, disable the contact to reject it.
-        if (rejectBodyA || rejectBodyB || rejectCollider)
+        bool rejected = rejectBodyA || rejectBodyB || rejectCollider;
+        if (rejected)
             contact.Enabled = false;
+
+        // Track the active contact so GetActiveContacts() can report colliding body pairs.
+        if (!rejected)
+            AddActiveContact(bodyA, bodyB);
 
         // Return true to keep the contact (Aether will destroy it ourselves if rejected).
         return true;
@@ -184,6 +218,9 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
             concreteColliderA.RaiseOnSeparation(concreteColliderB);
             concreteColliderB.RaiseOnSeparation(concreteColliderA);
         }
+
+        // Clear the active-contact record for this body pair.
+        RemoveActiveContact(bodyA, bodyB);
     }
 
     /// <summary>
@@ -201,6 +238,81 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         return null;
     }
 
+    /// <summary>
+    /// Gets the body pairs that are currently in active contact, as tracked from the
+    /// physics world's BeginContact/EndContact callbacks.
+    /// </summary>
+    /// <returns>An immutable collection of the currently colliding body pairs.</returns>
+    public IReadOnlyCollection<BodyContactPair> GetActiveContacts()
+    {
+        var result = new List<BodyContactPair>(_activeContacts.Count);
+        foreach (var kvp in _activeContacts)
+        {
+            if (kvp.Value > 0)
+                result.Add(new BodyContactPair(kvp.Key.A, kvp.Key.B));
+        }
+        return result;
+    }
+
+    private void AddActiveContact(IPhysicsBody a, IPhysicsBody b)
+    {
+        var key = ContactKey.Create(a, b);
+        _activeContacts[key] = _activeContacts.GetValueOrDefault(key) + 1;
+    }
+
+    private void RemoveActiveContact(IPhysicsBody a, IPhysicsBody b)
+    {
+        var key = ContactKey.Create(a, b);
+        if (!_activeContacts.TryGetValue(key, out int count))
+            return;
+
+        count--;
+        if (count <= 0)
+            _activeContacts.Remove(key);
+        else
+            _activeContacts[key] = count;
+    }
+
+    private void RemoveContactsForBody(IPhysicsBody body)
+    {
+        foreach (var key in _activeContacts.Keys.ToList())
+        {
+            if (ReferenceEquals(key.A, body) || ReferenceEquals(key.B, body))
+                _activeContacts.Remove(key);
+        }
+    }
+
+    /// <summary>
+    /// A normalized, order-independent key for an unordered physics body contact pair.
+    /// </summary>
+    private readonly struct ContactKey : IEquatable<ContactKey>
+    {
+        public readonly IPhysicsBody A;
+        public readonly IPhysicsBody B;
+
+        private ContactKey(IPhysicsBody a, IPhysicsBody b)
+        {
+            A = a;
+            B = b;
+        }
+
+        public static ContactKey Create(IPhysicsBody x, IPhysicsBody y)
+        {
+            int hx = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(x);
+            int hy = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(y);
+            return hx <= hy ? new ContactKey(x, y) : new ContactKey(y, x);
+        }
+
+        public bool Equals(ContactKey other)
+            => ReferenceEquals(A, other.A) && ReferenceEquals(B, other.B);
+
+        public override bool Equals(object? obj) => obj is ContactKey other && Equals(other);
+
+        public override int GetHashCode()
+            => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(A)
+               ^ System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(B);
+    }
+
     #endregion
 
     /// <summary>
@@ -211,6 +323,16 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         get => _world.Gravity;
         set => _world.Gravity = value;
     }
+
+    /// <summary>
+    /// Gets the underlying Aether <see cref="World"/>.
+    /// <para>
+    /// <b>Internal only:</b> exposed so the Aether-specific <c>PhysicsDebugRenderer</c>
+    /// (same assembly) can drive Aether's built-in <c>DebugView</c>. This is deliberately
+    /// <c>internal</c> so the engine-agnostic public API never leaks Aether types.
+    /// </para>
+    /// </summary>
+    internal World AetherWorld => _world;
 
     #region Body Creation
 
@@ -299,6 +421,9 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
 
         _physicsBodies.Remove(aetherBody);
 
+        // Drop any tracked active contacts involving this body.
+        RemoveContactsForBody(body);
+
         // Disable and reset — keep body in world so it can be re-enabled from the pool.
         // This is the same pattern as the old WorldPool.cs: disabled bodies are not simulated.
         aetherBody.Enabled = false;
@@ -366,6 +491,7 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         var aetherBody = pb?._body;
         if (aetherBody == null) return;
         _physicsBodies.Remove(aetherBody);
+        RemoveContactsForBody(body);
     }
 
     /// <inheritdoc/>
@@ -381,6 +507,7 @@ public class PhysicsEngine : GameSystem, IFixedUpdateGameSystem, IPhysicsWorld
         }
 
         _physicsBodies.Clear();
+        _activeContacts.Clear();
     }
 
     /// <inheritdoc/>

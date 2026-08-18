@@ -1,9 +1,9 @@
+using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GUI;
 using CoreEssentials.Audio;
 using CoreEssentials.GUI.Factory;
 using Microsoft.Xna.Framework;
-using System;
 
 namespace CoreEssentials.Playground;
 
@@ -15,15 +15,26 @@ public class VolumeButtonEntity : Entity
     private Canvas _canvas;
     private float _volumeLevel;
     private string _buttonText;
-    
+
+    // Parameterless constructor for XML/template loading
+    public VolumeButtonEntity()
+    {
+        _canvas = new Canvas();
+    }
+
     public VolumeButtonEntity(Vector2 position, float volumeLevel, string buttonText)
     {
         _position = position;
+        Configure(volumeLevel, buttonText);
+    }
+
+    /// <summary>
+    /// Configures the button with volume level and text.
+    /// </summary>
+    public void Configure(float volumeLevel, string buttonText)
+    {
         _volumeLevel = volumeLevel;
         _buttonText = buttonText;
-        
-        // Create canvas for UI components
-        _canvas = new Canvas();
         
         // Create a button for setting the volume via factory (returns IButton interface)
         var button = WidgetFactory.CreateTextButton(_buttonText);

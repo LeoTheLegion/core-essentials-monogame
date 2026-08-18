@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.Scenes;
@@ -7,112 +8,126 @@ using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using CoreEssentials.Audio;
-using CoreEssentials.Assets;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.Playground;
 
 /// <summary>
 /// A scene to demonstrate the SpriteSheet functionality with a character display.
+/// Demonstrates XML-based entity loading using templates and EntitySerializer.LoadSceneFromXml.
 /// </summary>
 public class CharacterScene : Scene
 {
     private string songID;
-    private const string InfoText = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
-    private const string CharacterInfo = "Static Character (Left) | Animated Character (Right)";
-    
+
     protected override GameSystem[] LoadGameSystems()
     {
-        // Only need the entity system for this demo
         return new GameSystem[]
         {
             new EntitySystem()
         };
     }
-    
+
     protected override IEnumerator OnStartCoroutine()
     {
         UpdateLoadingProgress(0.1f, "Initializing character scene...");
         yield return null;
-        
-        GraphicsDeviceManager graphics = SceneManager.Game.Graphics;
 
-        // Ensure window size is appropriate
+        GraphicsDeviceManager graphics = SceneManager.Game.Graphics;
         graphics.PreferredBackBufferWidth = 1280;
         graphics.PreferredBackBufferHeight = 720;
         graphics.ApplyChanges();
-        
-        UpdateLoadingProgress(0.5f, "Creating characters...");
+
+        UpdateLoadingProgress(0.3f, "Registering templates...");
         yield return null;
-        
-        // Get access to the entity system
+
         EntitySystem entitySystem = GetGameSystem<EntitySystem>();
-        
-        // Create a static character entity at the left side of the screen
-        entitySystem.CreateEntity<CharacterEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 4, graphics.PreferredBackBufferHeight / 2)
-        );
 
-        // Create an animated character entity at the right side of the screen
-        entitySystem.CreateEntity<AnimatedCharacterEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth * 3 / 4, graphics.PreferredBackBufferHeight / 2)
-        );
-        
-        // Create text entities for UI information
-        entitySystem.CreateEntity<TextEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 2, 20),
-            InfoText,
-            Color.White,
-            TextEntity.TextAlignment.Center
-        );
-        
-        entitySystem.CreateEntity<TextEntity>(
-            new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight - 40),
-            CharacterInfo,
-            Color.LightGreen,
-            TextEntity.TextAlignment.Center
-        );
+        // Register reusable entity templates
+        entitySystem.RegisterTemplate("TextPrefab", "TextTemplate.xml");
+        entitySystem.RegisterTemplate("SoundButtonPrefab", "SoundButtonTemplate.xml");
+        entitySystem.RegisterTemplate("VolumeButtonPrefab", "VolumeButtonTemplate.xml");
 
-        // Create sound button entities
-        entitySystem.CreateEntity<SoundButtonEntity>(
-            new Vector2(100, 100),
-            "footstep1_sound.xml",
-            "Footstep 1"
-        );
-        
-        entitySystem.CreateEntity<SoundButtonEntity>(
-            new Vector2(100, 150),
-            "footstep2_sound.xml",
-            "Footstep 2"
-        );
-        
-        entitySystem.CreateEntity<SoundButtonEntity>(
-            new Vector2(100, 200),
-            "footstep3_sound.xml",
-            "Footstep 3"
-        );
-        
-        // Create volume control buttons
-        entitySystem.CreateEntity<VolumeButtonEntity>(
-            new Vector2(100, 250),
-            0.1f,
-            "Volume: 10%"
-        );
-        
-        entitySystem.CreateEntity<VolumeButtonEntity>(
-            new Vector2(100, 300),
-            1.0f,
-            "Volume: 100%"
-        );
+        UpdateLoadingProgress(0.5f, "Loading entities from XML...");
+        yield return null;
+
+        // Load all entities from scene definition (uses EntitySerializer.LoadSceneFromXml)
+        var sceneAsset = AssetManager.LoadAsset<CoreEssentials.Assets.XMLAsset>("CharacterScene.xml");
+        var entities = LoadEntitiesFromXml(sceneAsset, entitySystem);
+
+        UpdateLoadingProgress(0.7f, "Configuring entities by ID...");
+        yield return null;
+
+        // Configure text entities using ID lookup
+        var infoTextEntity = entitySystem.FindById("infoText") as TextEntity;
+        if (infoTextEntity != null)
+        {
+            infoTextEntity.Text = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
+            infoTextEntity.Color = Color.White;
+            infoTextEntity.Alignment = TextEntity.TextAlignment.Center;
+        }
+
+        var charInfoTextEntity = entitySystem.FindById("characterInfoText") as TextEntity;
+        if (charInfoTextEntity != null)
+        {
+            charInfoTextEntity.Text = "Static Character (Left) | Animated Character (Right)";
+            charInfoTextEntity.Color = Color.LightGreen;
+            charInfoTextEntity.Alignment = TextEntity.TextAlignment.Center;
+        }
+
+        // Configure sound buttons using ID lookup
+        var footstep1Btn = entitySystem.FindById("footstep1Button") as SoundButtonEntity;
+        if (footstep1Btn != null) footstep1Btn.Configure("footstep1_sound.xml", "Footstep 1");
+
+        var footstep2Btn = entitySystem.FindById("footstep2Button") as SoundButtonEntity;
+        if (footstep2Btn != null) footstep2Btn.Configure("footstep2_sound.xml", "Footstep 2");
+
+        var footstep3Btn = entitySystem.FindById("footstep3Button") as SoundButtonEntity;
+        if (footstep3Btn != null) footstep3Btn.Configure("footstep3_sound.xml", "Footstep 3");
+
+        // Configure volume buttons using ID lookup
+        var volumeLowBtn = entitySystem.FindById("volumeLowButton") as VolumeButtonEntity;
+        if (volumeLowBtn != null) volumeLowBtn.Configure(0.1f, "Volume: 10%");
+
+        var volumeHighBtn = entitySystem.FindById("volumeHighButton") as VolumeButtonEntity;
+        if (volumeHighBtn != null) volumeHighBtn.Configure(1.0f, "Volume: 100%");
+
+        UpdateLoadingProgress(0.9f, "Scene ready!");
+        yield return null;
 
         // Register input handler
         Input.Keyboard.KeyReleased += Reset();
         Input.Keyboard.KeyReleased += PlaySound();
-        
+
+        // Setup debug visualization — toggle with F3
+        entitySystem.DebugMode = true;
+        entitySystem.DebugConfig.ShowEntityBounds = true;
+        entitySystem.DebugConfig.ShowEntityIds = true;
+        entitySystem.DebugConfig.ShowEntityTags = true;
+        entitySystem.DebugConfig.ShowEntityHierarchy = true;
+        entitySystem.DebugConfig.ShowEntityPosition = true;
+        entitySystem.DebugFont = AssetManager.LoadAsset<FontAsset>("base");
+
         UpdateLoadingProgress(1.0f, "Scene ready!");
-        Console.WriteLine("Character scene loaded successfully!");
+        Console.WriteLine($"Character scene loaded with {entities.Count} entities from XML! (Debug mode ON — press F3 to toggle)");
 
         songID = AudioManager.Instance.PlaySound("song1_sound.xml");
+    }
+
+    /// <summary>
+    /// Pauses or resumes this scene's background music when the application loses or regains focus.
+    /// </summary>
+    public override void OnApplicationPause(bool paused)
+    {
+        base.OnApplicationPause(paused);
+
+        if (string.IsNullOrEmpty(songID))
+            return;
+
+        if (paused)
+            AudioManager.Instance.PauseSound(songID);
+        else
+            AudioManager.Instance.ResumeSound(songID);
     }
 
     public override void Unload()
@@ -135,7 +150,7 @@ public class CharacterScene : Scene
         };
     }
 
-    private static EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
+    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
     {
         return (sender, args) =>
         {
@@ -170,6 +185,13 @@ public class CharacterScene : Scene
             {
                 AudioManager.Instance.SetMasterVolume(1.0f);
                 Console.WriteLine("Volume set to 100%");
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.F3)
+            {
+                var entitySystem = GetGameSystem<EntitySystem>();
+                entitySystem.DebugMode = !entitySystem.DebugMode;
+                Console.WriteLine($"Debug mode: {(entitySystem.DebugMode ? "ON" : "OFF")}");
             }
         };
     }
