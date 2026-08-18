@@ -15,11 +15,11 @@ Texture2DAsset textureAsset = AssetManager.LoadAsset<Texture2DAsset>("character_
 // Load a sprite that references a sprite sheet
 Sprite sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
-// Load an animated sprite
-AnimatedSprite animSprite = AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
+// Load an animated sprite (same Sprite type — a one-frame sprite is just a static sprite)
+Sprite animSprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
 
 // Load audio
-SoundAsset sound = AssetManager.LoadAsset<SoundAsset>("footstep1_sound.xml");
+AudioClip sound = AssetManager.LoadAsset<AudioClip>("footstep1_sound.xml");
 
 // Load a font
 FontAsset font = AssetManager.LoadAsset<FontAsset>("base");
@@ -97,7 +97,7 @@ The `SpriteSheet` class manages sprite atlases and defines frames:
 // Load a sprite sheet from XML definition
 SpriteSheet sheet = AssetManager.LoadAsset<SpriteSheet>("character_sheet.xml");
 
-// Sprite sheets are typically used by Sprite and AnimatedSprite classes
+// Sprite sheets are typically used by the Sprite class
 // and not directly manipulated
 ```
 
@@ -244,7 +244,7 @@ CoreEssentials uses XML files for defining complex assets:
 
 ```xml
 <!-- Example animated sprite XML (character_anim_walk.xml) -->
-<AnimatedSpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+<SpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
   <SourceType>spritesheet</SourceType>
   <Source>character_sheet.xml</Source>
   <Size>
@@ -253,7 +253,7 @@ CoreEssentials uses XML files for defining complex assets:
   </Size>
   <Frames>36,37,38,39,40,41,42,43</Frames>
   <FrameRate>11</FrameRate>
-</AnimatedSpriteData>
+</SpriteData>
 ```
 
 ### Audio Asset XML
@@ -269,11 +269,11 @@ CoreEssentials uses XML files for defining complex assets:
 
 ## Animation System
 
-CoreEssentials includes a robust animation system with `AnimatedSprite` and `AnimationState`:
+CoreEssentials includes a robust animation system built on the unified `Sprite` type and `AnimationState`:
 
 ```csharp
-// Load an animated sprite from XML definition
-AnimatedSprite animatedSprite = AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
+// Load an animated sprite from XML definition (the same Sprite type handles static and animated)
+Sprite animatedSprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
 
 // Create an animation state to track the animation progress for an instance
 AnimationState animState = new AnimationState(animatedSprite);
@@ -359,18 +359,18 @@ public class CharacterEntity : Entity
 
 public class AnimatedCharacterEntity : Entity
 {
-    private AnimatedSprite _animatedSprite;
+    private Sprite _sprite;
     private AnimationState _animationState;
     
     public AnimatedCharacterEntity(Vector2 position)
     {
         _position = position;
         
-        // Load the animated sprite
-        _animatedSprite = (AnimatedSprite)AssetManager.LoadAsset<AnimatedSprite>("character_anim_walk.xml");
+        // Load the animated sprite (unified Sprite type)
+        _sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
         
         // Create animation state for this instance
-        _animationState = new AnimationState(_animatedSprite);
+        _animationState = new AnimationState(_sprite);
     }
     
     public override void OnStart()
@@ -409,7 +409,7 @@ public class AnimatedCharacterEntity : Entity
 - Define assets through XML files following the proper schema namespaces
 - Organize assets in a logical folder structure in the Content directory
 - Always access assets through the static AssetManager.LoadAsset<T> method for automatic caching and reference counting
-- Let animations play through AnimationState instances rather than manipulating the AnimatedSprite directly
+- Let animations play through AnimationState instances rather than manipulating the Sprite directly
 - Make use of the Origin defined in sprite sheets for proper centering and rotation
 - Use descriptive filenames for your XML asset definitions
 - Consider memory usage when working with large textures

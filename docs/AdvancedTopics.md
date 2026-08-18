@@ -227,7 +227,8 @@ public class InputAction
     
     public InputAction AddGamepadBinding(PlayerIndex playerIndex, Buttons button)
     {
-        _conditions.Add(() => Input.Gamepad.IsButtonDown(playerIndex, button));
+        // No Input.Gamepad API — use MonoGame's GamePad directly
+        _conditions.Add(() => GamePad.GetState(playerIndex).Buttons[button] == ButtonState.Pressed);
         return this;
     }
     

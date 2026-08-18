@@ -41,10 +41,9 @@ public class BulletEntity : Entity, IPooledEntity
     private float _speed = 500f;
     private int _damage = 10;
     
-    public override void Reset()
+    public void Reset()
     {
-        base.Reset();
-        // Reset custom state
+        // Reset custom state (Entity has no virtual Reset to call)
         Velocity = Vector2.Zero;
         Damage = _damage;
         Lifetime = 3f;
