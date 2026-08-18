@@ -1,5 +1,11 @@
 # Entity System Roadmap
 
+> **Note:** This is a **historical planning document** written before several of the
+> features below were implemented. The "Current State" section and the "API Sketch"
+> XML/C# blocks reflect the design *at the time* and are **not** the current API.
+> For the current, implemented API see [Entity System](./EntitySystem.md),
+> [Entity Templates](./EntityTemplates.md), and [XML Entity Definitions](./XMLEntityDefinitions.md).
+
 Future enhancements and feature ideas for the Entity System in CoreEssentials-MonoGame.
 
 ## Current State
