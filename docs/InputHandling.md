@@ -218,7 +218,7 @@ private EventHandler<KeyboardEventArgs> PlaySound()
         {
             // Play a sound effect when Q is pressed
             var id = AudioManager.Instance.PlayOneShotSound("footstep1_sound.xml");
-            Debug.Console.WriteLine($"Sound played with ID: {id}");
+            Console.WriteLine($"Sound played with ID: {id}");
         }
         
         // Additional key handling...

@@ -4,8 +4,8 @@ This guide will walk you through the process of setting up a new project using t
 
 ## Prerequisites
 
-- [.NET 5.0 or higher](https://dotnet.microsoft.com/download)
-- [Visual Studio 2019 or higher](https://visualstudio.microsoft.com/) (with .NET desktop development workload)
+- [.NET 8.0 or higher](https://dotnet.microsoft.com/download)
+- [Visual Studio 2022 or higher](https://visualstudio.microsoft.com/) (with .NET desktop development workload)
 - [MonoGame](https://www.monogame.net/downloads/) (MonoGame 3.8+ recommended)
 
 ## Create a New Project
@@ -64,7 +64,7 @@ using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.Inputs;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
 using CoreEssentials.Debugging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -128,7 +128,8 @@ Create an entity class for your menu:
 
 ```csharp
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.SceneManagement;
+using CoreEssentials.Scenes;
+using CoreEssentials.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -136,33 +137,33 @@ namespace YourGameNamespace
 {
     public class MenuEntity : Entity
     {
-        private SpriteFont _font;
+        private FontAsset _font;
         private string _titleText = "My Awesome Game";
         private string _instructionText = "Press ENTER to start";
         
-        public override void Initialize()
+        public override void OnStart()
         {
-            base.Initialize();
+            base.OnStart();
             
-            // Load font from content (assumes you've added a SpriteFont to your Content project)
-            _font = Scene.Game.Content.Load<SpriteFont>("Fonts/MenuFont");
+            // Load font through the asset manager (assumes you've added a SpriteFont to your Content project)
+            _font = AssetManager.LoadAsset<FontAsset>("Fonts/MenuFont");
         }
         
-        public override void Draw(SpriteBatch spriteBatch)
+        public override void Render(SpriteBatch spriteBatch)
         {
-            base.Draw(spriteBatch);
+            base.Render(spriteBatch);
             
             // Draw title text
-            Vector2 titleSize = _font.MeasureString(_titleText);
-            spriteBatch.DrawString(_font, _titleText, 
+            Vector2 titleSize = _font.MeasureStringVector(_titleText);
+            _font.Font.DrawString(spriteBatch, _titleText, 
                 Position - new Vector2(titleSize.X / 2, 50), 
-                Color.White);
+                Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             
             // Draw instruction text
-            Vector2 instructSize = _font.MeasureString(_instructionText);
-            spriteBatch.DrawString(_font, _instructionText, 
+            Vector2 instructSize = _font.MeasureStringVector(_instructionText);
+            _font.Font.DrawString(spriteBatch, _instructionText, 
                 Position - new Vector2(instructSize.X / 2, -50), 
-                Color.Yellow);
+                Color.Yellow, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
         }
     }
 }
@@ -232,41 +233,44 @@ public class GameplayScene : Scene
 
 ### Create a Physics-Enabled Entity
 
+Physics is added to entities through components. A `RigidbodyComponent` gives the entity a physics body, and a `ColliderComponent` gives it a shape. The rigidbody keeps the entity's `Position`/`Rotation` in sync with the physics body automatically.
+
 ```csharp
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.Assets;
+using CoreEssentials.Inputs;
+
 public class PlayerEntity : Entity
 {
-    public Body Body { get; private set; }
-    private Sprite _sprite;
+    private RigidbodyComponent _rigidbody;
+    private SpriteComponent _sprite;
     
-    public override void Initialize()
+    public override void OnStart()
     {
-        base.Initialize();
+        base.OnStart();
         
-        // Get physics system
-        PhysicsEngine physics = Scene.GetGameSystem<PhysicsEngine>();
+        // Add a dynamic rigidbody (body is created lazily on first access)
+        _rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
+        _rigidbody.Mass = 1f;
+        AddComponent(_rigidbody);
         
-        // Create physics body
-        Body = physics.CreateCircle(Position, 16f, 1f);
-        Body.BodyType = BodyType.Dynamic;
-        Body.LinearDamping = 0.5f;
-        Body.Restitution = 0.5f;
-        Body.Tag = this;
+        // Add a circle collider
+        var collider = new ColliderComponent(radius: 16f);
+        collider.Restitution = 0.5f;
+        AddComponent(collider);
         
-        // Load sprite
-        SpriteSheet sheet = Scene.AssetManager.LoadSpriteSheet("player.xml");
-        _sprite = sheet.GetSprite("default");
-        _sprite.Origin = new Vector2(_sprite.Width / 2, _sprite.Height / 2);
+        // Load and add a sprite
+        var sprite = AssetManager.LoadAsset<Sprite>("player.xml");
+        _sprite = new SpriteComponent(sprite);
+        _sprite.Origin = new Vector2(0.5f, 0.5f);
+        AddComponent(_sprite);
     }
     
     public override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
         
-        // Update position from physics body
-        Position = Body.Position;
-        Rotation = Body.Rotation;
-        
-        // Handle input
+        // Handle input and apply a force through the rigidbody component
         Vector2 force = Vector2.Zero;
         
         if (Input.Keyboard.IsKeyDown(Keys.W)) force.Y -= 1;
@@ -276,56 +280,60 @@ public class PlayerEntity : Entity
         
         if (force != Vector2.Zero)
         {
-            // Normalize and apply force
             force.Normalize();
             force *= 10f;
-            Body.ApplyForce(force);
+            _rigidbody.ApplyImpulse(force);
         }
+        
+        // Position/Rotation are synced from the physics body automatically.
     }
     
-    public override void Draw(SpriteBatch spriteBatch)
+    public override void Render(SpriteBatch spriteBatch)
     {
-        base.Draw(spriteBatch);
+        base.Render(spriteBatch);
         
-        _sprite.Draw(spriteBatch, Position, Rotation);
+        _sprite.Draw(spriteBatch);
     }
 }
 ```
 
 ## Using Audio
 
-Add sound effects to your gameplay:
+Add sound effects to your gameplay through the `AudioManager` singleton:
 
 ```csharp
 // Inside PlayerEntity.cs
-private string _engineSoundId;
-
-public override void Initialize()
-{
-    // ...existing code...
-    
-    // Play engine sound when moving
-    _engineSoundId = AudioManager.Instance.PlaySound("engine_sound.xml");
-    AudioManager.Instance.SetSoundVolume(_engineSoundId, 0.0f);
-}
+private string _footstepSoundId;
 
 public override void Update(GameTime gameTime)
 {
     // ...existing code...
     
-    // Adjust engine sound volume based on movement
-    float speed = Body.LinearVelocity.Length();
-    float volume = MathHelper.Clamp(speed / 10f, 0f, 1f);
-    AudioManager.Instance.SetSoundVolume(_engineSoundId, volume * 0.5f);
+    // Play a one-shot sound effect (e.g., footsteps)
+    _footstepSoundId = AudioManager.Instance.PlayOneShotSound("footstep_sound.xml");
 }
 
 public override void OnDestroy()
 {
     base.OnDestroy();
     
-    // Stop sound when entity is destroyed
-    AudioManager.Instance.StopSound(_engineSoundId);
+    // Stop sounds when the entity is destroyed
+    if (_footstepSoundId != null)
+        AudioManager.Instance.StopSound(_footstepSoundId);
 }
+```
+
+Other useful `AudioManager` methods:
+
+```csharp
+// Start a looping/controllable sound
+string id = AudioManager.Instance.PlaySound("engine_sound.xml");
+AudioManager.Instance.PauseSound(id);
+AudioManager.Instance.ResumeSound(id);
+AudioManager.Instance.StopSound(id);
+
+// Adjust the overall volume
+AudioManager.Instance.SetMasterVolume(0.5f);
 ```
 
 ## Running and Testing

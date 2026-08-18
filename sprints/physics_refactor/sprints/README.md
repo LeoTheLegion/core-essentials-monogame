@@ -28,7 +28,7 @@ core-essentials-monogame.sln
 │   └── factory/                 # Factory classes for creating physics objects
 │       ├── PhysicsFactory.cs   # 🔒 Creates bodies via interfaces
 │       └── SpatialShapeFactory.cs # 🔒 Shape creation factory
-├── docs/physics_refactor/sprints/    # These sprint files
+├── sprints/physics_refactor/sprints/    # These sprint files
 ```
 
 **Key Design Decision:** Users interact ONLY through `IPhysicsBody` and the `PhysicsEngine` GameSystem. The world type (`IPhysicsWorld`) is **COMPLETELY HIDDEN** from users — it's managed internally by `PhysicsEngine` with no public API exposure. All other types (`IFixture`, `IShape`, `IConstraint`) are also internal-only 🔒.

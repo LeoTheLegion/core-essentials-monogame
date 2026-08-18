@@ -84,9 +84,9 @@ namespace YourGame
 
 ## Active Refactoring Projects
 
-- [Physics Refactor Sprints](./physics_refactor/sprints/README.md) — Engine-swap pattern for physics (completed ✅)
-- [GUI Refactor Sprints](./gui_refactor_sprints/README.md) — Abstraction layer to remove direct Myra dependencies (completed ✅)
-- [Namespace Cleanup Sprints](./namespace_cleanup_sprints/README.md) — Standardize folder casing and namespace consistency
+- [Physics Refactor Sprints](../sprints/physics_refactor/sprints/README.md) — Engine-swap pattern for physics (completed ✅)
+- [GUI Refactor Sprints](../sprints/gui_refactor_sprints/README.md) — Abstraction layer to remove direct Myra dependencies (completed ✅)
+- [Namespace Cleanup Sprints](../sprints/namespace_cleanup_sprints/README.md) — Standardize folder casing and namespace consistency
 
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)

@@ -120,10 +120,10 @@ Console.WriteLine(child.Parent == null); // true
 
 ### World Position
 
-When an entity has a parent, its world position is calculated as:
+When an entity has a parent, its world position (`Position`) is calculated as:
 
 ```
-WorldPosition = Parent.WorldPosition + LocalPosition
+Position = Parent.Position + LocalPosition
 ```
 
 **Example:**
@@ -140,10 +140,10 @@ Console.WriteLine(child.Position); // Vector2(150, 100)
 
 ### World Rotation
 
-World rotation is calculated as:
+World rotation (`Rotation`) is calculated as:
 
 ```
-WorldRotation = Parent.WorldRotation + LocalRotation
+Rotation = Parent.Rotation + LocalRotation
 ```
 
 **Example:**

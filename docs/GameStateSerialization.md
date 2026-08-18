@@ -155,7 +155,7 @@ public class Ball : Entity, ISaveableEntity
         base.OnStart();
         _sprite = new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball.png"));
         AddComponent(_sprite);
-        _rigidbody = new RigidbodyComponent(...);
+        _rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
         AddComponent(_rigidbody);
     }
 
@@ -165,12 +165,13 @@ public class Ball : Entity, ISaveableEntity
             new XAttribute("Color", _sprite?.Color.ToArgb() ?? 0)
         );
 
-        if (_rigidbody?.Body != null && _rigidbody.Body.IsBodyCreated)
+        // The RigidbodyComponent exposes velocity directly (no need to reach into the body).
+        if (_rigidbody != null && _rigidbody.IsBodyCreated)
         {
             state.Add(new XElement("Physics",
-                new XAttribute("LinearVelocityX", _rigidbody.Body.LinearVelocity.X),
-                new XAttribute("LinearVelocityY", _rigidbody.Body.LinearVelocity.Y),
-                new XAttribute("AngularVelocity", _rigidbody.Body.AngularVelocity)
+                new XAttribute("LinearVelocityX", _rigidbody.LinearVelocity.X),
+                new XAttribute("LinearVelocityY", _rigidbody.LinearVelocity.Y),
+                new XAttribute("AngularVelocity", _rigidbody.AngularVelocity)
             ));
         }
 
@@ -188,16 +189,21 @@ public class Ball : Entity, ISaveableEntity
         }
 
         var physics = element.Element("Physics");
-        if (physics != null && _rigidbody?.Body != null)
+        if (physics != null && _rigidbody != null && _rigidbody.IsBodyCreated)
         {
             if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value,
                     NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
                 float.TryParse(physics.Attribute("LinearVelocityY")?.Value,
                     NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
             {
-                var velocityChange = new Vector2(velX - _rigidbody.Body.LinearVelocity.X,
-                                                 velY - _rigidbody.Body.LinearVelocity.Y);
-                _rigidbody.Body.ApplyImpulse(velocityChange * _rigidbody.Body.Mass, Vector2.Zero);
+                // Setting LinearVelocity directly restores the saved velocity.
+                _rigidbody.LinearVelocity = new Vector2(velX, velY);
+            }
+
+            if (float.TryParse(physics.Attribute("AngularVelocity")?.Value,
+                    NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
+            {
+                _rigidbody.AngularVelocity = angVel;
             }
         }
     }

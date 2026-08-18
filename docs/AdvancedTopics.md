@@ -66,21 +66,21 @@ public class BulletPool
 - **Limit physics bodies**: Only use physics for entities that need it
 
 ```csharp
-// Set up collision categories
-Body playerBody = physics.CreateCircle(position, radius, 1f);
-playerBody.CollisionCategories = Category.Cat1;
-playerBody.CollidesWith = Category.Cat2 | Category.Cat3; // Only collide with categories 2 and 3
+using CoreEssentials.GameSystems.Physics.Types;
 
-// Allow body to sleep when not moving
-playerBody.SleepingAllowed = true;
+// Set up collision categories on a collider
+ICollider collider = playerBody.CreateCircleCollider(radius);
+collider.Categories   = CollisionCategory.Cat1;
+collider.CollidesWith = CollisionCategory.Cat2 | CollisionCategory.Cat3; // Only collide with categories 2 and 3
 
-// Create compound shape
-Body compoundBody = physics.World.CreateBody();
-compoundBody.BodyType = BodyType.Dynamic;
-compoundBody.CreateFixture(physics.World.CreateCircleShape(radius1, 1f, new Vector2(0, -10)));
-compoundBody.CreateFixture(physics.World.CreateRectangleShape(width, height, 1f, Vector2.Zero));
-compoundBody.CreateFixture(physics.World.CreateCircleShape(radius2, 1f, new Vector2(0, 10)));
+// Create a compound shape: attach multiple colliders to one body
+IPhysicsBody body = physics.CreateDynamic(position);
+body.CreateCircleCollider(radius1, offset: new Vector2(0, -10));
+body.CreateRectangleCollider(new Vector2(width, height), offset: Vector2.Zero);
+body.CreateCircleCollider(radius2, offset: new Vector2(0, 10));
 ```
+
+> **Tip:** the recommended way to add physics to entities is via components — `RigidbodyComponent` (the body) plus one or more `ColliderComponent` (the shapes). See [Collision Groups & Filtering](./CollisionGroups.md) for the full filtering model.
 
 ## Scene Management Patterns
 
@@ -323,110 +323,70 @@ private void OnJumpStarted(InputActionEventArgs args)
 
 ### Contact Listeners
 
-Set up advanced collision detection:
+Set up advanced collision detection. The recommended approach is the per-body `OnCollision` / `OnSeparation` events rather than touching the engine's contact manager directly:
 
 ```csharp
-public class CollisionManager : GameSystem
+// On the player's physics body
+IPhysicsBody playerBody = ...;
+
+playerBody.OnCollision += args =>
 {
-    private PhysicsEngine _physicsEngine;
-    
-    public override void Initialize()
+    IPhysicsBody other = args.BodyB == playerBody ? args.BodyA : args.BodyB;
+
+    // Resolve the owning entity from the body's type tag
+    if (other.Type == "Player" && TryGetEntity(other, out Entity entity))
     {
-        base.Initialize();
-        
-        _physicsEngine = Scene.GetGameSystem<PhysicsEngine>();
-        _physicsEngine.World.ContactManager.BeginContact += OnBeginContact;
-        _physicsEngine.World.ContactManager.EndContact += OnEndContact;
+        if (entity is EnemyEntity enemy)
+            ((PlayerEntity)entity).OnHitEnemy(enemy);
     }
-    
-    private void OnBeginContact(Contact contact)
-    {
-        // Get the entities from the fixtures' user data
-        var entityA = contact.FixtureA.Body.Tag as Entity;
-        var entityB = contact.FixtureB.Body.Tag as Entity;
-        
-        if (entityA is PlayerEntity && entityB is EnemyEntity)
-        {
-            (entityA as PlayerEntity).OnHitEnemy(entityB as EnemyEntity);
-        }
-        else if (entityA is EnemyEntity && entityB is PlayerEntity)
-        {
-            (entityB as PlayerEntity).OnHitEnemy(entityA as EnemyEntity);
-        }
-    }
-    
-    private void OnEndContact(Contact contact)
-    {
-        // Handle end of contact
-    }
-    
-    public override void Dispose()
-    {
-        if (_physicsEngine != null && _physicsEngine.World != null)
-        {
-            _physicsEngine.World.ContactManager.BeginContact -= OnBeginContact;
-            _physicsEngine.World.ContactManager.EndContact -= OnEndContact;
-        }
-        
-        base.Dispose();
-    }
-}
+
+    return true; // Allow the collision (return false to reject)
+};
+
+playerBody.OnSeparation += args =>
+{
+    // Handle end of contact
+};
 ```
+
+See [Physics System — Collision Events](./PhysicsSystem.md) for the full event model, including per-collider granularity.
 
 ### Ragdoll Physics
 
-Implement advanced physics effects like ragdoll:
+A ragdoll is a set of dynamic bodies connected by joints. Each body part can be its own entity with a `RigidbodyComponent`, or a single entity with multiple colliders. Note that joint types (`IRevoluteJoint`, `IWeldJoint`, `IDistanceJoint`) are currently **internal-use** in the abstraction layer — they exist for the engine but are not yet exposed as a public creation API. Until they are, build multi-part bodies from several `IPhysicsBody` instances and keep their relative positions in your own update logic:
 
 ```csharp
 public class RagdollEntity : Entity
 {
-    private List<Body> _bodyParts = new List<Body>();
-    private List<Joint> _joints = new List<Joint>();
+    private IPhysicsBody _torso;
+    private IPhysicsBody _head;
     
-    public override void Initialize()
+    public override void OnStart()
     {
-        base.Initialize();
+        base.OnStart();
         
-        PhysicsEngine physics = Scene.GetGameSystem<PhysicsEngine>();
+        PhysicsEngine physics = EntitySystem.GetGameSystem<PhysicsEngine>();
         
         // Create torso
-        Body torso = physics.CreateRectangle(Position, 40, 60, 1f);
-        torso.BodyType = BodyType.Dynamic;
-        _bodyParts.Add(torso);
+        _torso = physics.CreateDynamic(Position);
+        _torso.CreateRectangleCollider(new Vector2(40, 60));
         
         // Create head
-        Body head = physics.CreateCircle(Position + new Vector2(0, -40), 20, 1f);
-        head.BodyType = BodyType.Dynamic;
-        _bodyParts.Add(head);
-        
-        // Create limbs
-        Body leftArm = physics.CreateRectangle(Position + new Vector2(-30, 0), 30, 10, 1f);
-        leftArm.BodyType = BodyType.Dynamic;
-        _bodyParts.Add(leftArm);
+        _head = physics.CreateDynamic(Position + new Vector2(0, -40));
+        _head.CreateCircleCollider(radius: 20);
         
         // ...more body parts...
-        
-        // Connect with joints
-        var neckJoint = physics.World.CreateRevoluteJoint(torso, head, 
-            head.Position + new Vector2(0, 20),
-            new Vector2(0, -30));
-        neckJoint.LowerLimit = -0.5f;
-        neckJoint.UpperLimit = 0.5f;
-        neckJoint.LimitEnabled = true;
-        _joints.Add(neckJoint);
-        
-        // ...more joints...
     }
     
     public override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
         
-        // Update entity position to follow the torso
-        if (_bodyParts.Count > 0)
+        // Follow the torso
+        if (_torso != null)
         {
-            Position = _bodyParts[0].Position;
-            Rotation = _bodyParts[0].Rotation;
+            Position = _torso.Position;
+            Rotation = _torso.Rotation;
         }
     }
 }
@@ -439,24 +399,17 @@ public class RagdollEntity : Entity
 Implement proper asset management to avoid memory leaks:
 
 ```csharp
+using CoreEssentials.Assets;
+
 public class GameplayScene : Scene
 {
-    private List<string> _sceneAssets = new List<string>();
-    
     protected override IEnumerator OnStartCoroutine()
     {
-        // Track loaded assets
-        _sceneAssets.Add("player_texture.png");
-        _sceneAssets.Add("enemy_texture.png");
-        _sceneAssets.Add("level_background.png");
-        _sceneAssets.Add("explosion_sound.wav");
-        
-        // Load assets
-        AssetManager assetManager = Game.AssetManager;
-        assetManager.LoadTexture(_sceneAssets[0]);
-        assetManager.LoadTexture(_sceneAssets[1]);
-        assetManager.LoadTexture(_sceneAssets[2]);
-        assetManager.LoadSoundEffect(_sceneAssets[3]);
+        // Load assets through the static AssetManager (reference-counted)
+        var playerSprite = AssetManager.LoadAsset<Sprite>("player_texture.png");
+        var enemySprite  = AssetManager.LoadAsset<Sprite>("enemy_texture.png");
+        var background   = AssetManager.LoadAsset<Sprite>("level_background.png");
+        var explosion    = AssetManager.LoadAsset<AudioClip>("explosion_sound.wav");
         
         yield return null;
         
@@ -467,15 +420,11 @@ public class GameplayScene : Scene
     {
         base.Unload();
         
-        // Unload scene-specific assets
-        AssetManager assetManager = Game.AssetManager;
-        foreach (string asset in _sceneAssets)
-        {
-            assetManager.UnloadAsset(asset);
-        }
-        
-        // Force garbage collection if needed
-        GC.Collect();
+        // Release scene-specific assets (decrements the reference count)
+        AssetManager.UnloadAsset<Sprite>("player_texture.png");
+        AssetManager.UnloadAsset<Sprite>("enemy_texture.png");
+        AssetManager.UnloadAsset<Sprite>("level_background.png");
+        AssetManager.UnloadAsset<AudioClip>("explosion_sound.wav");
     }
 }
 ```
@@ -499,18 +448,18 @@ public class EnemyEntity : Entity
     private EnemyState _currentState = EnemyState.Idle;
     private StateMachine<EnemyState> _stateMachine;
     private Entity _target;
-    private Body _body;
+    private RigidbodyComponent _rigidbody;
     private float _detectionRange = 200f;
     private float _attackRange = 50f;
     
-    public override void Initialize()
+    public override void OnStart()
     {
-        base.Initialize();
+        base.OnStart();
         
-        // Set up physics body
-        PhysicsEngine physics = Scene.GetGameSystem<PhysicsEngine>();
-        _body = physics.CreateCircle(Position, 16f, 1f);
-        _body.BodyType = BodyType.Dynamic;
+        // Set up physics body via component
+        _rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
+        AddComponent(_rigidbody);
+        AddComponent(new ColliderComponent(radius: 16f));
         
         // Create state machine
         _stateMachine = new StateMachine<EnemyState>();
@@ -552,16 +501,13 @@ public class EnemyEntity : Entity
         // Update state machine
         _stateMachine.Update(gameTime);
         
-        // Update position from physics body
-        Position = _body.Position;
-        Rotation = _body.Rotation;
+        // Position/Rotation are synced from the physics body automatically.
     }
     
     private Entity FindTarget()
     {
-        // Find player entity
-        EntitySystem entitySystem = Scene.GetGameSystem<EntitySystem>();
-        return entitySystem.GetEntitiesOfType<PlayerEntity>().FirstOrDefault();
+        // Find player entity (EntitySystem is the protected field on Entity)
+        return EntitySystem?.FindByType<PlayerEntity>().FirstOrDefault();
     }
     
     private bool CanSeeTarget()
@@ -593,7 +539,7 @@ public class EnemyEntity : Entity
             // Move toward target
             Vector2 direction = _target.Position - Position;
             direction.Normalize();
-            _body.ApplyForce(direction * 10f);
+            _rigidbody.ApplyImpulse(direction * 10f);
         }
     }
     private void EnterAttackState() { /* Implementation */ }
