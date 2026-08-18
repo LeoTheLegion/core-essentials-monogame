@@ -109,7 +109,7 @@
 
 ## Follow-up: Further Simplification with XML (Sprint 7)
 
-The imperative factory calls in `StickyLog.LoadGUI()` can be further simplified by migrating the static grid structure to an XML layout file via `GuiSerializer` — see `docs/gui_refactor_sprints/Sprint_7_StickyLog_XML_Refactor.md`. This reduces ~15 lines of boilerplate to a single declarative XML load call.
+The imperative factory calls in `StickyLog.LoadGUI()` can be further simplified by migrating the static grid structure to an XML layout file via `GuiSerializer` — see `Sprint_7_StickyLog_XML_Refactor.md`. This reduces ~15 lines of boilerplate to a single declarative XML load call.
 
 ## Bonus Work
 

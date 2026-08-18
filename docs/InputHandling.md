@@ -12,7 +12,8 @@ The `Input` class is the central static access point for all input handling:
 // Access input devices
 var keyboard = Input.Keyboard; // CoreEssentials.Inputs.Keyboard
 var mouse = Input.Mouse;     // MonoGame.Extended.Input.InputListeners.MouseListener
-// var gamepad = Input.Gamepad; // Example, if implemented
+var touch = Input.Touch;     // MonoGame.Extended.Input.InputListeners.TouchListener
+// (No gamepad handler — use Microsoft.Xna.Framework.Input.GamePad directly.)
 ```
 
 ### Keyboard Input (`CoreEssentials.Inputs.Keyboard`)
@@ -125,27 +126,20 @@ private void OnMouseMoved(object sender, MouseEventArgs args)
 
 ### Gamepad Input
 
-Handle gamepad input for controller support:
-
-```csharp
-// Check if a gamepad is connected
-bool isConnected = Input.Gamepad.IsConnected(PlayerIndex.One);
-
-// Get thumbstick values (-1.0 to 1.0 in each axis)
-Vector2 leftStick = Input.Gamepad.GetLeftStick(PlayerIndex.One);
-Vector2 rightStick = Input.Gamepad.GetRightStick(PlayerIndex.One);
-
-// Get trigger values (0.0 to 1.0)
-float leftTrigger = Input.Gamepad.GetLeftTrigger(PlayerIndex.One);
-float rightTrigger = Input.Gamepad.GetRightTrigger(PlayerIndex.One);
-
-// Check button states
-bool isAButtonDown = Input.Gamepad.IsButtonDown(PlayerIndex.One, Buttons.A);
-
-// Subscribe to button events
-Input.Gamepad.ButtonPressed += OnGamepadButtonPressed;
-Input.Gamepad.ButtonReleased += OnGamepadButtonReleased;
-```
+> **Note:** The `Input` system currently exposes **keyboard**, **mouse**, and **touch**
+> handlers only — there is no `Input.Gamepad` API yet. For controller support, use
+> MonoGame's built-in `Microsoft.Xna.Framework.Input.GamePad` directly, e.g.:
+>
+> ```csharp
+> // Check if a gamepad is connected
+> bool isConnected = GamePad.GetState(PlayerIndex.One).IsConnected;
+>
+> // Get thumbstick values (-1.0 to 1.0 in each axis)
+> Vector2 leftStick = GamePad.GetState(PlayerIndex.One).ThumbSticks.Left;
+>
+> // Check button states
+> bool isAButtonDown = GamePad.GetState(PlayerIndex.One).Buttons.A == ButtonState.Pressed;
+> ```
 
 ## Event-Based Input Handling
 
@@ -218,7 +212,7 @@ private EventHandler<KeyboardEventArgs> PlaySound()
         {
             // Play a sound effect when Q is pressed
             var id = AudioManager.Instance.PlayOneShotSound("footstep1_sound.xml");
-            Debug.Console.WriteLine($"Sound played with ID: {id}");
+            Console.WriteLine($"Sound played with ID: {id}");
         }
         
         // Additional key handling...

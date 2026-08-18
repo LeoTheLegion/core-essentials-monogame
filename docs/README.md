@@ -4,7 +4,7 @@
 
 CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame that provides essential building blocks for game development. Designed to accelerate game development by providing ready-to-use systems for common game development challenges.
 
-**Version:** 0.8.2  
+**Version:** 0.14.0  
 **Author:** Michael Mena  
 **Repository:** [https://github.com/LeoTheLegion/core-essentials-monogame](https://github.com/LeoTheLegion/core-essentials-monogame)
 
@@ -81,18 +81,20 @@ namespace YourGame
   - [Migration Guide: Legacy → New Physics API](./Migration_Guide_Physics.md)
 - [GUI System](./GUISystem.md)
   - [Migration Guide: Myra → Abstraction Layer](./GUI_Migration_Guide.md)
-
-## Active Refactoring Projects
-
-- [Physics Refactor Sprints](./physics_refactor/sprints/README.md) — Engine-swap pattern for physics (completed ✅)
-- [GUI Refactor Sprints](./gui_refactor_sprints/README.md) — Abstraction layer to remove direct Myra dependencies (completed ✅)
-- [Namespace Cleanup Sprints](./namespace_cleanup_sprints/README.md) — Standardize folder casing and namespace consistency
-
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)
 - [Audio System](./AudioSystem.md)
 - [Debugging Tools](./DebuggingTools.md)
 - [XML Documentation](./XMLDocumentation.md)
+
+## Refactoring Sprint History
+
+Completed refactoring efforts, documented as sprint logs (lived in `docs/` during the work, now archived under [`sprints/`](../sprints/)):
+
+- [Entity System Sprints](../sprints/entity_system_sprints/README.md) — OOP entity system build-out
+- [Physics Refactor Sprints](../sprints/physics_refactor/sprints/README.md) — Engine-swap pattern for physics (completed ✅)
+- [GUI Refactor Sprints](../sprints/gui_refactor_sprints/README.md) — Abstraction layer to remove direct Myra dependencies (completed ✅)
+- [Namespace Cleanup Sprints](../sprints/namespace_cleanup_sprints/README.md) — Standardize folder casing and namespace consistency
 
 ## Playground Examples
 

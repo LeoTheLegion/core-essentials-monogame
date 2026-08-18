@@ -117,7 +117,7 @@ ICollider hull = dynamicBody.CreateConvexHullCollider(
 
 ### Position & Rotation
 ```csharp
-Vector2 worldPos = body.WorldPosition;
+Vector2 worldPos = body.Position;
 float rotation = body.Rotation;
 body.Rotation = MathF.PI / 4; // Set rotation in radians
 ```
@@ -324,11 +324,11 @@ public class Ball : Entity
 {
     private IPhysicsBody _body;   // Use interface, not Aether Body directly
 
-    public override void Initialize()
+    public override void OnStart()
     {
-        base.Initialize();
+        base.OnStart();
         
-        PhysicsEngine physics = Scene.GetGameSystem<PhysicsEngine>();
+        PhysicsEngine physics = EntitySystem.GetGameSystem<PhysicsEngine>();
         
         // Create dynamic body with circle collider
         _body = physics.CreateDynamic(Position);
@@ -344,7 +344,7 @@ public class Ball : Entity
         base.Update(gameTime);
         
         // Sync entity position with physics body
-        Position = _body.WorldPosition;
+        Position = _body.Position;
         Rotation = _body.Rotation;
     }
 }

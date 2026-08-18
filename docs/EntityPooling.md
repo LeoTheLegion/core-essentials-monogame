@@ -41,10 +41,9 @@ public class BulletEntity : Entity, IPooledEntity
     private float _speed = 500f;
     private int _damage = 10;
     
-    public override void Reset()
+    public void Reset()
     {
-        base.Reset();
-        // Reset custom state
+        // Reset custom state (Entity has no virtual Reset to call)
         Velocity = Vector2.Zero;
         Damage = _damage;
         Lifetime = 3f;
@@ -162,9 +161,9 @@ public class BulletEntity : Entity, IPooledEntity
     public Vector2 Velocity { get; set; }
     public int Damage { get; set; } = 10;
     
-    public override void Reset()
+    public void Reset()
     {
-        base.Reset();
+        // Reset custom state (Entity has no virtual Reset to call)
         Velocity = Vector2.Zero;
         Damage = 10;
         SetActive(false);
@@ -209,9 +208,9 @@ public class ParticleEntity : Entity, IPooledEntity
     public float Lifetime { get; set; }
     private float _maxLifetime;
     
-    public override void Reset()
+    public void Reset()
     {
-        base.Reset();
+        // Reset custom state (Entity has no virtual Reset to call)
         Velocity = Vector2.Zero;
         Lifetime = 0f;
         _maxLifetime = 0f;
@@ -343,9 +342,9 @@ var pool = entitySystem.GetOrCreatePool<ParticleEntity>(
 Always reset all state in `Reset()`:
 
 ```csharp
-public override void Reset()
+public void Reset()
 {
-    base.Reset();
+    // Reset all mutable state (Entity has no virtual Reset to call)
     
     // Reset position
     Position = Vector2.Zero;
@@ -371,7 +370,6 @@ public override void Reset()
 ### Avoid Common Pitfalls
 
 **Don't:**
-- Forget to call `base.Reset()`
 - Leave references to old data
 - Assume entity is at default position
 - Modify pool directly

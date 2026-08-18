@@ -19,11 +19,10 @@ IDs are **case-insensitive** — `"Hero"`, `"hero"`, and `"HERO"` are treated as
 
 ### Auto-Generated IDs
 
-If you don't assign an ID, one can be auto-generated on demand:
-
-```csharp
-var id = entity.EnsureId(); // Returns "PlayerEntity_a3f8b2c1"
-```
+If you don't assign an ID, one is auto-generated on demand **internally** by the
+framework (for example, when an entity is serialized or referenced). The public
+`EnsureId()` method is `internal` to CoreEssentials, so you can't call it directly
+from game code — assign IDs explicitly with `SetId()` when you need a stable lookup key.
 
 Auto-generated IDs follow the pattern `{TypeName}_{8-char-GUID}`.
 
@@ -120,7 +119,7 @@ Entity? target = reference; // Null if not resolved
 |--------|------|-------------|
 | `Entity.Id` | Property | Gets the entity's unique ID |
 | `Entity.SetId(string)` | Method | Assigns a unique ID |
-| `Entity.EnsureId()` | Method | Returns or generates an ID |
+| `Entity.EnsureId()` | Method (`internal`) | Returns or generates an ID (framework-internal) |
 | `EntitySystem.FindById(string)` | Method | Finds entity by ID |
 | `EntitySystem.ResolveReferences()` | Method | Resolves all pending references |
 | `EntityReference` | Class | Deferred entity lookup |

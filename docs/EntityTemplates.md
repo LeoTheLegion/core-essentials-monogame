@@ -63,18 +63,27 @@ var enemy = entitySystem.Instantiate("EnemyGoblin", new Vector2(100, 200));
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
-                <Property Name="Texture" Value="goblin_sprite" />
-                <Property Name="Scale" Value="1,1" />
+                <Property Name="Color" Value="255,255,255,255" />
+                <Property Name="LayerDepth" Value="0.5" />
             </Properties>
         </Component>
         <Component Type="RigidbodyComponent">
             <Properties>
-                <Property Name="BodyType" Value="Dynamic" />
+                <Property Name="Mass" Value="1.0" />
+                <Property Name="FixedRotation" Value="false" />
+                <Property Name="SyncFromPhysics" Value="true" />
             </Properties>
         </Component>
     </Components>
 </EntityTemplate>
 ```
+
+> **Note on `RigidbodyComponent` in templates:** The rigidbody *type* (`Static`, `Dynamic`,
+> `Kinematic`) is chosen via the constructor — `new RigidbodyComponent(RigidbodyType.Dynamic)` —
+> and is **not** a settable XML property. `RigidbodyComponent` has no parameterless constructor,
+> so a template cannot create it on its own: add it in your entity's `OnStart()` first, and the
+> template will then apply the settable properties (`Mass`, `FixedRotation`, `SyncFromPhysics`)
+> via reflection.
 
 ### Attributes
 
@@ -100,11 +109,17 @@ var enemy = entitySystem.Instantiate("EnemyGoblin", new Vector2(100, 200));
 <Components>
     <Component Type="SpriteComponent">
         <Properties>
-            <Property Name="Texture" Value="goblin_sprite" />
+            <Property Name="Color" Value="255,255,255,255" />
+            <Property Name="LayerDepth" Value="0.5" />
         </Properties>
     </Component>
 </Components>
 ```
+
+> **Note:** The `Sprite` itself is a complex asset and is assigned in code
+> (e.g. `new SpriteComponent(AssetManager.LoadAsset<Sprite>("goblin_sprite.xml"))`),
+> not via a string XML property. Templates set the simple, settable properties
+> such as `Color`, `Origin`, `Effects`, and `LayerDepth`.
 
 ### Children Element
 
@@ -173,12 +188,8 @@ public class TemplateManager
             enemy.SetTag(tag);
         }
         
-        // Modify components
-        var sprite = enemy.GetComponent<SpriteComponent>();
-        if (sprite != null)
-        {
-            sprite.Scale = new Vector2(scale, scale);
-        }
+        // Modify the entity's scale (SpriteComponent has no Scale property)
+        enemy.Scale = new Vector2(scale, scale);
         
         return enemy;
     }
@@ -196,7 +207,8 @@ public class TemplateManager
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
-                <Property Name="Texture" Value="spaceship" />
+                <Property Name="Color" Value="255,255,255,255" />
+                <Property Name="LayerDepth" Value="1.0" />
             </Properties>
         </Component>
     </Components>
@@ -206,7 +218,7 @@ public class TemplateManager
             <Components>
                 <Component Type="SpriteComponent">
                     <Properties>
-                        <Property Name="Texture" Value="engine" />
+                        <Property Name="Color" Value="128,128,128,255" />
                     </Properties>
                 </Component>
             </Components>
@@ -216,7 +228,7 @@ public class TemplateManager
             <Components>
                 <Component Type="SpriteComponent">
                     <Properties>
-                        <Property Name="Texture" Value="engine" />
+                        <Property Name="Color" Value="128,128,128,255" />
                     </Properties>
                 </Component>
             </Components>
@@ -345,7 +357,8 @@ public void LoadTemplatesFromDirectory(string directory)
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
-                <Property Name="Texture" Value="goblin" />
+                <Property Name="Color" Value="255,255,255,255" />
+                <Property Name="LayerDepth" Value="0.5" />
             </Properties>
         </Component>
     </Components>
@@ -386,7 +399,7 @@ public void LoadTemplatesFromDirectory(string directory)
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
-                <Property Name="Texture" Value="enemy_sprite" />
+                <Property Name="Color" Value="255,255,255,255" />
             </Properties>
         </Component>
     </Components>
@@ -402,9 +415,9 @@ public void LoadTemplatesFromDirectory(string directory)
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
-                <Property Name="Texture" Value="enemy_1_sprite" />
-                <Property Name="Scale" Value="1.5,1.5" />
-                <Property Name="Color" Value="Red" />
+                <Property Name="LayerDepth" Value="1.5" />
+                <Property Name="Color" Value="255,0,0,255" />
+                <Property Name="Origin" Value="0.5,0.5" />
                 <!-- Too many properties -->
             </Properties>
         </Component>
