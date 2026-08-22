@@ -4,7 +4,7 @@
 
 CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame that provides essential building blocks for game development. Designed to accelerate game development by providing ready-to-use systems for common game development challenges.
 
-**Version:** 0.14.0  
+**Version:** 0.15.0  
 **Author:** Michael Mena  
 **Repository:** [https://github.com/LeoTheLegion/core-essentials-monogame](https://github.com/LeoTheLegion/core-essentials-monogame)
 
