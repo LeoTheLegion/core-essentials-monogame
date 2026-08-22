@@ -19,24 +19,18 @@ namespace CoreEssentials.Inputs
         private KeyboardState _currentState;
 
         /// <summary>
-        /// Occurs when a key is pressed.
-        /// This event is forwarded from the underlying MonoGame.Extended.Input.InputListeners.KeyboardListener.
+        /// Occurs when a key is pressed. The event arguments are the CoreEssentials-owned
+        /// <see cref="KeyboardEventArgs"/> (with <see cref="Keys"/> and <see cref="KeyboardModifiers"/>),
+        /// so consumers do not need to reference any MonoGame.Extended namespaces.
         /// </summary>
-        public event EventHandler<KeyboardEventArgs> KeyPressed
-        {
-            add => _keyboardListener.KeyPressed += value;
-            remove => _keyboardListener.KeyPressed -= value;
-        }
+        public event EventHandler<KeyboardEventArgs>? KeyPressed;
 
         /// <summary>
-        /// Occurs when a key is released.
-        /// This event is forwarded from the underlying MonoGame.Extended.Input.InputListeners.KeyboardListener.
+        /// Occurs when a key is released. The event arguments are the CoreEssentials-owned
+        /// <see cref="KeyboardEventArgs"/> (with <see cref="Keys"/> and <see cref="KeyboardModifiers"/>),
+        /// so consumers do not need to reference any MonoGame.Extended namespaces.
         /// </summary>
-        public event EventHandler<KeyboardEventArgs> KeyReleased
-        {
-            add => _keyboardListener.KeyReleased += value;
-            remove => _keyboardListener.KeyReleased -= value;
-        }
+        public event EventHandler<KeyboardEventArgs>? KeyReleased;
 
         // If KeyboardListener has other events like KeyTyped, they can be exposed similarly.
         // public event EventHandler<KeyTypedEventArgs> KeyTyped ...
@@ -53,6 +47,10 @@ namespace CoreEssentials.Inputs
             
             _currentState = _keyboardStateProvider.GetState();
             _previousState = _currentState;
+
+            // Subscribe once to the underlying listener and re-raise with CoreEssentials args.
+            _keyboardListener.KeyPressed += OnListenerKeyPressed;
+            _keyboardListener.KeyReleased += OnListenerKeyReleased;
         }
 
         /// <summary>
@@ -107,6 +105,31 @@ namespace CoreEssentials.Inputs
         public bool IsKeyReleasedOnce(Keys key)
         {
             return _currentState.IsKeyUp(key) && _previousState.IsKeyDown(key);
+        }
+
+        // ---- Underlying listener event forwarding (converted to CoreEssentials args) ----
+
+        private void OnListenerKeyPressed(object? sender, MonoGame.Extended.Input.InputListeners.KeyboardEventArgs e)
+            => KeyPressed?.Invoke(this, ToCoreArgs(e));
+
+        private void OnListenerKeyReleased(object? sender, MonoGame.Extended.Input.InputListeners.KeyboardEventArgs e)
+            => KeyReleased?.Invoke(this, ToCoreArgs(e));
+
+        private static KeyboardEventArgs ToCoreArgs(MonoGame.Extended.Input.InputListeners.KeyboardEventArgs e)
+        {
+            return new KeyboardEventArgs(e.Key, ToCoreModifiers(e.Modifiers));
+        }
+
+        private static KeyboardModifiers ToCoreModifiers(MonoGame.Extended.Input.InputListeners.KeyboardModifiers modifiers)
+        {
+            var result = KeyboardModifiers.None;
+            if ((modifiers & MonoGame.Extended.Input.InputListeners.KeyboardModifiers.Control) != 0)
+                result |= KeyboardModifiers.Control;
+            if ((modifiers & MonoGame.Extended.Input.InputListeners.KeyboardModifiers.Shift) != 0)
+                result |= KeyboardModifiers.Shift;
+            if ((modifiers & MonoGame.Extended.Input.InputListeners.KeyboardModifiers.Alt) != 0)
+                result |= KeyboardModifiers.Alt;
+            return result;
         }
     }
 }

@@ -276,7 +276,7 @@ public class PhysicsEntityScene : Scene
         }
     }
 
-    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
+    private EventHandler<CoreEssentials.Inputs.KeyboardEventArgs> Reset()
     {
         return (sender, args) =>
         {
