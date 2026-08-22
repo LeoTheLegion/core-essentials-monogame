@@ -12,11 +12,11 @@ The `Input` class is the central static access point for all input handling:
 // Access input devices
 var keyboard = Input.Keyboard; // CoreEssentials.Inputs.Keyboard
 var mouse = Input.Mouse;       // CoreEssentials.Inputs.Mouse
-var touch = Input.Touch;       // MonoGame.Extended.Input.InputListeners.TouchListener
+var touch = Input.Touch;       // CoreEssentials.Inputs.Touch
 // (No gamepad handler — use Microsoft.Xna.Framework.Input.GamePad directly.)
 ```
 
-> **Note:** Both the `Keyboard` and `Mouse` handlers are CoreEssentials-owned wrappers. Their events use CE-owned event args (`CoreEssentials.Inputs.KeyboardEventArgs`, `CoreEssentials.Inputs.MouseEventArgs`) so game code never needs to reference `MonoGame.Extended` namespaces.
+> **Note:** The `Keyboard`, `Mouse`, and `Touch` handlers are all CoreEssentials-owned wrappers. Their events use CE-owned event args (`CoreEssentials.Inputs.KeyboardEventArgs`, `CoreEssentials.Inputs.MouseEventArgs`, `CoreEssentials.Inputs.TouchEventArgs`) so game code never needs to reference `MonoGame.Extended` namespaces.
 
 ### Keyboard Input (`CoreEssentials.Inputs.Keyboard`)
 
@@ -162,6 +162,42 @@ private void OnMouseWheelMoved(object sender, MouseEventArgs args)
 
 // Remember to unsubscribe when the object is destroyed or scene unloads
 // Input.Mouse.MouseDown -= OnMouseDown;
+```
+
+### Touch Input (`CoreEssentials.Inputs.Touch`)
+
+The `CoreEssentials.Inputs.Touch` class wraps `MonoGame.Extended.Input.InputListeners.TouchListener` to provide a clean, CoreEssentials-owned touch API. Events use the CE-owned `CoreEssentials.Inputs.TouchEventArgs`, which exposes a viewport-independent `Vector2 Position`, the finger `Id`, and the `TouchLocationState`.
+
+#### Polling Touch State
+
+```csharp
+// In your entity's Update method
+if (Input.Touch.HasActiveTouches)
+{
+    // At least one finger is on the screen
+    int count = Input.Touch.ActiveTouchCount;
+}
+```
+
+**Important:** As with keyboard and mouse, `Input.Update(gameTime)` must be called once per frame for polling to stay in sync.
+
+#### Touch Events
+
+```csharp
+// Subscribe (e.g. in a Scene's OnStart)
+Input.Touch.TouchStarted += OnTouchStarted;
+Input.Touch.TouchMoved   += OnTouchMoved;
+Input.Touch.TouchEnded   += OnTouchEnded;
+Input.Touch.TouchCancelled += OnTouchCancelled;
+
+private void OnTouchStarted(object sender, TouchEventArgs e)
+{
+    // e.Id identifies the finger (use it to track a touch across frames)
+    // e.Position is the viewport-independent position
+}
+
+// Remember to unsubscribe when the object is destroyed or scene unloads
+Input.Touch.TouchStarted -= OnTouchStarted;
 ```
 
 ### Gamepad Input

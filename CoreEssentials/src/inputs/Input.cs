@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using MonoGame.Extended.Input.InputListeners;
 
 namespace CoreEssentials.Inputs
 {
@@ -11,8 +10,10 @@ namespace CoreEssentials.Inputs
     {
         /// <summary>
         /// Gets the touch input handler with events for touch gestures and interactions.
+        /// This is a CoreEssentials-owned wrapper that does not require consumers to
+        /// reference MonoGame.Extended namespaces.
         /// </summary>
-        public static TouchListener Touch { private set; get; }
+        public static Touch Touch { private set; get; }
 
         /// <summary>
         /// Gets the keyboard input handler with events for key presses and releases, and polling methods.
@@ -28,7 +29,7 @@ namespace CoreEssentials.Inputs
 
         static Input()
         {
-            Touch = new TouchListener();
+            Touch = new Touch(); // Changed to instantiate our new Touch wrapper class
             Keyboard = new Keyboard(); // Changed to instantiate our new Keyboard class
             Mouse = new Mouse(); // Changed to instantiate our new Mouse wrapper class
         }

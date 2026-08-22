@@ -1,7 +1,6 @@
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input; // Added for KeyboardState
-using MonoGame.Extended.Input.InputListeners;
 using Moq;
 using System;
 using System.Reflection;
@@ -25,7 +24,7 @@ namespace CoreEssentials.Tests.Inputs
             Assert.NotNull(Input.Mouse);
             
             // Verify types
-            Assert.IsType<TouchListener>(Input.Touch);
+            Assert.IsType<CoreEssentials.Inputs.Touch>(Input.Touch); // Fully qualified name (wrapper, not raw TouchListener)
             Assert.IsType<CoreEssentials.Inputs.Keyboard>(Input.Keyboard); // Fully qualified name
             Assert.IsType<CoreEssentials.Inputs.Mouse>(Input.Mouse); // Fully qualified name (wrapper, not raw MouseListener)
         }
