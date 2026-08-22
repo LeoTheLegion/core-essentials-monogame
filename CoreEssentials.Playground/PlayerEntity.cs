@@ -2,7 +2,6 @@ using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using CoreEssentials.Inputs;
-using MonoGame.Extended.Input.InputListeners;
 using CoreEssentials.Timing; // Added for Time.DeltaTime
 
 namespace CoreEssentials.Playground;

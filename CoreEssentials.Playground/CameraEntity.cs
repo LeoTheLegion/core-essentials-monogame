@@ -3,8 +3,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System; // Added for MathHelper if not already present, and for event handlers
-using CoreEssentials.Inputs; // Added for Input class
-using MonoGame.Extended.Input.InputListeners; // Added for KeyboardEventArgs
+using CoreEssentials.Inputs; // Added for Input class + CoreEssentials-owned KeyboardEventArgs
 using CoreEssentials.Timing; // Added for Time.DeltaTime
 
 namespace CoreEssentials.Playground

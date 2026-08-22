@@ -20,15 +20,17 @@ namespace CoreEssentials.Inputs
         public static Keyboard Keyboard { private set; get; } // Changed type to CoreEssentials.Inputs.Keyboard
 
         /// <summary>
-        /// Gets the mouse input handler with events for mouse movement and button presses.
+        /// Gets the mouse input handler with events for mouse movement and button presses,
+        /// as well as polling methods. This is a CoreEssentials-owned wrapper that does not
+        /// require consumers to reference MonoGame.Extended namespaces.
         /// </summary>
-        public static MouseListener Mouse { private set; get; }
+        public static Mouse Mouse { private set; get; }
 
         static Input()
         {
             Touch = new TouchListener();
             Keyboard = new Keyboard(); // Changed to instantiate our new Keyboard class
-            Mouse = new MouseListener();
+            Mouse = new Mouse(); // Changed to instantiate our new Mouse wrapper class
         }
 
         /// <summary>

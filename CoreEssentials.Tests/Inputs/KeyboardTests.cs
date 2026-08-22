@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic; // For List<Keys>
-using MonoGame.Extended.Input.InputListeners;
 
 namespace CoreEssentials.Tests.Inputs
 {
@@ -157,6 +156,47 @@ namespace CoreEssentials.Tests.Inputs
             // Similar limitations to KeyPressedEvent test.
 
             // Assert.True(eventFired, "KeyReleased event did not fire as expected.");
+        }
+
+        [Fact]
+        public void KeyboardEventArgs_ExposesKeyAndModifiers()
+        {
+            var args = new CoreEssentials.Inputs.KeyboardEventArgs(Keys.A, KeyboardModifiers.Control | KeyboardModifiers.Shift);
+
+            Assert.Equal(Keys.A, args.Key);
+            Assert.True(args.IsControl);
+            Assert.True(args.IsShift);
+            Assert.False(args.IsAlt);
+        }
+
+        [Fact]
+        public void KeyboardEventArgs_Character_ReturnsPrintableCharacter()
+        {
+            Assert.Equal('a', new CoreEssentials.Inputs.KeyboardEventArgs(Keys.A).Character);
+            Assert.Equal('A', new CoreEssentials.Inputs.KeyboardEventArgs(Keys.A, KeyboardModifiers.Shift).Character);
+            Assert.Equal('5', new CoreEssentials.Inputs.KeyboardEventArgs(Keys.D5).Character);
+            Assert.Equal('%', new CoreEssentials.Inputs.KeyboardEventArgs(Keys.D5, KeyboardModifiers.Shift).Character);
+            Assert.Equal(' ', new CoreEssentials.Inputs.KeyboardEventArgs(Keys.Space).Character);
+        }
+
+        [Fact]
+        public void KeyboardEventArgs_Character_ReturnsNullForNonPrintableKeys()
+        {
+            Assert.Null(new CoreEssentials.Inputs.KeyboardEventArgs(Keys.Escape).Character);
+            Assert.Null(new CoreEssentials.Inputs.KeyboardEventArgs(Keys.F1).Character);
+            Assert.Null(new CoreEssentials.Inputs.KeyboardEventArgs(Keys.Left).Character);
+        }
+
+        [Fact]
+        public void KeyPressedEvent_UsesCoreEssentialsOwnedEventArgs()
+        {
+            // The event should be typed with the CE-owned KeyboardEventArgs (not a MonoGame.Extended type),
+            // so consumers never need to reference MonoGame.Extended namespaces.
+            CoreEssentials.Inputs.KeyboardEventArgs received = null!;
+            _keyboardWrapper.KeyPressed += (sender, args) => received = args;
+
+            // The handler above compiles without any MonoGame.Extended using directives — that is the point.
+            Assert.Null(received);
         }
     }
 }

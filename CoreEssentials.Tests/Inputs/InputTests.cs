@@ -27,7 +27,7 @@ namespace CoreEssentials.Tests.Inputs
             // Verify types
             Assert.IsType<TouchListener>(Input.Touch);
             Assert.IsType<CoreEssentials.Inputs.Keyboard>(Input.Keyboard); // Fully qualified name
-            Assert.IsType<MouseListener>(Input.Mouse);
+            Assert.IsType<CoreEssentials.Inputs.Mouse>(Input.Mouse); // Fully qualified name (wrapper, not raw MouseListener)
         }
 
         // Helper method to set static properties via reflection

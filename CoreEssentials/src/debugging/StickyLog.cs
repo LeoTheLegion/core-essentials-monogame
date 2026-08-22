@@ -4,7 +4,6 @@ using CoreEssentials.GUI.Internal;
 using CoreEssentials.GUI.Types;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
-using MonoGame.Extended.Input.InputListeners;
 using System.Collections.Generic;
 
 namespace CoreEssentials.Debugging
