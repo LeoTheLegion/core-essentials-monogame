@@ -20,7 +20,9 @@ public class ButtonWidget : WidgetBase, IButton
     /// <inheritdoc />
     public string? Text
     {
-        get => _textContent ?? Button.Content?.ToString();
+        // When the content is a MyraLabel (e.g. buttons created via CreateTextButton),
+        // return its text rather than the label's type name.
+        get => _textContent ?? (Button.Content is MyraLabel contentLabel ? contentLabel.Text : Button.Content?.ToString());
         set
         {
             _textContent = value;

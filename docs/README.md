@@ -80,6 +80,7 @@ namespace YourGame
   - [Physics Transform Sync](./PhysicsTransformSync.md)
   - [Migration Guide: Legacy → New Physics API](./Migration_Guide_Physics.md)
 - [GUI System](./GUISystem.md)
+  - [GUI Entity Components](./GUIComponents.md)
   - [Migration Guide: Myra → Abstraction Layer](./GUI_Migration_Guide.md)
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)
