@@ -137,7 +137,7 @@ public class CharacterScene : Scene
         Input.Keyboard.KeyReleased -= PlaySound();
     }
 
-    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> Reset()
+    private EventHandler<CoreEssentials.Inputs.KeyboardEventArgs> Reset()
     {
         return (sender, args) =>
         {
@@ -150,7 +150,7 @@ public class CharacterScene : Scene
         };
     }
 
-    private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> PlaySound()
+    private EventHandler<CoreEssentials.Inputs.KeyboardEventArgs> PlaySound()
     {
         return (sender, args) =>
         {

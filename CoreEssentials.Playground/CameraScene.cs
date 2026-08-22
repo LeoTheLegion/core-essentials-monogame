@@ -21,7 +21,7 @@ namespace CoreEssentials.Playground
         
         // Event handlers for input
         // Camera key press/release are now handled by CameraEntity
-        private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> keyReleaseHandlerForScene; // Renamed to avoid conflict and clarify purpose
+        private EventHandler<KeyboardEventArgs> keyReleaseHandlerForScene; // CoreEssentials-owned KeyboardEventArgs
 
         protected override GameSystem[] LoadGameSystems()
         {
@@ -98,7 +98,7 @@ namespace CoreEssentials.Playground
         // Handle continuous key presses (for movement)   
         // HandleKeyPress method is removed as its logic is now in CameraEntity and PlayerEntity
 
-        private EventHandler<MonoGame.Extended.Input.InputListeners.KeyboardEventArgs> HandleSceneKeyRelease() // Renamed method
+        private EventHandler<KeyboardEventArgs> HandleSceneKeyRelease() // CoreEssentials-owned KeyboardEventArgs
         {
             return (sender, args) =>
             {

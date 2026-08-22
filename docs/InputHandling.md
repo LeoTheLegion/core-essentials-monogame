@@ -11,10 +11,12 @@ The `Input` class is the central static access point for all input handling:
 ```csharp
 // Access input devices
 var keyboard = Input.Keyboard; // CoreEssentials.Inputs.Keyboard
-var mouse = Input.Mouse;     // MonoGame.Extended.Input.InputListeners.MouseListener
-var touch = Input.Touch;     // MonoGame.Extended.Input.InputListeners.TouchListener
+var mouse = Input.Mouse;       // CoreEssentials.Inputs.Mouse
+var touch = Input.Touch;       // CoreEssentials.Inputs.Touch
 // (No gamepad handler — use Microsoft.Xna.Framework.Input.GamePad directly.)
 ```
+
+> **Note:** The `Keyboard`, `Mouse`, and `Touch` handlers are all CoreEssentials-owned wrappers. Their events use CE-owned event args (`CoreEssentials.Inputs.KeyboardEventArgs`, `CoreEssentials.Inputs.MouseEventArgs`, `CoreEssentials.Inputs.TouchEventArgs`) so game code never needs to reference `MonoGame.Extended` namespaces.
 
 ### Keyboard Input (`CoreEssentials.Inputs.Keyboard`)
 
@@ -62,10 +64,11 @@ For discrete actions that should happen once per press or release, you can subsc
 
 ```csharp
 // Subscribe to key events (e.g., in an OnStart or Initialize method)
+// Only requires: using CoreEssentials.Inputs; and using Microsoft.Xna.Framework.Input;
 Input.Keyboard.KeyPressed += OnKeyPressed;
 Input.Keyboard.KeyReleased += OnKeyReleased;
 
-// Event handler examples
+// Event handler examples (KeyboardEventArgs is CoreEssentials.Inputs.KeyboardEventArgs)
 private void OnKeyPressed(object sender, KeyboardEventArgs args)
 {
     // This event fires repeatedly while a key is held down.
@@ -74,6 +77,10 @@ private void OnKeyPressed(object sender, KeyboardEventArgs args)
     {
         // Respond to F key press (e.g., fire weapon, interact)
     }
+
+    // Modifier keys and the printable character are also available:
+    bool ctrl = args.IsControl;   // or: (args.Modifiers & KeyboardModifiers.Control) != 0
+    char? c = args.Character;     // e.g. 'a', 'A', '5', '%' — null for non-printable keys
 }
 
 private void OnKeyReleased(object sender, KeyboardEventArgs args)
@@ -90,38 +97,107 @@ private void OnKeyReleased(object sender, KeyboardEventArgs args)
 // Input.Keyboard.KeyReleased -= OnKeyReleased;
 ```
 
-### Mouse Input (`MonoGame.Extended.Input.InputListeners.MouseListener`)
+### Mouse Input (`CoreEssentials.Inputs.Mouse`)
 
-Handle mouse events and check mouse states:
+The `CoreEssentials.Inputs.Mouse` class wraps the underlying MonoGame.Extended mouse listener and exposes a clean, CE-owned API. All events use `CoreEssentials.Inputs.MouseEventArgs`, whose `Position` is a viewport-independent `Vector2` (no viewport adapter setup required). Only `using CoreEssentials.Inputs;` and `using Microsoft.Xna.Framework;` are needed.
+
+#### Polling Mouse States
+
+For continuous actions, polling methods are preferred (call `Input.Update(gameTime)` once per frame first):
 
 ```csharp
-// Get current mouse position
-Vector2 mousePosition = Input.Mouse.Position;
-
-// Check if mouse buttons are pressed
-bool isLeftButtonDown = Input.Mouse.IsButtonDown(MouseButton.Left);
-bool isRightButtonDown = Input.Mouse.IsButtonDown(MouseButton.Right);
-
-// Subscribe to mouse events
-Input.Mouse.ButtonPressed += OnMouseButtonPressed;
-Input.Mouse.ButtonReleased += OnMouseButtonReleased;
-Input.Mouse.Moved += OnMouseMoved;
-Input.Mouse.Scrolled += OnMouseScrolled;
-
-// Event handler examples
-private void OnMouseButtonPressed(object sender, MouseButtonEventArgs args)
+// In your entity's Update method
+public override void Update(GameTime gameTime)
 {
-    if (args.Button == MouseButton.Left)
+    // Get the current mouse position in pixels (Vector2)
+    Vector2 mousePosition = Input.Mouse.Position;
+
+    // Check if a button is currently held down
+    bool isLeftButtonDown = Input.Mouse.IsButtonDown(MouseButton.Left);
+    bool isRightButtonDown = Input.Mouse.IsButtonDown(MouseButton.Right);
+
+    // Check for single-frame transitions
+    if (Input.Mouse.IsButtonPressedOnce(MouseButton.Left))
     {
-        // Respond to left click at args.Position
+        // Left button was just pressed this frame
+    }
+
+    if (Input.Mouse.IsButtonReleasedOnce(MouseButton.Right))
+    {
+        // Right button was just released this frame
+    }
+}
+```
+
+#### Event-Based Mouse Input
+
+For discrete actions, subscribe to events:
+
+```csharp
+// Subscribe to mouse events (e.g., in an OnStart or Initialize method)
+Input.Mouse.MouseDown += OnMouseDown;            // Any button pressed
+Input.Mouse.MouseUp += OnMouseUp;                // Any button released
+Input.Mouse.MouseClicked += OnMouseClicked;      // Press + release without dragging
+Input.Mouse.MouseMoved += OnMouseMoved;          // Mouse moved this frame
+Input.Mouse.MouseWheelMoved += OnMouseWheelMoved; // Scroll wheel changed
+
+// Event handler examples (MouseEventArgs is CoreEssentials.Inputs.MouseEventArgs)
+private void OnMouseDown(object sender, MouseEventArgs args)
+{
+    if (args.IsLeftButton)   // or: args.Button == MouseButton.Left
+    {
+        // Respond to left click at args.Position (Vector2, viewport-independent)
     }
 }
 
 private void OnMouseMoved(object sender, MouseEventArgs args)
 {
-    // Mouse moved to args.Position
-    // args.Delta contains movement amount since last frame
+    // Mouse moved to args.Position; args.DeltaMoved contains movement since last frame
 }
+
+private void OnMouseWheelMoved(object sender, MouseEventArgs args)
+{
+    // args.ScrollWheelDelta > 0 = scrolled up, < 0 = scrolled down
+}
+
+// Remember to unsubscribe when the object is destroyed or scene unloads
+// Input.Mouse.MouseDown -= OnMouseDown;
+```
+
+### Touch Input (`CoreEssentials.Inputs.Touch`)
+
+The `CoreEssentials.Inputs.Touch` class wraps `MonoGame.Extended.Input.InputListeners.TouchListener` to provide a clean, CoreEssentials-owned touch API. Events use the CE-owned `CoreEssentials.Inputs.TouchEventArgs`, which exposes a viewport-independent `Vector2 Position`, the finger `Id`, and the `TouchLocationState`.
+
+#### Polling Touch State
+
+```csharp
+// In your entity's Update method
+if (Input.Touch.HasActiveTouches)
+{
+    // At least one finger is on the screen
+    int count = Input.Touch.ActiveTouchCount;
+}
+```
+
+**Important:** As with keyboard and mouse, `Input.Update(gameTime)` must be called once per frame for polling to stay in sync.
+
+#### Touch Events
+
+```csharp
+// Subscribe (e.g. in a Scene's OnStart)
+Input.Touch.TouchStarted += OnTouchStarted;
+Input.Touch.TouchMoved   += OnTouchMoved;
+Input.Touch.TouchEnded   += OnTouchEnded;
+Input.Touch.TouchCancelled += OnTouchCancelled;
+
+private void OnTouchStarted(object sender, TouchEventArgs e)
+{
+    // e.Id identifies the finger (use it to track a touch across frames)
+    // e.Position is the viewport-independent position
+}
+
+// Remember to unsubscribe when the object is destroyed or scene unloads
+Input.Touch.TouchStarted -= OnTouchStarted;
 ```
 
 ### Gamepad Input
@@ -151,7 +227,7 @@ protected override IEnumerator OnStartCoroutine()
 {
     // Register input handlers
     Input.Keyboard.KeyReleased += HandleKeyRelease();
-    Input.Mouse.ButtonPressed += HandleMouseClick();
+    Input.Mouse.MouseDown += HandleMouseClick();
     
     yield return null;
 }
@@ -161,7 +237,7 @@ public override void Unload()
 {
     base.Unload();
     Input.Keyboard.KeyReleased -= HandleKeyRelease();
-    Input.Mouse.ButtonPressed -= HandleMouseClick();
+    Input.Mouse.MouseDown -= HandleMouseClick();
 }
 
 // Using anonymous methods as event handlers
