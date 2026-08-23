@@ -16,7 +16,11 @@ public class CanvasImpl : ContainerWidget, ICanvas
     private bool _isScreenSpace;
 
     /// <inheritdoc />
-    public bool IsScreenSpace => _isScreenSpace;
+    public bool IsScreenSpace
+    {
+        get => _isScreenSpace;
+        set => _isScreenSpace = value;
+    }
 
     /// <summary>
     /// Gets the underlying Myra Panel instance.

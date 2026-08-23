@@ -39,4 +39,14 @@ public abstract class EntityComponent
     public virtual void Update(GameTime gameTime)
     {
     }
+
+    /// <summary>
+    /// Called every frame after all regular updates, while the component is attached to an
+    /// active entity. Override for logic that must see the final state of the frame (e.g.
+    /// camera sync).
+    /// </summary>
+    /// <param name="gameTime">Provides timing information.</param>
+    public virtual void LateUpdate(GameTime gameTime)
+    {
+    }
 }
