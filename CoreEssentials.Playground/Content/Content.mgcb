@@ -117,6 +117,9 @@
 /processorParam:Quality=Best
 /build:Goblins_Den_(Regular).wav
 
+#begin GuiAnchorDemo.xml
+/copy:GuiAnchorDemo.xml
+
 #begin layout/main.xml
 /copy:layout/main.xml
 

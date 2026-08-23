@@ -397,7 +397,10 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     public Entity CreateEntity(Type type, params object[] args)
     {
         Console.WriteLine($"[EntitySystem] CreateEntity<{type.Name}>: instantiating...");
-        Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
+        object? instance = CreateInstanceWithOptionalParams(type, args);
+        if (instance == null)
+            throw new InvalidOperationException($"Failed to create entity of type {type}.");
+        Entity entity = (Entity)instance;
         Console.WriteLine($"[EntitySystem]   Instantiated, setting up...");
         entity.SetGameSystem(this);
         entity.EnsureId();
@@ -442,7 +445,10 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <returns>The newly created entity (not yet started).</returns>
     public Entity CreateEntityUnstarted(Type type, params object[] args)
     {
-        Entity entity = (Entity)(Activator.CreateInstance(type, args) ?? throw new InvalidOperationException($"Failed to create entity of type {type}."));
+        object? instance = CreateInstanceWithOptionalParams(type, args);
+        if (instance == null)
+            throw new InvalidOperationException($"Failed to create entity of type {type}.");
+        Entity entity = (Entity)instance;
         entity.SetGameSystem(this);
         entity.EnsureId();
         _entities.Add(entity);
@@ -452,6 +458,62 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         entity.OnAwake();
         NotifyAwoken(entity);
         return entity;
+    }
+
+    /// <summary>
+    /// Instantiates <paramref name="type"/> with constructor resolution that supports optional parameters.
+    /// Finds a public constructor whose required parameter count is at most <c>args.Length</c> and whose total
+    /// parameter count is at least <c>args.Length</c>, then fills any omitted trailing arguments from their
+    /// declared defaults. This mirrors how C# call sites fill optional parameters at compile time, so entities
+    /// with optional-parameter constructors can be created with fewer arguments than the full signature.
+    /// </summary>
+    /// <param name="type">The type to instantiate.</param>
+    /// <param name="args">Positional constructor arguments.</param>
+    /// <returns>The newly created instance, or null if invocation produced no value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no public constructor can accept the given
+    /// arguments. The message lists all available constructors to aid diagnosis.</exception>
+    private static object? CreateInstanceWithOptionalParams(Type type, object[] args)
+    {
+        var ctor = type.GetConstructors()
+            .Where(c =>
+            {
+                var ps = c.GetParameters();
+                int requiredCount = ps.Count(p => !p.IsOptional);
+                return args.Length >= requiredCount && args.Length <= ps.Length;
+            })
+            // Prefer the tightest match: exact arity first, then fewest filled-in defaults.
+            .OrderBy(c => c.GetParameters().Length)
+            .FirstOrDefault();
+
+        if (ctor == null)
+            throw new InvalidOperationException(
+                $"No matching constructor on {type.FullName} for {args.Length} argument(s). " +
+                $"Available constructors: {DescribeConstructors(type)}");
+
+        var ps = ctor.GetParameters();
+        var fullArgs = new object?[ps.Length];
+        for (int i = 0; i < ps.Length; i++)
+            fullArgs[i] = i < args.Length ? args[i] : ps[i].DefaultValue;
+
+        return ctor.Invoke(fullArgs);
+    }
+
+    /// <summary>
+    /// Builds a human-readable list of the public constructors on a type, for error messages.
+    /// </summary>
+    private static string DescribeConstructors(Type type)
+    {
+        var ctors = type.GetConstructors();
+        if (ctors.Length == 0)
+            return "(none)";
+
+        return string.Join(" | ", ctors.Select(c =>
+        {
+            var ps = c.GetParameters();
+            string signature = string.Join(", ", ps.Select(p =>
+                p.IsOptional ? $"{p.ParameterType.Name} {p.Name} (optional)" : $"{p.ParameterType.Name} {p.Name}"));
+            return $"({signature})";
+        }));
     }
 
     /// <summary>
@@ -1059,9 +1121,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     private IEnumerator RespawnRoutine(Type entityType, Vector2 position, TimeSpan delay)
     {
         yield return new WaitForSeconds((float)delay.TotalSeconds);
-        var entity = (Entity?)Activator.CreateInstance(entityType);
-        if (entity == null)
+        // Resolve a constructor accepting no required arguments, filling optional params with their defaults.
+        object? instance = CreateInstanceWithOptionalParams(entityType, Array.Empty<object>());
+        if (instance == null)
             yield break;
+
+        Entity entity = (Entity)instance;
 
         entity.SetGameSystem(this);
         entity.Position = position;

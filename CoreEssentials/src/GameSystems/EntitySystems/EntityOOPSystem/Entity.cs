@@ -363,12 +363,17 @@ public abstract class Entity
 
     /// <summary>
     /// Called after <see cref="Update"/> on every frame, for active entities.
-    /// Override this method for logic that must run after all regular updates
-    /// (e.g. camera follow, end-of-frame corrections).
+    /// By default this drives <see cref="Components.EntityComponent.LateUpdate"/> on every
+    /// attached component, so components can react to the final state of the frame (e.g.
+    /// camera sync). Override and call <c>base.OnLateUpdate</c> to add entity-level logic.
     /// </summary>
     /// <param name="gameTime">Provides timing information.</param>
     public virtual void OnLateUpdate(GameTime gameTime)
     {
+        foreach (var component in _components.Values)
+        {
+            component.LateUpdate(gameTime);
+        }
     }
 
     /// <summary>

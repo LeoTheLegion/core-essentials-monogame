@@ -51,6 +51,34 @@ namespace CoreEssentials.Camera
         public Vector2 Origin { get; set; }
 
         /// <summary>
+        /// Gets or sets the orthographic half-height of the visible area in world units, mirroring
+        /// Unity's <c>Camera.orthographicSize</c>. When greater than zero the camera uses the
+        /// orthographic projection model (see <see cref="ComputeProjectionScale"/>); when zero it
+        /// falls back to the legacy behavior where one world unit equals one pixel at zoom 1.
+        /// </summary>
+        public float OrthographicSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the logical (game) resolution in pixels that the camera projects into. For
+        /// pixel-art games this is typically smaller than the actual render/backbuffer resolution
+        /// (e.g. a 320x180 game view presented on a 1280x720 window). When zero, the viewport height
+        /// is derived from <see cref="OrthographicSize"/>.
+        /// </summary>
+        public Vector2 ViewportSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ratio of render resolution to game resolution (pixel-art upscaling).
+        /// Defaults to 1. A value of 4 means a 320x180 game view is presented on a 1280x720 window.
+        /// </summary>
+        public float RenderScale { get; set; } = 1f;
+
+        /// <summary>
+        /// Gets the height of the visible world area in world units, accounting for zoom.
+        /// Mirrors Unity's relationship between orthographic size and zoom.
+        /// </summary>
+        public float VisibleWorldHeight => OrthographicSize > 0f ? (2f * OrthographicSize) / Zoom : ViewportSize.Y;
+
+        /// <summary>
         /// Gets the view matrix for this camera
         /// </summary>
         public Matrix ViewMatrix
@@ -128,11 +156,34 @@ namespace CoreEssentials.Camera
         /// <returns>The calculated view matrix</returns>
         private Matrix CalculateViewMatrix()
         {
-            // The camera view matrix is a combination of translation, rotation, and scaling
+            // The camera view matrix is a combination of translation, rotation, and scaling.
+            float scale = ComputeProjectionScale();
             return Matrix.CreateTranslation(new Vector3(-Position, 0.0f)) *
                    Matrix.CreateRotationZ(Rotation) *
-                   Matrix.CreateScale(new Vector3(Zoom, Zoom, 1.0f)) *
+                   Matrix.CreateScale(scale, scale, 1.0f) *
                    Matrix.CreateTranslation(new Vector3(Origin, 0.0f));
+        }
+
+        /// <summary>
+        /// Computes the pixels-per-world-unit projection scale.
+        /// </summary>
+        /// <remarks>
+        /// When <see cref="OrthographicSize"/> is zero the legacy model is used: one world unit
+        /// equals one pixel, scaled by <see cref="Zoom"/>. This preserves the pre-ortho behavior so
+        /// existing scenes render unchanged unless they opt in.
+        ///
+        /// Otherwise the orthographic model is used: the scale maps world units into the logical
+        /// (<see cref="ViewportSize"/>) resolution and is multiplied by <see cref="RenderScale"/> to
+        /// account for pixel-art upscaling to the actual backbuffer.
+        /// </remarks>
+        private float ComputeProjectionScale()
+        {
+            if (OrthographicSize <= 0f)
+                return Zoom;
+
+            float viewportHeight = ViewportSize.Y > 0f ? ViewportSize.Y : 2f * OrthographicSize;
+            float worldToGamePixel = (viewportHeight * Zoom) / (2f * OrthographicSize);
+            return worldToGamePixel * RenderScale;
         }
 
         #endregion

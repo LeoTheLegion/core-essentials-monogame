@@ -33,9 +33,35 @@ public class CanvasComponent : EntityComponent
     public Canvas Canvas => _canvas;
 
     /// <summary>
-    /// Gets a value indicating whether the canvas renders in screen space (true) or world space (false).
+    /// Gets or sets a value indicating whether the canvas renders in screen space (true) or
+    /// world space (false). Setting it at runtime flips the space on the next update; XML scene
+    /// files can use this to declare world-space canvases via a <c>Property</c> element.
     /// </summary>
-    public bool IsScreenSpace => _canvas.IsScreenSpace;
+    public bool IsScreenSpace
+    {
+        get => _canvas.IsScreenSpace;
+        set => _canvas.IsScreenSpace = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the canvas width. For world-space canvases this is the size of the anchored
+    /// rectangle in world units (see <c>AnchorComponent</c>).
+    /// </summary>
+    public float Width
+    {
+        get => _canvas.Width;
+        set => _canvas.Width = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the canvas height. For world-space canvases this is the size of the anchored
+    /// rectangle in world units (see <c>AnchorComponent</c>).
+    /// </summary>
+    public float Height
+    {
+        get => _canvas.Height;
+        set => _canvas.Height = value;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CanvasComponent"/> class.

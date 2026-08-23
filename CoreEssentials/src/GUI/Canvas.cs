@@ -13,8 +13,15 @@ public class Canvas : ICanvas
 {
     private readonly CanvasImpl _impl;
 
-    /// <inheritdoc />
-    public bool IsScreenSpace => _impl.IsScreenSpace;
+    /// <summary>
+    /// Gets or sets whether the canvas renders in screen space (true) or world space (false).
+    /// The value is re-evaluated on every update, so it can be switched at runtime.
+    /// </summary>
+    public bool IsScreenSpace
+    {
+        get => _impl.IsScreenSpace;
+        set => _impl.IsScreenSpace = value;
+    }
 
     /// <inheritdoc />
     public IBrush? Background

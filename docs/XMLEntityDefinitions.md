@@ -134,8 +134,14 @@ The following components are registered by default:
 | Component | Description |
 |-----------|-------------|
 | `SpriteComponent` | Sprite-based rendering |
+| `AnimationComponent` | Named sprite-frame animations |
 | `RigidbodyComponent` | Physics body (Dynamic, Static, Kinematic) |
 | `ColliderComponent` | Collision detection |
+| `CanvasComponent` | GUI canvas owner (screen- or world-space) |
+| `LabelComponent` | GUI text label bound to the nearest canvas |
+| `ButtonComponent` | GUI clickable button bound to the nearest canvas |
+| `AnchorComponent` | Unity-style anchor + offset positioning within a canvas |
+| `CameraComponent` | Anchors a camera to the owning entity (synced in `LateUpdate`) |
 
 ### Supported Property Types
 
@@ -211,15 +217,49 @@ References are resolved after all entities are created (two-pass loading).
 
 ## Custom Component Factory
 
-Register custom components:
+The serializer resolves `<Component Type="...">` entries through an `IComponentFactory`. If you don't pass one to the loader, it builds a default with only the built-ins registered — so **custom components must be registered on your own factory and passed in**:
 
 ```csharp
-var factory = new DefaultComponentFactory();
-factory.RegisterBuiltIns();
-factory.Register<MyCustomComponent>("CustomComp");
+// 1. Subclass EntityComponent (parameterless constructor shown)
+public class HealthComponent : EntityComponent
+{
+    public int MaxHealth { get; set; } = 100;
+}
 
-var entity = EntitySerializer.LoadEntity<MyEntity>(xml, system, factory);
+// 2. Register it and pass the factory to the scene loader
+var factory = new DefaultComponentFactory();
+factory.RegisterBuiltIns();                       // built-ins first
+factory.Register<HealthComponent>("Health");      // your own name
+
+var roots = EntitySerializer.LoadSceneFromFile("scene.xml", entitySystem, factory);
 ```
+
+Then in XML:
+
+```xml
+<Component Type="Health">
+    <Properties>
+        <Property Name="MaxHealth" Value="150" />
+    </Properties>
+</Component>
+```
+
+### Registration Overloads
+
+| Method | Use when |
+|---|---|
+| `factory.Register<T>("Name")` | The component has a parameterless constructor. |
+| `factory.Register("Name", () => new MyComp(arg))` | The component needs constructor arguments — this is how built-ins like `ColliderComponent` are registered. |
+
+### Fully-Qualified Name Fallback
+
+You can skip registration entirely: if the type name isn't in the factory, `DefaultComponentFactory.Create` falls back to `Type.GetType(typeName)`, so a **fully qualified type name** works directly in XML as long as the assembly is loaded:
+
+```xml
+<Component Type="MyGame.Components.HealthComponent" />
+```
+
+Registering by short name (recommended) keeps scene files clean and decoupled from your code's namespace layout.
 
 ## Error Handling
 

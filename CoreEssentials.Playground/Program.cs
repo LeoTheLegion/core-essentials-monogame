@@ -11,7 +11,7 @@ game.Graphics.ApplyChanges();
 
 // Create a loading screen with custom colors
 LoadingScene loadingScene = new LoadingScene(
-    "Loading Physics Scene...", 
+    "Loading Anchored GUI Demo...", 
     Color.Black, 
     Color.LightBlue, 
     Color.White
@@ -20,7 +20,7 @@ LoadingScene loadingScene = new LoadingScene(
 // Set the loading scene for the SceneManager to use during transitions
 game.SceneManager.SetLoadingScene(loadingScene);
 
-// Use our new CharacterScene instead of the PhysicsEntityScene
-game.SceneManager.LoadScene(new PhysicsEntityScene());
+// Start on the fully data-driven anchored GUI demo (press Esc in-game to go to the physics scene)
+game.SceneManager.LoadScene(new GuiAnchorDemoScene());
 
 game.Run();
