@@ -105,7 +105,8 @@ public LabelComponent()          // template-friendly; set Text before attaching
 public LabelComponent(string text)
 ```
 
-### Properties (all can be set before attaching; applied on attach)
+### Properties (live pass-throughs)
+All properties can be set **before** attaching (applied on attach) **or after** attaching — setting one after attach immediately updates the rendered widget, so labels are suitable for dynamic HUD values (score, timer, health, cooldowns).
 
 | Property | Type | Default | Description |
 |---|---|---|---|
@@ -118,11 +119,13 @@ public LabelComponent(string text)
 ### Example
 
 ```csharp
-var healthLabel = new HealthLabelEntity();
-healthLabel.AddComponent<LabelComponent>("HP: 100");
-// or configure after construction:
-var comp = healthLabel.GetComponent<LabelComponent>();
-comp.TextColor = Color.LimeGreen;
+var scoreEntity = new ScoreEntity();
+scoreEntity.AddComponent<LabelComponent>("Score: 0");
+
+// Later — e.g. every time the score changes:
+var comp = scoreEntity.GetComponent<LabelComponent>();
+comp.Text = "Score: 42";      // updates the rendered widget immediately
+comp.TextColor = Color.Gold;
 comp.Opacity = 0.8f;
 ```
 
