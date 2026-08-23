@@ -153,8 +153,22 @@ public static class EntityTemplateLoader
 
     /// <summary>
     /// Instantiates an entity from a template and adds it to the system.
+    /// The full child subtree is created first, then components are attached pre-order
+    /// (parents before children) so hierarchy-dependent components — e.g. a widget component
+    /// looking up its CanvasComponent through the parent chain — can find their ancestors.
     /// </summary>
     public static Entity Instantiate(EntityTemplate template, EntitySystem system, Vector2 position)
+    {
+        var root = BuildSubtree(template, system, position);
+        AttachPreOrder(root, template);
+        return root;
+    }
+
+    /// <summary>
+    /// Recursively creates and starts the entity for a template and all of its children,
+    /// without attaching any component definitions yet.
+    /// </summary>
+    private static Entity BuildSubtree(EntityTemplate template, EntitySystem system, Vector2 position)
     {
         // Use the robust type resolution logic from EntitySerializer (if accessible) or mirror it here
         Type? type = null;
@@ -188,7 +202,7 @@ public static class EntityTemplateLoader
 
         // 1. Create entity WITHOUT calling OnStart() yet — we need to set position first so physics bodies initialize correctly
         var entity = system.CreateEntityUnstarted(type);
-        
+
         // 2. Apply base properties BEFORE OnStart() so components initialize at the correct position
         entity.Position = position;
         entity.Rotation = template.Rotation;
@@ -207,20 +221,32 @@ public static class EntityTemplateLoader
         // 4. NOW call OnStart() — components will initialize at the correct position
         entity.OnStart();
 
-        // 5. Re-apply component overrides after OnStart() — this ensures template values win over OnStart() defaults
+        // Recurse for children before any component attachments happen.
+        foreach (var childTemplate in template.Children)
+        {
+            var child = BuildSubtree(childTemplate, system, position); // Relative positioning usually handled by Entity logic if children are added
+            entity.AddChild(child);
+        }
+
+        return entity;
+    }
+
+    /// <summary>
+    /// Recursively applies component definitions so that a parent's components attach before
+    /// its children's (pre-order).
+    /// </summary>
+    private static void AttachPreOrder(Entity entity, EntityTemplate template)
+    {
+        // Re-apply component overrides after OnStart() — this ensures template values win over OnStart() defaults
         foreach (var compDef in template.Components)
         {
             ApplyComponentDefinition(entity, compDef);
         }
 
-        // 6. Recurse for children
-        foreach (var childTemplate in template.Children)
+        for (int i = 0; i < template.Children.Count && i < entity.Children.Count; i++)
         {
-            var child = Instantiate(childTemplate, system, position); // Relative positioning usually handled by Entity logic if children are added
-            entity.AddChild(child);
+            AttachPreOrder(entity.Children[i], template.Children[i]);
         }
-
-        return entity;
     }
 
     /// <summary>

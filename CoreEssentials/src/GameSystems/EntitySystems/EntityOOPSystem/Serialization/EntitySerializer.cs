@@ -192,7 +192,16 @@ public static class EntitySerializer
         return entity;
     }
 
+    /// <summary>Entry point with components attached — used for the top-level definitions in a scene.</summary>
     private static Entity LoadEntityFromDefinition(XElement entityDef, EntitySystem system, IComponentFactory factory, Dictionary<string, Entity> idToEntity)
+        => LoadEntityFromDefinition(entityDef, system, factory, idToEntity, attachComponents: true);
+
+    /// <summary>
+    /// Loads an entity definition and its nested children. When <paramref name="attachComponents"/>
+    /// is false, no components are attached on this subtree — the caller is responsible for a
+    /// pre-order attach pass once the full hierarchy is parented.
+    /// </summary>
+    private static Entity LoadEntityFromDefinition(XElement entityDef, EntitySystem system, IComponentFactory factory, Dictionary<string, Entity> idToEntity, bool attachComponents)
     {
         var entityType = entityDef.Attribute("Type")?.Value;
         if (string.IsNullOrWhiteSpace(entityType))
@@ -211,37 +220,75 @@ public static class EntitySerializer
         // Apply properties (position, rotation, sort, tags, active)
         ApplyEntityProperties(entity, entityDef);
 
-        // Load components - support both <Components><Component .../></Components> and direct <Component .../>
+        // Build the whole subtree first (children are loaded without attaching their components),
+        // then attach components pre-order (parents before children). Hierarchy-dependent
+        // components — e.g. a widget component looking up its CanvasComponent through the parent
+        // chain — need their ancestors to be parented (and their components attached) by the time
+        // they attach.
+        var childDefs = GetChildDefinitions(entityDef);
+        foreach (var childDef in childDefs)
+        {
+            var child = LoadEntityFromDefinition(childDef, system, factory, idToEntity, attachComponents: false);
+            entity.AddChild(child);
+        }
+
+        if (attachComponents)
+            AttachComponentsPreOrder(entity, entityDef, factory);
+
+        return entity;
+    }
+
+    /// <summary>
+    /// Attaches the components declared on <paramref name="entityDef"/> to <paramref name="entity"/>,
+    /// then recurses into its children so that parent components attach before child components.
+    /// </summary>
+    private static void AttachComponentsPreOrder(Entity entity, XElement entityDef, IComponentFactory factory)
+    {
+        AttachComponents(entity, entityDef, factory);
+
+        var childDefs = GetChildDefinitions(entityDef);
+        for (int i = 0; i < childDefs.Count && i < entity.Children.Count; i++)
+        {
+            AttachComponentsPreOrder(entity.Children[i], childDefs[i], factory);
+        }
+    }
+
+    /// <summary>
+    /// Attaches the components declared on <paramref name="entityDef"/> to <paramref name="entity"/>.
+    /// Supports both a &lt;Components&gt; wrapper and direct &lt;Component&gt; children.
+    /// </summary>
+    private static void AttachComponents(Entity entity, XElement entityDef, IComponentFactory factory)
+    {
         var componentsElement = entityDef.Element("Components");
         if (componentsElement != null)
         {
             LoadComponents(entity, componentsElement, factory);
-        }
-        else
-        {
-            // Support direct <Component> children without wrapper - create a virtual wrapper
-            foreach (var componentElement in entityDef.Elements("Component"))
-            {
-                var typeName = componentElement.Attribute("Type")?.Value;
-                if (!string.IsNullOrWhiteSpace(typeName))
-                {
-                    LoadComponent(entity, componentElement, factory);
-                }
-            }
+            return;
         }
 
-        // Load nested children from &lt;Children&gt; element
+        // Support direct <Component> children without wrapper - create a virtual wrapper
+        foreach (var componentElement in entityDef.Elements("Component"))
+        {
+            var typeName = componentElement.Attribute("Type")?.Value;
+            if (!string.IsNullOrWhiteSpace(typeName))
+            {
+                LoadComponent(entity, componentElement, factory);
+            }
+        }
+    }
+
+    /// <summary>Gets the nested &lt;EntityDefinition&gt; elements declared in a definition's &lt;Children&gt; element.</summary>
+    private static List<XElement> GetChildDefinitions(XElement entityDef)
+    {
+        var result = new List<XElement>();
         var childrenElement = entityDef.Element("Children");
-        if (childrenElement != null)
-        {
-            foreach (var childDef in childrenElement.Elements("EntityDefinition"))
-            {
-                var child = LoadEntityFromDefinition(childDef, system, factory, idToEntity);
-                entity.AddChild(child);
-            }
-        }
+        if (childrenElement == null)
+            return result;
 
-        return entity;
+        foreach (var childDef in childrenElement.Elements("EntityDefinition"))
+            result.Add(childDef);
+
+        return result;
     }
 
     private static void ResolveReferences(XElement entityDef, Dictionary<string, Entity> idToEntity, List<Entity> rootEntities)
@@ -571,7 +618,10 @@ public interface IComponentFactory
     void Register(string typeName, Func<EntityComponent> factory);
 
     /// <summary>
-    /// Registers all built-in components (SpriteComponent, RigidbodyComponent, ColliderComponent).
+    /// Registers all built-in components (SpriteComponent, AnimationComponent, RigidbodyComponent,
+    /// ColliderComponent, the GUI components CanvasComponent, LabelComponent, ButtonComponent and
+    /// AnchorComponent, and CameraComponent). Register custom components with one of the
+    /// <see cref="Register{T}"/> overloads before loading scenes that reference them.
     /// </summary>
     void RegisterBuiltIns();
 }
@@ -623,5 +673,14 @@ public class DefaultComponentFactory : IComponentFactory
 
         // ColliderComponent requires constructor args, use factory function with default circle collider
         Register("ColliderComponent", () => new Components.BuiltIn.ColliderComponent(radius: 1f));
+
+        // GUI components. Registered so data-driven XML scenes can compose canvases and
+        // widgets without any game-layer code. CanvasComponent's constructor takes an optional
+        // argument, so it needs the factory-function overload instead of Register<T>.
+        Register("CanvasComponent", () => new Components.BuiltIn.CanvasComponent());
+        Register<Components.BuiltIn.LabelComponent>("LabelComponent");
+        Register<Components.BuiltIn.ButtonComponent>("ButtonComponent");
+        Register<Components.BuiltIn.AnchorComponent>("AnchorComponent");
+        Register<Components.BuiltIn.CameraComponent>("CameraComponent");
     }
 }

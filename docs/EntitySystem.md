@@ -35,6 +35,24 @@ YourEntity entity = entitySystem.CreateEntity<YourEntity>(new Vector2(100, 100))
 List<YourEntity> entities = entitySystem.FindByType<YourEntity>();
 ```
 
+#### Constructor resolution with optional parameters
+
+`CreateEntity`, `CreateEntity<T>`, and `CreateEntityUnstarted` resolve constructors the same way C# call sites do: **trailing optional parameters may be omitted** and are filled from their declared defaults.
+
+```csharp
+public class PopupEntity : Entity
+{
+    public PopupEntity(Vector2 position, float scale = 1f, bool radiation = false) { ... }
+}
+
+// All of these work — previously the first two threw MissingMethodException at runtime:
+entitySystem.CreateEntity<PopupEntity>(new Vector2(0, 0));
+entitySystem.CreateEntity<PopupEntity>(new Vector2(0, 0), 2f);
+entitySystem.CreateEntity<PopupEntity>(new Vector2(0, 0), 2f, true);
+```
+
+When no constructor matches the given arguments, an `InvalidOperationException` is thrown listing all available constructors and their signatures to aid diagnosis.
+
 ### Entity Class
 
 The `Entity` class is the base class for all game objects. Extend this class to create specific entity types.

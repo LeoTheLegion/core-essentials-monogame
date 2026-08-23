@@ -104,22 +104,22 @@ Releases are automated via GitHub Actions. To create a new release:
 Edit `CoreEssentials/CoreEssentials.csproj` and update the version number:
 
 ```xml
-<Version>0.15.0</Version>
+<Version>0.16.0</Version>
 ```
 
 ### 2. Commit and Push
 
 ```bash
 git add CoreEssentials/CoreEssentials.csproj
-git commit -m "Bump version to 0.15.0"
+git commit -m "Bump version to 0.16.0"
 git push origin main
 ```
 
 ### 3. Create and Push a Tag
 
 ```bash
-git tag v0.15.0
-git push origin v0.15.0
+git tag v0.16.0
+git push origin v0.16.0
 ```
 
 ### 4. Automated Release

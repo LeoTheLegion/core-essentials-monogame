@@ -193,5 +193,89 @@ public class LabelComponentTests : IDisposable
         Assert.Empty(canvas.Canvas.Children);
     }
 
+    // ===== Live property updates after attach (#68) =====
+
+    [Fact]
+    public void SetText_AfterAttach_UpdatesWidget()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("Score: 0"));
+
+        label.Text = "Score: 42";
+
+        var widget = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+        Assert.Equal("Score: 42", widget.Text);
+    }
+
+    [Fact]
+    public void SetTextColor_AfterAttach_UpdatesWidget()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+
+        label.TextColor = Color.LimeGreen;
+
+        var widget = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+        Assert.Equal(Color.LimeGreen, widget.TextColor);
+    }
+
+    [Fact]
+    public void SetScaleOpacityAndVisible_AfterAttach_UpdateWidget()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+
+        label.Scale = new Vector2(2, 1);
+        label.Opacity = 0.25f;
+        label.Visible = false;
+
+        var widget = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+        Assert.Equal(new Vector2(2, 1), widget.Scale);
+        Assert.Equal(0.25f, widget.Opacity);
+        Assert.False(widget.Visible);
+    }
+
+    [Fact]
+    public void SetProperties_BeforeAttach_AppliedOnAttach()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = new LabelComponent("T")
+        {
+            TextColor = Color.Red,
+            Scale = new Vector2(3, 3),
+            Opacity = 0.5f,
+            Visible = false
+        };
+        entity.AddComponent(label);
+
+        var widget = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+        Assert.Equal(Color.Red, widget.TextColor);
+        Assert.Equal(new Vector2(3, 3), widget.Scale);
+        Assert.Equal(0.5f, widget.Opacity);
+        Assert.False(widget.Visible);
+    }
+
+    [Fact]
+    public void Reattach_AfterDetach_ReappliesCurrentPropertyValues()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+        label.TextColor = Color.Blue;
+
+        entity.RemoveComponent<LabelComponent>();
+        Assert.Empty(canvas.Canvas.Children);
+
+        // Re-attach the same component instance: widget must reflect values set while detached too.
+        entity.AddComponent(label);
+
+        var widget = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+        Assert.Equal(Color.Blue, widget.TextColor);
+    }
+
     private static IWidget GetWidget(CanvasComponent canvas) => canvas.Canvas.Children[0];
 }

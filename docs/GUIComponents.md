@@ -5,6 +5,7 @@ CoreEssentials provides built-in entity components for rendering GUI widgets as 
 - `CanvasComponent` — owns a `Canvas` (screen-space or world-space)
 - `LabelComponent` — renders a text label at the entity's position
 - `ButtonComponent` — renders a clickable text button at the entity's position
+- `AnchorComponent` — pins an entity to an anchor point of its canvas (Unity RectTransform style)
 
 All live in the namespace `CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn`.
 
@@ -56,7 +57,9 @@ public CanvasComponent(bool isScreenSpace = true)
 | Property | Type | Description |
 |---|---|---|
 | `Canvas` | `Canvas` | The canvas owned by this component (the single source of truth for the subtree). |
-| `IsScreenSpace` | `bool` | Whether the canvas renders in screen space. |
+| `IsScreenSpace` | `bool` | Whether the canvas renders in screen space. **Settable at runtime** — flipping it switches the space on the next update, and XML scene files can declare world-space canvases via a `<Property Name="IsScreenSpace" Value="false" />` element. |
+| `Width` | `float` | Canvas width. For world-space canvases this defines the anchored rectangle that `AnchorComponent` resolves against (in world units). |
+| `Height` | `float` | Canvas height (same as `Width`). |
 
 ### Methods
 
@@ -94,6 +97,102 @@ score.AddComponent<LabelComponent>("Score: 0");
 hudRoot.AddChild(score);
 ```
 
+### World-Space Canvases
+
+Setting `IsScreenSpace` to `false` (in code or XML) turns the canvas into an **in-world panel**: it is positioned in world coordinates through the main camera, so it moves with its owning entity and can be attached to NPCs, vehicles, or any other moving object. Give the canvas a `Width`/`Height` to define its anchored rectangle:
+
+```csharp
+// In-world panel that follows an NPC
+var panel = new Entity();
+panel.Position = new Vector2(640, 360);
+var canvas = panel.AddComponent<CanvasComponent>(isScreenSpace: false);
+canvas.Width = 320f;
+canvas.Height = 200f;
+```
+
+Child entities of the panel entity position themselves **relative to the panel** (the same convention as screen-space canvases), so they stay pinned inside it while it moves around the world. Combine with `AnchorComponent` for resize-stable layouts within the panel.
+
+## AnchorComponent
+
+Pins the owning entity to an anchor point of its canvas, mirroring Unity's RectTransform anchor + offset model. Each frame the entity's position is resolved as:
+
+```
+position = (Anchor * canvasRect) + Offset
+```
+
+where `canvasRect` is:
+- **Screen-space canvas** — the GUI viewport (`GUIManager.Width/Height`), so HUD layouts survive window resizes.
+- **World-space canvas** — the canvas's own `Width`/`Height` (falling back to the GUI viewport when unset), in world units relative to the canvas entity.
+
+Entities without a canvas anywhere up the parent chain are left untouched, so plain gameplay entities can carry this component harmlessly. For parented entities the resolved position is written to `LocalPosition` (canvas-relative); for root entities it goes to `Position`.
+
+### Constructors
+
+```csharp
+public AnchorComponent()                        // defaults: MiddleCenter, no offset
+public AnchorComponent(AnchorPreset preset, Vector2 offset)
+```
+
+### Properties (all live pass-throughs; all XML-serializable)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Preset` | `AnchorPreset` | `MiddleCenter` | One of the nine Unity-style anchor presets. Setting it updates `Anchor`. |
+| `Anchor` | `Vector2` | `(0.5, 0.5)` | Normalized anchor point: (0, 0) = top-left, (1, 1) = bottom-right. Assigning directly does not change `Preset` — the last property written wins. |
+| `Offset` | `Vector2` | `(0, 0)` | Offset from the anchor point (screen pixels for screen-space canvases, world units for world-space). |
+| `Active` | `bool` | `true` | Set to false to freeze the current position while keeping the anchor configuration. |
+
+### AnchorPreset Values
+
+`TopLeft`, `TopCenter`, `TopRight`, `MiddleLeft`, `MiddleCenter`, `MiddleRight`, `BottomLeft`, `BottomCenter`, `BottomRight`.
+
+### Example — HUD with anchored elements
+
+```csharp
+var hudRoot = new Entity();
+hudRoot.AddComponent<CanvasComponent>(); // screen-space, at origin
+scene.Add(hudRoot);
+
+var score = new Entity();
+score.AddComponent<LabelComponent>("Score: 0");
+score.AddComponent(new AnchorComponent(AnchorPreset.TopLeft, new Vector2(16, 16)));
+hudRoot.AddChild(score);
+
+var pauseButton = new Entity();
+pauseButton.AddComponent<ButtonComponent>("Pause");
+pauseButton.AddComponent(new AnchorComponent(AnchorPreset.TopRight, new Vector2(-16, 16)));
+hudRoot.AddChild(pauseButton);
+```
+
+### Example — XML scene with anchored widgets
+
+```xml
+<EntityDefinition Type="Entity" Id="hud">
+    <Components>
+        <Component Type="CanvasComponent" />
+    </Components>
+    <Children>
+        <EntityDefinition Type="Entity" Id="score">
+            <Components>
+                <Component Type="LabelComponent">
+                    <Properties>
+                        <Property Name="Text" Value="Score: 0" />
+                    </Properties>
+                </Component>
+                <Component Type="AnchorComponent">
+                    <Properties>
+                        <Property Name="Preset" Value="TopLeft" />
+                        <Property Name="Offset" Value="16,16" />
+                    </Properties>
+                </Component>
+            </Components>
+        </EntityDefinition>
+    </Children>
+</EntityDefinition>
+```
+
+> **Loading order note:** scene loading attaches components **pre-order** (parents before children), so a child's `AnchorComponent`/widget component always finds its ancestor `CanvasComponent` already attached.
+
 ## LabelComponent
 
 Renders a text label (`ILabel`) into the nearest ancestor canvas.
@@ -105,7 +204,8 @@ public LabelComponent()          // template-friendly; set Text before attaching
 public LabelComponent(string text)
 ```
 
-### Properties (all can be set before attaching; applied on attach)
+### Properties (live pass-throughs)
+All properties can be set **before** attaching (applied on attach) **or after** attaching — setting one after attach immediately updates the rendered widget, so labels are suitable for dynamic HUD values (score, timer, health, cooldowns).
 
 | Property | Type | Default | Description |
 |---|---|---|---|
@@ -118,11 +218,13 @@ public LabelComponent(string text)
 ### Example
 
 ```csharp
-var healthLabel = new HealthLabelEntity();
-healthLabel.AddComponent<LabelComponent>("HP: 100");
-// or configure after construction:
-var comp = healthLabel.GetComponent<LabelComponent>();
-comp.TextColor = Color.LimeGreen;
+var scoreEntity = new ScoreEntity();
+scoreEntity.AddComponent<LabelComponent>("Score: 0");
+
+// Later — e.g. every time the score changes:
+var comp = scoreEntity.GetComponent<LabelComponent>();
+comp.Text = "Score: 42";      // updates the rendered widget immediately
+comp.TextColor = Color.Gold;
 comp.Opacity = 0.8f;
 ```
 
@@ -178,5 +280,6 @@ hudRoot.AddChild(menuButton);
 ## Notes
 
 - **Widget creation goes through `WidgetFactory`**, so the components stay decoupled from the Myra backend (see [GUI System](./GUISystem.md)).
-- **World-space canvases** are useful for in-world UI (e.g., a floating panel attached to an NPC); screen-space is the default for HUDs and menus.
+- **World-space canvases** are useful for in-world UI (e.g., a floating panel attached to an NPC); screen-space is the default for HUDs and menus. World-space canvases require a main camera (`Camera.MainCamera`) to project their world position.
+- **`AnchorComponent` drives position every frame**, so don't also drive the same entity's position from game code — the anchor wins on the next update.
 - **Font handling** is intentionally out of scope for v1 — widgets use the GUI engine's default font. Custom fonts can be applied later via the underlying `ILabel.Font` property if needed.
