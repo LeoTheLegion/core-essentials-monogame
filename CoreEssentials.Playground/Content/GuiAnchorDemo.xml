@@ -19,7 +19,14 @@
                     <Property Name="Offset" Value="0,0" />
                 </Properties>
             </Component>
+            <!-- Score state lives in a component on the HUD root; both buttons below bind
+                 their Clicked events to its public methods. -->
+            <Component Type="ScoreKeeperComponent" />
         </Components>
+        <References>
+            <!-- Injects the score label entity into ScoreKeeperComponent.ScoreLabel. -->
+            <Reference Name="ScoreLabel" TargetId="scoreText" />
+        </References>
 
         <Children>
             <!-- Title: top edge, centered horizontally -->
@@ -91,6 +98,8 @@
                             <Property Name="Text" Value="Add 10" />
                         </Properties>
                     </Component>
+                    <!-- Declarative wiring: no FindById + subscribe code in the scene. -->
+                    <Bind Event="Clicked" Command="AddTen" />
                 </Components>
             </EntityDefinition>
 
@@ -107,6 +116,7 @@
                             <Property Name="Text" Value="Reset" />
                         </Properties>
                     </Component>
+                    <Bind Event="Clicked" Command="Reset" />
                 </Components>
             </EntityDefinition>
         </Children>

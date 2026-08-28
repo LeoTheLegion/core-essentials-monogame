@@ -9,7 +9,7 @@ namespace CoreEssentials.Tests.GUI;
 
 /// <summary>
 /// Tests for Scale and Opacity properties on IWidget interface.
-/// These tests verify Issue #29: Add Scale and Opacity to ILabel/IWidget interface.
+/// These tests verify the Scale and Opacity properties on the ILabel/IWidget interface.
 /// </summary>
 public class ScaleOpacityTests : IDisposable
 {

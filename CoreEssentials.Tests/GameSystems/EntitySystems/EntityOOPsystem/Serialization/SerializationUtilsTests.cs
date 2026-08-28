@@ -28,7 +28,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         [Fact]
         public void ParseVector2_ScalarExpandsToUniformVector()
         {
-            // Issue #74: a bare scalar like Scale="1.5" should become (1.5, 1.5)
+            // A bare scalar like Scale="1.5" should become (1.5, 1.5)
             Assert.Equal(new Vector2(1.5f, 1.5f), SerializationUtils.ParseVector2FromString("1.5"));
         }
 
@@ -64,7 +64,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         [Fact]
         public void ParseColor_RGBString_ParsesNumericComponents()
         {
-            // Issue #73: "100,255,100" should parse instead of falling back to White
+            // "100,255,100" should parse instead of falling back to White
             var color = SerializationUtils.ParseColor("100,255,100");
             Assert.Equal(100, color.R);
             Assert.Equal(255, color.G);
