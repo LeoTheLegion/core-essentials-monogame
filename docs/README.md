@@ -4,7 +4,7 @@
 
 CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame that provides essential building blocks for game development. Designed to accelerate game development by providing ready-to-use systems for common game development challenges.
 
-**Version:** 0.16.0  
+**Version:** 0.17.0  
 **Author:** Michael Mena  
 **Repository:** [https://github.com/LeoTheLegion/core-essentials-monogame](https://github.com/LeoTheLegion/core-essentials-monogame)
 
@@ -18,6 +18,7 @@ CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame th
 - **Audio Management**: Play, pause, and manage sound effects and music
 - **Debugging Tools**: In-game console, logging, and physics visualization
 - **GUI System**: User interface components built with Myra
+- **Declarative XML Scenes**: Entities, components, references and event-to-command wiring defined entirely in XML, with custom components discovered by name — no registration code required
 - **XML Documentation**: IntelliSense support for easier API usage
 
 ## Getting Started
