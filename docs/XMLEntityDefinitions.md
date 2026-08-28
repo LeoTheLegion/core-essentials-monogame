@@ -147,13 +147,13 @@ The following components are registered by default:
 
 Properties are parsed via reflection. Supported types:
 
-- **int** — Integer values (`Value=""5""`)
-- **float** — Decimal values (`Value=""3.14""`)
-- **bool** — Boolean values (`Value=""true""`)
-- **string** — Text values (`Value=""Hello""`)
-- **Vector2** — Two floats separated by comma (`Value=""1,2""`)
-- **Color** — Named colors (`Value=""Red"`", `"Blue"`, etc.)
-- **enum** — Any enum type (`Value=""Static""`)
+- **int** — Integer values (`Value="5"`)
+- **float** — Decimal values (`Value="3.14"`)
+- **bool** — Boolean values (`Value="true"`)
+- **string** — Text values (`Value="Hello"`)
+- **Vector2** — Two floats separated by comma (`Value="1,2"`), or a bare scalar for uniform scaling (`Value="1.5"` → `(1.5, 1.5)`)
+- **Color** — Named colors (`Value="Red"`, `Value="LightGreen"`) or numeric `R,G,B[,A]` strings (`Value="100,255,100"`, `Value="100,255,100,128"`)
+- **enum** — Any enum type (`Value="Static"`)
 
 ## Scene XML Schema
 
