@@ -42,6 +42,10 @@ public static class EntitySerializer
             LoadComponents(entity, componentsElement, factory);
         }
 
+        // Wire up declarative <Bind> event-to-command subscriptions now that all
+        // components on this entity are attached.
+        CommandBindings.ApplyBindings(entity, element);
+
         return entity;
     }
 
@@ -246,6 +250,11 @@ public static class EntitySerializer
     {
         AttachComponents(entity, entityDef, factory);
 
+        // Wire up declarative <Bind> event-to-command subscriptions now that all
+        // components on this entity are attached (children's binds are applied when
+        // the recursion below reaches them).
+        CommandBindings.ApplyBindings(entity, entityDef);
+
         var childDefs = GetChildDefinitions(entityDef);
         for (int i = 0; i < childDefs.Count && i < entity.Children.Count; i++)
         {
@@ -335,8 +344,33 @@ public static class EntitySerializer
         if (property != null && property.PropertyType.IsAssignableFrom(typeof(Entity)))
         {
             property.SetValue(target, reference);
+            return;
         }
-        // If no matching property exists, silently skip - forward-compatible for future entity subclasses
+
+        // Fall back to components: the first component exposing a settable Entity-typed
+        // member (property or public field) with this name receives the reference. This lets
+        // XML declare links to specific entities for components (e.g. the label a
+        // score-updating component owns).
+        foreach (var component in target.Components)
+        {
+            var componentType = component.GetType();
+
+            var componentProperty = componentType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public);
+            if (componentProperty != null && componentProperty.CanWrite && componentProperty.PropertyType.IsAssignableFrom(typeof(Entity)))
+            {
+                componentProperty.SetValue(component, reference);
+                return;
+            }
+
+            var componentField = componentType.GetField(name, BindingFlags.Instance | BindingFlags.Public);
+            if (componentField != null && componentField.FieldType.IsAssignableFrom(typeof(Entity)))
+            {
+                componentField.SetValue(component, reference);
+                return;
+            }
+        }
+
+        // If no matching member exists, silently skip - forward-compatible for future entity subclasses
     }
 
     #endregion
@@ -511,9 +545,12 @@ public static class EntitySerializer
 
         var existingComponent = GetExistingComponent(entity, typeName);
         EntityComponent? component = existingComponent ?? factory.Create(typeName);
-        
+
         if (component == null)
+        {
+            Console.WriteLine($"[Serialization] Could not create component '{typeName}' for entity {entity.Id} — no matching registration in the component factory; skipping.");
             return;
+        }
 
         ApplyProperties(entity, component, componentElement);
 
@@ -586,12 +623,7 @@ public static class EntitySerializer
     // Color ParseColor(string value) { ... }
     #endregion
 
-    private static IComponentFactory CreateDefaultComponentFactory()
-    {
-        var factory = new DefaultComponentFactory();
-        factory.RegisterBuiltIns();
-        return factory;
-    }
+    private static IComponentFactory CreateDefaultComponentFactory() => new DefaultComponentFactory();
 
     #endregion
 }
@@ -620,7 +652,8 @@ public interface IComponentFactory
     /// <summary>
     /// Registers all built-in components (SpriteComponent, AnimationComponent, RigidbodyComponent,
     /// ColliderComponent, the GUI components CanvasComponent, LabelComponent, ButtonComponent and
-    /// AnchorComponent, and CameraComponent). Register custom components with one of the
+    /// AnchorComponent, and CameraComponent). <see cref="DefaultComponentFactory"/> calls this in
+    /// its constructor, so it is idempotent; register custom components with one of the
     /// <see cref="Register{T}"/> overloads before loading scenes that reference them.
     /// </summary>
     void RegisterBuiltIns();
@@ -632,6 +665,16 @@ public interface IComponentFactory
 public class DefaultComponentFactory : IComponentFactory
 {
     private readonly Dictionary<string, Func<EntityComponent>> _factories = new();
+
+    /// <summary>
+    /// Creates a factory with all built-in components pre-registered. Register additional
+    /// custom components after construction — they are added to the built-ins rather than
+    /// replacing them, so scenes can mix built-in and custom components freely.
+    /// </summary>
+    public DefaultComponentFactory()
+    {
+        RegisterBuiltIns();
+    }
 
     /// <inheritdoc />
     public EntityComponent? Create(string typeName)

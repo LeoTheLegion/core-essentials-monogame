@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.Inputs;
 using CoreEssentials.Scenes;
 using Microsoft.Xna.Framework.Input;
@@ -14,13 +14,11 @@ namespace CoreEssentials.Playground;
 /// The entire HUD (labels + buttons) is defined in <c>GuiAnchorDemo.xml</c> using plain
 /// <see cref="GameObjectEntity"/> nodes composed of built-in components:
 /// one root <c>CanvasComponent</c>, plus <c>AnchorComponent</c> + <c>LabelComponent</c>/<c>ButtonComponent</c>
-/// on each child. No per-element game code is needed — this scene only wires the button
-/// commands and drives the live-updating score label (see Issue #68).
+/// on each child. Button behavior is wired declaratively with &lt;Bind&gt; elements
+/// — this scene contains no FindById + subscribe code at all.
 /// </summary>
 public class GuiAnchorDemoScene : Scene
 {
-    private int _score;
-    private LabelComponent _scoreLabel;
 
     protected override GameSystem[] LoadGameSystems()
     {
@@ -37,33 +35,25 @@ public class GuiAnchorDemoScene : Scene
 
         var entitySystem = GetGameSystem<EntitySystem>();
 
-        // Everything below the <Scene> root is data: entities, canvas, anchors and widgets.
-        LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem);
+        // Everything below the <Scene> root is data: entities, canvas, anchors, widgets,
+        // and the button command wiring (<Bind Event="Clicked" Command="..."/> in the XML).
+        var factory = new DefaultComponentFactory();
+        factory.Register("ScoreKeeperComponent", () => new ScoreKeeperComponent());
+        LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem, factory);
 
         // A camera so the world-space panel can be panned around (WASD) to show that its
         // anchored children stay pinned inside it in world space, not screen space.
-        entitySystem.CreateEntity<CameraEntity>();
+        var cameraEntity = entitySystem.CreateEntity<CameraEntity>();
+        cameraEntity.CameraSpeed = 300f; // world units/second — the default of 1 is imperceptible
 
-        UpdateLoadingProgress(0.7f, "Wiring button commands...");
+        UpdateLoadingProgress(0.7f, "Scene ready...");
         yield return null;
-
-        // The only hand-written code in this scene: command wiring + the live score label.
-        var addButton = FindButton(entitySystem, "addScoreButton");
-        if (addButton != null)
-            addButton.Clicked += () => UpdateScore(_score + 10);
-
-        var resetButton = FindButton(entitySystem, "resetButton");
-        if (resetButton != null)
-            resetButton.Clicked += () => UpdateScore(0);
-
-        _scoreLabel = entitySystem.FindById("scoreText")?.GetComponent<LabelComponent>();
-        UpdateScore(0);
 
         // Escape returns to the original startup scene.
         Input.Keyboard.KeyReleased += OnKeyReleased;
 
         UpdateLoadingProgress(1.0f, "Anchored GUI scene ready!");
-        Console.WriteLine("[GuiAnchorDemo] Scene loaded — every HUD element came from XML (anchors + offsets).");
+        Console.WriteLine("[GuiAnchorDemo] Scene loaded — every HUD element and its button wiring came from XML.");
         yield break;
     }
 
@@ -72,20 +62,6 @@ public class GuiAnchorDemoScene : Scene
         base.Unload();
         Input.Keyboard.KeyReleased -= OnKeyReleased;
     }
-
-    private void UpdateScore(int value)
-    {
-        _score = value;
-
-        // Live pass-through (Issue #68): setting Text after attach updates the rendered widget immediately.
-        if (_scoreLabel != null)
-            _scoreLabel.Text = $"Score: {value}";
-
-        Console.WriteLine($"[GuiAnchorDemo] Score = {value}");
-    }
-
-    private static ButtonComponent FindButton(EntitySystem system, string id) =>
-        system.FindById(id)?.GetComponent<ButtonComponent>();
 
     private void OnKeyReleased(object sender, KeyboardEventArgs e)
     {
