@@ -310,7 +310,7 @@ From the playground's `GuiAnchorDemo.xml` — the score buttons bind to methods 
 </EntityDefinition>
 ```
 
-The matching C# component (registered on the `IComponentFactory` you pass to the loader) simply exposes public methods and reads its injected label:
+The matching C# component needs no registration at all — it's discovered by simple name (see [Custom Components](#custom-components)). It simply exposes public methods and reads its injected label:
 
 ```csharp
 public class ScoreKeeperComponent : EntityComponent
@@ -330,62 +330,66 @@ public class ScoreKeeperComponent : EntityComponent
 ```
 
 ```csharp
-var factory = new DefaultComponentFactory();
-factory.Register("ScoreKeeperComponent", () => new ScoreKeeperComponent());
-scene.LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem, factory);
+scene.LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem);
 ```
 
-## Custom Component Factory
+## Custom Components
 
-The serializer resolves `<Component Type="...">` entries through an `IComponentFactory`. If you don't pass one to the loader, it builds a default with only the built-ins registered — so **custom components must be registered on your own factory and passed in**:
+The serializer resolves `<Component Type="...">` entries through an `IComponentFactory`. The default factory (`DefaultComponentFactory`) resolves a type name in this order:
+
+1. **Explicit registrations** — always win, even over discovery.
+2. **Fully qualified type names** — resolved via `Type.GetType`, e.g. `<Component Type="MyGame.Components.HealthComponent" />`.
+3. **Discovery** — any public, non-abstract, non-nested `EntityComponent` subclass with a public parameterless constructor in an already-loaded assembly is matched by its **simple name**. This is the Unity-style default: if you wrote the component, XML can reference it.
+
+So a custom component usually needs **no registration at all**:
 
 ```csharp
-// 1. Subclass EntityComponent (parameterless constructor shown)
+// 1. Subclass EntityComponent with a parameterless constructor
 public class HealthComponent : EntityComponent
 {
     public int MaxHealth { get; set; } = 100;
 }
 
-// 2. Register it and pass the factory to the scene loader
-var factory = new DefaultComponentFactory();
-factory.RegisterBuiltIns();                       // built-ins first
-factory.Register<HealthComponent>("Health");      // your own name
-
-var roots = EntitySerializer.LoadSceneFromFile("scene.xml", entitySystem, factory);
+// 2. Load the scene — HealthComponent is found automatically
+var roots = EntitySerializer.LoadSceneFromFile("scene.xml", entitySystem);
 ```
 
 Then in XML:
 
 ```xml
-<Component Type="Health">
+<Component Type="HealthComponent">
     <Properties>
         <Property Name="MaxHealth" Value="150" />
     </Properties>
 </Component>
 ```
 
-### Registration Overloads
+### When to Register Explicitly
+
+Registration is only needed when discovery can't do the job:
 
 | Method | Use when |
 |---|---|
-| `factory.Register<T>("Name")` | The component has a parameterless constructor. |
+| `factory.Register<T>("Name")` | You want a different XML name than the class's simple name. |
 | `factory.Register("Name", () => new MyComp(arg))` | The component needs constructor arguments — this is how built-ins like `ColliderComponent` are registered. |
 
-### Fully-Qualified Name Fallback
-
-You can skip registration entirely: if the type name isn't in the factory, `DefaultComponentFactory.Create` falls back to `Type.GetType(typeName)`, so a **fully qualified type name** works directly in XML as long as the assembly is loaded:
-
-```xml
-<Component Type="MyGame.Components.HealthComponent" />
+```csharp
+var factory = new DefaultComponentFactory();
+factory.Register("Health", () => new HealthComponent(100)); // ctor args + custom name
+var roots = EntitySerializer.LoadSceneFromFile("scene.xml", entitySystem, factory);
 ```
 
-Registering by short name (recommended) keeps scene files clean and decoupled from your code's namespace layout.
+Notes on discovery:
+
+- Discovered types are cached process-wide; each assembly is scanned at most once (on the first miss), so assemblies loaded later are picked up automatically.
+- If two classes share a simple name, the first match wins and a `[Serialization]` warning is logged — register explicitly to disambiguate.
+- Discovery only sees types in **loaded** assemblies. Fully qualified names via `Type.GetType` have the same requirement; load your assembly first if needed.
 
 ## Error Handling
 
 - **Missing file**: `FileNotFoundException`
 - **Invalid XML**: `FormatException`
-- **Unknown component type**: Component is silently skipped
+- **Unknown component type**: Component is skipped and a `[Serialization]` warning is logged
 - **Invalid property value**: Property is silently skipped
 
 ## Complete Example

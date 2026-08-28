@@ -361,6 +361,60 @@ public class CommandBindingTests : IDisposable
         Assert.NotNull(root.GetComponent<ScoreKeeperComponent>());
     }
 
+    // ──────────────────────────── Component discovery (Unity-style) ────────────────────────────
+
+    [Fact]
+    public void Discovery_ConcreteComponentBySimpleName_IsCreatedWithoutRegistration()
+    {
+        var factory = new DefaultComponentFactory();
+
+        var component = factory.Create("DiscoveryFixtureComponent");
+
+        Assert.IsType<DiscoveryFixtureComponent>(component);
+    }
+
+    [Fact]
+    public void LoadScene_DiscoveredComponent_AttachesWithoutRegistration()
+    {
+        // The whole point: a custom component written in code is usable from XML with no
+        // factory registration at all.
+        var xml = @"
+            <Scene>
+                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Serialization.PlainEntity"" Id=""root"">
+                    <Components>
+                        <Component Type=""DiscoveryFixtureComponent"" />
+                    </Components>
+                </EntityDefinition>
+            </Scene>";
+
+        var roots = EntitySerializer.LoadSceneFromXml(xml, _system, new DefaultComponentFactory());
+
+        var root = (PlainEntity)roots.Single(r => r.Id == "root");
+        var discovered = (DiscoveryFixtureComponent)root.GetComponent<DiscoveryFixtureComponent>()!;
+
+        discovered.Increment();
+        Assert.Equal(1, discovered.Count);
+    }
+
+    [Fact]
+    public void Discovery_ExplicitRegistrationBeatsDiscoveredType()
+    {
+        // A same-name registration must shadow whatever the assembly scan finds —
+        // DiscoveryFixtureComponent is discoverable, but the registration wins.
+        var factory = new DefaultComponentFactory();
+        factory.Register("DiscoveryFixtureComponent", () => new DiscoveryShadowWinner());
+
+        Assert.IsType<DiscoveryShadowWinner>(factory.Create("DiscoveryFixtureComponent"));
+    }
+
+    [Fact]
+    public void Discovery_UnknownName_ReturnsNull()
+    {
+        var factory = new DefaultComponentFactory();
+
+        Assert.Null(factory.Create("NoSuchComponentAnywhere"));
+    }
+
     // ──────────────────────────── Helpers ────────────────────────────
 
     /// <summary>Factory registering the test fixture components by their short names.</summary>
@@ -466,5 +520,17 @@ public class ClickCounterEntity : Entity
 
 /// <summary>Scene-loadable entity hosting the ScoreKeeperComponent.</summary>
 public class KeeperEntity : Entity
+{
+}
+
+/// <summary>Discovered by the assembly scan — never explicitly registered anywhere.</summary>
+public class DiscoveryFixtureComponent : EntityComponent
+{
+    public int Count;
+    public void Increment() => Count++;
+}
+
+/// <summary>Returned by an explicit registration that shadows a same-named discoverable type.</summary>
+public class DiscoveryShadowWinner : EntityComponent
 {
 }

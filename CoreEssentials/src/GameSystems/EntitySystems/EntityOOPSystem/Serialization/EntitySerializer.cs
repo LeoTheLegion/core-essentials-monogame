@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Xml.Linq;
 using System.Globalization;
@@ -635,7 +636,9 @@ public interface IComponentFactory
 {
     /// <summary>
     /// Creates a new component instance of the specified type name.
-    /// Returns null if the type is not registered.
+    /// Resolution order: explicit registrations, fully qualified type names, then discovery
+    /// (any concrete <see cref="EntityComponent"/> subclass in a loaded assembly, matched by simple
+    /// name). Returns null if the type cannot be resolved.
     /// </summary>
     EntityComponent? Create(string typeName);
 
@@ -661,10 +664,21 @@ public interface IComponentFactory
 
 /// <summary>
 /// Default implementation of IComponentFactory using reflection to create components.
+/// Beyond explicit registrations and fully qualified names, it discovers any concrete
+/// <see cref="EntityComponent"/> subclass in a loaded assembly by simple name (Unity-style:
+/// if you wrote the component, XML can reference it), so custom components need no
+/// registration unless they require constructor arguments.
 /// </summary>
 public class DefaultComponentFactory : IComponentFactory
 {
     private readonly Dictionary<string, Func<EntityComponent>> _factories = new();
+
+    // Process-wide discovery state: discovered types are cached by simple name and each
+    // assembly is scanned at most once, so assemblies loaded later are picked up on the next
+    // miss without re-scanning earlier ones.
+    private static readonly Dictionary<string, Type> _discoveredTypes = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<Assembly> _scannedAssemblies = new();
+    private static readonly object _discoveryLock = new();
 
     /// <summary>
     /// Creates a factory with all built-in components pre-registered. Register additional
@@ -687,7 +701,73 @@ public class DefaultComponentFactory : IComponentFactory
         if (type != null && typeof(EntityComponent).IsAssignableFrom(type) && !type.IsAbstract)
             return (EntityComponent)Activator.CreateInstance(type)!;
 
-        return null;
+        // Discovery: match a concrete EntityComponent subclass by simple name across loaded assemblies.
+        return CreateDiscovered(typeName);
+    }
+
+    private static EntityComponent? CreateDiscovered(string typeName)
+    {
+        Type? type;
+        lock (_discoveryLock)
+        {
+            if (!_discoveredTypes.TryGetValue(typeName, out type))
+            {
+                ScanForComponents();
+                _discoveredTypes.TryGetValue(typeName, out type);
+            }
+        }
+
+        if (type == null)
+            return null;
+
+        try
+        {
+            return (EntityComponent)Activator.CreateInstance(type)!;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Serialization] Could not instantiate discovered component '{typeName}': {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Scans all loaded assemblies (skipping ones already scanned) for public, non-abstract,
+    /// non-nested <see cref="EntityComponent"/> subclasses with a public parameterless constructor,
+    /// indexing them by simple name. Duplicate names keep the first match and log a warning.
+    /// </summary>
+    private static void ScanForComponents()
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            if (!_scannedAssemblies.Add(assembly))
+                continue;
+
+            Type[] types;
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types = ex.Types.Where(t => t != null).ToArray()!;
+            }
+
+            foreach (var candidate in types)
+            {
+                if (!candidate.IsPublic || candidate.IsAbstract || candidate.IsNested)
+                    continue;
+                if (!typeof(EntityComponent).IsAssignableFrom(candidate))
+                    continue;
+                if (candidate.GetConstructor(Type.EmptyTypes) == null)
+                    continue;
+
+                if (!_discoveredTypes.TryAdd(candidate.Name, candidate))
+                {
+                    Console.WriteLine($"[Serialization] Duplicate component name '{candidate.Name}' discovered in {assembly.GetName().Name} — keeping the first match.");
+                }
+            }
+        }
     }
 
     /// <inheritdoc />

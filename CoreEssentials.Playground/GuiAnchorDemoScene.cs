@@ -37,9 +37,8 @@ public class GuiAnchorDemoScene : Scene
 
         // Everything below the <Scene> root is data: entities, canvas, anchors, widgets,
         // and the button command wiring (<Bind Event="Clicked" Command="..."/> in the XML).
-        var factory = new DefaultComponentFactory();
-        factory.Register("ScoreKeeperComponent", () => new ScoreKeeperComponent());
-        LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem, factory);
+        // ScoreKeeperComponent needs no registration — it's discovered by name automatically.
+        LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem);
 
         // A camera so the world-space panel can be panned around (WASD) to show that its
         // anchored children stay pinned inside it in world space, not screen space.
