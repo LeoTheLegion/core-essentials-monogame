@@ -246,11 +246,12 @@ public abstract class Scene
     /// </summary>
     /// <param name="xmlAssetName">The name/key of the XML asset in the AssetManager (e.g., "MyScene.xml").</param>
     /// <param name="entitySystem">The EntitySystem to create entities in.</param>
+    /// <param name="componentFactory">Optional factory for creating components. Uses built-in types if null.</param>
     /// <returns>A list of all root entities loaded from the scene.</returns>
-    protected List<Entity> LoadEntitiesFromXml(string xmlAssetName, EntitySystem entitySystem)
+    protected List<Entity> LoadEntitiesFromXml(string xmlAssetName, EntitySystem entitySystem, IComponentFactory? componentFactory = null)
     {
         var sceneAsset = AssetManager.LoadAsset<XMLAsset>(xmlAssetName);
-        return LoadEntitiesFromXml(sceneAsset, entitySystem);
+        return LoadEntitiesFromXml(sceneAsset, entitySystem, componentFactory);
     }
 
     /// <summary>
@@ -259,10 +260,11 @@ public abstract class Scene
     /// </summary>
     /// <param name="xmlAsset">The XML asset containing the scene definition.</param>
     /// <param name="entitySystem">The EntitySystem to create entities in.</param>
+    /// <param name="componentFactory">Optional factory for creating components. Uses built-in types if null.</param>
     /// <returns>A list of all root entities loaded from the scene.</returns>
-    protected List<Entity> LoadEntitiesFromXml(XMLAsset xmlAsset, EntitySystem entitySystem)
+    protected List<Entity> LoadEntitiesFromXml(XMLAsset xmlAsset, EntitySystem entitySystem, IComponentFactory? componentFactory = null)
     {
-        return EntitySerializer.LoadSceneFromXml(xmlAsset.XMLContent!, entitySystem);
+        return EntitySerializer.LoadSceneFromXml(xmlAsset.XMLContent!, entitySystem, componentFactory);
     }
 
     /// <summary>

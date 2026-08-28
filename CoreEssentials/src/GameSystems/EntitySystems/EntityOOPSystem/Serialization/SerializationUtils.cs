@@ -39,25 +39,52 @@ public static class SerializationUtils
     }
 
     /// <summary>
-    /// Parses a string in "X,Y" format into a Vector2.
+    /// Parses a string into a Vector2.
+    /// Accepts "X,Y" format or a bare scalar, which is expanded to (v, v) for uniform scaling.
     /// </summary>
     public static Vector2 ParseVector2FromString(string value)
     {
         var parts = value.Split(',');
+        if (parts.Length == 1 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float scalar))
+        {
+            return new Vector2(scalar, scalar);
+        }
+
         if (parts.Length >= 2 &&
             float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
             float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
         {
             return new Vector2(x, y);
         }
+
+        Console.WriteLine($"[Serialization] Could not parse Vector2 from '{value}' — using (0, 0).");
         return Vector2.Zero;
     }
 
     /// <summary>
-    /// Parses a string into a Color, supporting named colors and fallback to White.
+    /// Parses a string into a Color.
+    /// Supports named colors (e.g. "LightGreen"), numeric "R,G,B" and "R,G,B,A" strings
+    /// (e.g. "100,255,100"), with fallback to White for unrecognized input.
     /// </summary>
     public static Color ParseColor(string value)
     {
+        // 1. Try numeric "R,G,B[,A]" format first — named colors never contain commas.
+        var parts = value.Split(',');
+        if ((parts.Length == 3 || parts.Length == 4) &&
+            int.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out int r) &&
+            int.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out int g) &&
+            int.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out int b))
+        {
+            int a = parts.Length == 4 && int.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out int alpha) ? alpha : 255;
+            return new Color(
+                (byte)Math.Clamp(r, 0, 255),
+                (byte)Math.Clamp(g, 0, 255),
+                (byte)Math.Clamp(b, 0, 255),
+                (byte)Math.Clamp(a, 0, 255));
+        }
+
+        // 2. Try named colors from the Color static palette.
         try
         {
             var colorType = typeof(Color);
@@ -73,6 +100,8 @@ public static class SerializationUtils
         {
             // Fall through to default
         }
+
+        Console.WriteLine($"[Serialization] Could not parse Color from '{value}' — using White.");
         return Color.White;
     }
 }
