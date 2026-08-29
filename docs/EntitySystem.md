@@ -16,7 +16,7 @@ The Entity System includes several advanced features:
 | **Lifecycle** | [EntityLifecycle.md](./EntityLifecycle.md) | Delayed destruction, spawning, and respawning |
 | **Templates** | [EntityTemplates.md](./EntityTemplates.md) | Reusable entity blueprints from XML |
 | **XML Definitions** | [XMLEntityDefinitions.md](./XMLEntityDefinitions.md) | Load entities from XML files |
-| **Event System** | [EventSystem.md](./EventSystem.md) | Decoupled entity communication |
+| **SendMessage** | [SendMessage.md](./SendMessage.md) | Scene-wide, Unity-style multi-cast messaging |
 
 ## Key Components
 
@@ -188,4 +188,4 @@ public class PhysicsEntity : Entity
 - [Entity Lifecycle](./EntityLifecycle.md) — Delayed operations
 - [Entity Templates](./EntityTemplates.md) — Reusable blueprints
 - [XML Entity Definitions](./XMLEntityDefinitions.md) — XML loading
-- [Event System](./EventSystem.md) — Entity communication
+- [SendMessage](./SendMessage.md) — Scene-wide messaging

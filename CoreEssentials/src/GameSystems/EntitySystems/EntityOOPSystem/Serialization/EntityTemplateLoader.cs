@@ -63,6 +63,7 @@ public static class EntityTemplateLoader
         ParseTags(root, template);
         ParseComponents(root, template);
         ParseChildren(root, template);
+        ParseBinds(root, template);
 
         return template;
     }
@@ -80,8 +81,32 @@ public static class EntityTemplateLoader
         ParseTags(element, template);
         ParseComponents(element, template);
         ParseChildren(element, template);
+        ParseBinds(element, template);
 
         return template;
+    }
+
+    /// <summary>
+    /// Parses &lt;Bind&gt; elements from a template element. Collects the same set of binds
+    /// that <see cref="CommandBindings.ApplyBindings"/> understands: direct children of the
+    /// template and binds nested inside its &lt;Components&gt; element.
+    /// </summary>
+    private static void ParseBinds(XElement element, EntityTemplate template)
+    {
+        foreach (var bind in element.Elements("Bind"))
+            template.Binds.Add(bind);
+
+        var componentsElement = element.Element("Components");
+        if (componentsElement != null)
+        {
+            foreach (var child in componentsElement.Elements())
+            {
+                if (child.Name.LocalName == "Bind")
+                    template.Binds.Add(child);
+                else if (child.Name.LocalName == "Component")
+                    template.Binds.AddRange(child.Elements("Bind"));
+            }
+        }
     }
 
     /// <summary>Parses the Tags element and populates the template's tags list.</summary>
@@ -161,7 +186,32 @@ public static class EntityTemplateLoader
     {
         var root = BuildSubtree(template, system, position);
         AttachPreOrder(root, template);
+        ApplyBindsPreOrder(root, template);
         return root;
+    }
+
+    /// <summary>
+    /// Applies the template's declarative &lt;Bind&gt; wiring to the instantiated entity,
+    /// recursively for child templates. Runs after all components are attached so event
+    /// sources and command handlers are resolvable.
+    /// </summary>
+    private static void ApplyBindsPreOrder(Entity entity, EntityTemplate template)
+    {
+        if (template.Binds.Count > 0)
+        {
+            // Clone the binds into a fresh wrapper element so repeated instantiation of the
+            // same template never mutates the stored elements.
+            var wrapper = new XElement("EntityTemplate");
+            foreach (var bind in template.Binds)
+                wrapper.Add(new XElement(bind)); // deep copy — repeated instantiation must not mutate the stored binds
+
+            CommandBindings.ApplyBindings(entity, wrapper);
+        }
+
+        for (int i = 0; i < template.Children.Count && i < entity.Children.Count; i++)
+        {
+            ApplyBindsPreOrder(entity.Children[i], template.Children[i]);
+        }
     }
 
     /// <summary>

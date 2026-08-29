@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml.Linq;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
@@ -43,6 +44,12 @@ public class EntityTemplate
     /// Templates for child entities to be created and attached to the parent.
     /// </summary>
     public List<EntityTemplate> Children { get; set; } = new();
+
+    /// <summary>
+    /// Declarative &lt;Bind&gt; elements (event-to-command wiring) applied to each entity
+    /// instantiated from this template. Populated when the template is parsed from XML.
+    /// </summary>
+    public List<XElement> Binds { get; set; } = new();
 
     /// <summary>
     /// Defines a component blueprint, including its type and initial property values.

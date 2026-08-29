@@ -48,7 +48,7 @@ public class GuiAnchorDemoScene : Scene
         UpdateLoadingProgress(0.7f, "Scene ready...");
         yield return null;
 
-        // Escape returns to the original startup scene.
+        // Escape goes to the physics scene; M jumps straight to the SendMessage demo.
         Input.Keyboard.KeyReleased += OnKeyReleased;
 
         UpdateLoadingProgress(1.0f, "Anchored GUI scene ready!");
@@ -66,5 +66,8 @@ public class GuiAnchorDemoScene : Scene
     {
         if (e.Key == Keys.Escape)
             SceneManager.LoadScene(new PhysicsEntityScene());
+
+        if (e.Key == Keys.M)
+            SceneManager.LoadScene(new SendMessageDemoScene());
     }
 }
