@@ -31,6 +31,20 @@ entitySystem.RegisterTemplate("EnemyGoblin", "templates/enemy_goblin.xml");
 entitySystem.RegisterTemplate("Player", "templates/player.xml");
 ```
 
+### RegisterTemplate(string name, EntityTemplate template)
+
+Registers an already-constructed template under the given name — useful when the template was parsed from a raw XML string (`EntityTemplateLoader.LoadFromXml`) or built in code.
+
+```csharp
+public void RegisterTemplate(string name, EntityTemplate template)
+```
+
+**Example:**
+```csharp
+var template = EntityTemplateLoader.LoadFromXml(xmlString);
+entitySystem.RegisterTemplate("Popup", template);
+```
+
 ### Instantiate(string templateName, Vector2 position)
 
 Instantiates an entity from a registered template.
@@ -49,6 +63,20 @@ public Entity Instantiate(string templateName, Vector2 position)
 ```csharp
 var enemy = entitySystem.Instantiate("EnemyGoblin", new Vector2(100, 200));
 ```
+
+### Prefab-Style Convenience Methods
+
+Entities and components can spawn a registered template directly — Unity-style prefab instantiation — without reaching for the system:
+
+```csharp
+// On Entity (spawns in this entity's system):
+Entity popup = InstantiateTemplate("popup", position);
+
+// On EntityComponent (spawns in the owning entity's system):
+Entity popup = InstantiateTemplate("popup", position);
+```
+
+Both return `null` when the caller is not attached to a system. They pair with `CreateGameObject<T>()` and `Destroy()` / `DestroyOwner()` — see [SendMessage](./SendMessage.md#unity-style-entity-management-one-liners) for the full set of one-liners.
 
 ## Template XML Schema
 
@@ -132,6 +160,24 @@ var enemy = entitySystem.Instantiate("EnemyGoblin", new Vector2(100, 200));
     </Children>
 </EntityTemplate>
 ```
+
+### Bind Element
+
+Templates support the same declarative `<Bind>` event-to-command wiring as scene entity definitions. Binds are parsed from the template and applied to **every** entity instantiated from it (recursively, for child templates), so a prefab can be fully data-driven:
+
+```xml
+<EntityTemplate Type="ScoreButtonEntity">
+    <Components>
+        <Component Type="ButtonComponent">
+            <Properties><Property Name="Label" Value="+10" /></Properties>
+        </Component>
+    </Components>
+    <!-- Clicked on ButtonComponent -> ScoreKeeperComponent.AddTen() -->
+    <Bind Event="Clicked" Command="AddTen" />
+</EntityTemplate>
+```
+
+Each instantiation gets its own wiring — re-instantiating the same template never shares or mutates state between instances. See [Declarative Command Binding](./XMLEntityDefinitions.md#declarative-command-binding) for the bind forms and resolution rules.
 
 ## Usage Examples
 

@@ -131,9 +131,40 @@ public abstract class Entity
 
     /// <summary>
     /// Gets the EntitySystem that manages this entity.
-    /// Used by components to access game systems.
+    /// Public so components can reach system-level services (spawn, destroy, queries,
+    /// SendMessage) and, through <c>Game</c>, the MainGame/SceneManager chain.
     /// </summary>
-    internal EntitySystem? GetEntitySystem() => EntitySystem;
+    public EntitySystem? GetEntitySystem() => EntitySystem;
+
+    /// <summary>
+    /// Sends a scene-wide message: every entity in this entity's system (and its components)
+    /// with a public instance method named <paramref name="message"/> is invoked — Unity SendMessage style.
+    /// </summary>
+    /// <param name="message">The name of the handler methods to invoke.</param>
+    /// <param name="payload">Optional payload delivered to single-parameter handlers.</param>
+    /// <returns>The number of handlers invoked, or -1 if the entity is not in a system.</returns>
+    public int SendMessage(string message, object? payload = null)
+        => EntitySystem?.SendMessage(message, payload) ?? -1;
+
+    /// <summary>
+    /// Creates a new entity of the specified type in this entity's system — Unity-style one-liner:
+    /// <c>CreateGameObject&lt;Ball&gt;()</c>. Pairs with <see cref="Destroy"/>.
+    /// </summary>
+    /// <typeparam name="T">The concrete Entity type to create.</typeparam>
+    /// <param name="args">Constructor arguments for the entity.</param>
+    /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
+    public T? CreateGameObject<T>(params object[] args) where T : Entity
+        => EntitySystem?.CreateEntity<T>(args);
+
+    /// <summary>
+    /// Instantiates a registered template (prefab) at the given position in this entity's system:
+    /// <c>InstantiateTemplate("popup", position)</c>. Pairs with <see cref="Destroy"/>.
+    /// </summary>
+    /// <param name="templateName">The name of the registered template to instantiate.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
+    public Entity? InstantiateTemplate(string templateName, Vector2 position)
+        => EntitySystem?.Instantiate(templateName, position);
 
     /// <summary>
     /// The unique identifier for this entity.
@@ -590,7 +621,8 @@ public abstract class Entity
         }
         _components.Clear();
 
-        // Auto-unsubscribe from all events
+        // Auto-unsubscribe from all events (legacy system kept working until it is removed).
+#pragma warning disable CS0618 // EntityEventSystem is obsolete; this cleanup must keep working for legacy subscribers.
         var eventSystem = EntityEventSystem.Instance;
         if (eventSystem != null)
         {
@@ -599,6 +631,7 @@ public abstract class Entity
                 eventSystem.Unsubscribe(this, eventName, handler);
             }
         }
+#pragma warning restore CS0618
         _eventSubscriptions.Clear();
     }
 
@@ -686,6 +719,7 @@ public abstract class Entity
     /// </summary>
     /// <param name="eventName">The name of the event to subscribe to.</param>
     /// <param name="handler">The handler to invoke when the event is raised.</param>
+    [Obsolete("Use SendMessage for scene-wide messages or declarative <Bind> wiring in XML scenes. The legacy entity event system is being removed.")]
     public void Subscribe(string eventName, EntityEventHandler handler)
     {
         if (EntitySystem == null)
@@ -704,6 +738,7 @@ public abstract class Entity
     /// </summary>
     /// <param name="eventName">The name of the event to publish.</param>
     /// <param name="args">The event arguments.</param>
+    [Obsolete("Use SendMessage for scene-wide messages or declarative <Bind> wiring in XML scenes. The legacy entity event system is being removed.")]
     public void Publish(string eventName, EntityEventArgs args)
     {
         if (EntitySystem == null)
@@ -721,6 +756,7 @@ public abstract class Entity
     /// </summary>
     /// <param name="eventName">The name of the event to unsubscribe from.</param>
     /// <param name="handler">The handler to remove.</param>
+    [Obsolete("Use SendMessage for scene-wide messages or declarative <Bind> wiring in XML scenes. The legacy entity event system is being removed.")]
     public void Unsubscribe(string eventName, EntityEventHandler handler)
     {
         var eventSystem = EntityEventSystem.Instance;

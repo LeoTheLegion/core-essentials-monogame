@@ -32,6 +32,7 @@ public delegate void EntityEventHandler(Entity sender, EntityEventArgs args);
 /// entity.Publish("OnDamage", new EntityEventArgs&lt;float&gt;(entity, 10f));
 /// </code>
 /// </remarks>
+[Obsolete("Use EntitySystem.SendMessage for scene-wide messages or declarative <Bind> wiring in XML scenes. The legacy entity event system is being removed.")]
 public class EntityEventSystem : GameSystem
 {
     /// <summary>

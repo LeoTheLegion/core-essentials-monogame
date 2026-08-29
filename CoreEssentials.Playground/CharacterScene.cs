@@ -62,7 +62,7 @@ public class CharacterScene : Scene
         var infoTextEntity = entitySystem.FindById("infoText") as TextEntity;
         if (infoTextEntity != null)
         {
-            infoTextEntity.Text = "Press Q, W, E for sound effects | Z, X to change volume | Right Arrow for next scene | Or use the buttons on the left";
+            infoTextEntity.Text = "Press Q, W, E for sound effects | Z, X to change volume | M for SendMessage demo | + for physics scene | Or use the buttons on the left";
             infoTextEntity.Color = Color.White;
             infoTextEntity.Alignment = TextEntity.TextAlignment.Center;
         }
@@ -146,6 +146,12 @@ public class CharacterScene : Scene
                 AudioManager.Instance.StopSound(songID);
                 // Use SceneManager property directly here to get the current reference at the time of the event
                 SceneManager.LoadScene(new PhysicsEntityScene());
+            }
+
+            if (args.Key == Microsoft.Xna.Framework.Input.Keys.M)
+            {
+                AudioManager.Instance.StopSound(songID);
+                SceneManager.LoadScene(new SendMessageDemoScene());
             }
         };
     }

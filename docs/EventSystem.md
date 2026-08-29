@@ -1,5 +1,12 @@
 # Event System Documentation
 
+> ## ⚠️ Deprecated
+> This legacy string-keyed pub/sub system (`Entity.Subscribe` / `Publish` / `Unsubscribe`, backed by the singleton `EntityEventSystem`) is **obsolete** and scheduled for removal. It still compiles and works, but new code should use:
+> - **`SendMessage`** — scene-wide multi-cast messaging (Unity-style) — see [SendMessage](./SendMessage.md)
+> - **`<Bind>` declarative wiring** in XML scenes — see [XML Entity Definitions](./XMLEntityDefinitions.md#declarative-command-binding)
+>
+> The API is marked `[Obsolete]`; the compiler will flag remaining call sites.
+
 The Event System provides a decoupled publish/subscribe mechanism for entity communication. Entities can publish events and other entities can subscribe to them without needing direct references to each other.
 
 ## Overview
