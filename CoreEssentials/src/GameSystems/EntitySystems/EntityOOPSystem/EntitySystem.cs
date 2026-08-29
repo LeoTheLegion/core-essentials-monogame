@@ -614,6 +614,79 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
+    /// Sends a scene-wide message (Unity SendMessage style): every entity managed by this
+    /// system, and each of their components, is searched for public instance methods named
+    /// <paramref name="message"/> with zero or one parameter, and all matches are invoked.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the declarative &lt;Bind&gt; wiring (which walks a single entity's ancestor chain
+    /// and stops at the first match), SendMessage reaches every matching handler in the whole
+    /// scene — including entities spawned at runtime from templates. Handler exceptions are
+    /// caught and logged so one bad handler cannot take down the game loop.
+    /// </remarks>
+    /// <param name="message">The name of the handler methods to invoke.</param>
+    /// <param name="payload">Optional payload delivered to single-parameter handlers.</param>
+    /// <returns>The number of handlers invoked.</returns>
+    public int SendMessage(string message, object? payload = null)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return 0;
+
+        var invoked = 0;
+
+        // Snapshot so handlers that spawn/destroy entities mid-broadcast can't mutate the list.
+        foreach (var root in _entities.ToList())
+            InvokeMessageOnSubtree(root, message, payload, ref invoked);
+
+        return invoked;
+    }
+
+    /// <summary>
+    /// Depth-first visit of an entity and its whole child subtree, invoking matching
+    /// handlers on the entity, each of its components, and every descendant — mirroring
+    /// how the per-frame update loop reaches children through their roots.
+    /// </summary>
+    private static void InvokeMessageOnSubtree(Entity entity, string message, object? payload, ref int invoked)
+    {
+        InvokeMessageOn(entity, message, payload, ref invoked);
+        foreach (var component in entity.Components)
+            InvokeMessageOn(component, message, payload, ref invoked);
+
+        // Snapshot children too: a handler may attach/detach children mid-broadcast.
+        foreach (var child in entity.Children.ToList())
+            InvokeMessageOnSubtree(child, message, payload, ref invoked);
+    }
+
+    private static void InvokeMessageOn(object target, string message, object? payload, ref int invoked)
+    {
+        var methods = target.GetType().GetMethods(
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(m => m.Name == message && !m.IsGenericMethodDefinition
+                        && (m.GetParameters().Length == 0 || m.GetParameters().Length == 1))
+            .ToList();
+
+        foreach (var method in methods)
+        {
+            try
+            {
+                if (method.GetParameters().Length == 1)
+                    method.Invoke(target, new[] { payload });
+                else
+                    method.Invoke(target, null);
+
+                invoked++;
+            }
+            catch (Exception ex)
+            {
+                var cause = ex is System.Reflection.TargetInvocationException tie && tie.InnerException != null
+                    ? tie.InnerException
+                    : ex;
+                Console.WriteLine($"[EntitySystem] SendMessage handler '{method.DeclaringType?.Name}.{message}' threw: {cause.Message}");
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets all entities with the specified tag.
     /// </summary>
     /// <param name="tag">The tag to search for.</param>
@@ -854,6 +927,18 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
         var template = Serialization.EntityTemplateLoader.LoadFromAsset(assetName);
         _templates[name] = template;
+    }
+
+    /// <summary>
+    /// Registers an already-constructed template under the given name (e.g. one parsed with
+    /// <see cref="Serialization.EntityTemplateLoader.LoadFromXml"/>).
+    /// </summary>
+    /// <param name="name">The name to instantiate the template by.</param>
+    /// <param name="template">The template to register.</param>
+    public void RegisterTemplate(string name, Serialization.EntityTemplate template)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Template name cannot be empty.", nameof(name));
+        _templates[name] = template ?? throw new ArgumentNullException(nameof(template));
     }
 
     /// <summary>

@@ -72,6 +72,12 @@
 #begin CharacterTemplate.xml
 /copy:CharacterTemplate.xml
 
+#begin PingPrefabTemplate.xml
+/copy:PingPrefabTemplate.xml
+
+#begin SendMessageDemoScene.xml
+/copy:SendMessageDemoScene.xml
+
 #begin PhysicsConfig.xml
 /copy:PhysicsConfig.xml
 

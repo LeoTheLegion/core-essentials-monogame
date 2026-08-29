@@ -9,7 +9,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
 using CoreEssentials.Coroutines;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -131,9 +130,40 @@ public abstract class Entity
 
     /// <summary>
     /// Gets the EntitySystem that manages this entity.
-    /// Used by components to access game systems.
+    /// Public so components can reach system-level services (spawn, destroy, queries,
+    /// SendMessage) and, through <c>Game</c>, the MainGame/SceneManager chain.
     /// </summary>
-    internal EntitySystem? GetEntitySystem() => EntitySystem;
+    public EntitySystem? GetEntitySystem() => EntitySystem;
+
+    /// <summary>
+    /// Sends a scene-wide message: every entity in this entity's system (and its components)
+    /// with a public instance method named <paramref name="message"/> is invoked — Unity SendMessage style.
+    /// </summary>
+    /// <param name="message">The name of the handler methods to invoke.</param>
+    /// <param name="payload">Optional payload delivered to single-parameter handlers.</param>
+    /// <returns>The number of handlers invoked, or -1 if the entity is not in a system.</returns>
+    public int SendMessage(string message, object? payload = null)
+        => EntitySystem?.SendMessage(message, payload) ?? -1;
+
+    /// <summary>
+    /// Creates a new entity of the specified type in this entity's system — Unity-style one-liner:
+    /// <c>CreateGameObject&lt;Ball&gt;()</c>. Pairs with <see cref="Destroy"/>.
+    /// </summary>
+    /// <typeparam name="T">The concrete Entity type to create.</typeparam>
+    /// <param name="args">Constructor arguments for the entity.</param>
+    /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
+    public T? CreateGameObject<T>(params object[] args) where T : Entity
+        => EntitySystem?.CreateEntity<T>(args);
+
+    /// <summary>
+    /// Instantiates a registered template (prefab) at the given position in this entity's system:
+    /// <c>InstantiateTemplate("popup", position)</c>. Pairs with <see cref="Destroy"/>.
+    /// </summary>
+    /// <param name="templateName">The name of the registered template to instantiate.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
+    public Entity? InstantiateTemplate(string templateName, Vector2 position)
+        => EntitySystem?.Instantiate(templateName, position);
 
     /// <summary>
     /// The unique identifier for this entity.
@@ -152,12 +182,6 @@ public abstract class Entity
     /// Tags are case-insensitive and provide a simple way to group entities.
     /// </summary>
     public HashSet<string> Tags { get; }
-
-    /// <summary>
-    /// The collection of event handlers subscribed by this entity.
-    /// Used for auto-cleanup when the entity is destroyed.
-    /// </summary>
-    private readonly List<(string EventName, EntityEventHandler Handler)> _eventSubscriptions = new();
 
     /// <summary>
     /// The dictionary of components attached to this entity.
@@ -589,17 +613,6 @@ public abstract class Entity
             component.Owner = null!;
         }
         _components.Clear();
-
-        // Auto-unsubscribe from all events
-        var eventSystem = EntityEventSystem.Instance;
-        if (eventSystem != null)
-        {
-            foreach (var (eventName, handler) in _eventSubscriptions)
-            {
-                eventSystem.Unsubscribe(this, eventName, handler);
-            }
-        }
-        _eventSubscriptions.Clear();
     }
 
     /// <summary>
@@ -680,56 +693,6 @@ public abstract class Entity
     /// </summary>
     /// <returns>True if the entity is active; otherwise, false.</returns>
     public virtual bool GetActive() { return _active; }
-
-    /// <summary>
-    /// Subscribes to an event with a handler. The subscription is automatically removed when this entity is destroyed.
-    /// </summary>
-    /// <param name="eventName">The name of the event to subscribe to.</param>
-    /// <param name="handler">The handler to invoke when the event is raised.</param>
-    public void Subscribe(string eventName, EntityEventHandler handler)
-    {
-        if (EntitySystem == null)
-            throw new InvalidOperationException("Cannot subscribe to events before the entity is added to an EntitySystem.");
-
-        var eventSystem = EntityEventSystem.Instance;
-        if (eventSystem == null)
-            throw new InvalidOperationException("Cannot subscribe to events before the EntityEventSystem is initialized.");
-
-        _eventSubscriptions.Add((eventName, handler));
-        eventSystem.Subscribe(this, eventName, handler);
-    }
-
-    /// <summary>
-    /// Publishes an event from this entity.
-    /// </summary>
-    /// <param name="eventName">The name of the event to publish.</param>
-    /// <param name="args">The event arguments.</param>
-    public void Publish(string eventName, EntityEventArgs args)
-    {
-        if (EntitySystem == null)
-            throw new InvalidOperationException("Cannot publish events before the entity is added to an EntitySystem.");
-
-        var eventSystem = EntityEventSystem.Instance;
-        if (eventSystem == null)
-            throw new InvalidOperationException("Cannot publish events before the EntityEventSystem is initialized.");
-
-        eventSystem.Publish(this, eventName, args);
-    }
-
-    /// <summary>
-    /// Unsubscribes from an event with a specific handler.
-    /// </summary>
-    /// <param name="eventName">The name of the event to unsubscribe from.</param>
-    /// <param name="handler">The handler to remove.</param>
-    public void Unsubscribe(string eventName, EntityEventHandler handler)
-    {
-        var eventSystem = EntityEventSystem.Instance;
-        if (eventSystem == null)
-            throw new InvalidOperationException("Cannot unsubscribe from events before the EntityEventSystem is initialized.");
-
-        eventSystem.Unsubscribe(this, eventName, handler);
-        _eventSubscriptions.RemoveAll(s => s.EventName == eventName && s.Handler == handler);
-    }
 
     /// <summary>
     /// Adds the specified entity as a child of this entity.

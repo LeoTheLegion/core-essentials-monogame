@@ -12,7 +12,7 @@ The OOP `Entity` base class exposes the following overridable lifecycle hooks:
 |------|---------------|
 | `OnAwake()` | Once, when the entity is added to its `EntitySystem` (before `OnStart`) |
 | `OnEnable()` | When the entity transitions to active |
-| `OnStart()` | Once, after `OnAwake` (already available before this sprint) |
+| `OnStart()` | Once, after `OnAwake` |
 | `OnFixedUpdate(GameTime)` | Every fixed timestep, for active entities |
 | `Update(GameTime)` | Every frame, for active entities |
 | `OnLateUpdate(GameTime)` | Every frame, *after* `Update`, for active entities |

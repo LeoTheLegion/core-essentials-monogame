@@ -439,14 +439,3 @@ bodyCollider.OnSeparation += args => {
 5. **Disable unused colliders** — Use `collider.Deactivate()` instead of removing fixtures when toggling collision on/off.
 6. **Debug render during development** — Enable `PhysicsDebugRenderer` to visualize shapes and detect issues early.
 7. **Synchronize carefully** — Only update entity position from physics in `Update()`, never modify physics body position directly for dynamic bodies.
-
----
-
-## Migration Guide
-
-Migrating from the legacy Aether API? See [Migration_Guide_Physics.md](./Migration_Guide_Physics.md) for side-by-side examples covering:
-- Body creation
-- Shape/collider addition
-- Joint constraints
-- Collision handling
-- World management

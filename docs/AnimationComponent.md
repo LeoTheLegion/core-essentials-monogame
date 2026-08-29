@@ -104,4 +104,3 @@ On restore, sprite assets are reloaded in `OnAttach` (after the component is att
 
 - [Sprite System](SpriteSystem.md) — the unified `Sprite` asset the component animates.
 - [Entity System](EntitySystem.md) — components and the base `Entity` lifecycle.
-- [Migration Guide](Migration_Guide_SpriteConsolidation.md) — migrating from `AnimatedSprite` + `AnimationState`.

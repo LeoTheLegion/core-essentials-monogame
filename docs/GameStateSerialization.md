@@ -481,12 +481,12 @@ This eliminates redundancy - previously each entity stored its own scale, now it
 
 ## Dependencies
 
-- Sprint 10: XML Entity Definitions
-- Sprint 12: Entity IDs
+- [XML Entity Definitions](XMLEntityDefinitions.md)
+- [Entity IDs](EntityIDs.md)
 - Entity System Core
 
 ## See Also
 
 - [Entity System Documentation](EntitySystem.md)
-- [Entity Templates](XMLEntityDefinitions.md)
+- [Entity Templates](EntityTemplates.md)
 - [Physics System](PhysicsSystem.md)
