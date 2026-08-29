@@ -1,8 +1,6 @@
 # Sprite System
 
-The `Sprite` asset is the single, unified drawable type in CoreEssentials. One type handles both a **static** sprite (a single `texture2d` frame) and an **animated** sprite (an N-frame `spritesheet` sequence with a frame rate). A static sprite is simply a one-frame sprite, so there is no separate `AnimatedSprite` type anymore.
-
-> **Note:** This is the post-Sprint 15.5 model. The former `AnimatedSprite` class has been removed and folded into `Sprite`. See [Migration Guide](Migration_Guide_SpriteConsolidation.md) for the breaking changes.
+The `Sprite` asset is the single, unified drawable type in CoreEssentials. One type handles both a **static** sprite (a single `texture2d` frame) and an **animated** sprite (an N-frame `spritesheet` sequence with a frame rate). A static sprite is simply a one-frame sprite, so there is no separate `AnimatedSprite` type.
 
 ## Source Types
 
@@ -119,4 +117,3 @@ RegisterForInstancedRendering(sprite); // uses sprite.Texture
 
 - [Animation Component](AnimationComponent.md) — drives named animations on an entity.
 - [Sprite Scaling](SpriteScaling.md) — working with sprite scale and origin.
-- [Migration Guide](Migration_Guide_SpriteConsolidation.md) — `AnimatedSprite` → `Sprite` breaking changes.

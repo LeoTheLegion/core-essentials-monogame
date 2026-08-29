@@ -4,7 +4,7 @@
 
 CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame that provides essential building blocks for game development. Designed to accelerate game development by providing ready-to-use systems for common game development challenges.
 
-**Version:** 0.17.0  
+**Version:** 0.18.0  
 **Author:** Michael Mena  
 **Repository:** [https://github.com/LeoTheLegion/core-essentials-monogame](https://github.com/LeoTheLegion/core-essentials-monogame)
 
@@ -76,33 +76,22 @@ namespace YourGame
   - [Z-Order Render Layers](./ZOrderRenderLayers.md)
 - [Sprite System](./SpriteSystem.md)
   - [Sprite Scaling](./SpriteScaling.md)
-  - [Migration Guide: Sprite Consolidation](./Migration_Guide_SpriteConsolidation.md)
 - [Physics System](./PhysicsSystem.md)
   - [Collision Groups & Filtering](./CollisionGroups.md)
   - [Physics Transform Sync](./PhysicsTransformSync.md)
-  - [Migration Guide: Legacy → New Physics API](./Migration_Guide_Physics.md)
 - [GUI System](./GUISystem.md)
   - [GUI Entity Components](./GUIComponents.md)
-  - [Migration Guide: Myra → Abstraction Layer](./GUI_Migration_Guide.md)
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)
 - [Audio System](./AudioSystem.md)
 - [Debugging Tools](./DebuggingTools.md)
 - [XML Documentation](./XMLDocumentation.md)
 
-## Refactoring Sprint History
-
-Completed refactoring efforts, documented as sprint logs (lived in `docs/` during the work, now archived under [`sprints/`](../sprints/)):
-
-- [Entity System Sprints](../sprints/entity_system_sprints/README.md) — OOP entity system build-out
-- [Physics Refactor Sprints](../sprints/physics_refactor/sprints/README.md) — Engine-swap pattern for physics (completed ✅)
-- [GUI Refactor Sprints](../sprints/gui_refactor_sprints/README.md) — Abstraction layer to remove direct Myra dependencies (completed ✅)
-- [Namespace Cleanup Sprints](../sprints/namespace_cleanup_sprints/README.md) — Standardize folder casing and namespace consistency
-
 ## Playground Examples
 
 The framework includes a Playground project with practical demonstrations:
 
+- **SendMessageDemoScene** (default launch scene): Demonstrates scene-wide `SendMessage` messaging, XML prefab templates with `<Bind>` wiring, and the entity-management one-liners
 - **CharacterScene**: Demonstrates sprite animation, character movement, and audio management
 - **PhysicsEntityScene**: Shows physics interactions with multiple entities and collision detection
 

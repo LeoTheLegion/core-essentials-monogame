@@ -188,7 +188,3 @@ Say you want the **player** to collide with **walls** and **pickups**, but **pic
 - **Engine-agnostic:** `CollisionCategory` mirrors the underlying engine's category bits one-for-one, so the adapter can cast directly. No Aether types leak into the public API.
 - **No "always/never" group:** the underlying engine also supports a signed group value that forces "always collide" / "never collide". CoreEssentials intentionally does **not** expose it — the two-bitmask approach covers the general case and keeps the API portable across engines.
 - **Live contact detection:** filtering decides *whether* two colliders *can* collide. Actual contact detection (and the `OnCollision` / `OnSeparation` events) is handled by the engine and covered by the physics event system — see [Physics System](PhysicsSystem.md).
-
----
-
-*Part of the Entity System Enhancements Project · Sprint 19*

@@ -130,18 +130,6 @@ Because the walk is scene-wide and multi-cast, the death ripple needs no event r
 | One specific component reacting to another's event, wired at load time | `<Bind>` declarative wiring — see [XML Entity Definitions](./XMLEntityDefinitions.md#declarative-command-binding) |
 | Narrow, typed, bidirectional communication between two known systems | A direct method call or a dedicated `GameSystem` |
 
-## Migration from the Legacy Event System
-
-The legacy string-keyed pub/sub (`Entity.Subscribe` / `Publish` / `Unsubscribe`, backed by the singleton `EntityEventSystem`) is **obsolete** and scheduled for removal. It still compiles and works, but new code should not use it.
-
-| Legacy | Replacement |
-|--------|-------------|
-| `entity.Publish("OnDamage", args)` + N subscribers | `system.SendMessage("OnDamage", payload)` — every matching handler fires |
-| `entity.Subscribe("OnDamage", handler)` in one specific entity | Name the handler method on that entity/component (`OnDamage()`) and let the broadcast reach it; or use `<Bind>` wiring for event-driven pairs |
-| Auto-cleanup of subscriptions on destroy | Nothing to clean up — there are no subscriptions |
-
-The legacy API is marked `[Obsolete]` with a message pointing here; the compiler will flag any remaining call sites.
-
 ## Testing
 
-Covered in `CoreEssentials.Tests/GameSystems/EntitySystems/EntityOOPsystem/SendMessageTests.cs`: broadcast scope (entity, component, cross-subtree), payload delivery, unknown/empty messages, handler exception isolation, spawn-during-broadcast safety, detached-caller returns, the create/destroy/prefab conveniences, and legacy-API compatibility.
+Covered in `CoreEssentials.Tests/GameSystems/EntitySystems/EntityOOPsystem/SendMessageTests.cs`: broadcast scope (entity, component, cross-subtree), payload delivery, unknown/empty messages, handler exception isolation, spawn-during-broadcast safety, detached-caller returns, and the create/destroy/prefab conveniences.

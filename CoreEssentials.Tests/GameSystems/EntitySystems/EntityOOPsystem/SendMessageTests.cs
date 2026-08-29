@@ -2,7 +2,6 @@
 using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Events;
 using Microsoft.Xna.Framework;
 using Xunit;
 
@@ -299,26 +298,6 @@ public class SendMessageTests : IDisposable
         {
             Type = nameof(PlainHostEntity)
         });
-
-    // ──────────────────────────── Legacy event system still functional ────────────────────────────
-
-#pragma warning disable CS0618 // These tests deliberately exercise the obsolete legacy API.
-    [Fact]
-    public void Legacy_SubscribePublish_StillWorks()
-    {
-        var eventSystem = new EntityEventSystem();
-        EntityEventSystem.Instance = eventSystem;
-
-        var publisher = _system.CreateEntity<PlainHostEntity>();
-        var subscriber = _system.CreateEntity<PlainHostEntity>();
-        var received = 0;
-
-        subscriber.Subscribe("LegacyPing", (_, _) => received++);
-        publisher.Publish("LegacyPing", new EntityEventArgs(publisher));
-
-        Assert.Equal(1, received);
-    }
-#pragma warning restore CS0618
 
     public void Dispose() => _system.Dispose();
 }

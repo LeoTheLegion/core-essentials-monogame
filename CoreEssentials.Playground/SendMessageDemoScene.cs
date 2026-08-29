@@ -12,18 +12,21 @@ namespace CoreEssentials.Playground;
 /// <summary>
 /// Demonstrates scene-wide SendMessage (Unity-style multi-cast), the Unity-style
 /// entity-management one-liners, and prefab templates with declarative &lt;Bind&gt; wiring.
+/// All receivers are plain GameObjectEntity shells carrying a PingReceiverComponent —
+/// behavior lives on components, entities stay inert (Unity-style).
 ///
 /// Controls:
 ///   Space — broadcast "OnPing" to the whole scene (every receiver, in every subtree, counts up)
 ///   P     — spawn a prefab via InstantiateTemplate (the template's &lt;Bind&gt; turns it green)
-///   B     — spawn a typed entity via CreateGameObject&lt;PingReceiverEntity&gt;()
-///   D     — destroy the most recently spawned prefab (DestroyOwner from a component / Destroy on the entity)
+///   B     — spawn a GameObjectEntity + component via CreateGameObject&lt;GameObjectEntity&gt;()
+///   D     — destroy the most recently spawned entity
 ///   Esc   — back to the character scene
 /// </summary>
 public class SendMessageDemoScene : Scene
 {
     private EntitySystem? _entitySystem;
-    private PingReceiverEntity? _lastSpawned;
+    private Entity? _lastSpawned;
+    private int _spawnCounter;
 
     // Stored as a field (not a property) so Unload can unsubscribe the exact same delegate instance.
     private EventHandler<CoreEssentials.Inputs.KeyboardEventArgs>? _handleKey;
@@ -37,26 +40,15 @@ public class SendMessageDemoScene : Scene
 
         _entitySystem = GetGameSystem<EntitySystem>();
 
-        // Prefab template built in code — registered through the EntityTemplate overload,
-        // with a declarative <Bind> that wires the entity's own Spawned event to OnSpawned.
-        var prefab = EntityTemplateLoader.LoadFromXml(
-            @"<EntityTemplate Type=""CoreEssentials.Playground.PingReceiverEntity"" Sort=""100"">
-                <Bind Event=""Spawned"" Command=""OnSpawned"" />
-            </EntityTemplate>");
-        _entitySystem.RegisterTemplate("PingPrefab", prefab);
+        // Prefab template from an XML content file: a plain GameObjectEntity shell carrying
+        // the receiver component, with a declarative <Bind> wiring Spawned → OnSpawned.
+        UpdateLoadingProgress(0.4f, "Registering PingPrefab template...");
+        _entitySystem.RegisterTemplate("PingPrefab", "PingPrefabTemplate.xml");
 
-        // Two receivers in unrelated subtrees: one at the root, one nested under a parent.
-        var rootReceiver = _entitySystem.CreateEntity<PingReceiverEntity>(new Vector2(400, 300), "root receiver");
-        rootReceiver?.SetId("rootReceiver");
-
-        var parent = _entitySystem.CreateEntity<Entity>();
-        var nestedReceiver = new PingReceiverEntity(new Vector2(800, 300), "nested receiver (child)");
-        parent.AddChild(nestedReceiver);
-
-        var info = _entitySystem.CreateEntity<PingReceiverEntity>(new Vector2(640, 150),
-            "Space: broadcast OnPing | P: prefab spawn | B: typed spawn | D: destroy last | Esc: back");
-        info?.SetId("info");
-        if (info != null) info.Color = Color.White;
+        // Scene entities (root receiver, nested receiver in its own subtree, info line)
+        // all come from the scene XML definition file.
+        UpdateLoadingProgress(0.7f, "Loading scene entities from XML...");
+        LoadEntitiesFromXml("SendMessageDemoScene.xml", _entitySystem);
 
         _handleKey = (sender, args) => HandleKeyPressed(sender, args);
         Input.Keyboard.KeyReleased += _handleKey;
@@ -86,16 +78,25 @@ public class SendMessageDemoScene : Scene
                 break;
 
             case Microsoft.Xna.Framework.Input.Keys.P:
-                // Prefab spawn from a component's owning entity — the template's <Bind> turns it green.
-                var prefab = _entitySystem.Instantiate("PingPrefab", new Vector2(640, 450));
-                Console.WriteLine($"Spawned prefab '{prefab?.GetType().Name}'.");
+                // Prefab spawn — the template's <Bind> turns each new instance green.
+                _spawnCounter++;
+                var prefab = _entitySystem.Instantiate("PingPrefab", new Vector2(640 + (_spawnCounter % 5) * 80, 450));
+                prefab.GetComponent<PingReceiverComponent>()!.Label = $"prefab {_spawnCounter}";
+                _lastSpawned = prefab;
+                Console.WriteLine($"Spawned prefab '{prefab.GetType().Name}'.");
                 break;
 
             case Microsoft.Xna.Framework.Input.Keys.B:
-                // Unity-style typed one-liner from an existing entity.
-                _lastSpawned = (PingReceiverEntity?)_entitySystem.FindById("rootReceiver")
-                    ?.CreateGameObject<PingReceiverEntity>(new Vector2(300, 450), "typed spawn");
-                Console.WriteLine($"Created {_lastSpawned?.GetType().Name} via CreateGameObject<T>().");
+                // Unity-style one-liner from an existing entity, then compose it from a component.
+                _spawnCounter++;
+                var shell = _entitySystem.FindById("rootReceiver")?.CreateGameObject<GameObjectEntity>();
+                if (shell != null)
+                {
+                    shell.Position = new Vector2(300 + (_spawnCounter % 5) * 80, 450);
+                    shell.AddComponent(new PingReceiverComponent { Label = $"typed spawn {_spawnCounter}" });
+                    _lastSpawned = shell;
+                }
+                Console.WriteLine("Created GameObjectEntity via CreateGameObject<T>().");
                 break;
 
             case Microsoft.Xna.Framework.Input.Keys.D:

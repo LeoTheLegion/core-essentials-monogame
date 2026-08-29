@@ -1,0 +1,43 @@
+<Scene>
+    <!-- Root-level receiver: a plain GameObjectEntity shell carrying the demo component. -->
+    <EntityDefinition Type="GameObjectEntity" Id="rootReceiver">
+        <Position X="400" Y="300" />
+        <Components>
+            <Component Type="PingReceiverComponent">
+                <Properties>
+                    <Property Name="Label" Value="root receiver" />
+                </Properties>
+            </Component>
+        </Components>
+    </EntityDefinition>
+
+    <!-- Nested receiver: child in a separate subtree, proving scene-wide multi-cast crosses hierarchy. -->
+    <EntityDefinition Type="GameObjectEntity" Id="nestedParent">
+        <Position X="720" Y="300" />
+        <Children>
+            <EntityDefinition Type="GameObjectEntity" Id="nestedReceiver">
+                <Position X="80" Y="0" />
+                <Components>
+                    <Component Type="PingReceiverComponent">
+                        <Properties>
+                            <Property Name="Label" Value="nested receiver (child)" />
+                        </Properties>
+                    </Component>
+                </Components>
+            </EntityDefinition>
+        </Children>
+    </EntityDefinition>
+
+    <!-- Info line (white so it stands out against the default cyan receivers). -->
+    <EntityDefinition Type="GameObjectEntity" Id="info">
+        <Position X="640" Y="150" />
+        <Components>
+            <Component Type="PingReceiverComponent">
+                <Properties>
+                    <Property Name="Label" Value="Space: broadcast OnPing | P: prefab spawn | B: typed spawn | D: destroy last | Esc: back" />
+                    <Property Name="Color" Value="White" />
+                </Properties>
+            </Component>
+        </Components>
+    </EntityDefinition>
+</Scene>
