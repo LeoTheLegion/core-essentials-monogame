@@ -23,15 +23,17 @@ Widget components **never own a canvas themselves**. If no `CanvasComponent` exi
 
 > No CanvasComponent found for the given entity or any of its ancestors. Add a CanvasComponent to this entity or one of its parents before attaching GUI widget components.
 
-### Position Sync
+### Position Sync (container alignment)
 
-Each frame, a widget's position is synced so it sits at its owning entity's position **relative to the canvas entity**:
+Each frame, a widget is positioned **inside its canvas** by `HorizontalAlignment`/`VerticalAlignment`, with the entity's position relative to the canvas entity added as a margin:
 
 ```
-widget.Position = Owner.Position - CanvasEntity.Position
+widget.Position = (Owner.Position - CanvasEntity.Position) + AlignmentOffset(canvas)
 ```
 
-Move the entity (including children moving via `LocalPosition`) and its widget follows automatically. For screen-space canvases this means "screen coordinates relative to the canvas anchor"; for world-space canvases it means "world offset from the canvas entity".
+`AlignmentOffset` places the widget's top-left corner for the configured alignment: Left/Top is `(0, 0)`; Center shifts by half the canvas minus half the rendered size; Right/Bottom shifts by the canvas size minus the rendered size (rendered = measured size × scale). A host entity with no position is therefore positioned by alignment alone — e.g. `Center`/`Center` centers the widget in the whole canvas.
+
+Move the entity (including children moving via `LocalPosition`) and its widget follows automatically as a margin shift. For screen-space canvases this means "screen coordinates relative to the canvas anchor"; for world-space canvases it means "world offset from the canvas entity".
 
 ## CanvasComponent
 
@@ -58,7 +60,7 @@ public CanvasComponent(bool isScreenSpace = true)
 |---|---|---|
 | `Canvas` | `Canvas` | The canvas owned by this component (the single source of truth for the subtree). |
 | `IsScreenSpace` | `bool` | Whether the canvas renders in screen space. **Settable at runtime** — flipping it switches the space on the next update, and XML scene files can declare world-space canvases via a `<Property Name="IsScreenSpace" Value="false" />` element. |
-| `Width` | `float` | Canvas width. For world-space canvases this defines the anchored rectangle that `AnchorComponent` resolves against (in world units). |
+| `Width` | `float` | Canvas width. For **screen-space** canvases, auto-sizing (the default) reports the GUI viewport size — the canvas IS the screen. For **world-space** canvases it defines the anchored rectangle that `AnchorComponent` resolves against (in world units); set it explicitly to pin the panel size. |
 | `Height` | `float` | Canvas height (same as `Width`). |
 
 ### Methods
@@ -214,6 +216,8 @@ All properties can be set **before** attaching (applied on attach) **or after** 
 | `Scale` | `Vector2` | `(1, 1)` | Scale of the label widget. |
 | `Visible` | `bool` | `true` | Whether the label is visible. |
 | `Opacity` | `float` | `1.0f` | Opacity (0 = fully transparent, 1 = opaque). |
+| `HorizontalAlignment` | `HorizontalAlignment` | `Left` | How the label is positioned **inside its canvas**: `Left` (default) puts its left edge on the canvas's left edge, `Center` centers it in the canvas, `Right` puts its right edge on the canvas's right edge. The entity's position relative to the canvas entity acts as a margin from that reference point. Applied per frame during position sync; scale-aware. |
+| `VerticalAlignment` | `VerticalAlignment` | `Top` | Same as above for the vertical axis (`Top`, `Center`, `Bottom`). |
 
 ### Example
 
@@ -227,6 +231,25 @@ comp.Text = "Score: 42";      // updates the rendered widget immediately
 comp.TextColor = Color.Gold;
 comp.Opacity = 0.8f;
 ```
+
+### Positioning a label by alignment alone (container semantics)
+
+Alignment positions the label **inside its canvas** — no anchor position needed. A host
+entity with no position is placed purely by alignment:
+
+```csharp
+// Centered in the whole canvas, even when scaled:
+var comp = entity.AddComponent<LabelComponent>("+10");
+comp.HorizontalAlignment = HorizontalAlignment.Center;
+comp.VerticalAlignment = VerticalAlignment.Center;
+
+// Hugs the canvas's right edge with a 16px margin:
+entity.LocalPosition = new Vector2(-16, 0);
+```
+
+The entity's position relative to the canvas entity is treated as a **margin** added on top
+of the aligned reference point. The offset is computed per frame from the widget's current
+(measured) size and scale, so it stays correct while the text changes or the scale animates.
 
 ## ButtonComponent
 
@@ -247,6 +270,8 @@ public ButtonComponent(string text)
 | `Scale` | `Vector2` | `(1, 1)` | Scale of the button widget. |
 | `Visible` | `bool` | `true` | Whether the button is visible. |
 | `Enabled` | `bool` | `true` | Whether the button receives input. |
+| `HorizontalAlignment` | `HorizontalAlignment` | `Left` | How the button is positioned inside its canvas (container semantics, see `LabelComponent`). |
+| `VerticalAlignment` | `VerticalAlignment` | `Top` | Same as above for the vertical axis. |
 
 ### Events
 
@@ -268,12 +293,64 @@ comp.Clicked += () => SceneManager.LoadScene(new MainMenuScene());
 hudRoot.AddChild(menuButton);
 ```
 
+## Widget Sizing: AutoWidth / AutoHeight
+
+Every widget (`IWidget`) reports its size through `Width`/`Height`, but how that size is
+determined depends on two flags, both defaulting to `true`:
+
+- **`AutoWidth`** — when `true`, `Width` returns the size *measured from the widget's content*
+  (e.g., the text width of a label). Setting `Width` while auto is on has **no effect**.
+- **`AutoHeight`** — same for the vertical axis.
+
+This means an auto-sized label always reports its real pixel size instead of `0`, so you can
+use `Width`/`Height` for layout math (centering, hit areas, spacing) without any special-casing.
+
+### Pinning an explicit size
+
+To force a fixed size, turn the corresponding auto flag off first — toggling it off pins the
+widget at its current measured size, so there is no visual jump:
+
+```csharp
+var button = WidgetFactory.CreateTextButton("Save");
+button.AutoWidth = false;   // pins width to the measured text width
+button.Width = 200f;        // now sets an explicit size
+button.AutoHeight = false;
+button.Height = 50f;
+```
+
+Turning auto back on restores content-measured sizing:
+
+```csharp
+button.AutoWidth = true;    // Width is measured from the text again
+```
+
+### XML
+
+In XML layout files, a `Width`/`Height` attribute pins auto-sizing automatically — you do not
+need (and cannot) express the flags in XML:
+
+```xml
+<Button Text="Save" Width="200" Height="50" />   <!-- fixed size -->
+<Label Text="Score: 0" />                        <!-- auto-sized, reports measured Width/Height -->
+```
+
+### Canvas note
+
+A **screen-space** canvas IS the screen, so while auto-sized (the default) its `Width`/`Height`
+report the GUI viewport (`GUIManager.Width/Height`) instead of a content measurement — there is
+no meaningful "content size" for the whole screen. A **world-space** canvas keeps the normal
+widget semantics: auto means measured content size, so give it an explicit `Width`/`Height` to
+define its anchored rectangle.
+
+Setting `Canvas.Width`/`Canvas.Height` (or `CanvasComponent.Width`/`Height`) pins auto-sizing on
+set, so an explicit size is always applied.
+
 ## Lifecycle Summary
 
 | Phase | What happens |
 |---|---|
 | `OnAttach` (widget components) | Resolve nearest canvas (`RequireCanvas`, throws if missing), create the widget via `WidgetFactory`, apply all properties, add the widget to the canvas. |
-| `Update` | Sync widget position to `Owner.Position - CanvasEntity.Position`. The `CanvasComponent` also syncs and pumps its canvas. |
+| `Update` | Position the widget inside its canvas by alignment, with the entity's position relative to the canvas entity as a margin (see Position Sync). The `CanvasComponent` also syncs and pumps its canvas. |
 | `OnDetach` (widget components) | Unsubscribe events (button), remove the widget from the canvas, clear references. |
 | `OnDetach` (`CanvasComponent`) | `Canvas.CleanUp()` — releases all child widgets. |
 

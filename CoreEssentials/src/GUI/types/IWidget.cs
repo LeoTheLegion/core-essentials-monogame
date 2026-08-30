@@ -8,12 +8,32 @@ namespace CoreEssentials.GUI.Types;
 public interface IWidget
 {
     /// <summary>
+    /// Gets a value indicating whether the width is measured from content (default).
+    /// When <c>true</c>, <see cref="Width"/> returns the size measured from the widget's
+    /// content, and setting <see cref="Width"/> has no effect until this is set to <c>false</c>.
+    /// Setting this to <c>false</c> pins both axes at their current measured size.
+    /// </summary>
+    bool AutoWidth { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether the height is measured from content (default).
+    /// When <c>true</c>, <see cref="Height"/> returns the size measured from the widget's
+    /// content, and setting <see cref="Height"/> has no effect until this is set to <c>false</c>.
+    /// Setting this to <c>false</c> pins both axes at their current measured size.
+    /// </summary>
+    bool AutoHeight { get; set; }
+
+    /// <summary>
     /// Gets or sets the width of this widget in pixels.
+    /// When <see cref="AutoWidth"/> is <c>true</c>, the getter returns the content-measured
+    /// width and the setter has no effect (set <see cref="AutoWidth"/> to <c>false</c> first).
     /// </summary>
     float Width { get; set; }
 
     /// <summary>
     /// Gets or sets the height of this widget in pixels.
+    /// When <see cref="AutoHeight"/> is <c>true</c>, the getter returns the content-measured
+    /// height and the setter has no effect (set <see cref="AutoHeight"/> to <c>false</c> first).
     /// </summary>
     float Height { get; set; }
 

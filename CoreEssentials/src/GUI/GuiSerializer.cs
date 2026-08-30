@@ -251,13 +251,19 @@ public static class GuiSerializer
 
     private static void ApplyBaseProperties(IWidget widget, XElement element)
     {
-        // Width
+        // Width (explicit size in XML pins auto-sizing first)
         if (float.TryParse(element.Attribute("Width")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float width))
+        {
+            widget.AutoWidth = false;
             widget.Width = width;
+        }
 
-        // Height
+        // Height (explicit size in XML pins auto-sizing first)
         if (float.TryParse(element.Attribute("Height")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float height))
+        {
+            widget.AutoHeight = false;
             widget.Height = height;
+        }
 
         // Visible
         if (bool.TryParse(element.Attribute("Visible")?.Value, out bool visible))

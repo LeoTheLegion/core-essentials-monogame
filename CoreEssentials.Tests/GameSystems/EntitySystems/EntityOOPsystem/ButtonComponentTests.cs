@@ -211,6 +211,51 @@ public class ButtonComponentTests : IDisposable
         Assert.Equal(new Vector2(40, 20), widget.Position);
     }
 
+    // ===== Alignment =====
+
+    [Fact]
+    public void Constructor_Default_AlignmentIsLeftTop()
+    {
+        var component = new ButtonComponent();
+
+        Assert.Equal(HorizontalAlignment.Left, component.HorizontalAlignment);
+        Assert.Equal(VerticalAlignment.Top, component.VerticalAlignment);
+    }
+
+    [Fact]
+    public void Update_CenterCenter_CentersInCanvas()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var button = entity.AddComponent(new ButtonComponent("T"));
+        button.HorizontalAlignment = HorizontalAlignment.Center;
+        button.VerticalAlignment = VerticalAlignment.Center;
+
+        button.Update(new GameTime());
+
+        var widget = Assert.IsAssignableFrom<IButton>(canvas.Canvas.Children[0]);
+        // The screen-space canvas reports the GUI viewport (800x600 from Init). Myra stores
+        // Left/Top as int, so the result is truncated on assignment.
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Width * 0.5f - widget.Width * 0.5f), widget.Position.X);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Height * 0.5f - widget.Height * 0.5f), widget.Position.Y);
+    }
+
+    [Fact]
+    public void Update_Centering_IsScaleAware()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var button = entity.AddComponent(new ButtonComponent("T"));
+        button.Scale = new Vector2(3, 1);
+        button.HorizontalAlignment = HorizontalAlignment.Right;
+
+        button.Update(new GameTime());
+
+        var widget = Assert.IsAssignableFrom<IButton>(canvas.Canvas.Children[0]);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Width - widget.Width * 3f), widget.Position.X);
+        Assert.Equal(0f, widget.Position.Y);
+    }
+
     /// <summary>
     /// Raises the widget's own Clicked event via its backing field, simulating a user click
     /// without driving Myra's input pipeline. A plain C# event compiles to a private instance

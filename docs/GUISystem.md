@@ -13,9 +13,11 @@ using CoreEssentials.GUI;
 using CoreEssentials.GUI.Factory;
 using Microsoft.Xna.Framework;
 
-// Create a panel
+// Create a panel (pin auto-sizing before setting an explicit size)
 IPanel panel = WidgetFactory.CreatePanel();
+panel.AutoWidth = false;
 panel.Width = 200f;
+panel.AutoHeight = false;
 panel.Height = 150f;
 panel.Background = new SolidColorBrush(Color.DarkBlue);
 
@@ -325,7 +327,8 @@ The `StickyLog` class in the `CoreEssentials.Debugging` namespace is a real-worl
 _grid = WidgetFactory.CreateGrid();
 _grid.RowSpacing = 8; _grid.ColumnSpacing = 8;
 _grid.Background = Color.Black.WithAlpha(100).AsBrush();
-_grid.Width = 300; _grid.Height = 100;
+_grid.AutoWidth = false; _grid.Width = 300;
+_grid.AutoHeight = false; _grid.Height = 100;
 _grid.Visible = true;
 ```
 
