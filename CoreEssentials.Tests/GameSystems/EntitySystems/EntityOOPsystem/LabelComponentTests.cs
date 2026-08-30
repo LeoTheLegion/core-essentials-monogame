@@ -277,5 +277,113 @@ public class LabelComponentTests : IDisposable
         Assert.Equal(Color.Blue, widget.TextColor);
     }
 
+    // ===== Alignment (container semantics: the canvas positions the label) =====
+
+    [Fact]
+    public void Constructor_Default_AlignmentIsLeftTop()
+    {
+        var component = new LabelComponent();
+
+        Assert.Equal(HorizontalAlignment.Left, component.HorizontalAlignment);
+        Assert.Equal(VerticalAlignment.Top, component.VerticalAlignment);
+    }
+
+    [Fact]
+    public void Update_HorizontalCenter_CentersInCanvas()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+
+        label.Update(new GameTime());
+
+        var widget = GetWidget(canvas);
+        // The screen-space canvas reports the GUI viewport (800x600 from Init). Myra stores
+        // Left/Top as int, so the result is truncated on assignment.
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Width * 0.5f - widget.Width * 0.5f), widget.Position.X);
+        Assert.Equal(0f, widget.Position.Y);
+    }
+
+    [Fact]
+    public void Update_VerticalCenter_CentersInCanvas()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+        label.VerticalAlignment = VerticalAlignment.Center;
+
+        label.Update(new GameTime());
+
+        var widget = GetWidget(canvas);
+        Assert.Equal(0f, widget.Position.X);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Height * 0.5f - widget.Height * 0.5f), widget.Position.Y);
+    }
+
+    [Fact]
+    public void Update_RightBottom_EdgesOnCanvasEdges()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+        label.HorizontalAlignment = HorizontalAlignment.Right;
+        label.VerticalAlignment = VerticalAlignment.Bottom;
+
+        label.Update(new GameTime());
+
+        var widget = GetWidget(canvas);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Width - widget.Width), widget.Position.X);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Height - widget.Height), widget.Position.Y);
+    }
+
+    [Fact]
+    public void Update_Centering_IsScaleAware()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+        label.Scale = new Vector2(2, 4);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.VerticalAlignment = VerticalAlignment.Center;
+
+        label.Update(new GameTime());
+
+        var widget = GetWidget(canvas);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Width * 0.5f - widget.Width * 2f * 0.5f), widget.Position.X);
+        Assert.Equal((float)MathF.Truncate(canvas.Canvas.Height * 0.5f - widget.Height * 4f * 0.5f), widget.Position.Y);
+    }
+
+    [Fact]
+    public void Update_DefaultAlignment_TopsLeftCornerOfCanvas()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var label = entity.AddComponent(new LabelComponent("T"));
+
+        label.Update(new GameTime());
+
+        Assert.Equal(Vector2.Zero, GetWidget(canvas).Position);
+    }
+
+    [Fact]
+    public void Update_EntityOffsetActsAsMarginFromAlignedReference()
+    {
+        var root = new TestEntity();
+        root.Position = new Vector2(100, 50);
+        var canvas = root.AddComponent(new CanvasComponent());
+
+        var child = new TestEntity();
+        root.AddChild(child);
+        child.LocalPosition = new Vector2(40, 20); // margin (40, 20) relative to the canvas entity
+        var label = child.AddComponent(new LabelComponent("T"));
+        label.HorizontalAlignment = HorizontalAlignment.Right;
+
+        label.Update(new GameTime());
+
+        var widget = GetWidget(canvas);
+        Assert.Equal((float)MathF.Truncate(40f + canvas.Canvas.Width - widget.Width), widget.Position.X);
+        Assert.Equal(20f, widget.Position.Y);
+    }
+
     private static IWidget GetWidget(CanvasComponent canvas) => canvas.Canvas.Children[0];
 }

@@ -11,7 +11,7 @@ game.Graphics.ApplyChanges();
 
 // Create a loading screen with custom colors
 LoadingScene loadingScene = new LoadingScene(
-    "Loading SendMessage Demo...", 
+    "Loading Label Alignment Demo...", 
     Color.Black, 
     Color.LightBlue, 
     Color.White
@@ -20,7 +20,7 @@ LoadingScene loadingScene = new LoadingScene(
 // Set the loading scene for the SceneManager to use during transitions
 game.SceneManager.SetLoadingScene(loadingScene);
 
-// Start on the SendMessage demo (press Esc in-game to go to the character scene)
-game.SceneManager.LoadScene(new SendMessageDemoScene());
+// Start on the label alignment demo (press Esc in-game to go to the SendMessage demo)
+game.SceneManager.LoadScene(new LabelAlignmentDemoScene());
 
 game.Run();

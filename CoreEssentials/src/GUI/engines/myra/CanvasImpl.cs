@@ -36,6 +36,28 @@ public class CanvasImpl : ContainerWidget, ICanvas
         _manager.AddWidget(this);
     }
 
+    /// <summary>
+    /// Gets the canvas width. A screen-space canvas IS the screen, so while auto-sized (the
+    /// default) it reports the GUI viewport size instead of a content measurement. World-space
+    /// canvases keep the base behavior: auto means measured content size.
+    /// </summary>
+    public override float Width
+    {
+        get => _isScreenSpace && AutoWidth ? _manager.Width : base.Width;
+        set => base.Width = value;
+    }
+
+    /// <summary>
+    /// Gets the canvas height. A screen-space canvas IS the screen, so while auto-sized (the
+    /// default) it reports the GUI viewport size instead of a content measurement. World-space
+    /// canvases keep the base behavior: auto means measured content size.
+    /// </summary>
+    public override float Height
+    {
+        get => _isScreenSpace && AutoHeight ? _manager.Height : base.Height;
+        set => base.Height = value;
+    }
+
     /// <inheritdoc />
     public void SetPosition(Vector2 position)
     {

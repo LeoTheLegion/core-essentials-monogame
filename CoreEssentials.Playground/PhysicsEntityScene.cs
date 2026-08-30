@@ -213,7 +213,9 @@ public class PhysicsEntityScene : Scene
         // Create save button
         _saveButton = WidgetFactory.CreateTextButton("Save Physics Scene");
         _saveButton.Position = new Vector2(20, 20);
+        _saveButton.AutoWidth = false;
         _saveButton.Width = 200;
+        _saveButton.AutoHeight = false;
         _saveButton.Height = 50;
         _saveButton.Clicked += (button) => SaveScene();
         GUIManager.AddWidget(_saveButton);
@@ -221,7 +223,9 @@ public class PhysicsEntityScene : Scene
         // Create load button
         _loadButton = WidgetFactory.CreateTextButton("Load Physics Scene");
         _loadButton.Position = new Vector2(20, 80);
+        _loadButton.AutoWidth = false;
         _loadButton.Width = 200;
+        _loadButton.AutoHeight = false;
         _loadButton.Height = 50;
         _loadButton.Clicked += (button) => LoadScene();
         GUIManager.AddWidget(_loadButton);

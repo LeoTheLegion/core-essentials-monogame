@@ -55,17 +55,72 @@ public abstract class WidgetWrapper : IWidget
     }
 
     /// <inheritdoc />
-    public float Width
+    public bool AutoWidth
     {
-        get => (MyraWidget.Width ?? 0) * 1.0f;
-        set => MyraWidget.Width = (int)value;
+        get => MyraWidget.Width == null;
+        set
+        {
+            if (value)
+                MyraWidget.Width = null;
+            else
+                PinSizeToMeasured();
+        }
     }
 
     /// <inheritdoc />
-    public float Height
+    public bool AutoHeight
     {
-        get => (MyraWidget.Height ?? 0) * 1.0f;
-        set => MyraWidget.Height = (int)value;
+        get => MyraWidget.Height == null;
+        set
+        {
+            if (value)
+                MyraWidget.Height = null;
+            else
+                PinSizeToMeasured();
+        }
+    }
+
+    /// <inheritdoc />
+    public virtual float Width
+    {
+        get => AutoWidth ? Measure().X : MyraWidget.Width!.Value;
+        set
+        {
+            if (!AutoWidth)
+                MyraWidget.Width = (int)value;
+        }
+    }
+
+    /// <inheritdoc />
+    public virtual float Height
+    {
+        get => AutoHeight ? Measure().Y : MyraWidget.Height!.Value;
+        set
+        {
+            if (!AutoHeight)
+                MyraWidget.Height = (int)value;
+        }
+    }
+
+    private static readonly Microsoft.Xna.Framework.Point _fullAvailableSize = new(int.MaxValue, int.MaxValue);
+
+    private Microsoft.Xna.Framework.Vector2 Measure()
+    {
+        var size = MyraWidget.Measure(_fullAvailableSize);
+        return new(size.X, size.Y);
+    }
+
+    /// <summary>
+    /// Pins both width and height to their current content-measured size so that
+    /// switching off auto-sizing does not cause a visual jump.
+    /// </summary>
+    private void PinSizeToMeasured()
+    {
+        var size = MyraWidget.Measure(_fullAvailableSize);
+        if (MyraWidget.Width == null)
+            MyraWidget.Width = size.X;
+        if (MyraWidget.Height == null)
+            MyraWidget.Height = size.Y;
     }
 
     /// <inheritdoc />
