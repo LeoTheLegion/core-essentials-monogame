@@ -18,6 +18,8 @@ namespace CoreEssentials.Tests.GUI;
 
 public class FakeLabel : ILabel
 {
+    public bool AutoWidth { get; set; } = true;
+    public bool AutoHeight { get; set; } = true;
     public float Width { get; set; }
     public float Height { get; set; }
     public bool Visible { get; set; } = true;
@@ -37,6 +39,8 @@ public class FakeLabel : ILabel
 
 public class FakeButton : IButton
 {
+    public bool AutoWidth { get; set; } = true;
+    public bool AutoHeight { get; set; } = true;
     public float Width { get; set; }
     public float Height { get; set; }
     public bool Visible { get; set; } = true;
@@ -57,6 +61,8 @@ public class FakeButton : IButton
 
 public class FakePanel : IPanel
 {
+    public bool AutoWidth { get; set; } = true;
+    public bool AutoHeight { get; set; } = true;
     public float Width { get; set; }
     public float Height { get; set; }
     public bool Visible { get; set; } = true;
@@ -80,6 +86,8 @@ public class FakePanel : IPanel
 
 public class FakeGrid : IGrid
 {
+    public bool AutoWidth { get; set; } = true;
+    public bool AutoHeight { get; set; } = true;
     public float Width { get; set; }
     public float Height { get; set; }
     public bool Visible { get; set; } = true;

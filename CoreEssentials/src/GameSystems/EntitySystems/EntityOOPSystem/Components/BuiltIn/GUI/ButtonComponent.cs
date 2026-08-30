@@ -12,9 +12,12 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.Bu
 /// and added to the nearest canvas when the component attaches.
 /// </summary>
 /// <remarks>
-/// Per frame, the button's position is synced so it sits at the owning entity's position relative
-/// to the canvas entity: <c>widget.Position = Owner.Position - CanvasEntity.Position</c>.
-/// Move the entity and the button follows. Subscribe to <see cref="Clicked"/> to react to user input.
+/// Per frame, the button is positioned inside its canvas by <see cref="HorizontalAlignment"/>
+/// and <see cref="VerticalAlignment"/>: e.g. <c>Center</c> puts the button's horizontal middle on
+/// the canvas's horizontal middle. The entity's position relative to the canvas entity acts as a
+/// margin offset from that aligned reference point, so a host with no position is positioned by
+/// alignment alone, and moving the entity moves the button. Subscribe to <see cref="Clicked"/>
+/// to react to user input.
 /// </remarks>
 public class ButtonComponent : EntityComponent
 {
@@ -46,6 +49,26 @@ public class ButtonComponent : EntityComponent
     /// Can be set before attaching; applied on attach.
     /// </summary>
     public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets how the button is positioned inside its canvas, horizontally.
+    /// <see cref="HorizontalAlignment.Left"/> (default) puts the button's left edge on the canvas's
+    /// left edge; <see cref="HorizontalAlignment.Center"/> centers it in the canvas;
+    /// <see cref="HorizontalAlignment.Right"/> puts its right edge on the canvas's right edge.
+    /// The entity's position relative to the canvas entity offsets (margin) from that reference.
+    /// Applied per frame during position sync; scale-aware.
+    /// </summary>
+    public HorizontalAlignment HorizontalAlignment { get; set; } = HorizontalAlignment.Left;
+
+    /// <summary>
+    /// Gets or sets how the button is positioned inside its canvas, vertically.
+    /// <see cref="VerticalAlignment.Top"/> (default) puts the button's top edge on the canvas's top
+    /// edge; <see cref="VerticalAlignment.Center"/> centers it in the canvas;
+    /// <see cref="VerticalAlignment.Bottom"/> puts its bottom edge on the canvas's bottom edge.
+    /// The entity's position relative to the canvas entity offsets (margin) from that reference.
+    /// Applied per frame during position sync; scale-aware.
+    /// </summary>
+    public VerticalAlignment VerticalAlignment { get; set; } = VerticalAlignment.Top;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ButtonComponent"/> class (template-friendly).
@@ -97,10 +120,43 @@ public class ButtonComponent : EntityComponent
         if (_button == null || _canvasComponent == null || Owner == null)
             return;
 
-        // Keep the button at the entity's position relative to the canvas entity.
+        // Position the button inside its canvas by alignment; the entity's position relative to
+        // the canvas entity is a margin added on top of the aligned reference point.
         var canvasEntity = _canvasComponent.Owner;
         if (canvasEntity != null)
-            _button.Position = Owner.Position - canvasEntity.Position;
+        {
+            var margin = Owner.Position - canvasEntity.Position;
+            _button.Position = margin + GetAlignmentOffset(_canvasComponent.Canvas);
+        }
+    }
+
+    /// <summary>
+    /// Computes where the button's top-left corner sits inside the canvas for the configured
+    /// alignment: Left/Top is (0, 0); Center shifts by half the canvas minus half the rendered
+    /// size; Right/Bottom shifts by the canvas size minus the rendered size. Rendered size is the
+    /// measured size multiplied by scale, since Myra scales from the top-left corner.
+    /// </summary>
+    private Vector2 GetAlignmentOffset(ICanvas canvas)
+    {
+        if (_button == null)
+            return Vector2.Zero;
+
+        var renderedSize = new Vector2(_button.Width * Scale.X, _button.Height * Scale.Y);
+        float x = HorizontalAlignment switch
+        {
+            HorizontalAlignment.Left => 0f,
+            HorizontalAlignment.Center => canvas.Width * 0.5f - renderedSize.X * 0.5f,
+            HorizontalAlignment.Right => canvas.Width - renderedSize.X,
+            _ => 0f
+        };
+        float y = VerticalAlignment switch
+        {
+            VerticalAlignment.Top => 0f,
+            VerticalAlignment.Center => canvas.Height * 0.5f - renderedSize.Y * 0.5f,
+            VerticalAlignment.Bottom => canvas.Height - renderedSize.Y,
+            _ => 0f
+        };
+        return new Vector2(x, y);
     }
 
     /// <summary>

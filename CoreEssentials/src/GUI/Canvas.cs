@@ -79,10 +79,30 @@ public class Canvas : ICanvas
     public void ClearChildren() => _impl.ClearChildren();
 
     /// <inheritdoc />
-    public float Width { get => _impl.Width; set => _impl.Width = value; }
+    public bool AutoWidth { get => _impl.AutoWidth; set => _impl.AutoWidth = value; }
 
     /// <inheritdoc />
-    public float Height { get => _impl.Height; set => _impl.Height = value; }
+    public bool AutoHeight { get => _impl.AutoHeight; set => _impl.AutoHeight = value; }
+
+    /// <summary>
+    /// Gets or sets the canvas width. Setting it pins auto-sizing first so an explicit
+    /// size is always applied (world-space canvases rely on this).
+    /// </summary>
+    public float Width
+    {
+        get => _impl.Width;
+        set { _impl.AutoWidth = false; _impl.Width = value; }
+    }
+
+    /// <summary>
+    /// Gets or sets the canvas height. Setting it pins auto-sizing first so an explicit
+    /// size is always applied (world-space canvases rely on this).
+    /// </summary>
+    public float Height
+    {
+        get => _impl.Height;
+        set { _impl.AutoHeight = false; _impl.Height = value; }
+    }
 
     /// <inheritdoc />
     public bool Visible { get => _impl.Visible; set => _impl.Visible = value; }
