@@ -93,6 +93,9 @@ public class ButtonComponent : EntityComponent
         _canvasComponent = CanvasComponent.RequireCanvas(Owner);
 
         _button = WidgetFactory.CreateTextButton(Text);
+        // Pin the transform origin to the top-left so scaling matches the alignment math,
+        // which assumes top-left scaling. Myra's default origin is the widget center.
+        _button.TransformOrigin = Vector2.Zero;
         _button.Scale = Scale;
         _button.Visible = Visible;
         _button.Enabled = Enabled;

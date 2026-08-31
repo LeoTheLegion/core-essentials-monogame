@@ -132,5 +132,8 @@ public class Canvas : ICanvas
     public Vector2 Scale { get => _impl.Scale; set => _impl.Scale = value; }
 
     /// <inheritdoc />
+    public Vector2 TransformOrigin { get => _impl.TransformOrigin; set => _impl.TransformOrigin = value; }
+
+    /// <inheritdoc />
     public float Opacity { get => _impl.Opacity; set => _impl.Opacity = value; }
 }

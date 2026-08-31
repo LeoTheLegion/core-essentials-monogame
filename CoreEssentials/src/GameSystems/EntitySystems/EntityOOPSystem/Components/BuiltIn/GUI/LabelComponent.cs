@@ -146,6 +146,9 @@ public class LabelComponent : EntityComponent
         // Apply the current property values to the freshly created widget.
         _label = WidgetFactory.CreateLabel(_text);
         _label.TextColor = _textColor;
+        // Pin the transform origin to the top-left so scaling matches the alignment math,
+        // which assumes top-left scaling. Myra's default origin is the widget center.
+        _label.TransformOrigin = Vector2.Zero;
         _label.Scale = _scale;
         _label.Visible = _visible;
         _label.Opacity = _opacity;

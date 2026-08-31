@@ -31,6 +31,7 @@ public class FakeLabel : ILabel
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
+    public Vector2 TransformOrigin { get; set; } = new(0.5f, 0.5f);
     public float Opacity { get; set; } = 1.0f;
     public string? Text { get; set; }
     public object? Font { get; set; }
@@ -52,6 +53,7 @@ public class FakeButton : IButton
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
+    public Vector2 TransformOrigin { get; set; } = new(0.5f, 0.5f);
     public float Opacity { get; set; } = 1.0f;
     public string? Text { get; set; }
 #pragma warning disable CS0067 // The event is never used (required by IButton interface)
@@ -74,6 +76,7 @@ public class FakePanel : IPanel
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
+    public Vector2 TransformOrigin { get; set; } = new(0.5f, 0.5f);
     public float Opacity { get; set; } = 1.0f;
     public IBrush? Background { get; set; }
     public Thickness BorderThickness { get; set; }
@@ -99,6 +102,7 @@ public class FakeGrid : IGrid
     public HorizontalAlignment HorizontalAlignment { get; set; }
     public VerticalAlignment VerticalAlignment { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
+    public Vector2 TransformOrigin { get; set; } = new(0.5f, 0.5f);
     public float Opacity { get; set; } = 1.0f;
     public IBrush? Background { get; set; }
     public System.Collections.Generic.IList<float> RowProportions { get; } = new System.Collections.Generic.List<float>();
