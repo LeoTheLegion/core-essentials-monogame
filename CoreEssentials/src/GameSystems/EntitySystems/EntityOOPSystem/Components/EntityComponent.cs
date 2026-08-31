@@ -15,6 +15,28 @@ public abstract class EntityComponent
     /// </summary>
     public Entity Owner { get; internal set; } = null!;
 
+    private bool _attached;
+
+    /// <summary>
+    /// True once <see cref="OnAttach"/> has run for this component. Used by prefab
+    /// instantiation to defer attachment until property overrides are applied, and to
+    /// guarantee <c>OnAttach</c> fires exactly once per component lifetime.
+    /// </summary>
+    public bool IsAttached => _attached;
+
+    internal void MarkAttached() => _attached = true;
+
+    /// <summary>
+    /// Fires <see cref="OnAttach"/> exactly once and marks the component as attached.
+    /// All attachment paths (entity AddComponent, prefab instantiation) go through here.
+    /// </summary>
+    internal void Attach()
+    {
+        if (_attached) return;
+        _attached = true;
+        OnAttach();
+    }
+
     /// <summary>
     /// Gets the EntitySystem managing the owning entity, or null if the owner has not been
     /// added to a system yet. Gives component code public access to spawn/destroy/query and
@@ -51,15 +73,26 @@ public abstract class EntityComponent
         => Owner?.CreateGameObject<T>(args);
 
     /// <summary>
-    /// Instantiates a registered template (prefab) at the given position in the owning entity's
+    /// Instantiates a registered prefab at the given position in the owning entity's
     /// system — Unity-style prefab spawn from component code:
-    /// <c>InstantiateTemplate("popup", position)</c>.
+    /// <c>InstantiatePrefab("popup", position)</c>.
+    /// </summary>
+    /// <param name="prefabName">The name of the registered prefab to instantiate.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <returns>The newly created entity, or null if the owner is not in a system.</returns>
+    public Entity? InstantiatePrefab(string prefabName, Vector2 position)
+        => Owner?.InstantiatePrefab(prefabName, position);
+
+    /// <summary>
+    /// Instantiates a registered template (prefab) at the given position in the owning entity's
+    /// system — Unity-style prefab spawn from component code.
     /// </summary>
     /// <param name="templateName">The name of the registered template to instantiate.</param>
     /// <param name="position">The world position to place the instantiated entity.</param>
     /// <returns>The newly created entity, or null if the owner is not in a system.</returns>
+    [Obsolete("Renamed to InstantiatePrefab. Will be removed in a future release.")]
     public Entity? InstantiateTemplate(string templateName, Vector2 position)
-        => Owner?.InstantiateTemplate(templateName, position);
+        => InstantiatePrefab(templateName, position);
 
     /// <summary>
     /// Destroys the owning entity (and its children) — Unity-style one-liner from component code.
@@ -73,6 +106,13 @@ public abstract class EntityComponent
     public virtual void OnAttach()
     {
     }
+
+    /// <summary>
+    /// Resets the attached flag so a re-added component fires <see cref="OnAttach"/> again.
+    /// Called by the detach path — preserves the pre-guard behavior where every attachment
+    /// runs <c>OnAttach</c> exactly once per attachment.
+    /// </summary>
+    internal void ResetAttached() => _attached = false;
 
     /// <summary>
     /// Called when the component is detached from an entity.

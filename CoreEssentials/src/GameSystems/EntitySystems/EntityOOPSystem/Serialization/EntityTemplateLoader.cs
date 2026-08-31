@@ -17,9 +17,9 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization
 public static class EntityTemplateLoader
 {
     /// <summary>
-    /// Loads an EntityTemplate from an XML asset.
+    /// Loads a prefab from an XML asset.
     /// </summary>
-    public static EntityTemplate LoadFromAsset(string assetName)
+    public static Prefab LoadFromAsset(string assetName)
     {
         var xmlAsset = AssetManager.LoadAsset<XMLAsset>(assetName);
         if (xmlAsset.XMLContent == null)
@@ -29,9 +29,9 @@ public static class EntityTemplateLoader
     }
 
     /// <summary>
-    /// Loads an EntityTemplate from an XML file (legacy, for testing).
+    /// Loads a prefab from an XML file (legacy, for testing).
     /// </summary>
-    public static EntityTemplate LoadFromFile(string filePath)
+    public static Prefab LoadFromFile(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Template definition file not found: {filePath}");
@@ -41,10 +41,10 @@ public static class EntityTemplateLoader
     }
 
     /// <summary>
-    /// Parses an entity template from an XML string.
-    /// Expects a root element named <c>EntityTemplate</c>.
+    /// Parses a prefab from an XML string.
+    /// Expects a root element named <c>EntityTemplate</c> (the file format rename to <c>Prefab</c> ships with the scene-as-data work).
     /// </summary>
-    public static EntityTemplate LoadFromXml(string xmlData)
+    public static Prefab LoadFromXml(string xmlData)
     {
         var doc = XDocument.Parse(xmlData);
         var root = doc.Root;
@@ -52,7 +52,7 @@ public static class EntityTemplateLoader
         if (root == null || !string.Equals(root.Name.LocalName, "EntityTemplate", StringComparison.OrdinalIgnoreCase))
             throw new FormatException("Root element must be 'EntityTemplate'.");
 
-        var template = new EntityTemplate
+        var template = new Prefab
         {
             Type = root.Attribute("Type")?.Value ?? throw new FormatException("EntityTemplate missing required 'Type' attribute."),
             Rotation = float.Parse(root.Attribute("Rotation")?.Value ?? "0", NumberStyles.Any, CultureInfo.InvariantCulture),
@@ -68,9 +68,9 @@ public static class EntityTemplateLoader
         return template;
     }
 
-    private static EntityTemplate ParseTemplateElement(XElement element)
+    private static Prefab ParseTemplateElement(XElement element)
     {
-        var template = new EntityTemplate
+        var template = new Prefab
         {
             Type = element.Attribute("Type")?.Value ?? throw new FormatException("Nested EntityTemplate missing 'Type' attribute."),
             Rotation = float.Parse(element.Attribute("Rotation")?.Value ?? "0", NumberStyles.Any, CultureInfo.InvariantCulture),
@@ -91,7 +91,7 @@ public static class EntityTemplateLoader
     /// that <see cref="CommandBindings.ApplyBindings"/> understands: direct children of the
     /// template and binds nested inside its &lt;Components&gt; element.
     /// </summary>
-    private static void ParseBinds(XElement element, EntityTemplate template)
+    private static void ParseBinds(XElement element, Prefab template)
     {
         foreach (var bind in element.Elements("Bind"))
             template.Binds.Add(bind);
@@ -109,8 +109,8 @@ public static class EntityTemplateLoader
         }
     }
 
-    /// <summary>Parses the Tags element and populates the template's tags list.</summary>
-    private static void ParseTags(XElement element, EntityTemplate template)
+    /// <summary>Parses the Tags element and populates the prefab's tags list.</summary>
+    private static void ParseTags(XElement element, Prefab template)
     {
         var tagsElement = element.Element("Tags");
         if (tagsElement == null)
@@ -122,8 +122,8 @@ public static class EntityTemplateLoader
             .ToList()!;
     }
 
-    /// <summary>Parses the Components element and populates the template's components list.</summary>
-    private static void ParseComponents(XElement element, EntityTemplate template)
+    /// <summary>Parses the Components element and populates the prefab's components list.</summary>
+    private static void ParseComponents(XElement element, Prefab template)
     {
         var componentsElement = element.Element("Components");
         if (componentsElement == null)
@@ -141,9 +141,9 @@ public static class EntityTemplateLoader
     }
 
     /// <summary>Parses a single Component element into a ComponentDefinition.</summary>
-    private static EntityTemplate.ComponentDefinition ParseComponentDefinition(XElement compElem)
+    private static Prefab.ComponentDefinition ParseComponentDefinition(XElement compElem)
     {
-        var compDef = new EntityTemplate.ComponentDefinition
+        var compDef = new Prefab.ComponentDefinition
         {
             Type = compElem.Attribute("Type")?.Value ?? string.Empty
         };
@@ -163,8 +163,8 @@ public static class EntityTemplateLoader
         return compDef;
     }
 
-    /// <summary>Parses the Children element and recursively populates nested templates.</summary>
-    private static void ParseChildren(XElement element, EntityTemplate template)
+    /// <summary>Parses the Children element and recursively populates nested prefabs.</summary>
+    private static void ParseChildren(XElement element, Prefab template)
     {
         var childrenElement = element.Element("Children");
         if (childrenElement == null)
@@ -177,12 +177,12 @@ public static class EntityTemplateLoader
     }
 
     /// <summary>
-    /// Instantiates an entity from a template and adds it to the system.
+    /// Instantiates an entity from a prefab and adds it to the system.
     /// The full child subtree is created first, then components are attached pre-order
     /// (parents before children) so hierarchy-dependent components — e.g. a widget component
     /// looking up its CanvasComponent through the parent chain — can find their ancestors.
     /// </summary>
-    public static Entity Instantiate(EntityTemplate template, EntitySystem system, Vector2 position)
+    public static Entity Instantiate(Prefab template, EntitySystem system, Vector2 position)
     {
         var root = BuildSubtree(template, system, position);
         AttachPreOrder(root, template);
@@ -195,7 +195,7 @@ public static class EntityTemplateLoader
     /// recursively for child templates. Runs after all components are attached so event
     /// sources and command handlers are resolvable.
     /// </summary>
-    private static void ApplyBindsPreOrder(Entity entity, EntityTemplate template)
+    private static void ApplyBindsPreOrder(Entity entity, Prefab template)
     {
         if (template.Binds.Count > 0)
         {
@@ -218,7 +218,7 @@ public static class EntityTemplateLoader
     /// Recursively creates and starts the entity for a template and all of its children,
     /// without attaching any component definitions yet.
     /// </summary>
-    private static Entity BuildSubtree(EntityTemplate template, EntitySystem system, Vector2 position)
+    private static Entity BuildSubtree(Prefab template, EntitySystem system, Vector2 position)
     {
         // Use the robust type resolution logic from EntitySerializer (if accessible) or mirror it here
         Type? type = null;
@@ -262,14 +262,27 @@ public static class EntityTemplateLoader
         foreach (var tag in template.Tags)
             entity.SetTag(tag);
 
-        // 3. Apply component definitions to any pre-existing components (most won't exist yet — that's fine)
+        // 3. Apply component definitions to any pre-existing components (most won't exist yet —
+        //    that's fine). Components are NOT created here: entities like Ball expect their own
+        //    OnStart to be the creator, so creating early would hide the prefab definition from them.
         foreach (var compDef in template.Components)
         {
             ApplyComponentDefinitionIfExists(entity, compDef);
         }
 
-        // 4. NOW call OnStart() — components will initialize at the correct position
-        entity.OnStart();
+        // 4. NOW call OnStart() — with the deferred-attach window open so components the entity's
+        //    own OnStart adds attach only after prefab properties and overrides are final.
+        entity.BeginDeferringComponentAttach();
+        try
+        {
+            entity.OnStart();
+        }
+        catch
+        {
+            // Close the window so the entity isn't left with permanently deferred components.
+            entity.AttachPendingComponents();
+            throw;
+        }
 
         // Recurse for children before any component attachments happen.
         foreach (var childTemplate in template.Children)
@@ -285,13 +298,17 @@ public static class EntityTemplateLoader
     /// Recursively applies component definitions so that a parent's components attach before
     /// its children's (pre-order).
     /// </summary>
-    private static void AttachPreOrder(Entity entity, EntityTemplate template)
+    private static void AttachPreOrder(Entity entity, Prefab template)
     {
-        // Re-apply component overrides after OnStart() — this ensures template values win over OnStart() defaults
+        // Re-apply component overrides after OnStart() — this ensures prefab values win over OnStart() defaults
         foreach (var compDef in template.Components)
         {
             ApplyComponentDefinition(entity, compDef);
         }
+
+        // Complete attachment for everything created during the window (OnStart additions plus
+        // prefab-created components) now that all properties are final.
+        entity.AttachPendingComponents();
 
         for (int i = 0; i < template.Children.Count && i < entity.Children.Count; i++)
         {
@@ -303,7 +320,7 @@ public static class EntityTemplateLoader
     /// Applies component definition properties to an existing component only (does NOT create new components).
     /// Used before OnStart() to set properties that affect initialization.
     /// </summary>
-    private static void ApplyComponentDefinitionIfExists(Entity entity, EntityTemplate.ComponentDefinition def)
+    private static void ApplyComponentDefinitionIfExists(Entity entity, Prefab.ComponentDefinition def)
     {
         Type? type = ResolveComponentType(def.Type);
         if (type == null) return;
@@ -314,11 +331,15 @@ public static class EntityTemplateLoader
         ApplyProperties(component, type, def.Properties);
     }
 
+
     /// <summary>
-    /// Applies component definition, creating the component if it doesn't exist or updating existing one.
-    /// Used after OnStart() to ensure template values override defaults.
+    /// Applies component definition, creating the component if it doesn't exist or updating an
+    /// existing one. Runs inside the deferred-attach window, so components created here (via
+    /// <see cref="Entity.AddComponent"/>) attach only after all properties — including
+    /// per-instantiation overrides — are final, and observe those values in <c>OnAttach</c>.
+    /// Pre-existing components already attached keep their state; their properties are simply updated.
     /// </summary>
-    private static void ApplyComponentDefinition(Entity entity, EntityTemplate.ComponentDefinition def)
+    private static void ApplyComponentDefinition(Entity entity, Prefab.ComponentDefinition def)
     {
         Type? type = ResolveComponentType(def.Type);
         if (type == null) return;
@@ -329,18 +350,20 @@ public static class EntityTemplateLoader
             try
             {
                 component = (EntityComponent)Activator.CreateInstance(type)!;
+                // AddComponent defers OnAttach while the prefab instantiation window is open.
                 entity.AddComponent(component);
             }
             catch (MissingMethodException)
             {
                 // Component requires constructor args — skip creation, just log
-                Console.WriteLine($"[Template] Skipping creation of '{def.Type}' — no parameterless constructor.");
+                Console.WriteLine($"[Prefab] Skipping creation of '{def.Type}' — no parameterless constructor.");
                 return;
             }
         }
 
         ApplyProperties(component, type, def.Properties);
     }
+
 
     private static void ApplyProperties(EntityComponent component, Type type, Dictionary<string, string> properties)
     {
@@ -355,7 +378,11 @@ public static class EntityTemplateLoader
         }
     }
 
-    private static Type? ResolveComponentType(string typeName)
+    /// <summary>
+    /// Resolves a component type name (short or fully-qualified) across loaded assemblies.
+    /// Public so per-instantiation overrides can reuse the exact same resolution path.
+    /// </summary>
+    public static Type? ResolveComponentType(string typeName)
     {
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {

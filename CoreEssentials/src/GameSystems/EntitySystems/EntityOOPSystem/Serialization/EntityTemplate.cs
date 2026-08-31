@@ -5,10 +5,17 @@ using System.Xml.Linq;
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
 /// <summary>
-/// Represents a reusable blueprint for an entity.
-/// Templates can be loaded from XML and instantiated multiple times to create identical entities.
+/// A type alias kept for one release so existing code referencing the old name keeps compiling.
+/// Prefer <see cref="Prefab"/> in new code.
 /// </summary>
-public class EntityTemplate
+[Obsolete("Renamed to Prefab. EntityTemplate will be removed in a future release.")]
+public class EntityTemplate : Prefab { }
+
+/// <summary>
+/// Represents a reusable blueprint for an entity — a prefab.
+/// Prefabs can be loaded from XML and instantiated multiple times to create entities.
+/// </summary>
+public class Prefab
 {
     /// <summary>
     /// The name of the entity type (class name) this template creates.
@@ -41,15 +48,39 @@ public class EntityTemplate
     public List<ComponentDefinition> Components { get; set; } = new();
 
     /// <summary>
-    /// Templates for child entities to be created and attached to the parent.
+    /// Prefabs for child entities to be created and attached to the parent.
     /// </summary>
-    public List<EntityTemplate> Children { get; set; } = new();
+    public List<Prefab> Children { get; set; } = new();
 
     /// <summary>
     /// Declarative &lt;Bind&gt; elements (event-to-command wiring) applied to each entity
-    /// instantiated from this template. Populated when the template is parsed from XML.
+    /// instantiated from this prefab. Populated when the prefab is parsed from XML.
     /// </summary>
     public List<XElement> Binds { get; set; } = new();
+
+    /// <summary>
+    /// Creates a deep copy of this prefab. The original is never mutated — per-instantiation
+    /// overrides (see <see cref="PrefabOverrides"/>) are merged into a clone.
+    /// </summary>
+    public Prefab Clone()
+    {
+        var clone = new Prefab
+        {
+            Type = Type,
+            Rotation = Rotation,
+            Sort = Sort,
+            Active = Active,
+            Tags = new List<string>(Tags),
+            Components = Components.Select(c => new ComponentDefinition
+            {
+                Type = c.Type,
+                Properties = new Dictionary<string, string>(c.Properties)
+            }).ToList(),
+            Children = Children.Select(c => c.Clone()).ToList(),
+            Binds = Binds.Select(b => new XElement(b)).ToList() // deep copy — matches the bind-clone pattern in the loader
+        };
+        return clone;
+    }
 
     /// <summary>
     /// Defines a component blueprint, including its type and initial property values.

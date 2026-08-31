@@ -97,23 +97,49 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
 
         [Fact]
-        public void RegisterTemplate_RegistersTemplateSuccessfully()
+        public void RegisterPrefab_RegistersPrefabSuccessfully()
         {
             // Arrange
             var entitySystem = new EntitySystem();
             
             // Mock AssetManager - we'll test with direct loader instead
-            var template = EntityTemplateLoader.LoadFromXml(@"<EntityTemplate Type=""TestEntity"" />");
+            var prefab = EntityTemplateLoader.LoadFromXml(@"<EntityTemplate Type=""TestEntity"" />");
             
-            // Act - Use reflection to test private _templates field
-            var templatesField = typeof(EntitySystem).GetField("_templates", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var templates = (System.Collections.Generic.Dictionary<string, EntityTemplate>)templatesField!.GetValue(entitySystem)!;
-            templates["TestTemplate"] = template;
+            // Act
+            entitySystem.RegisterPrefab("TestPrefab", prefab);
 
             // Assert
-            Assert.True(templates.ContainsKey("TestTemplate"));
-            Assert.Equal("TestEntity", templates["TestTemplate"].Type);
+            Assert.True(entitySystem.HasPrefab("TestPrefab"));
+        }
+
+        [Fact]
+        public void RegisterPrefab_IsIdempotentAndReplaces()
+        {
+            // Arrange
+            var entitySystem = new EntitySystem();
+            var first = new Prefab { Type = "TemplateTestEntity", Sort = 1 };
+            var second = new Prefab { Type = "TemplateTestEntity", Sort = 2 };
+
+            // Act
+            entitySystem.RegisterPrefab("dup", first);
+            entitySystem.RegisterPrefab("dup", second);
+
+            // Assert — re-registration replaces rather than throwing
+            Assert.True(entitySystem.HasPrefab("dup"));
+            var entity = entitySystem.Instantiate("dup", Vector2.Zero);
+            Assert.Equal(2, entity.GetSort());
+        }
+
+        [Fact]
+        public void HasPrefab_ReturnsFalseForUnknownOrEmptyName()
+        {
+            // Arrange
+            var entitySystem = new EntitySystem();
+
+            // Act & Assert
+            Assert.False(entitySystem.HasPrefab("unknown"));
+            Assert.False(entitySystem.HasPrefab(""));
+            Assert.False(entitySystem.HasPrefab(null!));
         }
 
         [Fact]
@@ -121,7 +147,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange
             var entitySystem = new EntitySystem();
-            var template = new EntityTemplate
+            var prefab = new Prefab
             {
                 Type = "TemplateTestEntity",
                 Rotation = 90f,
@@ -130,10 +156,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 Tags = { "test", "template" }
             };
 
-            var templatesField = typeof(EntitySystem).GetField("_templates", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var templates = (System.Collections.Generic.Dictionary<string, EntityTemplate>)templatesField!.GetValue(entitySystem)!;
-            templates["TestTemplate"] = template;
+            entitySystem.RegisterPrefab("TestTemplate", prefab);
 
             var position = new Vector2(100, 200);
 
@@ -167,16 +190,13 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange
             var entitySystem = new EntitySystem();
-            var template = new EntityTemplate
+            var prefab = new Prefab
             {
                 Type = "TemplateTestEntity",
                 Rotation = 0f
             };
 
-            var templatesField = typeof(EntitySystem).GetField("_templates", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var templates = (System.Collections.Generic.Dictionary<string, EntityTemplate>)templatesField!.GetValue(entitySystem)!;
-            templates["TestTemplate"] = template;
+            entitySystem.RegisterPrefab("TestTemplate", prefab);
 
             // Act
             var entity1 = entitySystem.Instantiate("TestTemplate", new Vector2(10, 20));
@@ -197,15 +217,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange
             var entitySystem = new EntitySystem();
-            var template = new EntityTemplate
+            var prefab = new Prefab
             {
                 Type = "TemplateTestEntity"
             };
 
-            var templatesField = typeof(EntitySystem).GetField("_templates", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var templates = (System.Collections.Generic.Dictionary<string, EntityTemplate>)templatesField!.GetValue(entitySystem)!;
-            templates["TestTemplate"] = template;
+            entitySystem.RegisterPrefab("TestTemplate", prefab);
 
             // Act
             var entity = entitySystem.Instantiate("TestTemplate", new Vector2(500, 600));

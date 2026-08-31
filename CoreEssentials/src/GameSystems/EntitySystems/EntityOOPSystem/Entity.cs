@@ -156,14 +156,24 @@ public abstract class Entity
         => EntitySystem?.CreateEntity<T>(args);
 
     /// <summary>
-    /// Instantiates a registered template (prefab) at the given position in this entity's system:
-    /// <c>InstantiateTemplate("popup", position)</c>. Pairs with <see cref="Destroy"/>.
+    /// Instantiates a registered prefab at the given position in this entity's system:
+    /// <c>InstantiatePrefab("popup", position)</c>. Pairs with <see cref="Destroy"/>.
+    /// </summary>
+    /// <param name="prefabName">The name of the registered prefab to instantiate.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
+    public Entity? InstantiatePrefab(string prefabName, Vector2 position)
+        => EntitySystem?.Instantiate(prefabName, position);
+
+    /// <summary>
+    /// Instantiates a registered template (prefab) at the given position in this entity's system.
     /// </summary>
     /// <param name="templateName">The name of the registered template to instantiate.</param>
     /// <param name="position">The world position to place the instantiated entity.</param>
     /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
+    [Obsolete("Renamed to InstantiatePrefab. Will be removed in a future release.")]
     public Entity? InstantiateTemplate(string templateName, Vector2 position)
-        => EntitySystem?.Instantiate(templateName, position);
+        => InstantiatePrefab(templateName, position);
 
     /// <summary>
     /// The unique identifier for this entity.
@@ -189,6 +199,29 @@ public abstract class Entity
     /// Only one component of each type can be attached to an entity.
     /// </summary>
     private readonly Dictionary<Type, Components.EntityComponent> _components = new();
+
+    /// <summary>
+    /// True while a prefab instantiation pass is in flight for this entity. While set,
+    /// <see cref="AddComponent"/> stores components without firing <c>OnAttach</c> — attachment
+    /// is completed by the loader's finish pass (<see cref="AttachPendingComponents"/>) so every
+    /// component sees final, possibly overridden, property values in <c>OnAttach</c>.
+    /// </summary>
+    internal bool DeferringComponentAttach { get; private set; }
+
+    /// <summary>Begins the deferred-attach window for prefab instantiation.</summary>
+    internal void BeginDeferringComponentAttach() => DeferringComponentAttach = true;
+
+    /// <summary>
+    /// Fires <c>OnAttach</c> on every component that has not attached yet (in insertion order,
+    /// so a collider attaches after the rigidbody it depends on) and ends the deferred-attach
+    /// window. Called by prefab instantiation once all property overrides are applied.
+    /// </summary>
+    internal void AttachPendingComponents()
+    {
+        foreach (var component in _components.Values)
+            component.Attach(); // guarded — fires OnAttach exactly once
+        DeferringComponentAttach = false;
+    }
 
     /// <summary>
     /// Gets all components attached to this entity.
@@ -610,6 +643,7 @@ public abstract class Entity
         foreach (var component in _components.Values)
         {
             component.OnDetach();
+            component.ResetAttached();
             component.Owner = null!;
         }
         _components.Clear();
@@ -768,7 +802,8 @@ public abstract class Entity
 
         component.Owner = this;
         _components[componentType] = component;
-        component.OnAttach();
+        if (DeferringComponentAttach) return component; // attachment completed by the prefab finish pass
+        component.Attach();
         return component;
     }
 
@@ -787,7 +822,8 @@ public abstract class Entity
 
         component.Owner = this;
         _components[componentType] = component;
-        component.OnAttach();
+        if (DeferringComponentAttach) return; // attachment completed by the prefab finish pass
+        component.Attach();
     }
 
     /// <summary>
@@ -842,6 +878,7 @@ public abstract class Entity
         if (_components.TryGetValue(typeof(T), out var component))
         {
             component.OnDetach();
+            component.ResetAttached();
             component.Owner = null!;
             _components.Remove(typeof(T));
             return (T)component;

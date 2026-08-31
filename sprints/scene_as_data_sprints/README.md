@@ -1,6 +1,6 @@
 # Scene-as-Data — Scrum Sprints 🚀
 
-Closes #92 (scene-as-data), #84 (template auto-registration), and #81 (per-instance property overrides) in one effort. Temporary folder — discarded after merge.
+One effort covering scene-as-data, prefab auto-registration, and per-instance property overrides. Temporary folder — discarded after merge.
 
 ## Why This?
 
@@ -16,7 +16,7 @@ Breaking changes are accepted — early library. No backwards-compatibility shim
 
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
-| 0 | [Prefab Registration & Overrides](Sprint_0_Prefab_Registration_And_Overrides.md) | 5 | In Progress | `RegisterPrefab`/`HasPrefab`/lazy `Instantiate`, override-merge core + C# overrides overload |
+| 0 | [Prefab Registration & Overrides](Sprint_0_Prefab_Registration_And_Overrides.md) | 5 | ✅ Done | `RegisterPrefab`/`HasPrefab`/lazy `InstantiateFromAsset`, override-merge core + C# overrides overload |
 | 1 | [Scene Format Parser](Sprint_1_Scene_Format_Parser.md) | 5 | Not Started | Strict `<Scene>` parser: systems, prefabs, entities, flat + precise overrides |
 | 2 | [DataDrivenScene & Loading Screen](Sprint_2_DataDrivenScene_And_Loading_Screen.md) | 5 | Not Started | `DataDrivenScene`, `LoadScene(string)`/`SetLoadingScene(string)`, loading screen as data |
 | 3 | [Migration, Docs & Release](Sprint_3_Migration_Docs_Release.md) | 2 | Not Started | Migrate all playground XML to new format, docs, version bump |
