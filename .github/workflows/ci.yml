@@ -53,6 +53,18 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Restore local tools (mgcb)
+      run: |
+        # Restore the MGCB local tool manifests sequentially, before the build.
+        # Without this, the per-project `dotnet tool restore` calls triggered by
+        # MonoGame.Content.Builder.Task run in parallel on a fresh runner and race
+        # on extracting dotnet-mgcb from the NuGet cache (file lock -> MSB3073).
+        foreach ($dir in @('CoreEssentials', 'CoreEssentials.Playground', 'CoreEssentials.Tests')) {
+          Push-Location $dir
+          dotnet tool restore
+          Pop-Location
+        }
+
     - name: Restore dependencies
       run: dotnet restore
 
