@@ -128,6 +128,32 @@ public class LabelComponentTests : IDisposable
     }
 
     [Fact]
+    public void OnAttach_PinsTransformOriginToTopLeft()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new LabelComponent("T") { Scale = new Vector2(2, 2) });
+
+        var label = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+
+        // The alignment math assumes top-left scaling; Myra's default origin is center,
+        // so the component must pin it before applying scale.
+        Assert.Equal(Vector2.Zero, label.TransformOrigin);
+    }
+
+    [Fact]
+    public void OnAttach_PinsTransformOriginToTopLeft_EvenAtDefaultScale()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new LabelComponent("T"));
+
+        var label = Assert.IsAssignableFrom<ILabel>(canvas.Canvas.Children[0]);
+
+        Assert.Equal(Vector2.Zero, label.TransformOrigin);
+    }
+
+    [Fact]
     public void OnAttach_Throws_WhenNoCanvasInHierarchy()
     {
         var entity = new TestEntity();

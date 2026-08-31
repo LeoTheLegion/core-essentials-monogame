@@ -33,6 +33,8 @@ widget.Position = (Owner.Position - CanvasEntity.Position) + AlignmentOffset(can
 
 `AlignmentOffset` places the widget's top-left corner for the configured alignment: Left/Top is `(0, 0)`; Center shifts by half the canvas minus half the rendered size; Right/Bottom shifts by the canvas size minus the rendered size (rendered = measured size × scale). A host entity with no position is therefore positioned by alignment alone — e.g. `Center`/`Center` centers the widget in the whole canvas.
 
+Because this math assumes scaling about the widget's top-left corner, both components pin the widget's `TransformOrigin` to `(0, 0)` on attach (the GUI engine's default origin is the widget center). This keeps scaled widgets aligned exactly where the math places them instead of drifting off-center as scale grows.
+
 Move the entity (including children moving via `LocalPosition`) and its widget follows automatically as a margin shift. For screen-space canvases this means "screen coordinates relative to the canvas anchor"; for world-space canvases it means "world offset from the canvas entity".
 
 ## CanvasComponent
