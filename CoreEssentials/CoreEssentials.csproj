@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>CoreEssentials</RootNamespace>
     <PackageId>CoreEssentials-MonoGame</PackageId>
-    <Version>0.19.0</Version>
+    <Version>0.19.1</Version>
     <Authors>Michael Mena</Authors>
     <Company>LeoTheLegion</Company>
     <PackageDescription>A jump start for monogame dev</PackageDescription>

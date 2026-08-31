@@ -118,6 +118,32 @@ public class ButtonComponentTests : IDisposable
     }
 
     [Fact]
+    public void OnAttach_PinsTransformOriginToTopLeft()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new ButtonComponent("T") { Scale = new Vector2(3, 1) });
+
+        var button = Assert.IsAssignableFrom<IButton>(canvas.Canvas.Children[0]);
+
+        // The alignment math assumes top-left scaling; Myra's default origin is center,
+        // so the component must pin it before applying scale.
+        Assert.Equal(Vector2.Zero, button.TransformOrigin);
+    }
+
+    [Fact]
+    public void OnAttach_PinsTransformOriginToTopLeft_EvenAtDefaultScale()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new ButtonComponent("T"));
+
+        var button = Assert.IsAssignableFrom<IButton>(canvas.Canvas.Children[0]);
+
+        Assert.Equal(Vector2.Zero, button.TransformOrigin);
+    }
+
+    [Fact]
     public void OnAttach_Throws_WhenNoCanvasInHierarchy()
     {
         var entity = new TestEntity();

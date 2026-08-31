@@ -85,6 +85,13 @@ public interface IWidget
     Vector2 Scale { get; set; }
 
     /// <summary>
+    /// Gets or sets the point around which this widget is scaled and rotated,
+    /// expressed as a normalized offset within the widget's bounds:
+    /// (0, 0) = top-left corner, (0.5, 0.5) = center, (1, 1) = bottom-right corner.
+    /// </summary>
+    Vector2 TransformOrigin { get; set; }
+
+    /// <summary>
     /// Gets or sets the opacity of this widget. 
     /// 0.0 is fully transparent, 1.0 is fully opaque.
     /// </summary>

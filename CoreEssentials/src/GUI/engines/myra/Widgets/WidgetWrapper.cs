@@ -183,6 +183,13 @@ public abstract class WidgetWrapper : IWidget
     }
 
     /// <inheritdoc />
+    public Microsoft.Xna.Framework.Vector2 TransformOrigin
+    {
+        get => MyraWidget.TransformOrigin;
+        set => MyraWidget.TransformOrigin = value;
+    }
+
+    /// <inheritdoc />
     public float Opacity
     {
         get => MyraWidget.Opacity;
