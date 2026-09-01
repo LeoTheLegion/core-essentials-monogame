@@ -1,12 +1,12 @@
 # Sprint 4 — Playground Behavior Components 🎛️
 
-**Points:** 5 | **Status:** In Progress (Batches A+B done) | **Goal:** Move every piece of per-scene runtime behavior into components so scenes can be pure data.
+**Points:** 5 | **Status:** Done (all three batches committed) | **Goal:** Move every piece of per-scene runtime behavior into components so scenes can be pure data.
 
 ## Batches (work pace: batch by scene, commit between groups)
 
 - [x] **Batch A — Character set:** `NavigateOnKeyComponent`, `SoundKeyComponent`, `VolumeKeyComponent`, `DebugToggleComponent`, `MusicComponent` + tests
 - [x] **Batch B — Camera/Ping set:** `CameraInputComponent`, `PingControlComponent` + tests
-- [ ] **Batch C — Physics set:** `PhysicsSpawnComponent`, `SaveLoadButtonsComponent`, `PhysicsDebugOverlayComponent` + tests
+- [x] **Batch C — Physics set:** `PhysicsSpawnComponent`, `SaveLoadButtonsComponent`, `PhysicsDebugOverlayComponent` + tests
 
 ## Why This Sprint
 
@@ -36,9 +36,9 @@ Each component subscribes to `Input.Keyboard.KeyReleased` in `OnAttach` and unsu
 - [x] T4 ⭐ `MusicComponent` — start an audio asset on attach; pause/resume on application focus change
 - [x] T5 ⭐ `CameraInputComponent` — WASD/QE/R driving a built-in `CameraComponent` (speed + zoom sensitivity props)
 - [x] T6 ⭐ `PingControlComponent` — Space/P/B/D demo commands (broadcast, prefab spawn, typed spawn, destroy-last)
-- [ ] T7 ⭐ `PhysicsSpawnComponent` — declarative random/VIP ball spawning with collision filters + impulses; optional world border
-- [ ] T8 ⭐ `SaveLoadButtonsComponent` — save/load GUI buttons wired to the entity system's save/load
-- [ ] T9 ⭐ `PhysicsDebugOverlayComponent` — F1 toggle + physics debug draw overlay
+- [x] T7 ⭐ `PhysicsSpawnComponent` — declarative random/VIP ball spawning with collision filters + impulses; optional world border
+- [x] T8 ⭐ `SaveLoadButtonsComponent` — save/load GUI buttons wired to the entity system's save/load
+- [x] T9 ⭐ `PhysicsDebugOverlayComponent` — F1 toggle + physics debug draw overlay
 - [ ] T10 🔁 Unit tests for each component (attach/detach, key dispatch, side effects via fakes)
 
 ## Acceptance Criteria
@@ -54,6 +54,11 @@ Each component subscribes to `Input.Keyboard.KeyReleased` in `OnAttach` and unsu
 - **Test project now references the Playground:** `CoreEssentials.Tests.csproj` gained a `ProjectReference` to `CoreEssentials.Playground` so playground components are unit-testable. CoreEssentials marks its DesktopGL MonoGame package `PrivateAssets="All"`, so no transitive assembly conflict with the Playground's WindowsDX flavor — builds clean.
 - **CameraInputComponent (Batch B):** input-only layer over the built-in `CameraComponent` on the same entity — WASD pans the owner (the camera follows via the component's late-update sync), Q/E zoom, R resets. All keys + speeds are declarative props. `IsKeyHeld(Keys)` is a virtual seam so tests simulate input; pan/reset logic runs for real in tests (no camera → position-only assertions).
 - **PingControlComponent (Batch B):** single-entity driver for the SendMessage demo commands (broadcast / prefab spawn / typed spawn / destroy-last), tracking the last-spawned entity. Each command is a virtual seam (`Broadcast`, `SpawnPrefab`, `SpawnTyped`, `DestroyLast`) so tests observe without loading demo assets. Key dispatch compares against configurable keys (not hardcoded case labels).
+- **Batch C — physics set:** three components reproduce `PhysicsEntityScene`'s runtime behavior declaratively.
+  - **Reaching sibling systems:** a component reaches another game system via `EntitySystem?.GetGameSystem<T>()` (inherited from `GameSystem`). Note `Scene.GetGameSystem<T>()` is an **exact-type** dictionary lookup (keyed by `GetType()`), so the overlay must request the concrete `PhysicsDebugRenderer`, not the `IPhysicsDebugRenderer` interface.
+  - **PhysicsSpawnComponent:** spawns regular balls at random positions within a declarative spawn area + a fixed VIP set (parallel comma/semicolon-separated id/position/color strings, since XML props are limited to int/float/bool/string/Vector2/Color/enum). Collision filters resolve named categories from the scene's `PhysicsConfig`; each ball gets a random impulse; optional world border. Every side effect (`InstantiateBall`, `ResolveCategory`, `ApplyCollisionFilter`, `ApplyImpulse`, `ConfigureVipBall`, `CreateWorldBorderEntity`) is a virtual seam.
+  - **SaveLoadButtonsComponent:** creates save/load text buttons at declarative positions/sizes, wires clicks to `EntitySystem.SaveState/LoadState`, and removes both widgets on detach. Button creation + GUI add/remove are seams so tests use a fake `IButton`.
+  - **PhysicsDebugOverlayComponent:** F1 (configurable) toggles the scene's `PhysicsDebugRenderer`; it implements `IDrawableComponent` so the owning entity's render pass draws the overlay when enabled — no scene `Draw` override needed. Reaching the renderer is a seam.
 - **Playground, not Core:** these are demo behaviors. If one proves general later it can be promoted to `Components/BuiltIn` in a separate change.
 - **Key enum as XML property:** components take keys as strings (e.g. `"Q"`) and parse via `Enum.Parse<Keys>` so they're settable from flat attributes / `<Properties>`.
 - **PhysicsSpawn is the biggest piece** — it must reproduce random positions, per-ball collision filters resolved from `PhysicsConfig`, and impulses declaratively.

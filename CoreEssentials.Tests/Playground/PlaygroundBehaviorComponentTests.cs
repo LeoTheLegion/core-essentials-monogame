@@ -8,6 +8,8 @@ using Xunit;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.Physics.Types;
+using CoreEssentials.GUI.Types;
 using CoreEssentials.Inputs;
 using CoreEssentials.Playground;
 
@@ -490,6 +492,299 @@ public class PlaygroundBehaviorComponentTests
         var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
         Assert.NotNull(GetHandler(comp));
         entity.RemoveComponent<RecordingPing>();
+        Assert.Null(GetHandler(comp));
+    }
+
+    // ── Batch C recording helpers ────────────────────────────────────────────────
+
+    private class FakeButton : IButton
+    {
+        public bool AutoWidth { get; set; }
+        public bool AutoHeight { get; set; }
+        public float Width { get; set; }
+        public float Height { get; set; }
+        public bool Visible { get; set; } = true;
+        public bool Enabled { get; set; } = true;
+        public bool IsMouseInside => false;
+        public bool IsKeyboardFocused => false;
+        public Vector2 Position { get; set; }
+        public Thickness Margin { get; set; }
+        public HorizontalAlignment HorizontalAlignment { get; set; }
+        public VerticalAlignment VerticalAlignment { get; set; }
+        public Vector2 Scale { get; set; } = Vector2.One;
+        public Vector2 TransformOrigin { get; set; }
+        public float Opacity { get; set; } = 1f;
+        public string? Text { get; set; }
+        public event Action<IButton>? Clicked;
+
+        public void RaiseClick() => Clicked?.Invoke(this);
+    }
+
+    private class RecordingSpawn : PhysicsSpawnComponent
+    {
+        public int InstantiateCalls;
+        public List<Vector2> Positions = new();
+        public List<CollisionCategory?> FilterCategories = new();
+        public List<CollisionCategory?> FilterCollidesWith = new();
+        public List<Vector2> Impulses = new();
+        public List<string> VipIds = new();
+        public List<Color> VipColors = new();
+        public float? VipScale;
+        public bool WorldBorderCreated;
+
+        protected override Entity? InstantiateBall(Vector2 position) { InstantiateCalls++; Positions.Add(position); return new TestEntity(); }
+        protected override CollisionCategory? ResolveCategory(string name) => name == "Player" ? CollisionCategory.Cat1 : (CollisionCategory?)CollisionCategory.Cat2;
+        protected override void ApplyCollisionFilter(Entity ball, CollisionCategory? categories, CollisionCategory? collidesWith) { FilterCategories.Add(categories); FilterCollidesWith.Add(collidesWith); }
+        protected override void ApplyImpulse(Entity ball, Vector2 impulse) => Impulses.Add(impulse);
+        protected override void ConfigureVipBall(Entity ball, string id, Color color, float scale) { VipIds.Add(id); VipColors.Add(color); VipScale = scale; }
+        protected override void CreateWorldBorderEntity(Vector2 position, Vector2 size) => WorldBorderCreated = true;
+    }
+
+    private class RecordingSaveLoad : SaveLoadButtonsComponent
+    {
+        public FakeButton? SaveBtn;
+        public FakeButton? LoadBtn;
+        public List<IWidget> Added = new();
+        public List<IWidget> Removed = new();
+        public int Saves;
+        public int Loads;
+
+        protected override IButton? CreateSaveButton() { SaveBtn = new FakeButton { Text = SaveButtonLabel }; return SaveBtn; }
+        protected override IButton? CreateLoadButton() { LoadBtn = new FakeButton { Text = LoadButtonLabel }; return LoadBtn; }
+        protected override void AddWidget(IWidget widget) => Added.Add(widget);
+        protected override void RemoveWidget(IWidget widget) => Removed.Add(widget);
+        protected override void Save() => Saves++;
+        protected override void Load() => Loads++;
+    }
+
+    private class FakeDebugRenderer : IPhysicsDebugRenderer
+    {
+        public bool IsEnabled { get; set; }
+        public int Draws;
+        public void Draw(SpriteBatch spriteBatch) => Draws++;
+        public void Dispose() { }
+    }
+
+    private class RecordingOverlay : PhysicsDebugOverlayComponent
+    {
+        public FakeDebugRenderer Renderer = new();
+        protected override IPhysicsDebugRenderer? GetDebugRenderer() => Renderer;
+    }
+
+    // ── PhysicsSpawnComponent (T7) ───────────────────────────────────────────────
+
+    [Fact]
+    public void Spawn_SpawnsConfiguredRegularBalls_WithFilterAndImpulse()
+    {
+        var comp = new RecordingSpawn
+        {
+            RegularBallCount = 3,
+            VipBallIds = "",
+            CreateWorldBorder = false
+        };
+
+        comp.Spawn();
+
+        Assert.Equal(3, comp.InstantiateCalls);
+        // Each regular ball gets a collision filter + an impulse.
+        Assert.Equal(3, comp.FilterCategories.Count);
+        Assert.Equal(3, comp.Impulses.Count);
+        // Regular balls resolve to the "Player" category (Cat1 in the fake).
+        Assert.All(comp.FilterCategories, c => Assert.Equal(CollisionCategory.Cat1, c));
+        // No VIP balls configured.
+        Assert.Empty(comp.VipIds);
+    }
+
+    [Fact]
+    public void Spawn_SpawnsVipBalls_WithIdColorScaleAndFilter()
+    {
+        var comp = new RecordingSpawn
+        {
+            RegularBallCount = 0,
+            VipBallIds = "vip_a,vip_b",
+            VipBallPositions = "10,20;30,40",
+            VipBallColors = "Blue,Green",
+            VipBallScale = 2.5f,
+            CreateWorldBorder = false
+        };
+
+        comp.Spawn();
+
+        // One instantiate per VIP ball.
+        Assert.Equal(2, comp.InstantiateCalls);
+        Assert.Equal(new[] { "vip_a", "vip_b" }, comp.VipIds);
+        Assert.Equal(Color.Blue, comp.VipColors[0]);
+        Assert.Equal(Color.Green, comp.VipColors[1]);
+        Assert.Equal(2.5f, comp.VipScale);
+        // VIP positions are parsed from the semicolon-separated list.
+        Assert.Contains(new Vector2(10, 20), comp.Positions);
+        Assert.Contains(new Vector2(30, 40), comp.Positions);
+        // Each VIP ball resolves to the "Vip" category (Cat2 in the fake).
+        Assert.All(comp.FilterCategories, c => Assert.Equal(CollisionCategory.Cat2, c));
+    }
+
+    [Fact]
+    public void Spawn_CreatesWorldBorder_WhenEnabled()
+    {
+        var comp = new RecordingSpawn
+        {
+            RegularBallCount = 0,
+            VipBallIds = "",
+            CreateWorldBorder = true
+        };
+
+        comp.Spawn();
+
+        Assert.True(comp.WorldBorderCreated);
+    }
+
+    [Fact]
+    public void Spawn_SkipsWorldBorder_WhenDisabled()
+    {
+        var comp = new RecordingSpawn
+        {
+            RegularBallCount = 0,
+            VipBallIds = "",
+            CreateWorldBorder = false
+        };
+
+        comp.Spawn();
+
+        Assert.False(comp.WorldBorderCreated);
+    }
+
+    [Fact]
+    public void Spawn_SpawnsOnAttach()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingSpawn)entity.AddComponent(new RecordingSpawn { RegularBallCount = 2, VipBallIds = "" });
+        try
+        {
+            // OnAttach ran at AddComponent time → spawn already occurred.
+            Assert.Equal(2, comp.InstantiateCalls);
+        }
+        finally { entity.RemoveComponent<RecordingSpawn>(); }
+    }
+
+    // ── SaveLoadButtonsComponent (T8) ────────────────────────────────────────────
+
+    [Fact]
+    public void SaveLoad_CreatesAndAddsBothButtons_OnAttach()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        try
+        {
+            Assert.NotNull(comp.SaveBtn);
+            Assert.NotNull(comp.LoadBtn);
+            // Both buttons are added to the GUI root.
+            Assert.Equal(2, comp.Added.Count);
+            Assert.Contains(comp.SaveBtn, comp.Added);
+            Assert.Contains(comp.LoadBtn, comp.Added);
+        }
+        finally { entity.RemoveComponent<RecordingSaveLoad>(); }
+    }
+
+    [Fact]
+    public void SaveLoad_SaveButtonClick_SavesState()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        try
+        {
+            comp.SaveBtn.RaiseClick();
+            Assert.Equal(1, comp.Saves);
+            Assert.Equal(0, comp.Loads);
+        }
+        finally { entity.RemoveComponent<RecordingSaveLoad>(); }
+    }
+
+    [Fact]
+    public void SaveLoad_LoadButtonClick_LoadsState()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        try
+        {
+            comp.LoadBtn.RaiseClick();
+            Assert.Equal(1, comp.Loads);
+            Assert.Equal(0, comp.Saves);
+        }
+        finally { entity.RemoveComponent<RecordingSaveLoad>(); }
+    }
+
+    [Fact]
+    public void SaveLoad_RemovesBothButtons_OnDetach()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+
+        // Detach removes both widgets from the GUI root.
+        entity.RemoveComponent<RecordingSaveLoad>();
+        Assert.Equal(2, comp.Removed.Count);
+        Assert.Contains(comp.SaveBtn, comp.Removed);
+        Assert.Contains(comp.LoadBtn, comp.Removed);
+    }
+
+    // ── PhysicsDebugOverlayComponent (T9) ────────────────────────────────────────
+
+    [Fact]
+    public void Overlay_ToggleKey_FlipsRendererEnabled()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        try
+        {
+            Assert.False(comp.Renderer.IsEnabled);
+            comp.HandleKey(comp.ToggleKey);
+            Assert.True(comp.Renderer.IsEnabled);
+
+            // Second press toggles back off.
+            comp.HandleKey(comp.ToggleKey);
+            Assert.False(comp.Renderer.IsEnabled);
+        }
+        finally { entity.RemoveComponent<RecordingOverlay>(); }
+    }
+
+    [Fact]
+    public void Overlay_WrongKey_DoesNothing()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        try
+        {
+            comp.HandleKey(Keys.F2);
+            Assert.False(comp.Renderer.IsEnabled);
+        }
+        finally { entity.RemoveComponent<RecordingOverlay>(); }
+    }
+
+    [Fact]
+    public void Overlay_DrawsOnlyWhenEnabled()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        try
+        {
+            // Disabled → no draw.
+            comp.Draw(null);
+            Assert.Equal(0, comp.Renderer.Draws);
+
+            // Enabled → draws through to the renderer.
+            comp.Renderer.IsEnabled = true;
+            comp.Draw(null);
+            Assert.Equal(1, comp.Renderer.Draws);
+        }
+        finally { entity.RemoveComponent<RecordingOverlay>(); }
+    }
+
+    [Fact]
+    public void Overlay_SubscribesOnAttach_UnsubscribesOnDetach()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        Assert.NotNull(GetHandler(comp));
+        entity.RemoveComponent<RecordingOverlay>();
         Assert.Null(GetHandler(comp));
     }
 }
