@@ -1,11 +1,11 @@
 # Sprint 4 — Playground Behavior Components 🎛️
 
-**Points:** 5 | **Status:** In Progress (Batch A done) | **Goal:** Move every piece of per-scene runtime behavior into components so scenes can be pure data.
+**Points:** 5 | **Status:** In Progress (Batches A+B done) | **Goal:** Move every piece of per-scene runtime behavior into components so scenes can be pure data.
 
 ## Batches (work pace: batch by scene, commit between groups)
 
 - [x] **Batch A — Character set:** `NavigateOnKeyComponent`, `SoundKeyComponent`, `VolumeKeyComponent`, `DebugToggleComponent`, `MusicComponent` + tests
-- [ ] **Batch B — Camera/Ping set:** `CameraInputComponent`, `PingControlComponent` + tests
+- [x] **Batch B — Camera/Ping set:** `CameraInputComponent`, `PingControlComponent` + tests
 - [ ] **Batch C — Physics set:** `PhysicsSpawnComponent`, `SaveLoadButtonsComponent`, `PhysicsDebugOverlayComponent` + tests
 
 ## Why This Sprint
@@ -34,8 +34,8 @@ Each component subscribes to `Input.Keyboard.KeyReleased` in `OnAttach` and unsu
 - [x] T2 ⭐ `SoundKeyComponent` / `VolumeKeyComponent` — key → play one-shot asset / set master volume
 - [x] T3 ⭐ `DebugToggleComponent` — key → toggle `EntitySystem.DebugMode` (+ optional config flags)
 - [x] T4 ⭐ `MusicComponent` — start an audio asset on attach; pause/resume on application focus change
-- [ ] T5 ⭐ `CameraInputComponent` — WASD/QE/R driving a built-in `CameraComponent` (speed + zoom sensitivity props)
-- [ ] T6 ⭐ `PingControlComponent` — Space/P/B/D demo commands (broadcast, prefab spawn, typed spawn, destroy-last)
+- [x] T5 ⭐ `CameraInputComponent` — WASD/QE/R driving a built-in `CameraComponent` (speed + zoom sensitivity props)
+- [x] T6 ⭐ `PingControlComponent` — Space/P/B/D demo commands (broadcast, prefab spawn, typed spawn, destroy-last)
 - [ ] T7 ⭐ `PhysicsSpawnComponent` — declarative random/VIP ball spawning with collision filters + impulses; optional world border
 - [ ] T8 ⭐ `SaveLoadButtonsComponent` — save/load GUI buttons wired to the entity system's save/load
 - [ ] T9 ⭐ `PhysicsDebugOverlayComponent` — F1 toggle + physics debug draw overlay
@@ -52,6 +52,8 @@ Each component subscribes to `Input.Keyboard.KeyReleased` in `OnAttach` and unsu
 - **MusicComponent pause plumbing (Batch A decision):** `Entity.OnApplicationPause(bool)` was an empty virtual that did *not* forward to components, so a data-driven music component had no way to hear focus changes. Added a general `OnApplicationPause` virtual to `EntityComponent` and made `Entity.OnApplicationPause` forward it to every attached component. This is lifecycle plumbing (not a new built-in component), so it fits the architecture and is required for any focus-reactive component. Music starts on attach, stops on detach (scene unload → `Entity.OnDestroy` detaches components), and pauses/resumes via the forwarded call.
 - **Testability seams:** each key-driven component exposes a public `HandleKey(Keys)` (invoked by its `KeyReleased` subscription) and routes its external side effect through a small `protected virtual` seam (`LoadScene`, `PlaySound`, `SetVolume`, `ApplyDebugConfig`, `PlayMusic/Pause/Resume/Stop`). Tests use recording subclasses to capture the requested value without real audio/scene transitions, and assert subscribe/unsubscribe by reading the private `_onKeyReleased` field (walking the type hierarchy — reflection does not inherit fields).
 - **Test project now references the Playground:** `CoreEssentials.Tests.csproj` gained a `ProjectReference` to `CoreEssentials.Playground` so playground components are unit-testable. CoreEssentials marks its DesktopGL MonoGame package `PrivateAssets="All"`, so no transitive assembly conflict with the Playground's WindowsDX flavor — builds clean.
+- **CameraInputComponent (Batch B):** input-only layer over the built-in `CameraComponent` on the same entity — WASD pans the owner (the camera follows via the component's late-update sync), Q/E zoom, R resets. All keys + speeds are declarative props. `IsKeyHeld(Keys)` is a virtual seam so tests simulate input; pan/reset logic runs for real in tests (no camera → position-only assertions).
+- **PingControlComponent (Batch B):** single-entity driver for the SendMessage demo commands (broadcast / prefab spawn / typed spawn / destroy-last), tracking the last-spawned entity. Each command is a virtual seam (`Broadcast`, `SpawnPrefab`, `SpawnTyped`, `DestroyLast`) so tests observe without loading demo assets. Key dispatch compares against configurable keys (not hardcoded case labels).
 - **Playground, not Core:** these are demo behaviors. If one proves general later it can be promoted to `Components/BuiltIn` in a separate change.
 - **Key enum as XML property:** components take keys as strings (e.g. `"Q"`) and parse via `Enum.Parse<Keys>` so they're settable from flat attributes / `<Properties>`.
 - **PhysicsSpawn is the biggest piece** — it must reproduce random positions, per-ball collision filters resolved from `PhysicsConfig`, and impulses declaratively.

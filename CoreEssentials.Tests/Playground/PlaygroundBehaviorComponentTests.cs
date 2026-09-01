@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -6,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using Xunit;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.Inputs;
 using CoreEssentials.Playground;
 
@@ -72,6 +74,30 @@ public class PlaygroundBehaviorComponentTests
         protected override void ResumeMusic(string soundId) => ResumedId = soundId;
         protected override void StopMusic(string soundId) => StoppedId = soundId;
     }
+
+    private class RecordingCameraInput : CameraInputComponent
+    {
+        public HashSet<Keys> Held = new();
+        // Real Update/ResetCamera run (no camera component → pan + position reset are observable).
+        protected override bool IsKeyHeld(Keys key) => Held.Contains(key);
+    }
+
+    private class RecordingPing : PingControlComponent
+    {
+        public int Broadcasts;
+        public string? BroadcastMessage;
+        public Vector2? PrefabPosition;
+        public string? PrefabUsed;
+        public Vector2? TypedPosition;
+        public int Destroys;
+        protected override int Broadcast() { Broadcasts++; BroadcastMessage = MessageName; return 1; }
+        protected override Entity? SpawnPrefab(Vector2 position) { PrefabPosition = position; PrefabUsed = PrefabName; return null; }
+        protected override Entity? SpawnTyped(Vector2 position) { TypedPosition = position; return null; }
+        protected override void DestroyLast() => Destroys++;
+    }
+
+    /// <summary>A GameTime with 1 second elapsed (the component reads ElapsedGameTime).</summary>
+    private static GameTime OneSecond() => new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
     /// <summary>
     /// Reads a component's private key-release handler field to verify subscribe/unsubscribe wiring.
@@ -302,5 +328,168 @@ public class PlaygroundBehaviorComponentTests
             Assert.Null(comp.PausedId);
         }
         finally { entity.RemoveComponent<RecordingMusic>(); }
+    }
+
+    // ── CameraInputComponent ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void Camera_PanKeys_MoveOwnerEntity()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingCameraInput)entity.AddComponent(new RecordingCameraInput());
+        try
+        {
+            comp.MoveSpeed = 100f;
+            var start = entity.Position;
+
+            // Hold Right → moves +X by MoveSpeed * dt.
+            comp.Held.Add(comp.RightKey);
+            comp.Update(OneSecond());
+            Assert.Equal(start + new Vector2(100f, 0f), entity.Position);
+
+            // Hold Up → moves -Y.
+            comp.Held.Clear();
+            comp.Held.Add(comp.UpKey);
+            var afterRight = entity.Position;
+            comp.Update(OneSecond());
+            Assert.Equal(afterRight + new Vector2(0f, -100f), entity.Position);
+
+            // No keys held → no movement.
+            comp.Held.Clear();
+            var stable = entity.Position;
+            comp.Update(OneSecond());
+            Assert.Equal(stable, entity.Position);
+        }
+        finally { entity.RemoveComponent<RecordingCameraInput>(); }
+    }
+
+    [Fact]
+    public void Camera_ResetKey_ResetsOwnerPosition()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingCameraInput)entity.AddComponent(new RecordingCameraInput());
+        try
+        {
+            entity.Position = new Vector2(50f, 60f);
+
+            // Wrong key → no reset.
+            comp.HandleKey(Keys.T);
+            Assert.Equal(new Vector2(50f, 60f), entity.Position);
+
+            // Reset key → position back to origin (no camera component present).
+            comp.HandleKey(comp.ResetKey);
+            Assert.Equal(Vector2.Zero, entity.Position);
+        }
+        finally { entity.RemoveComponent<RecordingCameraInput>(); }
+    }
+
+    [Fact]
+    public void Camera_SubscribesOnAttach_UnsubscribesOnDetach()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingCameraInput)entity.AddComponent(new RecordingCameraInput());
+        Assert.NotNull(GetHandler(comp));
+        entity.RemoveComponent<RecordingCameraInput>();
+        Assert.Null(GetHandler(comp));
+    }
+
+    // ── PingControlComponent ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void Ping_BroadcastKey_SendsConfiguredMessage()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        try
+        {
+            comp.MessageName = "OnPing";
+            comp.HandleKey(comp.BroadcastKey);
+
+            Assert.Equal(1, comp.Broadcasts);
+            Assert.Equal("OnPing", comp.BroadcastMessage);
+        }
+        finally { entity.RemoveComponent<RecordingPing>(); }
+    }
+
+    [Fact]
+    public void Ping_SpawnPrefabKey_SpawnsAtStaggeredPosition()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        try
+        {
+            comp.PrefabName = "PingPrefab";
+            comp.SpawnPosition = new Vector2(640, 450);
+
+            comp.HandleKey(comp.SpawnPrefabKey);
+            Assert.Equal("PingPrefab", comp.PrefabUsed);
+            // First spawn → offset (1 % 5) * 80 = 80.
+            Assert.Equal(new Vector2(720, 450), comp.PrefabPosition);
+
+            comp.HandleKey(comp.SpawnPrefabKey);
+            // Second spawn → offset (2 % 5) * 80 = 160.
+            Assert.Equal(new Vector2(800, 450), comp.PrefabPosition);
+        }
+        finally { entity.RemoveComponent<RecordingPing>(); }
+    }
+
+    [Fact]
+    public void Ping_SpawnTypedKey_SpawnsAtStaggeredPosition()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        try
+        {
+            comp.SpawnPosition = Vector2.Zero;
+            comp.HandleKey(comp.SpawnTypedKey);
+
+            // First spawn → offset (1 % 5) * 80 = 80.
+            Assert.Equal(new Vector2(80, 0), comp.TypedPosition);
+        }
+        finally { entity.RemoveComponent<RecordingPing>(); }
+    }
+
+    [Fact]
+    public void Ping_DestroyKey_TracksAndDestroys()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        try
+        {
+            // No spawn yet → destroy is a no-op but still routed.
+            comp.HandleKey(comp.DestroyLastKey);
+            Assert.Equal(1, comp.Destroys);
+
+            comp.HandleKey(comp.DestroyLastKey);
+            Assert.Equal(2, comp.Destroys);
+        }
+        finally { entity.RemoveComponent<RecordingPing>(); }
+    }
+
+    [Fact]
+    public void Ping_WrongKey_DoesNothing()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        try
+        {
+            comp.HandleKey(Keys.J);
+
+            Assert.Equal(0, comp.Broadcasts);
+            Assert.Null(comp.PrefabPosition);
+            Assert.Null(comp.TypedPosition);
+            Assert.Equal(0, comp.Destroys);
+        }
+        finally { entity.RemoveComponent<RecordingPing>(); }
+    }
+
+    [Fact]
+    public void Ping_SubscribesOnAttach_UnsubscribesOnDetach()
+    {
+        var entity = new TestEntity();
+        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        Assert.NotNull(GetHandler(comp));
+        entity.RemoveComponent<RecordingPing>();
+        Assert.Null(GetHandler(comp));
     }
 }
