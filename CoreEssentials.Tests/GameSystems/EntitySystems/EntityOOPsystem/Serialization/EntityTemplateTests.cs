@@ -31,7 +31,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 </EntityTemplate>";
 
             // Act
-            var template = EntityTemplateLoader.LoadFromXml(xml);
+            var template = EntityPrefabLoader.LoadFromXml(xml);
 
             // Assert
             Assert.Equal("TestEntity", template.Type);
@@ -53,7 +53,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             string xml = @"<EntityTemplate Rotation=""45"" />";
 
             // Act & Assert
-            Assert.Throws<FormatException>(() => EntityTemplateLoader.LoadFromXml(xml));
+            Assert.Throws<FormatException>(() => EntityPrefabLoader.LoadFromXml(xml));
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             string xml = @"<WrongRoot Type=""TestEntity"" />";
 
             // Act & Assert
-            Assert.Throws<FormatException>(() => EntityTemplateLoader.LoadFromXml(xml));
+            Assert.Throws<FormatException>(() => EntityPrefabLoader.LoadFromXml(xml));
         }
 
         [Fact]
@@ -77,7 +77,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             try
             {
                 // Act
-                var template = EntityTemplateLoader.LoadFromFile(tempFile);
+                var template = EntityPrefabLoader.LoadFromFile(tempFile);
 
                 // Assert
                 Assert.Equal("TestEntity", template.Type);
@@ -93,7 +93,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Act & Assert
             Assert.Throws<FileNotFoundException>(() => 
-                EntityTemplateLoader.LoadFromFile("nonexistent.xml"));
+                EntityPrefabLoader.LoadFromFile("nonexistent.xml"));
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var entitySystem = new EntitySystem();
             
             // Mock AssetManager - we'll test with direct loader instead
-            var prefab = EntityTemplateLoader.LoadFromXml(@"<EntityTemplate Type=""TestEntity"" />");
+            var prefab = EntityPrefabLoader.LoadFromXml(@"<EntityTemplate Type=""TestEntity"" />");
             
             // Act
             entitySystem.RegisterPrefab("TestPrefab", prefab);
@@ -243,7 +243,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 </EntityTemplate>";
 
             // Act
-            var template = EntityTemplateLoader.LoadFromXml(xml);
+            var template = EntityPrefabLoader.LoadFromXml(xml);
 
             // Assert
             Assert.Equal("ParentEntity", template.Type);
@@ -259,7 +259,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             string xml = @"<EntityTemplate Type=""TestEntity"" />";
 
             // Act
-            var template = EntityTemplateLoader.LoadFromXml(xml);
+            var template = EntityPrefabLoader.LoadFromXml(xml);
 
             // Assert
             Assert.Equal("TestEntity", template.Type);

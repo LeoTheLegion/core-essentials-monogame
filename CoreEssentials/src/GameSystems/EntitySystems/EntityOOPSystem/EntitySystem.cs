@@ -928,13 +928,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Prefab name cannot be empty.", nameof(name));
         if (string.IsNullOrWhiteSpace(assetName)) throw new ArgumentException("Asset name cannot be empty.", nameof(assetName));
 
-        var prefab = Serialization.EntityTemplateLoader.LoadFromAsset(assetName);
+        var prefab = Serialization.EntityPrefabLoader.LoadFromAsset(assetName);
         RegisterPrefab(name, prefab);
     }
 
     /// <summary>
     /// Registers an already-constructed prefab under the given name (e.g. one parsed with
-    /// <see cref="Serialization.EntityTemplateLoader.LoadFromXml"/>).
+    /// <see cref="Serialization.EntityPrefabLoader.LoadFromXml"/>).
     /// Re-registering the same name replaces the previous definition and logs a warning.
     /// </summary>
     /// <param name="name">The name to instantiate the prefab by.</param>
@@ -959,7 +959,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
     /// <summary>
     /// Registers an already-constructed template under the given name (e.g. one parsed with
-    /// <see cref="Serialization.EntityTemplateLoader.LoadFromXml"/>).
+    /// <see cref="Serialization.EntityPrefabLoader.LoadFromXml"/>).
     /// </summary>
     /// <param name="name">The name to instantiate the template by.</param>
     /// <param name="template">The template to register.</param>
@@ -1036,7 +1036,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             throw new KeyNotFoundException($"Prefab '{prefabName}' is not registered.");
 
         var effective = Serialization.PrefabOverrides.Apply(prefab, overrides);
-        return Serialization.EntityTemplateLoader.Instantiate(effective, this, position);
+        return Serialization.EntityPrefabLoader.Instantiate(effective, this, position);
     }
 
     /// <summary>

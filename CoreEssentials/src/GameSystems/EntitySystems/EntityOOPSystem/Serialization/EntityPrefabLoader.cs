@@ -14,7 +14,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization
 /// <summary>
 /// Logic for parsing EntityTemplates from XML and instantiating them into Entities.
 /// </summary>
-public static class EntityTemplateLoader
+public static class EntityPrefabLoader
 {
     /// <summary>
     /// Loads a prefab from an XML asset.
@@ -376,6 +376,34 @@ public static class EntityTemplateLoader
                 property.SetValue(component, value);
             }
         }
+    }
+
+    /// <summary>
+    /// Resolves an entity type name (short or fully-qualified) across loaded assemblies.
+    /// Public so the scene parser can validate &lt;EntityDefinition Type=&gt; at parse time.
+    /// </summary>
+    public static Type? ResolveEntityType(string typeName)
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            try
+            {
+                var foundType = assembly.GetType(typeName);
+                if (foundType != null && typeof(Entity).IsAssignableFrom(foundType))
+                    return foundType;
+
+                var candidates = assembly.GetTypes()
+                    .Where(t => t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase) && typeof(Entity).IsAssignableFrom(t));
+                var type = candidates.FirstOrDefault();
+                if (type != null) return type;
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine($"[Template] Failed to load types from assembly: {ex.Message}");
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

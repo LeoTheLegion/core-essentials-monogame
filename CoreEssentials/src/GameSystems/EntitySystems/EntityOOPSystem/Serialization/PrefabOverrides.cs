@@ -32,7 +32,7 @@ public static class PrefabOverrides
 
         foreach (var (componentKey, properties) in overrides)
         {
-            Type? resolvedType = EntityTemplateLoader.ResolveComponentType(componentKey);
+            Type? resolvedType = EntityPrefabLoader.ResolveComponentType(componentKey);
             if (resolvedType == null)
                 throw new FormatException($"Prefab override references unresolvable component type '{componentKey}'.");
 
