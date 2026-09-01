@@ -1,6 +1,8 @@
 # Sprint 3 — Migration, Docs & Release 📦
 
-**Points:** 2 | **Status:** Not Started | **Goal:** Migrate all content to the new format + docs + version bump.
+> ⚠️ **SUPERSEDED (2026-09-01):** this single sprint was too large once the scope grew to "port all scene behavior into components" and "remove the old load path." It is split into Sprints 3–7 (see [README](README.md)). This file is kept for reference only — do not work from it.
+
+**Points:** 2 | **Status:** ❌ Superseded by Sprints 3–7 | **Goal:** Migrate all content to the new format + docs + version bump.
 
 ## Tasks
 

@@ -19,13 +19,19 @@ Breaking changes are accepted — early library. No backwards-compatibility shim
 | 0 | [Prefab Registration & Overrides](Sprint_0_Prefab_Registration_And_Overrides.md) | 5 | ✅ Done | `RegisterPrefab`/`HasPrefab`/lazy `InstantiateFromAsset`, override-merge core + C# overrides overload |
 | 1 | [Scene Format Parser](Sprint_1_Scene_Format_Parser.md) | 5 | ✅ Done | Strict `<Scene>` parser: systems, prefabs, entities, flat + precise overrides |
 | 2 | [DataDrivenScene & Loading Screen](Sprint_2_DataDrivenScene_And_Loading_Screen.md) | 5 | ✅ Done (2026-08-31) | `DataDrivenScene`, `LoadScene(string)`/`SetLoadingScene(string)`, loading screen as data |
-| 3 | [Migration, Docs & Release](Sprint_3_Migration_Docs_Release.md) | 2 | Not Started | Migrate all playground XML to new format, docs, version bump |
+| 3 | [Prefab Format Rename & Content Migration](Sprint_3_Prefab_Format_Rename_And_Content_Migration.md) | 2 | ✅ Done (2026-09-01) | `<EntityTemplate>`→`<Prefab>` root; migrate content + fixtures |
+| 4 | [Playground Behavior Components](Sprint_4_Playground_Behavior_Components.md) | 5 | Not Started | Move per-scene runtime behavior (keys/audio/debug/camera/physics) into components |
+| 5 | [Migrate Playground Scenes Data-Driven](Sprint_5_Migrate_Playground_Scenes_DataDriven.md) | 5 | Not Started | All demo scenes run from XML; `Program.cs` boots from files; delete scene subclasses |
+| 6 | [Remove Old Scene-Load Path](Sprint_6_Remove_Old_Scene_Load_Path.md) | 2 | Not Started | Delete legacy flat-`<Scene>` load path (breaking); one XML→scene path remains |
+| 7 | [Docs, Version & Release](Sprint_7_Docs_Version_Release.md) | 2 | Not Started | `Prefabs.md` + `SceneAsData.md`, version 0.20.0, PR to `development` |
+
+> Sprints 3–7 supersede the original single "Migration, Docs & Release" sprint (see [Sprint_3_Migration_Docs_Release.md](Sprint_3_Migration_Docs_Release.md), kept for reference only).
 
 ## Point Summary
 
-- Total: 17 points (4 sprints)
+- Total: 28 points (8 sprints)
 - Sizing: 1 = small, 2 = medium, 5 = large
 
 ## Workflow Phases
 
-Foundation (Sprint 0) → Core Implementation (Sprints 1–2) → Migration & Quality Gate (Sprint 3)
+Foundation (Sprint 0) → Core Implementation (Sprints 1–2) → Format Lock (Sprint 3) → Behavior as Components (Sprint 4) → Migration (Sprint 5) → Cleanup & Quality Gate (Sprints 6–7)
