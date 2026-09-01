@@ -123,6 +123,17 @@ public abstract class EntityComponent
     }
 
     /// <summary>
+    /// Called app-wide when the application loses or regains focus, forwarded automatically
+    /// from the owning entity (see <see cref="Entity.OnApplicationPause"/>). Override to
+    /// pause or resume component-specific behavior (e.g. background audio) when the game is
+    /// backgrounded.
+    /// </summary>
+    /// <param name="paused">True when the application is being paused, false when resuming.</param>
+    public virtual void OnApplicationPause(bool paused)
+    {
+    }
+
+    /// <summary>
     /// Called every frame while the component is attached to an active entity.
     /// Override to implement per-frame update logic.
     /// </summary>

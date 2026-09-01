@@ -1,6 +1,12 @@
 # Sprint 4 — Playground Behavior Components 🎛️
 
-**Points:** 5 | **Status:** Not Started | **Goal:** Move every piece of per-scene runtime behavior into components so scenes can be pure data.
+**Points:** 5 | **Status:** In Progress (Batch A done) | **Goal:** Move every piece of per-scene runtime behavior into components so scenes can be pure data.
+
+## Batches (work pace: batch by scene, commit between groups)
+
+- [x] **Batch A — Character set:** `NavigateOnKeyComponent`, `SoundKeyComponent`, `VolumeKeyComponent`, `DebugToggleComponent`, `MusicComponent` + tests
+- [ ] **Batch B — Camera/Ping set:** `CameraInputComponent`, `PingControlComponent` + tests
+- [ ] **Batch C — Physics set:** `PhysicsSpawnComponent`, `SaveLoadButtonsComponent`, `PhysicsDebugOverlayComponent` + tests
 
 ## Why This Sprint
 
@@ -11,7 +17,7 @@ The strict scene format expresses *structure* (entities, components, properties,
 | Current home | Behavior | New component (playground) |
 |---|---|---|
 | `CharacterScene` | Q/W/E play sound; Z/X set master volume | `SoundKeyComponent`, `VolumeKeyComponent` |
-| `CharacterScene` | M/Add navigate to other scenes | `NavigateOnKeyComponent` (key → scene type) |
+| `CharacterScene` | M/Add navigate to other scenes | `NavigateOnKeyComponent` (key → scene asset-name string) |
 | `CharacterScene` | F3 toggle entity debug mode + config | `DebugToggleComponent` |
 | `CharacterScene` | background music start + pause-on-focus | `MusicComponent` (asset, auto-pause on app focus loss) |
 | `GuiAnchorDemo` / `CameraScene` / `LabelAlignmentDemo` | WASD pan, Q/E zoom, R reset camera | `CameraInputComponent` (wraps the built-in `CameraComponent`) |
@@ -24,10 +30,10 @@ Each component subscribes to `Input.Keyboard.KeyReleased` in `OnAttach` and unsu
 
 ## Tasks
 
-- [ ] T1 ⭐ `NavigateOnKeyComponent` — key → `Type targetScene`; instantiates + `SceneManager.LoadScene`
-- [ ] T2 ⭐ `SoundKeyComponent` / `VolumeKeyComponent` — key → play one-shot asset / set master volume
-- [ ] T3 ⭐ `DebugToggleComponent` — key → toggle `EntitySystem.DebugMode` (+ optional config flags)
-- [ ] T4 ⭐ `MusicComponent` — start an audio asset on attach; pause/resume on application focus change
+- [x] T1 ⭐ `NavigateOnKeyComponent` — key → scene asset-name string; `SceneManager.LoadScene(string)`
+- [x] T2 ⭐ `SoundKeyComponent` / `VolumeKeyComponent` — key → play one-shot asset / set master volume
+- [x] T3 ⭐ `DebugToggleComponent` — key → toggle `EntitySystem.DebugMode` (+ optional config flags)
+- [x] T4 ⭐ `MusicComponent` — start an audio asset on attach; pause/resume on application focus change
 - [ ] T5 ⭐ `CameraInputComponent` — WASD/QE/R driving a built-in `CameraComponent` (speed + zoom sensitivity props)
 - [ ] T6 ⭐ `PingControlComponent` — Space/P/B/D demo commands (broadcast, prefab spawn, typed spawn, destroy-last)
 - [ ] T7 ⭐ `PhysicsSpawnComponent` — declarative random/VIP ball spawning with collision filters + impulses; optional world border
@@ -43,6 +49,9 @@ Each component subscribes to `Input.Keyboard.KeyReleased` in `OnAttach` and unsu
 
 ## Notes & Risks
 
+- **MusicComponent pause plumbing (Batch A decision):** `Entity.OnApplicationPause(bool)` was an empty virtual that did *not* forward to components, so a data-driven music component had no way to hear focus changes. Added a general `OnApplicationPause` virtual to `EntityComponent` and made `Entity.OnApplicationPause` forward it to every attached component. This is lifecycle plumbing (not a new built-in component), so it fits the architecture and is required for any focus-reactive component. Music starts on attach, stops on detach (scene unload → `Entity.OnDestroy` detaches components), and pauses/resumes via the forwarded call.
+- **Testability seams:** each key-driven component exposes a public `HandleKey(Keys)` (invoked by its `KeyReleased` subscription) and routes its external side effect through a small `protected virtual` seam (`LoadScene`, `PlaySound`, `SetVolume`, `ApplyDebugConfig`, `PlayMusic/Pause/Resume/Stop`). Tests use recording subclasses to capture the requested value without real audio/scene transitions, and assert subscribe/unsubscribe by reading the private `_onKeyReleased` field (walking the type hierarchy — reflection does not inherit fields).
+- **Test project now references the Playground:** `CoreEssentials.Tests.csproj` gained a `ProjectReference` to `CoreEssentials.Playground` so playground components are unit-testable. CoreEssentials marks its DesktopGL MonoGame package `PrivateAssets="All"`, so no transitive assembly conflict with the Playground's WindowsDX flavor — builds clean.
 - **Playground, not Core:** these are demo behaviors. If one proves general later it can be promoted to `Components/BuiltIn` in a separate change.
 - **Key enum as XML property:** components take keys as strings (e.g. `"Q"`) and parse via `Enum.Parse<Keys>` so they're settable from flat attributes / `<Properties>`.
 - **PhysicsSpawn is the biggest piece** — it must reproduce random positions, per-ball collision filters resolved from `PhysicsConfig`, and impulses declaratively.

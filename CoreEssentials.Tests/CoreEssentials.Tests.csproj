@@ -28,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CoreEssentials\CoreEssentials.csproj" />
+    <ProjectReference Include="..\CoreEssentials.Playground\CoreEssentials.Playground.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="xunit.runner.json">

@@ -451,6 +451,10 @@ public abstract class Entity
     /// <param name="paused">True when the application is being paused, false when resuming.</param>
     public virtual void OnApplicationPause(bool paused)
     {
+        foreach (var component in _components.Values)
+        {
+            component.OnApplicationPause(paused);
+        }
     }
 
     /// <summary>
