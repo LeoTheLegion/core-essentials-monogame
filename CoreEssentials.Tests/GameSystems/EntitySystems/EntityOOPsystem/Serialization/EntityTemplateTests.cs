@@ -15,7 +15,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange
             string xml = @"
-                <EntityTemplate Type=""TestEntity"" Rotation=""45"" Sort=""5"" Active=""true"">
+                <Prefab Type=""TestEntity"" Rotation=""45"" Sort=""5"" Active=""true"">
                     <Tags>
                         <Tag Name=""enemy"" />
                         <Tag Name=""flying"" />
@@ -28,7 +28,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                             </Properties>
                         </Component>
                     </Components>
-                </EntityTemplate>";
+                </Prefab>";
 
             // Act
             var template = EntityPrefabLoader.LoadFromXml(xml);
@@ -50,7 +50,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         public void LoadFromXml_ThrowsOnMissingType()
         {
             // Arrange
-            string xml = @"<EntityTemplate Rotation=""45"" />";
+            string xml = @"<Prefab Rotation=""45"" />";
 
             // Act & Assert
             Assert.Throws<FormatException>(() => EntityPrefabLoader.LoadFromXml(xml));
@@ -71,7 +71,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange
             string tempFile = Path.GetTempFileName();
-            string xml = @"<EntityTemplate Type=""TestEntity"" />";
+            string xml = @"<Prefab Type=""TestEntity"" />";
             File.WriteAllText(tempFile, xml);
 
             try
@@ -103,7 +103,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var entitySystem = new EntitySystem();
             
             // Mock AssetManager - we'll test with direct loader instead
-            var prefab = EntityPrefabLoader.LoadFromXml(@"<EntityTemplate Type=""TestEntity"" />");
+            var prefab = EntityPrefabLoader.LoadFromXml(@"<Prefab Type=""TestEntity"" />");
             
             // Act
             entitySystem.RegisterPrefab("TestPrefab", prefab);
@@ -236,11 +236,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange
             string xml = @"
-                <EntityTemplate Type=""ParentEntity"">
+                <Prefab Type=""ParentEntity"">
                     <Children>
-                        <EntityTemplate Type=""ChildEntity"" Rotation=""30"" />
+                        <Prefab Type=""ChildEntity"" Rotation=""30"" />
                     </Children>
-                </EntityTemplate>";
+                </Prefab>";
 
             // Act
             var template = EntityPrefabLoader.LoadFromXml(xml);
@@ -256,7 +256,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         public void LoadFromXml_HandlesMissingOptionalElements()
         {
             // Arrange
-            string xml = @"<EntityTemplate Type=""TestEntity"" />";
+            string xml = @"<Prefab Type=""TestEntity"" />";
 
             // Act
             var template = EntityPrefabLoader.LoadFromXml(xml);

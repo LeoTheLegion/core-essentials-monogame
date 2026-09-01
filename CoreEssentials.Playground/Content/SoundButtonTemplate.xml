@@ -1,6 +1,6 @@
-<EntityTemplate Type="CoreEssentials.Playground.SoundButtonEntity" Rotation="0" Sort="100" Active="true">
+<Prefab Type="CoreEssentials.Playground.SoundButtonEntity" Rotation="0" Sort="100" Active="true">
     <Tags>
         <Tag Name="UI" />
         <Tag Name="Sound" />
     </Tags>
-</EntityTemplate>
+</Prefab>

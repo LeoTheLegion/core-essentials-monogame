@@ -922,7 +922,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// previous definition and logs a warning — registration is idempotent by design.
     /// </summary>
     /// <param name="name">The unique name to assign to this prefab.</param>
-    /// <param name="assetName">The name of the XML asset containing the <c>&lt;EntityTemplate&gt;</c> definition.</param>
+    /// <param name="assetName">The name of the XML asset containing the <c>&lt;Prefab&gt;</c> definition.</param>
     public void RegisterPrefab(string name, string assetName)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Prefab name cannot be empty.", nameof(name));
@@ -953,7 +953,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// Registers a prefab from an XML asset.
     /// </summary>
     /// <param name="name">The unique name to assign to this template.</param>
-    /// <param name="assetName">The name of the XML asset containing the <c>&lt;EntityTemplate&gt;</c> definition.</param>
+    /// <param name="assetName">The name of the XML asset containing the <c>&lt;Prefab&gt;</c> definition.</param>
     [Obsolete("Renamed to RegisterPrefab. Will be removed in a future release.")]
     public void RegisterTemplate(string name, string assetName) => RegisterPrefab(name, assetName);
 

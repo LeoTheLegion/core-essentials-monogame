@@ -18,13 +18,13 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange — a scene exercising every element of the locked schema
             const string prefabAsset = "SceneParserFullDocPrefab.xml";
-            WriteContentAsset(prefabAsset, @"<EntityTemplate Type=""ProbeEntity"">
+            WriteContentAsset(prefabAsset, @"<Prefab Type=""ProbeEntity"">
                 <Components>
                     <Component Type=""SingleMatchComponent"">
                         <Properties><Property Name=""Base"" Value=""default"" /></Properties>
                     </Component>
                 </Components>
-            </EntityTemplate>");
+            </Prefab>");
             AssetManager.Init(new MockContentManager());
 
             var xml = $@"<Scene>
@@ -170,12 +170,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange — two components both expose a writable 'Base' property
             const string prefabAsset = "SceneParserAmbiguityPrefab.xml";
-            WriteContentAsset(prefabAsset, @"<EntityTemplate Type=""ProbeEntity"">
+            WriteContentAsset(prefabAsset, @"<Prefab Type=""ProbeEntity"">
                 <Components>
                     <Component Type=""AmbiguityComponentA"" />
                     <Component Type=""AmbiguityComponentB"" />
                 </Components>
-            </EntityTemplate>");
+            </Prefab>");
             AssetManager.Init(new MockContentManager());
 
             var xml = $@"<Scene>
@@ -201,9 +201,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             // Arrange — the prefab's component has no writable 'Missing' property
             const string prefabAsset = "SceneParserNoMatchPrefab.xml";
-            WriteContentAsset(prefabAsset, @"<EntityTemplate Type=""ProbeEntity"">
+            WriteContentAsset(prefabAsset, @"<Prefab Type=""ProbeEntity"">
                 <Components><Component Type=""SingleMatchComponent"" /></Components>
-            </EntityTemplate>");
+            </Prefab>");
             AssetManager.Init(new MockContentManager());
 
             var xml = $@"<Scene>

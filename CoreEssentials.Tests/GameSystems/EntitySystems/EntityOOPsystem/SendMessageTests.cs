@@ -275,9 +275,9 @@ public class SendMessageTests : IDisposable
     public void Template_BindElement_WiresCommandOnInstantiation()
     {
         _system.RegisterPrefab("signaler", CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityPrefabLoader.LoadFromXml(
-            @"<EntityTemplate Type=""SignalingEntity"">
+            @"<Prefab Type=""SignalingEntity"">
                 <Bind Event=""Signaled"" Command=""OnSignalReceived"" />
-            </EntityTemplate>"));
+            </Prefab>"));
 
         var entity = (SignalingEntity)_system.Instantiate("signaler", Vector2.Zero);
 
@@ -290,11 +290,11 @@ public class SendMessageTests : IDisposable
     public void Template_BindElement_WiresEachInstantiationIndependently()
     {
         _system.RegisterPrefab("signaler", CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityPrefabLoader.LoadFromXml(
-            @"<EntityTemplate Type=""SignalingEntity"">
+            @"<Prefab Type=""SignalingEntity"">
                 <Components>
                     <Bind Event=""Signaled"" Command=""OnSignalReceived"" />
                 </Components>
-            </EntityTemplate>"));
+            </Prefab>"));
 
         var first = (SignalingEntity)_system.Instantiate("signaler", Vector2.Zero);
         var second = (SignalingEntity)_system.Instantiate("signaler", Vector2.Zero);

@@ -41,11 +41,11 @@ namespace CoreEssentials.Tests.SceneManagement
         public void DataDrivenScene_Loads_SystemsThenPrefabsThenEntities()
         {
             // Arrange — one entity system, one prefab registration, two entities
-            WriteContentAsset("DataDrivenLoadOrderProbe.xml", @"<EntityTemplate Type=""DDSEntity"">
+            WriteContentAsset("DataDrivenLoadOrderProbe.xml", @"<Prefab Type=""DDSEntity"">
                 <Components>
                     <Component Type=""DDSComponent"" />
                 </Components>
-            </EntityTemplate>");
+            </Prefab>");
 
             var xml = @"<Scene>
   <GameSystems>

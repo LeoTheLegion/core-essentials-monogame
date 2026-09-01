@@ -18,7 +18,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         public void InstantiateFromAsset_AutoRegistersOnFirstUse()
         {
             // Arrange
-            WriteContentAsset(AssetName, @"<EntityTemplate Type=""LazyProbeEntity"" />");
+            WriteContentAsset(AssetName, @"<Prefab Type=""LazyProbeEntity"" />");
             AssetManager.Init(new MockContentManager());
 
             // Act — zero explicit registration calls
@@ -40,7 +40,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         public void InstantiateFromAsset_WithNullOverrides_BehavesLikePlainInstantiate()
         {
             // Arrange
-            WriteContentAsset(AssetName, @"<EntityTemplate Type=""LazyProbeEntity"" />");
+            WriteContentAsset(AssetName, @"<Prefab Type=""LazyProbeEntity"" />");
             AssetManager.Init(new MockContentManager());
 
             // Act — explicit null overrides exercises the 3-arg overload end-to-end
@@ -58,7 +58,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var explicitPrefab = new Prefab { Type = "ExplicitHostEntity", Sort = 7 };
             _system.RegisterPrefab("ExplicitHost", explicitPrefab);
 
-            WriteContentAsset("ExplicitHost.xml", @"<EntityTemplate Type=""LazyProbeEntity"" />");
+            WriteContentAsset("ExplicitHost.xml", @"<Prefab Type=""LazyProbeEntity"" />");
             AssetManager.Init(new MockContentManager());
 
             // Act

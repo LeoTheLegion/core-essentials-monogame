@@ -12,7 +12,7 @@ using System.Reflection;
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
 /// <summary>
-/// Logic for parsing EntityTemplates from XML and instantiating them into Entities.
+/// Logic for parsing prefabs from XML and instantiating them into Entities.
 /// </summary>
 public static class EntityPrefabLoader
 {
@@ -42,19 +42,19 @@ public static class EntityPrefabLoader
 
     /// <summary>
     /// Parses a prefab from an XML string.
-    /// Expects a root element named <c>EntityTemplate</c> (the file format rename to <c>Prefab</c> ships with the scene-as-data work).
+    /// Expects a root element named <c>Prefab</c>.
     /// </summary>
     public static Prefab LoadFromXml(string xmlData)
     {
         var doc = XDocument.Parse(xmlData);
         var root = doc.Root;
 
-        if (root == null || !string.Equals(root.Name.LocalName, "EntityTemplate", StringComparison.OrdinalIgnoreCase))
-            throw new FormatException("Root element must be 'EntityTemplate'.");
+        if (root == null || !string.Equals(root.Name.LocalName, "Prefab", StringComparison.OrdinalIgnoreCase))
+            throw new FormatException("Root element must be 'Prefab'.");
 
         var template = new Prefab
         {
-            Type = root.Attribute("Type")?.Value ?? throw new FormatException("EntityTemplate missing required 'Type' attribute."),
+            Type = root.Attribute("Type")?.Value ?? throw new FormatException("Prefab missing required 'Type' attribute."),
             Rotation = float.Parse(root.Attribute("Rotation")?.Value ?? "0", NumberStyles.Any, CultureInfo.InvariantCulture),
             Sort = int.Parse(root.Attribute("Sort")?.Value ?? "0"),
             Active = bool.Parse(root.Attribute("Active")?.Value ?? "true")
@@ -72,7 +72,7 @@ public static class EntityPrefabLoader
     {
         var template = new Prefab
         {
-            Type = element.Attribute("Type")?.Value ?? throw new FormatException("Nested EntityTemplate missing 'Type' attribute."),
+            Type = element.Attribute("Type")?.Value ?? throw new FormatException("Nested Prefab missing 'Type' attribute."),
             Rotation = float.Parse(element.Attribute("Rotation")?.Value ?? "0", NumberStyles.Any, CultureInfo.InvariantCulture),
             Sort = int.Parse(element.Attribute("Sort")?.Value ?? "0"),
             Active = bool.Parse(element.Attribute("Active")?.Value ?? "true")
@@ -170,7 +170,7 @@ public static class EntityPrefabLoader
         if (childrenElement == null)
             return;
 
-        foreach (var childElem in childrenElement.Elements("EntityTemplate"))
+        foreach (var childElem in childrenElement.Elements("Prefab"))
         {
             template.Children.Add(ParseTemplateElement(childElem));
         }
@@ -201,7 +201,7 @@ public static class EntityPrefabLoader
         {
             // Clone the binds into a fresh wrapper element so repeated instantiation of the
             // same template never mutates the stored elements.
-            var wrapper = new XElement("EntityTemplate");
+            var wrapper = new XElement("Prefab");
             foreach (var bind in template.Binds)
                 wrapper.Add(new XElement(bind)); // deep copy — repeated instantiation must not mutate the stored binds
 

@@ -1,4 +1,4 @@
-<EntityTemplate Type="GameObjectEntity" Rotation="0" Sort="100" Active="true">
+<Prefab Type="GameObjectEntity" Rotation="0" Sort="100" Active="true">
     <Components>
         <Component Type="PingReceiverComponent">
             <Properties>
@@ -8,4 +8,4 @@
     </Components>
     <!-- Declarative bind: each instantiation wires the component's Spawned event to OnSpawned. -->
     <Bind Event="Spawned" Command="OnSpawned" />
-</EntityTemplate>
+</Prefab>
