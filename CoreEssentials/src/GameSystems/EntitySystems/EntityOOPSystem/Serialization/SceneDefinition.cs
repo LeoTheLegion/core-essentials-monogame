@@ -69,14 +69,14 @@ public class EntityDefinition
     /// <summary>Initial position. Defaults to (0, 0).</summary>
     public Microsoft.Xna.Framework.Vector2 Position { get; set; }
 
-    /// <summary>Initial rotation in degrees. Defaults to 0.</summary>
-    public float Rotation { get; init; }
+    /// <summary>Initial rotation in degrees. Null when the attribute is absent.</summary>
+    public float? Rotation { get; init; }
 
-    /// <summary>Render sort order. Defaults to 0.</summary>
-    public int Sort { get; init; }
+    /// <summary>Render sort order. Null when the attribute is absent.</summary>
+    public int? Sort { get; init; }
 
-    /// <summary>Whether the entity starts active. Defaults to true.</summary>
-    public bool Active { get; init; } = true;
+    /// <summary>Whether the entity starts active. Null when the attribute is absent.</summary>
+    public bool? Active { get; init; }
 
     /// <summary>Tags applied to the entity after creation.</summary>
     public List<string> Tags { get; } = new();
@@ -98,8 +98,9 @@ public class EntityDefinition
     /// <summary>Nested entity definitions from a &lt;Children&gt; element.</summary>
     public List<EntityDefinition> Children { get; } = new();
 
-    /// <summary>Component type names declared in this definition's &lt;Components&gt; element (in document order).</summary>
-    public List<string> DeclaredComponentTypes { get; } = new();
+    /// <summary>Full component definitions (type + properties) declared in this definition's
+    /// &lt;Components&gt; element, in document order. Only present for plain-class (Type=) definitions.</summary>
+    public List<Prefab.ComponentDefinition> DeclaredComponents { get; } = new();
 
     /// <summary>Declarative &lt;Bind&gt; elements applied to the entity after its components attach.</summary>
     public List<XElement> Binds { get; } = new();

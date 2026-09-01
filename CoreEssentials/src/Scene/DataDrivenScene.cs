@@ -1,0 +1,249 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Xml.Linq;
+using CoreEssentials.GameSystems;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+
+namespace CoreEssentials.Scenes;
+
+/// <summary>
+/// A scene that runs entirely from a parsed <see cref="SceneDefinition"/> — no C# subclass needed.
+/// Game systems are reflected from the definition, prefab registrations are applied to each entity
+/// system (idempotently), and entities — including nested children, per-instance overrides,
+/// declarative binds, and cross-entity references — are instantiated during the scene's start phase.
+/// </summary>
+public class DataDrivenScene : Scene
+{
+    private readonly SceneDefinition _definition;
+    private GameSystem[] _systems = Array.Empty<GameSystem>();
+
+    /// <summary>The parsed definition this scene was created from.</summary>
+    public SceneDefinition Definition => _definition;
+
+    /// <summary>Creates a data-driven scene from a parsed definition (see <see cref="SceneParser"/>).</summary>
+    /// <exception cref="InvalidOperationException">Thrown when a system that is not an
+    /// <see cref="EntitySystem"/> declares prefabs or entities — content can only live inside
+    /// <c>&lt;System Type="EntitySystem"&gt;</c>.</exception>
+    public DataDrivenScene(SceneDefinition definition)
+    {
+        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+
+        foreach (var systemDef in definition.Systems)
+        {
+            if ((systemDef.Prefabs.Count > 0 || systemDef.Entities.Count > 0) && systemDef.SystemType != typeof(EntitySystem))
+                throw new InvalidOperationException(
+                    $"System '{systemDef.TypeName}' declares prefabs or entities but is not an EntitySystem — " +
+                    "content can only live inside <System Type=\"EntitySystem\">.");
+        }
+    }
+
+    /// <summary>Reflectively instantiates every system declared by the definition, in document order.</summary>
+    protected override GameSystem[] LoadGameSystems()
+    {
+        var defs = _definition.Systems;
+        _systems = new GameSystem[defs.Count];
+        for (int i = 0; i < defs.Count; i++)
+        {
+            var type = defs[i].SystemType;
+            object? instance;
+            try
+            {
+                instance = Activator.CreateInstance(type);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Could not create game system '{type.Name}' from the scene definition — it needs a public parameterless constructor.", ex);
+            }
+            _systems[i] = (GameSystem)instance!;
+        }
+        return _systems;
+    }
+
+    /// <summary>
+    /// Registers each entity system's prefabs, then instantiates its entities. Runs in the
+    /// 50%→100% loading phase after all systems have started.
+    /// </summary>
+    protected override IEnumerator OnStartCoroutine()
+    {
+        var defs = _definition.Systems;
+        for (int i = 0; i < defs.Count; i++)
+        {
+            var systemDef = defs[i];
+            if (systemDef.Prefabs.Count == 0 && systemDef.Entities.Count == 0)
+                continue;
+
+            if (_systems[i] is not EntitySystem entitySystem)
+                throw new InvalidOperationException(
+                    $"System '{systemDef.TypeName}' declares content but was not created as an EntitySystem.");
+
+            var fraction = (float)i / Math.Max(1, defs.Count);
+            UpdateLoadingProgress(0.5f + 0.45f * fraction, $"Registering prefabs for {systemDef.TypeName}...");
+            foreach (var registration in systemDef.Prefabs)
+                entitySystem.RegisterPrefab(registration.Name, registration.Prefab!);
+            yield return null;
+
+            UpdateLoadingProgress(0.5f + 0.45f * ((float)(i + 1) / Math.Max(1, defs.Count)), $"Creating entities for {systemDef.TypeName}...");
+            var roots = new List<Entity>();
+            foreach (var def in systemDef.Entities)
+                roots.Add(InstantiateDefinition(def, entitySystem));
+            ResolveReferences(systemDef.Entities, roots);
+            yield return null;
+        }
+
+        UpdateLoadingProgress(1.0f, "Scene content ready");
+        yield break;
+    }
+
+    // ──────────────────────────── Entity instantiation ────────────────────────────
+
+    /// <summary>
+    /// Instantiates a single entity definition (recursively for nested children). A
+    /// <c>Source</c> definition instantiates its registered prefab with per-instance overrides;
+    /// a <c>Type</c> definition builds an ad-hoc prefab from the declared components and runs it
+    /// through the same prefab instantiation path, so both forms share identical attachment,
+    /// override, and bind semantics.
+    /// </summary>
+    private static Entity InstantiateDefinition(EntityDefinition def, EntitySystem system)
+    {
+        Entity entity;
+        if (def.Source != null)
+        {
+            entity = system.Instantiate(def.Source, def.Position, def.ResolvedOverrides);
+        }
+        else
+        {
+            var prefab = BuildAdHocPrefab(def);
+            var effective = PrefabOverrides.Apply(prefab, def.ResolvedOverrides);
+            entity = EntityPrefabLoader.Instantiate(effective, system, def.Position);
+        }
+
+        if (!string.IsNullOrEmpty(def.Id))
+            entity.SetId(def.Id);
+
+        ApplyDefinitionBinds(entity, def.Binds);
+
+        foreach (var child in def.Children)
+        {
+            var childEntity = InstantiateDefinition(child, system);
+            entity.AddChild(childEntity);
+        }
+
+        return entity;
+    }
+
+    /// <summary>Builds a throwaway prefab from a plain-class (Type=) definition's declared components.</summary>
+    private static Prefab BuildAdHocPrefab(EntityDefinition def)
+    {
+        return new Prefab
+        {
+            Type = def.Type!,
+            Rotation = def.Rotation ?? 0f,
+            Sort = def.Sort ?? 0,
+            Active = def.Active ?? true,
+            Tags = new List<string>(def.Tags),
+            Components = def.DeclaredComponents
+                .Select(c => new Prefab.ComponentDefinition
+                {
+                    Type = c.Type,
+                    Properties = new Dictionary<string, string>(c.Properties)
+                })
+                .ToList()
+        };
+    }
+
+    /// <summary>Applies a definition's declarative &lt;Bind&gt; wiring (deep-copied so the stored
+    /// elements are never mutated), mirroring the prefab loader's bind application.</summary>
+    private static void ApplyDefinitionBinds(Entity entity, List<XElement> binds)
+    {
+        if (binds.Count == 0) return;
+
+        var wrapper = new XElement("EntityDefinition");
+        foreach (var bind in binds)
+            wrapper.Add(new XElement(bind));
+
+        CommandBindings.ApplyBindings(entity, wrapper);
+    }
+
+    // ──────────────────────────── Reference resolution ────────────────────────────
+
+    /// <summary>Resolves &lt;Reference Name= TargetId=/&gt; links once every entity in the system
+    /// exists, mirroring <see cref="EntitySerializer"/> semantics: an entity property first, then a
+    /// component property or public field whose type accepts <see cref="Entity"/>.</summary>
+    private static void ResolveReferences(List<EntityDefinition> defs, List<Entity> roots)
+    {
+        var idToEntity = new Dictionary<string, Entity>(StringComparer.Ordinal);
+        CollectById(roots, idToEntity);
+
+        foreach (var def in defs)
+            ResolveReferences(def, idToEntity);
+    }
+
+    private static void ResolveReferences(EntityDefinition def, Dictionary<string, Entity> idToEntity)
+    {
+        if (!string.IsNullOrEmpty(def.Id) && idToEntity.TryGetValue(def.Id!, out var target))
+        {
+            foreach (var reference in def.References)
+            {
+                var name = reference.Attribute("Name")?.Value;
+                var targetId = reference.Attribute("TargetId")?.Value;
+                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(targetId))
+                    continue;
+
+                if (idToEntity.TryGetValue(targetId!, out var referenced))
+                    SetReference(target, name!, referenced);
+            }
+        }
+
+        foreach (var child in def.Children)
+            ResolveReferences(child, idToEntity);
+    }
+
+    private static void CollectById(List<Entity> roots, Dictionary<string, Entity> map)
+    {
+        foreach (var root in roots)
+            CollectById(root, map);
+    }
+
+    private static void CollectById(Entity entity, Dictionary<string, Entity> map)
+    {
+        if (!string.IsNullOrEmpty(entity.Id))
+            map[entity.Id!] = entity;
+
+        foreach (var child in entity.Children)
+            CollectById(child, map);
+    }
+
+    private static void SetReference(Entity target, string name, Entity reference)
+    {
+        var property = target.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public);
+        if (property != null && property.PropertyType.IsAssignableFrom(typeof(Entity)))
+        {
+            property.SetValue(target, reference);
+            return;
+        }
+
+        foreach (var component in target.Components)
+        {
+            var componentType = component.GetType();
+
+            var componentProperty = componentType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public);
+            if (componentProperty != null && componentProperty.CanWrite && componentProperty.PropertyType.IsAssignableFrom(typeof(Entity)))
+            {
+                componentProperty.SetValue(component, reference);
+                return;
+            }
+
+            var componentField = componentType.GetField(name, BindingFlags.Instance | BindingFlags.Public);
+            if (componentField != null && componentField.FieldType.IsAssignableFrom(typeof(Entity)))
+            {
+                componentField.SetValue(component, reference);
+                return;
+            }
+        }
+    }
+}

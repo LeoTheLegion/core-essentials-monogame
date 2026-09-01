@@ -1,4 +1,5 @@
 using CoreEssentials.Coroutines;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -56,6 +57,12 @@ public class SceneManager
     /// </summary>
     /// <returns>The next scene.</returns>
     public Scene? NextScene => _nextScene;
+
+    /// <summary>
+    /// Gets the loading screen scene used during transitions, or null when none is set.
+    /// The loading screen stays loaded after a transition so it can be reused for the next one.
+    /// </summary>
+    public Scene? LoadingScene => _loadingScene;
     
     /// <summary>
     /// Gets whether a scene transition is in progress.
@@ -64,10 +71,13 @@ public class SceneManager
     public bool IsTransitioning => _isTransitioning;
     
     /// <summary>
-    /// Gets the loading progress of the next scene if a transition is in progress.
-    /// Returns 0 if no transition is happening.
+    /// Gets the loading progress of the transition to the next scene (0.0 to 1.0).
+    /// While the next scene is still loading this mirrors its loading progress; once it has
+    /// finished loading but not yet been switched in, the load work is complete, so this
+    /// reports 1.0 for the final frame before the swap. Returns 0 when no transition is
+    /// happening (no next scene).
     /// </summary>
-    public float TransitionProgress => (_nextScene != null && _nextScene.IsLoading) ? _nextScene.LoadingProgress : 0f;
+    public float TransitionProgress => _nextScene == null ? 0f : (_nextScene.IsLoading ? _nextScene.LoadingProgress : 1f);
     
     /// <summary>
     /// Initializes a new instance of the SceneManager class with the specified MainGame instance.
@@ -99,6 +109,22 @@ public class SceneManager
         _loadingScene = loadingScene;
         _loadingScene.SetSceneManager(this);
     }
+
+    /// <summary>
+    /// Sets a data-driven loading screen parsed from a scene XML asset (see <see cref="SceneParser"/>).
+    /// The same file can later be loaded as a regular scene with <see cref="LoadScene(string)"/>.
+    /// </summary>
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "LoadingScene.xml").</param>
+    public void SetLoadingScene(string sceneAssetName)
+        => SetLoadingScene(new DataDrivenScene(SceneParser.LoadFromAsset(sceneAssetName)));
+
+    /// <summary>
+    /// Loads a data-driven scene from a scene XML asset (see <see cref="SceneParser"/>),
+    /// wrapping it in a <see cref="DataDrivenScene"/> and transitioning to it.
+    /// </summary>
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "MainMenu.xml").</param>
+    public void LoadScene(string sceneAssetName)
+        => LoadScene(new DataDrivenScene(SceneParser.LoadFromAsset(sceneAssetName)));
 
     /// <summary>
     /// Loads the specified scene with a transition.

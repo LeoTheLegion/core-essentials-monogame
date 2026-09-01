@@ -26,6 +26,12 @@ public abstract class Scene
     /// Gets the <see cref="SceneManager"/> responsible for managing this scene.
     /// </summary>
     public SceneManager SceneManager => _sceneManager ?? throw new InvalidOperationException("SceneManager has not been assigned.");
+
+    /// <summary>
+    /// Gets the <see cref="SceneManager"/> responsible for managing this scene, or null when none
+    /// has been assigned yet. Use from components that must tolerate running before assignment.
+    /// </summary>
+    public SceneManager? SceneManagerOrNull => _sceneManager;
     
     /// <summary>
     /// Collection of all registered game systems mapped by their type.

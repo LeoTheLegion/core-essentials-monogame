@@ -91,7 +91,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var plain = system.Entities.Single(e => e.Id == "plain");
             Assert.Equal("ProbeEntity", plain.Type);
             Assert.Null(plain.Source);
-            Assert.Contains("SingleMatchComponent", plain.DeclaredComponentTypes);
+            Assert.Contains(plain.DeclaredComponents, c => c.Type == "SingleMatchComponent");
             Assert.Equal("flat", plain.ResolvedOverrides[typeof(SingleMatchComponent).FullName!]["Base"]);
         }
 

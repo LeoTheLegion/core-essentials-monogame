@@ -195,9 +195,9 @@ public static class SceneParser
             Type = hasType ? typeAttr! : null,
             Source = hasSource ? sourceAttr! : null,
             Id = element.Attribute("Id")?.Value,
-            Rotation = ParseFloat(element.Attribute("Rotation")?.Value, 0f, "Rotation", element),
-            Sort = ParseInt(element.Attribute("Sort")?.Value, 0, "Sort", element),
-            Active = ParseBool(element.Attribute("Active")?.Value, true, "Active", element)
+            Rotation = ParseFloat(element.Attribute("Rotation")?.Value),
+            Sort = ParseInt(element.Attribute("Sort")?.Value),
+            Active = ParseBool(element.Attribute("Active")?.Value)
         };
 
         if (hasType && EntityPrefabLoader.ResolveEntityType(typeAttr!) == null)
@@ -290,8 +290,8 @@ public static class SceneParser
         }
     }
 
-    /// <summary>Collects the component type names declared in a &lt;Components&gt; element and
-    /// captures any &lt;Bind&gt; elements nested inside it.</summary>
+    /// <summary>Parses the full component definitions (type + properties) declared in a
+    /// &lt;Components&gt; element and captures any &lt;Bind&gt; elements nested inside it.</summary>
     private static void ParseComponentsElement(XElement componentsElement, EntityDefinition definition)
     {
         RejectUnknownAttributes(componentsElement, EmptySet);
@@ -301,8 +301,28 @@ public static class SceneParser
             if (child.Name.LocalName == "Component")
             {
                 var typeName = child.Attribute("Type")?.Value;
-                if (!string.IsNullOrWhiteSpace(typeName))
-                    definition.DeclaredComponentTypes.Add(typeName!);
+                if (string.IsNullOrWhiteSpace(typeName))
+                    throw new FormatException("<Component> inside <Components> is missing its required 'Type' attribute.");
+
+                RejectUnknownAttributes(child, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type" });
+                var compDef = new Prefab.ComponentDefinition { Type = typeName! };
+
+                var propsElem = child.Element("Properties");
+                if (propsElem != null)
+                {
+                    foreach (var prop in propsElem.Elements())
+                    {
+                        ExpectElementName(prop, "Property");
+                        RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name", "Value" });
+
+                        var name = prop.Attribute("Name")?.Value;
+                        if (string.IsNullOrWhiteSpace(name))
+                            throw new FormatException($"<Property> inside <Component Type=\"{typeName}\"> is missing its required 'Name' attribute.");
+                        compDef.Properties[name!] = prop.Attribute("Value")?.Value ?? string.Empty;
+                    }
+                }
+
+                definition.DeclaredComponents.Add(compDef);
             }
             else if (child.Name.LocalName == "Bind")
             {
@@ -359,7 +379,7 @@ public static class SceneParser
     {
         IEnumerable<string> candidateTypeNames = sourcePrefab != null
             ? sourcePrefab.Components.Select(c => c.Type)
-            : definition.DeclaredComponentTypes;
+            : definition.DeclaredComponents.Select(c => c.Type);
 
         var matches = new List<Type>();
         foreach (var typeName in candidateTypeNames)
@@ -412,18 +432,18 @@ public static class SceneParser
     {
         RejectUnknownAttributes(element, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "X", "Y" });
         return new Vector2(
-            ParseFloat(element.Attribute("X")?.Value, 0f, "X", context),
-            ParseFloat(element.Attribute("Y")?.Value, 0f, "Y", context));
+            ParseFloat(element.Attribute("X")?.Value) ?? 0f,
+            ParseFloat(element.Attribute("Y")?.Value) ?? 0f);
     }
 
-    private static float ParseFloat(string? raw, float fallback, string attrName, XElement context)
-        => raw == null ? fallback : float.Parse(raw, NumberStyles.Any, CultureInfo.InvariantCulture);
+    private static float? ParseFloat(string? raw)
+        => raw == null ? null : float.Parse(raw, NumberStyles.Any, CultureInfo.InvariantCulture);
 
-    private static int ParseInt(string? raw, int fallback, string attrName, XElement context)
-        => raw == null ? fallback : int.Parse(raw, NumberStyles.Any, CultureInfo.InvariantCulture);
+    private static int? ParseInt(string? raw)
+        => raw == null ? null : int.Parse(raw, NumberStyles.Any, CultureInfo.InvariantCulture);
 
-    private static bool ParseBool(string? raw, bool fallback, string attrName, XElement context)
-        => raw == null ? fallback : bool.Parse(raw);
+    private static bool? ParseBool(string? raw)
+        => raw == null ? null : bool.Parse(raw);
 
     /// <summary>Human-readable identifier for error messages: Id when present, otherwise Type/Source.</summary>
     private static string Describe(XElement? element)
