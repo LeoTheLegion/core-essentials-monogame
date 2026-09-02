@@ -81,6 +81,9 @@
 #begin PhysicsConfig.xml
 /copy:PhysicsConfig.xml
 
+#begin PhysicsEntityScene.xml
+/copy:PhysicsEntityScene.xml
+
 #begin SoundButtonTemplate.xml
 /copy:SoundButtonTemplate.xml
 

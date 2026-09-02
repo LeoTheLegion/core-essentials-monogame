@@ -145,7 +145,7 @@ public class CharacterScene : Scene
             {
                 AudioManager.Instance.StopSound(songID);
                 // Use SceneManager property directly here to get the current reference at the time of the event
-                SceneManager.LoadScene(new PhysicsEntityScene());
+                SceneManager.LoadScene("PhysicsEntityScene.xml");
             }
 
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.M)

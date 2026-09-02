@@ -1,0 +1,102 @@
+<Scene>
+    <!--
+        Physics demo, fully data-driven (strict scene format).
+
+        <System Type="PhysicsEngine" Config="PhysicsConfig.xml"/> creates the Aether engine from a
+        declarative config (gravity, solver iterations, named collision categories). The entity system
+        registers the ball prefab and instantiates three inert shells carrying the Sprint-4 physics
+        behavior components: PhysicsSpawnComponent (regular + VIP balls + world border),
+        SaveLoadButtonsComponent (save/load GUI), and PhysicsDebugOverlayComponent (F1 toggle).
+        <System Type="PhysicsDebugRenderer"/> is created parameterless and resolves the sibling engine
+        lazily on first draw.
+
+        Controls: F1 toggles the physics debug overlay; + navigates to the camera scene file.
+    -->
+    <GameSystems>
+        <System Type="PhysicsEngine" Config="PhysicsConfig.xml" />
+
+        <System Type="EntitySystem">
+            <Prefabs>
+                <!-- All balls share this template: sprite + rigidbody + collider. -->
+                <Prefab Name="BallPrefab" Asset="BallTemplate.xml" />
+            </Prefabs>
+            <Entities>
+                <!--
+                    Spawns 5 regular balls (random position, "Player" category) + 3 VIP balls
+                    (fixed id/position/color/scale, "Vip" category) + a world border. Every knob is
+                    declarative; defaults already match the original scene, but they are spelled out
+                    here so the data file is self-documenting.
+                -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="ballSpawner">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.PhysicsSpawnComponent">
+                            <Properties>
+                                <Property Name="BallPrefabName" Value="BallPrefab" />
+                                <Property Name="RegularBallCount" Value="5" />
+                                <Property Name="SpawnAreaMin" Value="32,32" />
+                                <Property Name="SpawnAreaMax" Value="1248,688" />
+                                <Property Name="RegularCategory" Value="Player" />
+                                <Property Name="RegularImpulseHalfRange" Value="5" />
+                                <Property Name="VipBallIds" Value="vip_ball_blue,vip_ball_green,vip_ball_red" />
+                                <Property Name="VipBallPositions" Value="640,360;580,300;700,420" />
+                                <Property Name="VipBallColors" Value="Blue,Green,Red" />
+                                <Property Name="VipBallScale" Value="2.0" />
+                                <Property Name="VipCategory" Value="Vip" />
+                                <Property Name="VipImpulseHalfRange" Value="7.5" />
+                                <Property Name="CreateWorldBorder" Value="true" />
+                                <Property Name="WorldBorderSize" Value="1280,720" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Save/load GUI buttons wired to the entity system's SaveState/LoadState. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="saveLoadButtons">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.SaveLoadButtonsComponent">
+                            <Properties>
+                                <Property Name="SaveFilePath" Value="PhysicsScene_Save.xml" />
+                                <Property Name="SaveButtonLabel" Value="Save Physics Scene" />
+                                <Property Name="LoadButtonLabel" Value="Load Physics Scene" />
+                                <Property Name="SaveButtonPosition" Value="20,20" />
+                                <Property Name="SaveButtonSize" Value="200,50" />
+                                <Property Name="LoadButtonPosition" Value="20,80" />
+                                <Property Name="LoadButtonSize" Value="200,50" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- F1 toggles the physics debug overlay; the component draws it each frame when on. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="debugOverlay">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.PhysicsDebugOverlayComponent">
+                            <Properties>
+                                <Property Name="ToggleKey" Value="F1" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Navigation: + goes to the camera scene file. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navCamera">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="OemPlus" />
+                                <Property Name="TargetSceneAsset" Value="CameraScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+
+        <!-- Created parameterless; resolves the sibling PhysicsEngine lazily on first draw. -->
+        <System Type="PhysicsDebugRenderer" />
+    </GameSystems>
+</Scene>
