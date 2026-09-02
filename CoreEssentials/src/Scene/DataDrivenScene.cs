@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using CoreEssentials.GameSystems;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+using CoreEssentials.GameSystems.Physics.Types;
 
 namespace CoreEssentials.Scenes;
 
@@ -41,27 +42,62 @@ public class DataDrivenScene : Scene
         }
     }
 
-    /// <summary>Reflectively instantiates every system declared by the definition, in document order.</summary>
+    /// <summary>Reflectively instantiates every system declared by the definition, in document order.
+    /// Systems with a <c>Config</c> attribute are created from their configuration asset instead of
+    /// their parameterless constructor.</summary>
     protected override GameSystem[] LoadGameSystems()
     {
         var defs = _definition.Systems;
         _systems = new GameSystem[defs.Count];
         for (int i = 0; i < defs.Count; i++)
         {
-            var type = defs[i].SystemType;
+            var def = defs[i];
             object? instance;
-            try
+            if (def.ConfigAsset != null)
             {
-                instance = Activator.CreateInstance(type);
+                instance = CreateSystemWithConfig(def);
             }
-            catch (Exception ex)
+            else
             {
-                throw new InvalidOperationException(
-                    $"Could not create game system '{type.Name}' from the scene definition — it needs a public parameterless constructor.", ex);
+                try
+                {
+                    instance = Activator.CreateInstance(def.SystemType);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not create game system '{def.SystemType.Name}' from the scene definition — it needs a public parameterless constructor.", ex);
+                }
             }
             _systems[i] = (GameSystem)instance!;
         }
         return _systems;
+    }
+
+    /// <summary>
+    /// Maps configuration parameter types to the loader that builds one from an XML asset name.
+    /// A system whose single-argument constructor accepts a registered type can be created from a
+    /// &lt;System Config="..."&gt; attribute.
+    /// </summary>
+    private static readonly Dictionary<Type, Func<string, object>> _configLoaders = new()
+    {
+        { typeof(PhysicsConfig), name => PhysicsConfig.LoadFromAsset(name) }
+    };
+
+    /// <summary>Creates a system from its configuration asset via its single-argument constructor.</summary>
+    private static object CreateSystemWithConfig(SystemDefinition def)
+    {
+        var candidates = def.SystemType.GetConstructors()
+            .Where(c => c.GetParameters().Length == 1 && _configLoaders.ContainsKey(c.GetParameters()[0].ParameterType))
+            .ToList();
+
+        if (candidates.Count != 1)
+            throw new InvalidOperationException(
+                $"System '{def.TypeName}' declares Config=\"{def.ConfigAsset}\" but has no single-argument constructor " +
+                $"accepting a known configuration type ({string.Join(", ", _configLoaders.Keys.Select(t => t.Name))}).");
+
+        var ctor = candidates[0];
+        return ctor.Invoke(new object[] { _configLoaders[ctor.GetParameters()[0].ParameterType](def.ConfigAsset!) });
     }
 
     /// <summary>
@@ -121,7 +157,7 @@ public class DataDrivenScene : Scene
     /// &lt;Source&gt; node resolves to its registered prefab (cloned); a plain-class (&lt;Type&gt;) node builds
     /// an ad-hoc prefab from its declared components. Per-instance overrides are applied at each node,
     /// and nested children are inlined so the loader can build + link + attach the whole tree in one
-    /// pass. (Nested children inherit the root's position, matching how prefab-internal children behave.)
+    /// pass. A child's &lt;Position&gt; is carried on its prefab node as an offset from its parent.
     /// </summary>
     private static Prefab BuildCombinedPrefab(EntityDefinition def, EntitySystem system)
     {
@@ -141,7 +177,12 @@ public class DataDrivenScene : Scene
         // are not — either way `node` is safe to extend without touching any registered prefab.
         var node = PrefabOverrides.Apply(rootPrefab, def.ResolvedOverrides, def.EntityOverrides);
         foreach (var child in def.Children)
-            node.Children.Add(BuildCombinedPrefab(child, system));
+        {
+            var childNode = BuildCombinedPrefab(child, system);
+            // A nested <Position> is an offset from this node, not a world position.
+            childNode.Position = child.Position;
+            node.Children.Add(childNode);
+        }
         return node;
     }
 

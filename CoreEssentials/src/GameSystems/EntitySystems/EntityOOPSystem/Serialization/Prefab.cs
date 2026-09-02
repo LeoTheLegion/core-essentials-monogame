@@ -60,6 +60,12 @@ public class Prefab
     public List<Prefab> Children { get; set; } = new();
 
     /// <summary>
+    /// Position of this node relative to its context: world position for a root prefab,
+    /// offset from the parent for a nested child. Defaults to (0, 0).
+    /// </summary>
+    public Microsoft.Xna.Framework.Vector2 Position { get; set; }
+
+    /// <summary>
     /// Declarative &lt;Bind&gt; elements (event-to-command wiring) applied to each entity
     /// instantiated from this prefab. Populated when the prefab is parsed from XML.
     /// </summary>
@@ -85,6 +91,7 @@ public class Prefab
             }).ToList(),
             EntityOverrides = new Dictionary<string, string>(EntityOverrides, StringComparer.Ordinal),
             Children = Children.Select(c => c.Clone()).ToList(),
+            Position = Position,
             Binds = Binds.Select(b => new XElement(b)).ToList() // deep copy — matches the bind-clone pattern in the loader
         };
         return clone;

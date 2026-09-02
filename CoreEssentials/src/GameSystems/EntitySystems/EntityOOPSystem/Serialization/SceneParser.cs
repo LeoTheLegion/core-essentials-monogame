@@ -110,16 +110,21 @@ public static class SceneParser
     private static void ParseSystem(XElement element, List<SystemDefinition> systems)
     {
         ExpectElementName(element, "System");
-        RejectUnknownAttributes(element, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type" });
+        RejectUnknownAttributes(element, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type", "Config" });
 
         var typeName = element.Attribute("Type")!.Value;
         if (string.IsNullOrWhiteSpace(typeName))
             throw new FormatException("<System> is missing its required 'Type' attribute.");
 
+        var configAttr = element.Attribute("Config")?.Value;
+        if (configAttr != null && string.IsNullOrWhiteSpace(configAttr))
+            throw new FormatException($"<System Type=\"{typeName}\"> has an empty 'Config' attribute.");
+
         var systemDef = new SystemDefinition
         {
             TypeName = typeName,
-            SystemType = ResolveSystemType(typeName)
+            SystemType = ResolveSystemType(typeName),
+            ConfigAsset = configAttr
         };
 
         foreach (var child in element.Elements())

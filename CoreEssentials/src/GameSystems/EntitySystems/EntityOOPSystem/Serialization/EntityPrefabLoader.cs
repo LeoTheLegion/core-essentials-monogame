@@ -292,8 +292,12 @@ public static class EntityPrefabLoader
         // Recurse for children before any component attachments happen.
         foreach (var childTemplate in template.Children)
         {
-            var child = BuildSubtree(childTemplate, system, position); // Relative positioning usually handled by Entity logic if children are added
+            // A child's Position is an offset from this entity; its world position is the sum.
+            var childWorldPosition = position + childTemplate.Position;
+            var child = BuildSubtree(childTemplate, system, childWorldPosition);
             entity.AddChild(child);
+            // Once parented, the position getter derives world position from LocalPosition — keep it in sync.
+            child.LocalPosition = childTemplate.Position;
         }
 
         return entity;

@@ -28,6 +28,12 @@ public class SystemDefinition
     /// <summary>The concrete <see cref="CoreEssentials.GameSystems.GameSystem"/> type resolved from <see cref="TypeName"/>.</summary>
     public Type SystemType { get; init; } = typeof(object);
 
+    /// <summary>
+    /// Optional configuration asset (e.g. "PhysicsConfig.xml") that the system is created from.
+    /// Null when the <c>Config</c> attribute is absent and the system's parameterless constructor is used.
+    /// </summary>
+    public string? ConfigAsset { get; init; }
+
     /// <summary>Prefab registrations owned by this system (name → asset file).</summary>
     public List<PrefabRegistration> Prefabs { get; } = new();
 

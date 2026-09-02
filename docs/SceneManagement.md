@@ -67,6 +67,58 @@ Scenes can display loading progress using the `UpdateLoadingProgress` method:
 UpdateLoadingProgress(0.5f, "Loading assets...");
 ```
 
+## Data-Driven Scenes
+
+A scene can run entirely from a data file — no C# subclass needed. `SceneManager.LoadScene("MyScene.xml")` parses the file into a `DataDrivenScene`, which reflects its game systems, registers prefabs, and instantiates entities.
+
+### File structure
+
+```xml
+<Scene>
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Prefabs>
+                <Prefab Name="Ball" Asset="BallTemplate.xml" />
+            </Prefabs>
+            <Entities>
+                <EntityDefinition Source="Ball" Id="ball1">
+                    <Position X="100" Y="200" />
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>
+```
+
+Rules:
+
+- `<Scene>` contains exactly one `<GameSystems>` element, which holds one or more `<System>` entries in document order (systems are created in that order).
+- Only an `EntitySystem` may declare `<Prefabs>` and `<Entities>`; all other systems must be self-closing.
+- Unknown elements and attributes are rejected at parse time.
+
+### System attributes
+
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `Type` | string | **Yes** | Built-in name (`EntitySystem`, `PhysicsEngine`) or a class name resolvable in a loaded assembly (must derive from `GameSystem`). |
+| `Config` | string | No | Name of an XML configuration asset the system is created from. The system must expose exactly one public single-argument constructor whose parameter type is a known configuration type (`PhysicsConfig` today). |
+
+Without `Config`, the system is created through its **public parameterless constructor**. Systems that need sibling systems at construction time — e.g. `PhysicsDebugRenderer`, which resolves the scene's `PhysicsEngine` lazily on first draw — work with the parameterless form:
+
+```xml
+<GameSystems>
+    <System Type="PhysicsEngine" Config="PhysicsConfig.xml" />
+    <System Type="EntitySystem">
+        <!-- ... -->
+    </System>
+    <System Type="PhysicsDebugRenderer" />
+</GameSystems>
+```
+
+### Nested child positions
+
+A nested `<Children>` entry's `<Position>` is an **offset from its parent**, not a world position. A child without a `<Position>` sits at the parent's position (zero local offset). World position of a child is `parent.Position + child.LocalPosition`.
+
 ## Scene Transitions
 
 The framework handles scene transitions automatically. When loading a new scene:
