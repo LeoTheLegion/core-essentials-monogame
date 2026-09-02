@@ -1,43 +1,111 @@
 <Scene>
-    <!-- Root-level receiver: a plain GameObjectEntity shell carrying the demo component. -->
-    <EntityDefinition Type="GameObjectEntity" Id="rootReceiver">
-        <Position X="400" Y="300" />
-        <Components>
-            <Component Type="PingReceiverComponent">
-                <Properties>
-                    <Property Name="Label" Value="root receiver" />
-                </Properties>
-            </Component>
-        </Components>
-    </EntityDefinition>
+    <!--
+        Demonstrates scene-wide SendMessage (Unity-style multi-cast), prefab templates with
+        declarative <Bind> wiring, and key-driven spawn/destroy controls.
 
-    <!-- Nested receiver: child in a separate subtree, proving scene-wide multi-cast crosses hierarchy. -->
-    <EntityDefinition Type="GameObjectEntity" Id="nestedParent">
-        <Position X="720" Y="300" />
-        <Children>
-            <EntityDefinition Type="GameObjectEntity" Id="nestedReceiver">
-                <Position X="80" Y="0" />
-                <Components>
-                    <Component Type="PingReceiverComponent">
-                        <Properties>
-                            <Property Name="Label" Value="nested receiver (child)" />
-                        </Properties>
-                    </Component>
-                </Components>
-            </EntityDefinition>
-        </Children>
-    </EntityDefinition>
+        Strict scene format: <Scene> -> <GameSystems> -> <System Type="EntitySystem">.
+        All receivers are plain GameObjectEntity shells carrying a PingReceiverComponent —
+        behavior lives on components, entities stay inert (Unity-style).
 
-    <!-- Info line (white so it stands out against the default cyan receivers). -->
-    <EntityDefinition Type="GameObjectEntity" Id="info">
-        <Position X="640" Y="150" />
-        <Components>
-            <Component Type="PingReceiverComponent">
-                <Properties>
-                    <Property Name="Label" Value="Space: broadcast OnPing | P: prefab spawn | B: typed spawn | D: destroy last | Esc: back" />
-                    <Property Name="Color" Value="White" />
-                </Properties>
-            </Component>
-        </Components>
-    </EntityDefinition>
+        Controls (all wired to PingControlComponent / NavigateOnKeyComponent below):
+          Space — broadcast "OnPing" to the whole scene (every receiver, in every subtree, counts up)
+          P     — spawn a prefab via Instantiate (the template's <Bind> turns it green)
+          B     — spawn a GameObjectEntity + component
+          D     — destroy the most recently spawned entity
+          Esc   — back to the character scene file
+    -->
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Prefabs>
+                <!-- Prefab template from an XML content file: a plain GameObjectEntity shell
+                carrying
+                     the receiver component, with a declarative <Bind> wiring Spawned -> OnSpawned. -->
+                <Prefab Name="PingPrefab" Asset="PingPrefabTemplate.xml" />
+            </Prefabs>
+            <Entities>
+                <!-- Root-level receiver: a plain GameObjectEntity shell carrying the demo
+                component. -->
+                <EntityDefinition Type="GameObjectEntity" Id="rootReceiver">
+                    <Position X="400" Y="300" />
+                    <Components>
+                        <Component Type="PingReceiverComponent">
+                            <Properties>
+                                <Property Name="Label" Value="root receiver" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Nested receiver: child in a separate subtree, proving scene-wide multi-cast
+                crosses hierarchy. -->
+                <EntityDefinition Type="GameObjectEntity" Id="nestedParent">
+                    <Position X="720" Y="300" />
+                    <Children>
+                        <EntityDefinition Type="GameObjectEntity" Id="nestedReceiver">
+                            <Position X="80" Y="0" />
+                            <Components>
+                                <Component Type="PingReceiverComponent">
+                                    <Properties>
+                                        <Property Name="Label" Value="nested receiver (child)" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+                    </Children>
+                </EntityDefinition>
+
+                <!-- Info line (white so it stands out against the default cyan receivers). -->
+                <EntityDefinition Type="GameObjectEntity" Id="info">
+                    <Position X="640" Y="150" />
+                    <Components>
+                        <Component Type="PingReceiverComponent">
+                            <Properties>
+                                <Property Name="Label"
+                                    Value="Space: broadcast OnPing | P: prefab spawn | B: typed spawn | D: destroy last | Esc: back" />
+                                <Property Name="Color" Value="White" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!--
+                    Key-driven demo controls on a single inert shell. All keys and the staggered spawn
+                    position are declarative; the component tracks spawns so D can remove the last one.
+                -->
+                <EntityDefinition
+                    Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity"
+                    Id="pingControl">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.PingControlComponent">
+                            <Properties>
+                                <Property Name="BroadcastKey" Value="Space" />
+                                <Property Name="MessageName" Value="OnPing" />
+                                <Property Name="SpawnPrefabKey" Value="P" />
+                                <Property Name="PrefabName" Value="PingPrefab" />
+                                <Property Name="SpawnTypedKey" Value="B" />
+                                <Property Name="DestroyLastKey" Value="D" />
+                                <Property Name="SpawnPosition" Value="640,450" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Navigation: pure data, resolved via SceneManager.LoadScene(string). -->
+                <EntityDefinition
+                    Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity"
+                    Id="navCharacter">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="Escape" />
+                                <Property Name="TargetSceneAsset" Value="CharacterScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
 </Scene>

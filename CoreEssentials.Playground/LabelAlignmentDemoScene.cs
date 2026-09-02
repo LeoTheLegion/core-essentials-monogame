@@ -142,7 +142,7 @@ public class LabelAlignmentDemoScene : Scene
     private void HandleKeyPressed(object sender, KeyboardEventArgs args)
     {
         if (args.Key == Microsoft.Xna.Framework.Input.Keys.Escape)
-            SceneManager.LoadScene(new SendMessageDemoScene());
+            SceneManager.LoadScene("SendMessageDemoScene.xml");
     }
 
     // ===== Debug overlay: make the invisible parts visible =====

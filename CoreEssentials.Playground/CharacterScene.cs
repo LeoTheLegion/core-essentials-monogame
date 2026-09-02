@@ -151,7 +151,7 @@ public class CharacterScene : Scene
             if (args.Key == Microsoft.Xna.Framework.Input.Keys.M)
             {
                 AudioManager.Instance.StopSound(songID);
-                SceneManager.LoadScene(new SendMessageDemoScene());
+                SceneManager.LoadScene("SendMessageDemoScene.xml");
             }
         };
     }
