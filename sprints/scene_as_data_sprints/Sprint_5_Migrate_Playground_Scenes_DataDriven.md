@@ -1,6 +1,14 @@
 # Sprint 5 — Migrate Playground Scenes to Data-Driven 🎬
 
-**Points:** 5 | **Status:** Not Started | **Goal:** Every playground demo scene runs from an XML file + its prefab assets — no per-scene C# subclass.
+**Points:** 13 (split) | **Status:** Split into 5a–5d | **Goal:** Every playground demo scene runs from an XML file + its prefab assets — no per-scene C# subclass.
+
+> **SPLIT:** This sprint was too large and high-risk to land in one go. It is now tracked as four ordered sub-sprints — do them in sequence:
+> - [ ] **5a** Foundation: data-driven booting (`loading.xml` + placeholder first scene, `Program.cs` from files) → `Sprint_5a_Foundation_DataDrivenBooting.md`
+> - [ ] **5b** Easy data scenes (GuiAnchor + SendMessage) → `Sprint_5b_EasyDataScenes.md`
+> - [ ] **5c** Physics scene → `Sprint_5c_PhysicsScene.md`
+> - [ ] **5d** Hard scenes (Character / Camera / LabelAlignment) — blocked on the entity-property decision → `Sprint_5d_HardScenes_EntityPropertyGap.md`
+>
+> The tasks below are retained for reference only; work is tracked in the sub-sprints.
 
 ## Why This Sprint
 

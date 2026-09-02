@@ -64,6 +64,50 @@ public Entity Instantiate(string templateName, Vector2 position)
 var enemy = entitySystem.Instantiate("EnemyGoblin", new Vector2(100, 200));
 ```
 
+### Per-Instantiation Overrides
+
+A single template can spawn many instances that differ per spawn — a floating score popup with different text/color/scale, a button with different labels — without writing a wrapper factory or one template per variant. `Instantiate` (and `InstantiateFromAsset`) accept two optional override maps:
+
+```csharp
+public Entity Instantiate(string prefabName, Vector2 position,
+    IReadOnlyDictionary<string, Dictionary<string, string>>? componentOverrides = null,
+    IReadOnlyDictionary<string, string>? entityOverrides = null);
+```
+
+- **`componentOverrides`** — `component type name → property name → value string`. A key matching an existing template component merges into it; a key matching none adds a new component. Component keys may be short names or fully-qualified type names.
+- **`entityOverrides`** — `property name → value string`, applied to the entity itself (not a component). Use this when state lives directly on the entity, e.g. an entity's own `Text`, `Color`, `CameraSpeed`, or `Scale`.
+
+Both are merged into a **clone** of the template before any component is attached or started, so components and the entity see the final values in `OnStart`/`OnAttach`. The registered template is never mutated — every instantiation gets its own copy. Values are parsed with the same rules as XML properties (`int`, `float`, `bool`, `string`, `Vector2`, `Color`, and enums).
+
+```csharp
+// A "popup" template whose text, color, scale and lifetime vary per spawn:
+var popup = entitySystem.Instantiate("popup", position,
+    componentOverrides: new Dictionary<string, Dictionary<string, string>>
+    {
+        ["FloatingPopUpComponent"] = new() { ["Scale"] = "1.5", ["Lifetime"] = "0.8" }
+    },
+    entityOverrides: new Dictionary<string, string>
+    {
+        ["Text"] = "×2",
+        ["Color"] = "Gold"
+    });
+```
+
+**Scene XML equivalent.** In a data-driven scene file, the same capability is expressed declaratively on an `<EntityDefinition>`: flat attributes and `<Overrides>` target *component* properties, while an `<EntityOverrides>` element targets the entity itself. This is the escape hatch for entities that keep state on themselves (e.g. `TextEntity.Text`) with no component to target.
+
+```xml
+<EntityDefinition Type="CoreEssentials.Playground.TextEntity" Id="score">
+  <Position X="100" Y="200" />
+  <!-- Component property override (via flat attribute or <Overrides>) -->
+  <Text>Score: 100</Text>
+  <!-- Entity-level overrides: properties on the entity itself, applied before OnStart/OnAttach -->
+  <EntityOverrides>
+    <Property Name="Color" Value="Gold" />
+    <Property Name="Alignment" Value="Center" />
+  </EntityOverrides>
+</EntityDefinition>
+```
+
 ### Prefab-Style Convenience Methods
 
 Entities and components can spawn a registered template directly — Unity-style prefab instantiation — without reaching for the system:

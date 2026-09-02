@@ -974,6 +974,25 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         => !string.IsNullOrWhiteSpace(name) && _prefabs.ContainsKey(name);
 
     /// <summary>
+    /// Tries to retrieve the registered prefab under the given name without instantiating it.
+    /// Read-only: callers receive the live instance, so treat it as immutable (clone before mutating).
+    /// </summary>
+    /// <param name="name">The registered prefab name.</param>
+    /// <param name="prefab">When true, the registered prefab; otherwise null.</param>
+    /// <returns>True when a prefab is registered under the given name.</returns>
+    public bool TryGetPrefab(string name, out Prefab? prefab)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && _prefabs.TryGetValue(name, out var found))
+        {
+            prefab = found;
+            return true;
+        }
+
+        prefab = null;
+        return false;
+    }
+
+    /// <summary>
     /// Instantiates a prefab straight from a Content XML asset with zero registration calls.
     /// On first use the asset is loaded and cached under its base name (the file name without
     /// extension), so subsequent instantiations reuse the parsed prefab. An explicit
@@ -983,7 +1002,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <param name="position">The world position to place the instantiated entity.</param>
     /// <returns>The newly created entity.</returns>
     public Entity InstantiateFromAsset(string assetName, Vector2 position)
-        => InstantiateFromAsset(assetName, position, null);
+        => InstantiateFromAsset(assetName, position, null, null);
 
     /// <summary>
     /// Instantiates a prefab straight from a Content XML asset with zero registration calls,
@@ -996,6 +1015,24 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <returns>The newly created entity.</returns>
     public Entity InstantiateFromAsset(string assetName, Vector2 position,
         IReadOnlyDictionary<string, Dictionary<string, string>>? overrides)
+        => InstantiateFromAsset(assetName, position, overrides, null);
+
+    /// <summary>
+    /// Instantiates a prefab straight from a Content XML asset with zero registration calls,
+    /// applying per-instantiation component and entity-level property overrides. See
+    /// <see cref="InstantiateFromAsset(string, Vector2)"/> for the lazy-registration semantics.
+    /// </summary>
+    /// <param name="assetName">The name of the XML asset containing the prefab definition.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <param name="overrides">Optional map of component type name → property name → value string.</param>
+    /// <param name="entityOverrides">
+    /// Optional map of entity property name → value string, applied to the created entity itself
+    /// (not a component) before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </param>
+    /// <returns>The newly created entity.</returns>
+    public Entity InstantiateFromAsset(string assetName, Vector2 position,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides,
+        IReadOnlyDictionary<string, string>? entityOverrides)
     {
         if (string.IsNullOrWhiteSpace(assetName)) throw new ArgumentException("Asset name cannot be empty.", nameof(assetName));
 
@@ -1003,7 +1040,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         if (!HasPrefab(prefabName))
             RegisterPrefab(prefabName, assetName);
 
-        return Instantiate(prefabName, position, overrides);
+        return Instantiate(prefabName, position, overrides, entityOverrides);
     }
 
     /// <summary>
@@ -1013,7 +1050,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <param name="position">The world position to place the instantiated entity.</param>
     /// <returns>The newly created entity.</returns>
     public Entity Instantiate(string prefabName, Vector2 position)
-        => Instantiate(prefabName, position, null);
+        => Instantiate(prefabName, position, null, null);
 
     /// <summary>
     /// Instantiates an entity from a registered prefab at the specified position,
@@ -1031,11 +1068,34 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <returns>The newly created entity.</returns>
     public Entity Instantiate(string prefabName, Vector2 position,
         IReadOnlyDictionary<string, Dictionary<string, string>>? overrides)
+        => Instantiate(prefabName, position, overrides, null);
+
+    /// <summary>
+    /// Instantiates an entity from a registered prefab at the specified position, applying
+    /// per-instantiation component and entity-level property overrides. Both are merged into a
+    /// copy of the prefab before any component is attached or started, so components and the entity
+    /// itself see the final values in <c>OnStart</c>/<c>OnAttach</c>. The registered prefab is never mutated.
+    /// </summary>
+    /// <param name="prefabName">The name of the registered prefab to use.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <param name="overrides">
+    /// Optional map of component type name → property name → value string.
+    /// A component key matching an existing prefab component merges into it;
+    /// a key matching no component adds a new component definition.
+    /// </param>
+    /// <param name="entityOverrides">
+    /// Optional map of entity property name → value string, applied to the created entity itself
+    /// (not a component) before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </param>
+    /// <returns>The newly created entity.</returns>
+    public Entity Instantiate(string prefabName, Vector2 position,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides,
+        IReadOnlyDictionary<string, string>? entityOverrides)
     {
         if (!_prefabs.TryGetValue(prefabName, out var prefab))
             throw new KeyNotFoundException($"Prefab '{prefabName}' is not registered.");
 
-        var effective = Serialization.PrefabOverrides.Apply(prefab, overrides);
+        var effective = Serialization.PrefabOverrides.Apply(prefab, overrides, entityOverrides);
         return Serialization.EntityPrefabLoader.Instantiate(effective, this, position);
     }
 

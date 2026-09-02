@@ -227,6 +227,9 @@ public static class SceneParser
                 case "Overrides":
                     ParsePreciseOverrides(child, definition, element);
                     break;
+                case "EntityOverrides":
+                    ParseEntityOverrides(child, definition, element);
+                    break;
                 case "Children":
                     ParseChildren(child, systemDef, prefabByName, definition.Children);
                     break;
@@ -243,7 +246,7 @@ public static class SceneParser
                     break;
                 default:
                     throw new FormatException($"Unknown element <{child.Name.LocalName}> inside EntityDefinition '{Describe(element)}'. " +
-                        "Allowed: Position, Tags, Components, Overrides, Bind, References, Children.");
+                        "Allowed: Position, Tags, Components, Overrides, EntityOverrides, Bind, References, Children.");
             }
         }
 
@@ -362,6 +365,29 @@ public static class SceneParser
             }
 
             definition.ResolvedOverrides[typeName!] = properties;
+        }
+    }
+
+    /// <summary>
+    /// Parses the &lt;EntityOverrides&gt; element — a flat set of property → value pairs targeting
+    /// writable public properties on the entity itself (not a component). This is the escape hatch for
+    /// entities that keep state directly on themselves (e.g. <c>TextEntity.Text</c>) with no component to
+    /// target via &lt;Overrides&gt;. Values are applied to the created entity before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </summary>
+    private static void ParseEntityOverrides(XElement element, EntityDefinition definition, XElement context)
+    {
+        RejectUnknownAttributes(element, EmptySet);
+
+        foreach (var prop in element.Elements())
+        {
+            ExpectElementName(prop, "Property");
+            RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name", "Value" });
+
+            var name = prop.Attribute("Name")?.Value;
+            if (string.IsNullOrWhiteSpace(name))
+                throw new FormatException($"<Property> inside <EntityOverrides> on EntityDefinition '{Describe(context)}' is missing its required 'Name' attribute.");
+
+            definition.EntityOverrides[name!] = prop.Attribute("Value")?.Value ?? string.Empty;
         }
     }
 

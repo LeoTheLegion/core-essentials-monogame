@@ -262,6 +262,11 @@ public static class EntityPrefabLoader
         foreach (var tag in template.Tags)
             entity.SetTag(tag);
 
+        // 2b. Apply per-instantiation entity-level overrides BEFORE OnStart() so the entity sees
+        //     final values during initialization (mirrors how component overrides are applied).
+        if (template.EntityOverrides.Count > 0)
+            ApplyEntityOverrides(entity, template.EntityOverrides);
+
         // 3. Apply component definitions to any pre-existing components (most won't exist yet —
         //    that's fine). Components are NOT created here: entities like Ball expect their own
         //    OnStart to be the creator, so creating early would hide the prefab definition from them.
@@ -374,6 +379,36 @@ public static class EntityPrefabLoader
             {
                 object value = SerializationUtils.ParseValue(property.PropertyType, prop.Value);
                 property.SetValue(component, value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies per-instantiation entity-level overrides to a created entity via reflection, before
+    /// <c>OnStart</c>/<c>OnAttach</c>. Targets writable public properties on the entity itself (not a
+    /// component), using the same value-parsing path as component properties. A property that does not
+    /// exist or is not writable is skipped with a warning so a typo never silently no-ops without a trace.
+    /// </summary>
+    private static void ApplyEntityOverrides(Entity entity, Dictionary<string, string> overrides)
+    {
+        var type = entity.GetType();
+        foreach (var (name, value) in overrides)
+        {
+            var property = type.GetProperty(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+            if (property == null || !property.CanWrite)
+            {
+                Console.WriteLine($"[Prefab] Entity override '{name}' does not match a writable property on '{type.Name}' — skipped.");
+                continue;
+            }
+
+            try
+            {
+                object parsed = SerializationUtils.ParseValue(property.PropertyType, value);
+                property.SetValue(entity, parsed);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Prefab] Could not apply entity override '{name}' on '{type.Name}': {ex.Message}");
             }
         }
     }

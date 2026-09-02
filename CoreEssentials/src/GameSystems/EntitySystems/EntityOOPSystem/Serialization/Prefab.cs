@@ -48,6 +48,13 @@ public class Prefab
     public List<ComponentDefinition> Components { get; set; } = new();
 
     /// <summary>
+    /// Per-instantiation overrides for properties that live on the entity itself (not on a
+    /// component), e.g. an entity's own <c>Text</c> or <c>CameraSpeed</c>. Property name → value
+    /// string, applied to the created entity via reflection before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </summary>
+    public Dictionary<string, string> EntityOverrides { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// Prefabs for child entities to be created and attached to the parent.
     /// </summary>
     public List<Prefab> Children { get; set; } = new();
@@ -76,6 +83,7 @@ public class Prefab
                 Type = c.Type,
                 Properties = new Dictionary<string, string>(c.Properties)
             }).ToList(),
+            EntityOverrides = new Dictionary<string, string>(EntityOverrides, StringComparer.Ordinal),
             Children = Children.Select(c => c.Clone()).ToList(),
             Binds = Binds.Select(b => new XElement(b)).ToList() // deep copy — matches the bind-clone pattern in the loader
         };

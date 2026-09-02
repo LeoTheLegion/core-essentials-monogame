@@ -24,11 +24,40 @@ public static class PrefabOverrides
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="prefab"/> is null.</exception>
     /// <exception cref="FormatException">Thrown when a component type cannot be resolved.</exception>
     public static Prefab Apply(Prefab prefab, IReadOnlyDictionary<string, Dictionary<string, string>>? overrides)
+        => Apply(prefab, overrides, null);
+
+    /// <summary>
+    /// Returns a copy of <paramref name="prefab"/> with the given component and entity-level
+    /// overrides merged into it. Component keys may be short names or fully-qualified type names;
+    /// resolution reuses the same reflection path as normal prefab instantiation. Entity-level
+    /// overrides target writable public properties on the entity itself (not a component).
+    /// </summary>
+    /// <param name="prefab">The prefab to override (never mutated).</param>
+    /// <param name="overrides">
+    /// Map of component type name → property name → value string. A key matching an existing
+    /// component merges into it; a key matching no component adds a new component definition.
+    /// </param>
+    /// <param name="entityOverrides">
+    /// Optional map of entity property name → value string, applied to the created entity before
+    /// <c>OnStart</c>/<c>OnAttach</c>. Merged into the prefab's <see cref="Prefab.EntityOverrides"/>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="prefab"/> is null.</exception>
+    /// <exception cref="FormatException">Thrown when a component type cannot be resolved.</exception>
+    public static Prefab Apply(Prefab prefab,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides,
+        IReadOnlyDictionary<string, string>? entityOverrides)
     {
         if (prefab == null) throw new ArgumentNullException(nameof(prefab));
-        if (overrides == null || overrides.Count == 0) return prefab;
+        var hasComponent = overrides != null && overrides.Count > 0;
+        var hasEntity = entityOverrides != null && entityOverrides.Count > 0;
+        if (!hasComponent && !hasEntity) return prefab;
 
         var clone = prefab.Clone();
+
+        foreach (var (name, value) in entityOverrides ?? new Dictionary<string, string>())
+            clone.EntityOverrides[name] = value;
+
+        if (overrides == null) return clone;
 
         foreach (var (componentKey, properties) in overrides)
         {

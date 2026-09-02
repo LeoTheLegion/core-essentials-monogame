@@ -95,6 +95,13 @@ public class EntityDefinition
     /// </summary>
     public Dictionary<string, Dictionary<string, string>> ResolvedOverrides { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Per-instantiation overrides for properties that live on the entity itself (not a component),
+    /// e.g. an entity's own <c>Text</c> or <c>CameraSpeed</c>. Parsed from an
+    /// &lt;EntityOverrides&gt; element and applied to the created entity before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </summary>
+    public Dictionary<string, string> EntityOverrides { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Nested entity definitions from a &lt;Children&gt; element.</summary>
     public List<EntityDefinition> Children { get; } = new();
 

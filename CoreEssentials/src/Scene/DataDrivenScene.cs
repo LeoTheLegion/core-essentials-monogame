@@ -102,38 +102,71 @@ public class DataDrivenScene : Scene
     // ──────────────────────────── Entity instantiation ────────────────────────────
 
     /// <summary>
-    /// Instantiates a single entity definition (recursively for nested children). A
-    /// <c>Source</c> definition instantiates its registered prefab with per-instance overrides;
-    /// a <c>Type</c> definition builds an ad-hoc prefab from the declared components and runs it
-    /// through the same prefab instantiation path, so both forms share identical attachment,
-    /// override, and bind semantics.
+    /// Instantiates a single entity definition and its nested &lt;Children&gt; as one tree. The whole
+    /// subtree is built and linked first, then components attach pre-order (parents before children),
+    /// so hierarchy-dependent components — e.g. a child's LabelComponent finding its ancestor
+    /// CanvasComponent — resolve correctly. This mirrors EntityPrefabLoader's two-phase design.
     /// </summary>
     private static Entity InstantiateDefinition(EntityDefinition def, EntitySystem system)
     {
-        Entity entity;
+        var combined = BuildCombinedPrefab(def, system);
+        var root = EntityPrefabLoader.Instantiate(combined, system, def.Position);
+
+        ApplyIdsAndBinds(root, def, system);
+        return root;
+    }
+
+    /// <summary>
+    /// Builds a single prefab tree for a definition and all of its nested scene &lt;Children&gt;. A
+    /// &lt;Source&gt; node resolves to its registered prefab (cloned); a plain-class (&lt;Type&gt;) node builds
+    /// an ad-hoc prefab from its declared components. Per-instance overrides are applied at each node,
+    /// and nested children are inlined so the loader can build + link + attach the whole tree in one
+    /// pass. (Nested children inherit the root's position, matching how prefab-internal children behave.)
+    /// </summary>
+    private static Prefab BuildCombinedPrefab(EntityDefinition def, EntitySystem system)
+    {
+        Prefab rootPrefab;
         if (def.Source != null)
         {
-            entity = system.Instantiate(def.Source, def.Position, def.ResolvedOverrides);
+            if (!system.TryGetPrefab(def.Source, out var registered))
+                throw new KeyNotFoundException($"Prefab '{def.Source}' is not registered.");
+            rootPrefab = registered!.Clone();
         }
         else
         {
-            var prefab = BuildAdHocPrefab(def);
-            var effective = PrefabOverrides.Apply(prefab, def.ResolvedOverrides);
-            entity = EntityPrefabLoader.Instantiate(effective, system, def.Position);
+            rootPrefab = BuildAdHocPrefab(def);
         }
 
+        // Apply returns a clone when overrides are present and the (already disposable) input when they
+        // are not — either way `node` is safe to extend without touching any registered prefab.
+        var node = PrefabOverrides.Apply(rootPrefab, def.ResolvedOverrides, def.EntityOverrides);
+        foreach (var child in def.Children)
+            node.Children.Add(BuildCombinedPrefab(child, system));
+        return node;
+    }
+
+    /// <summary>
+    /// Assigns stable ids and declarative binds to the built tree, walking in lockstep with the
+    /// definition. For a &lt;Source&gt; node whose registered prefab has its own children, those
+    /// prefab-internal children precede the scene-level ones in the built entity's child list, so we
+    /// skip past them before descending into the scene children.
+    /// </summary>
+    private static void ApplyIdsAndBinds(Entity entity, EntityDefinition def, EntitySystem system)
+    {
         if (!string.IsNullOrEmpty(def.Id))
             entity.SetId(def.Id);
 
         ApplyDefinitionBinds(entity, def.Binds);
 
-        foreach (var child in def.Children)
-        {
-            var childEntity = InstantiateDefinition(child, system);
-            entity.AddChild(childEntity);
-        }
+        int skip = def.Source != null && system.TryGetPrefab(def.Source, out var registered)
+            ? registered!.Children.Count
+            : 0;
 
-        return entity;
+        for (int i = 0; i < def.Children.Count; i++)
+        {
+            var builtChild = entity.Children[skip + i];
+            ApplyIdsAndBinds(builtChild, def.Children[i], system);
+        }
     }
 
     /// <summary>Builds a throwaway prefab from a plain-class (Type=) definition's declared components.</summary>

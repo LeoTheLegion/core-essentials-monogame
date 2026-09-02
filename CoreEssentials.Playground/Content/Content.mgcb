@@ -126,6 +126,12 @@
 #begin GuiAnchorDemo.xml
 /copy:GuiAnchorDemo.xml
 
+#begin loading.xml
+/copy:loading.xml
+
+#begin HomeScene.xml
+/copy:HomeScene.xml
+
 #begin layout/main.xml
 /copy:layout/main.xml
 
