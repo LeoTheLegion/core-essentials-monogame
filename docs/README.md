@@ -4,7 +4,7 @@
 
 CoreEssentials-MonoGame is a comprehensive framework built on top of MonoGame that provides essential building blocks for game development. Designed to accelerate game development by providing ready-to-use systems for common game development challenges.
 
-**Version:** 0.18.0  
+**Version:** 0.20.0  
 **Author:** Michael Mena  
 **Repository:** [https://github.com/LeoTheLegion/core-essentials-monogame](https://github.com/LeoTheLegion/core-essentials-monogame)
 
@@ -61,6 +61,7 @@ namespace YourGame
 ## Core Concepts
 
 - [Scene Management](./SceneManagement.md)
+  - [Scene-as-Data](./SceneAsData.md)
 - [Entity System](./EntitySystem.md)
   - [Entity Tags](./EntityTags.md)
   - [Entity Query API](./EntityQueryAPI.md)
@@ -68,7 +69,7 @@ namespace YourGame
   - [Entity Hierarchy](./EntityHierarchy.md)
   - [Spatial Partitioning](./SpatialPartitioning.md)
   - [Entity Lifecycle](./EntityLifecycle.md)
-  - [Entity Templates](./EntityTemplates.md)
+  - [Prefabs](./Prefabs.md)
   - [XML Entity Definitions](./XMLEntityDefinitions.md)
   - [SendMessage (Scene-Wide Messaging)](./SendMessage.md)
   - [Event System (Deprecated)](./EventSystem.md)
@@ -91,7 +92,7 @@ namespace YourGame
 
 The framework includes a Playground project with practical demonstrations:
 
-- **SendMessageDemoScene** (default launch scene): Demonstrates scene-wide `SendMessage` messaging, XML prefab templates with `<Bind>` wiring, and the entity-management one-liners
+- **HomeScene.xml** (default launch scene): Data-driven scene loaded via `SceneManager.LoadScene("HomeScene.xml")` after a data-driven loading screen (`loading.xml`) — demonstrates the Scene-as-Data format end to end
 - **CharacterScene**: Demonstrates sprite animation, character movement, and audio management
 - **PhysicsEntityScene**: Shows physics interactions with multiple entities and collision detection
 

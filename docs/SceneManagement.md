@@ -69,7 +69,15 @@ UpdateLoadingProgress(0.5f, "Loading assets...");
 
 ## Data-Driven Scenes
 
-A scene can run entirely from a data file — no C# subclass needed. `SceneManager.LoadScene("MyScene.xml")` parses the file into a `DataDrivenScene`, which reflects its game systems, registers prefabs, and instantiates entities.
+A scene can run entirely from a data file — no C# subclass needed. `SceneManager.LoadScene("MyScene.xml")` parses the file into a `DataDrivenScene`, which reflects its game systems, registers prefabs, and instantiates entities. The same file can also serve as the loading screen:
+
+```csharp
+// Both overloads take a scene XML asset name and wrap it in a DataDrivenScene.
+SceneManager.SetLoadingScene("loading.xml");   // data-driven loading screen
+SceneManager.LoadScene("MainMenu.xml");        // data-driven scene
+```
+
+The full strict schema — `Type=` vs `Source=`, flat/precise/entity overrides, binds, references, the data-driven loading screen with `TransitionProgressComponent`, and the 0.19 → 0.20 breaking changes — is documented in [Scene-as-Data](./SceneAsData.md).
 
 ### File structure
 

@@ -80,8 +80,8 @@ These pair with each other exactly like Unity's `GameObject.Create` / `Instantia
 // Spawn (typed) — returns null instead of throwing when detached:
 Ball ball = CreateGameObject<Ball>();
 
-// Spawn from a registered template ("prefab") at a position:
-Entity popup = InstantiateTemplate("popup", position);
+// Spawn from a registered prefab at a position:
+Entity popup = InstantiatePrefab("popup", position);
 
 // Destroy — marks the entity (and its children) for removal next update:
 Destroy();                    // on Entity
@@ -90,10 +90,10 @@ DestroyOwner();               // on EntityComponent
 
 | Call site | Typed spawn | Prefab spawn | Destroy |
 |-----------|-------------|--------------|---------|
-| `Entity` | `CreateGameObject<T>(args)` | `InstantiateTemplate(name, position)` | `Destroy()` |
-| `EntityComponent` | `CreateGameObject<T>(args)` | `InstantiateTemplate(name, position)` | `DestroyOwner()` |
+| `Entity` | `CreateGameObject<T>(args)` | `InstantiatePrefab(name, position)` | `Destroy()` |
+| `EntityComponent` | `CreateGameObject<T>(args)` | `InstantiatePrefab(name, position)` | `DestroyOwner()` |
 
-All spawn conveniences return `null` when the caller is not in a system (they never throw). Prefab spawning requires a registered template — see [Entity Templates](./EntityTemplates.md).
+All spawn conveniences return `null` when the caller is not in a system (they never throw). Prefab spawning requires a registered prefab — see [Prefabs](./Prefabs.md).
 
 ## Example: Cross-Subtree Broadcast
 
