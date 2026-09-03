@@ -20,8 +20,8 @@ Breaking changes are accepted — early library. No backwards-compatibility shim
 | 1 | [Scene Format Parser](Sprint_1_Scene_Format_Parser.md) | 5 | ✅ Done | Strict `<Scene>` parser: systems, prefabs, entities, flat + precise overrides |
 | 2 | [DataDrivenScene & Loading Screen](Sprint_2_DataDrivenScene_And_Loading_Screen.md) | 5 | ✅ Done (2026-08-31) | `DataDrivenScene`, `LoadScene(string)`/`SetLoadingScene(string)`, loading screen as data |
 | 3 | [Prefab Format Rename & Content Migration](Sprint_3_Prefab_Format_Rename_And_Content_Migration.md) | 2 | ✅ Done (2026-09-01) | `<EntityTemplate>`→`<Prefab>` root; migrate content + fixtures |
-| 4 | [Playground Behavior Components](Sprint_4_Playground_Behavior_Components.md) | 5 | Not Started | Move per-scene runtime behavior (keys/audio/debug/camera/physics) into components |
-| 5 | [Migrate Playground Scenes Data-Driven](Sprint_5_Migrate_Playground_Scenes_DataDriven.md) | 5 | Not Started | All demo scenes run from XML; `Program.cs` boots from files; delete scene subclasses |
+| 4 | [Playground Behavior Components](Sprint_4_Playground_Behavior_Components.md) | 5 | ✅ Done | Per-scene runtime behavior (keys/audio/debug/camera/physics) moved into components |
+| 5 | [Migrate Playground Scenes Data-Driven](Sprint_5_Migrate_Playground_Scenes_DataDriven.md) | 13 | ✅ Done (2026-09-02) | All six demo scenes run from XML; `Program.cs` boots from files; scene subclasses deleted |
 | 6 | [Remove Old Scene-Load Path](Sprint_6_Remove_Old_Scene_Load_Path.md) | 2 | Not Started | Delete legacy flat-`<Scene>` load path (breaking); one XML→scene path remains |
 | 7 | [Docs, Version & Release](Sprint_7_Docs_Version_Release.md) | 2 | Not Started | `Prefabs.md` + `SceneAsData.md`, version 0.20.0, PR to `development` |
 
