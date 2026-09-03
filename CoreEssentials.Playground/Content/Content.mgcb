@@ -66,11 +66,17 @@
 #begin character_sprite.xml
 /copy:character_sprite.xml
 
+#begin CameraScene.xml
+/copy:CameraScene.xml
+
 #begin CharacterScene.xml
 /copy:CharacterScene.xml
 
 #begin CharacterTemplate.xml
 /copy:CharacterTemplate.xml
+
+#begin LabelAlignmentDemoScene.xml
+/copy:LabelAlignmentDemoScene.xml
 
 #begin PingPrefabTemplate.xml
 /copy:PingPrefabTemplate.xml

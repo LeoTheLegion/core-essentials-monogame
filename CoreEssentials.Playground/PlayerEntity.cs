@@ -14,6 +14,11 @@ public class PlayerEntity : CharacterEntity
     {
     }
 
+    // Parameterless constructor for XML-based entity loading (Scene-as-Data, Sprint 5d).
+    public PlayerEntity() : base(Vector2.Zero)
+    {
+    }
+
     public override void OnStart()
     {
         base.OnStart();

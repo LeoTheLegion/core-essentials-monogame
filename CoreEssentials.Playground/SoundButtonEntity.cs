@@ -13,8 +13,9 @@ namespace CoreEssentials.Playground;
 public class SoundButtonEntity : Entity
 {
     private Canvas _canvas;
-    private string _soundAssetName;
-    private string _buttonText;
+    private string _soundAssetName = "";
+    private string _buttonText = "";
+    private bool _configured;
 
     // Parameterless constructor for XML/template loading
     public SoundButtonEntity()
@@ -29,13 +30,34 @@ public class SoundButtonEntity : Entity
     }
 
     /// <summary>
+    /// The asset-name string of the one-shot sound to play when the button is clicked.
+    /// Settable from scene XML via &lt;EntityOverrides&gt;; wired up in <see cref="OnStart"/>.
+    /// </summary>
+    public string SoundAsset
+    {
+        get => _soundAssetName;
+        set => _soundAssetName = value;
+    }
+
+    /// <summary>
+    /// The button's display text. Settable from scene XML via &lt;EntityOverrides&gt;;
+    /// wired up in <see cref="OnStart"/>.
+    /// </summary>
+    public string ButtonText
+    {
+        get => _buttonText;
+        set => _buttonText = value;
+    }
+
+    /// <summary>
     /// Configures the button with sound asset and text.
     /// </summary>
     public void Configure(string soundAssetName, string buttonText)
     {
         _soundAssetName = soundAssetName;
         _buttonText = buttonText;
-        
+        _configured = true;
+
         // Create a button for playing the sound via factory (returns IButton interface)
         var button = WidgetFactory.CreateTextButton(_buttonText);
         
@@ -49,6 +71,22 @@ public class SoundButtonEntity : Entity
         
         // Add button to canvas
         _canvas.AddWidget(button);
+    }
+
+    /// <summary>
+    /// Wires up the button when loaded from data (Scene-as-Data, Sprint 5d): if a sound asset and
+    /// text were set via &lt;EntityOverrides&gt; before OnStart, configure the widget now. Entities
+    /// constructed with the (position, asset, text) constructor are already configured, so this is a
+    /// no-op for them.
+    /// </summary>
+    public override void OnStart()
+    {
+        base.OnStart();
+
+        // Only configure here when the values arrived via <EntityOverrides> (data-driven load).
+        // Constructor-created entities already ran Configure and are flagged _configured.
+        if (!_configured && !string.IsNullOrEmpty(_soundAssetName))
+            Configure(_soundAssetName, _buttonText);
     }
     
     public override void Update(GameTime gameTime)

@@ -1,0 +1,193 @@
+<Scene>
+    <!--
+        Label-alignment demo, fully data-driven (strict scene format).
+
+        Demonstrates AutoWidth/AutoHeight labels and container-style Horizontal/Vertical alignment in
+        both canvas spaces:
+
+          Screen space — three HUD labels, one per row, positioned by alignment ALONE (no anchor
+                         positions): LEFT hugs the left edge, CENTER sits in the middle, RIGHT hugs
+                         the right edge. Each is refreshed a couple of times a second to embed its own
+                         measured size (HudLabelRefreshComponent).
+          World space  — a floating panel that orbits screen-center; its title is centered and its
+                         caption bottom-centered inside the panel by alignment alone.
+
+        A LabelAlignmentDebugOverlayComponent draws each canvas's bounds, each label's rendered bounds
+        in its own color, and a white cross at the reference point its alignment targets.
+
+        Controls: WASD pan, Q/E zoom, R reset (built into CameraEntity); Esc returns to the SendMessage
+        demo.
+    -->
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Entities>
+                <!-- Camera raised to a visible pan speed (the default 1 unit/s is imperceptible). -->
+                <EntityDefinition Type="CoreEssentials.Playground.CameraEntity" Id="camera">
+                    <Position X="640" Y="360" />
+                    <EntityOverrides>
+                        <Property Name="CameraSpeed" Value="300" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <!-- Screen-space HUD root at the origin; its canvas is the viewport. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="hudRoot">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CanvasComponent">
+                            <Properties>
+                                <Property Name="IsScreenSpace" Value="true" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                    <Children>
+                        <!-- LEFT: hugs the left edge; refreshed to show its own measured size. -->
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity">
+                            <Position X="16" Y="140" />
+                            <Components>
+                                <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="LEFT" />
+                                        <Property Name="TextColor" Value="CornflowerBlue" />
+                                        <Property Name="HorizontalAlignment" Value="Left" />
+                                    </Properties>
+                                </Component>
+                                <Component Type="CoreEssentials.Playground.HudLabelRefreshComponent">
+                                    <Properties>
+                                        <Property Name="TextTemplate" Value="LEFT   (W={w} H={h})" />
+                                        <Property Name="IntervalSeconds" Value="0.5" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+
+                        <!-- CENTER: sits in the middle of the canvas. -->
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity">
+                            <Position X="0" Y="190" />
+                            <Components>
+                                <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="CENTER" />
+                                        <Property Name="TextColor" Value="LimeGreen" />
+                                        <Property Name="HorizontalAlignment" Value="Center" />
+                                    </Properties>
+                                </Component>
+                                <Component Type="CoreEssentials.Playground.HudLabelRefreshComponent">
+                                    <Properties>
+                                        <Property Name="TextTemplate" Value="CENTER (W={w} H={h})" />
+                                        <Property Name="IntervalSeconds" Value="0.5" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+
+                        <!-- RIGHT: hugs the right edge. -->
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity">
+                            <Position X="-16" Y="240" />
+                            <Components>
+                                <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="RIGHT" />
+                                        <Property Name="TextColor" Value="OrangeRed" />
+                                        <Property Name="HorizontalAlignment" Value="Right" />
+                                    </Properties>
+                                </Component>
+                                <Component Type="CoreEssentials.Playground.HudLabelRefreshComponent">
+                                    <Properties>
+                                        <Property Name="TextTemplate" Value="RIGHT  (W={w} H={h})" />
+                                        <Property Name="IntervalSeconds" Value="0.5" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+
+                        <!-- Instructions in the bottom-left; the W/H reflect the standard 1280x720 viewport. -->
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity">
+                            <Position X="16" Y="620" />
+                            <Components>
+                                <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="Container alignment: no anchor positions — LEFT hugs the canvas left edge, CENTER sits in the middle, RIGHT hugs the right edge.&#10;HUD canvas is auto-sized and reports the viewport: W=1280 H=720. Each label shows its own measured Width.&#10;WASD pan / Q-E zoom / R reset camera. The HUD stays put while the world-space panel moves.&#10;Esc returns to the SendMessage demo." />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+                    </Children>
+                </EntityDefinition>
+
+                <!-- World-space panel that orbits screen-center; explicit size pins auto-sizing. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="panel">
+                    <Position X="640" Y="360" />
+                    <Components>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CanvasComponent">
+                            <Properties>
+                                <Property Name="IsScreenSpace" Value="false" />
+                                <Property Name="Width" Value="280" />
+                                <Property Name="Height" Value="150" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.OrbitPanelComponent">
+                            <Properties>
+                                <Property Name="CenterX" Value="640" />
+                                <Property Name="CenterY" Value="360" />
+                                <Property Name="RadiusX" Value="150" />
+                                <Property Name="RadiusY" Value="90" />
+                                <Property Name="Speed" Value="0.6" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                    <Children>
+                        <!-- Title centered horizontally near the top edge. -->
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity">
+                            <Position X="0" Y="8" />
+                            <Components>
+                                <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="World-space panel" />
+                                        <Property Name="TextColor" Value="Gold" />
+                                        <Property Name="HorizontalAlignment" Value="Center" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+
+                        <!-- Caption centered on the bottom edge, reporting the pinned canvas size. -->
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity">
+                            <Position X="0" Y="-12" />
+                            <Components>
+                                <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="Canvas: W=280 H=150 (pinned)" />
+                                        <Property Name="TextColor" Value="LightGray" />
+                                        <Property Name="HorizontalAlignment" Value="Center" />
+                                        <Property Name="VerticalAlignment" Value="Bottom" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+                    </Children>
+                </EntityDefinition>
+
+                <!-- Debug overlay auto-discovers every canvas + label in the scene. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="debugOverlay">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.LabelAlignmentDebugOverlayComponent" />
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Navigation: Esc returns to the SendMessage demo. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navSendMessage">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="Escape" />
+                                <Property Name="TargetSceneAsset" Value="SendMessageDemoScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>

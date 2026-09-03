@@ -41,6 +41,19 @@ public class DebugToggleComponent : EntityComponent
     /// <summary>Draw entity positions when debug mode is enabled.</summary>
     public bool ShowEntityPosition { get; set; }
 
+    /// <summary>
+    /// When true, debug mode is enabled (and the configured flags applied) as soon as the component
+    /// attaches — so a scene can start with the overlay already visible instead of waiting for the
+    /// first toggle. Defaults to false (toggle-only), preserving prior behavior.
+    /// </summary>
+    public bool StartEnabled { get; set; }
+
+    /// <summary>
+    /// Optional asset-name string of the font used to render debug text (IDs, tags, positions). When
+    /// non-empty it is loaded on attach and assigned to the system's debug font. Empty by default.
+    /// </summary>
+    public string DebugFontAsset { get; set; } = string.Empty;
+
     private EventHandler<KeyboardEventArgs>? _onKeyReleased;
 
     /// <inheritdoc />
@@ -48,6 +61,18 @@ public class DebugToggleComponent : EntityComponent
     {
         _onKeyReleased = (_, args) => HandleKey(args.Key);
         Input.Keyboard.KeyReleased += _onKeyReleased;
+
+        var system = EntitySystem;
+        if (system == null) return;
+
+        if (!string.IsNullOrEmpty(DebugFontAsset))
+            system.DebugFont = LoadDebugFont(DebugFontAsset);
+
+        if (StartEnabled)
+        {
+            system.DebugMode = true;
+            ApplyDebugConfig(system);
+        }
     }
 
     /// <inheritdoc />
@@ -73,6 +98,13 @@ public class DebugToggleComponent : EntityComponent
         if (system.DebugMode)
             ApplyDebugConfig(system);
     }
+
+    /// <summary>
+    /// Loads the debug font asset by name. Virtual so unit tests can observe the requested asset
+    /// without driving real content loading.
+    /// </summary>
+    protected virtual Assets.FontAsset LoadDebugFont(string assetName)
+        => Assets.AssetManager.LoadAsset<Assets.FontAsset>(assetName);
 
     /// <summary>
     /// Applies the configured overlay flags to the system's debug config. Virtual so unit tests
