@@ -23,7 +23,7 @@ Breaking changes are accepted — early library. No backwards-compatibility shim
 | 4 | [Playground Behavior Components](Sprint_4_Playground_Behavior_Components.md) | 5 | ✅ Done | Per-scene runtime behavior (keys/audio/debug/camera/physics) moved into components |
 | 5 | [Migrate Playground Scenes Data-Driven](Sprint_5_Migrate_Playground_Scenes_DataDriven.md) | 13 | ✅ Done (2026-09-02) | All six demo scenes run from XML; `Program.cs` boots from files; scene subclasses deleted |
 | 6 | [Remove Old Scene-Load Path](Sprint_6_Remove_Old_Scene_Load_Path.md) | 2 | ✅ Done | Legacy flat-`<Scene>` load path removed; strict `SceneParser` + `DataDrivenScene` is the only XML→scene path |
-| 7 | [Docs, Version & Release](Sprint_7_Docs_Version_Release.md) | 2 | 🔄 In Progress (T1–T6 done) | `Prefabs.md` + `SceneAsData.md`, version 0.20.0; PR to `development` pending |
+| 7 | [Docs, Version & Release](Sprint_7_Docs_Version_Release.md) | 2 | ✅ Done (2026-09-02) | `Prefabs.md` + `SceneAsData.md`, version 0.20.0; PR to `development` open |
 
 > Sprints 3–7 supersede the original single "Migration, Docs & Release" sprint (see [Sprint_3_Migration_Docs_Release.md](Sprint_3_Migration_Docs_Release.md), kept for reference only).
 

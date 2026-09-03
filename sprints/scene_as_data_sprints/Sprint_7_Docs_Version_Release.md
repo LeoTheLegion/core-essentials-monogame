@@ -14,7 +14,7 @@ Docs reference the final API surface, file names, and schema — all of which on
 - [x] T4 ⭐ Fix remaining cross-doc references to removed APIs / old schema (`docs/EntitySystem.md`, `docs/XMLEntityDefinitions.md`, `docs/SendMessage.md`, `docs/GameStateSerialization.md`)
 - [x] T5 ⭐ Version bump 0.19.x → **0.20.0** (breaking changes) in the package/project metadata
 - [x] T6 🔁 Build + full suite green; run the game crash-check one final time
-- [ ] T7 ⭐ Push `feature/scene-as-data` and open a PR to `development` — "Closes #92", "Closes #84", "Closes #81" go in the **PR body only** (never in code/comments/docs)
+- [x] T7 ⭐ Push `feature/scene-as-data` and open a PR to `development` — "Closes #92", "Closes #84", "Closes #81" go in the **PR body only** (never in code/comments/docs)
 
 ## Acceptance Criteria
 
@@ -37,6 +37,7 @@ Docs reference the final API surface, file names, and schema — all of which on
 - **T4** — Cross-doc fixes: `docs/XMLEntityDefinitions.md` (Quick Start, "Loading Scenes", strict scene schema section + `Source=` attribute row, menu example load call, custom-components examples re-pointed to single-entity loading, Complete Example rewritten to the strict format with `SceneManager.LoadScene` + `FindById`); `docs/EntitySystem.md` and `docs/GameStateSerialization.md` (template links → Prefabs); `docs/SendMessage.md` (`InstantiateTemplate` → `InstantiatePrefab`, link → Prefabs). Final grep across `docs/` for removed APIs is clean — the only remaining mentions are the intentional old→new tables inside `Prefabs.md` and `SceneAsData.md`.
 - **T5** — `CoreEssentials.csproj` `<Version>` 0.19.1 → **0.20.0** (minor bump: breaking changes, new features).
 - **T6** — Build green (`Build succeeded`, 0 errors); full suite **1098 passed / 0 failed / 3 skipped (Total 1101)** — unchanged from Sprint 6, as expected for docs-only changes.
+- **T7** — Branch `feature/scene-as-data` pushed; PR opened to `development` with the three issue references in the PR body only (none in code, comments, or docs). Docs + version commit: `dff66de`.
 
 ---
 *Created: 2026-09-01 | Part of Scene-as-Data Project*
