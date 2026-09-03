@@ -111,20 +111,24 @@ public class SceneManager
     }
 
     /// <summary>
-    /// Sets a data-driven loading screen parsed from a scene XML asset (see <see cref="SceneParser"/>).
-    /// The same file can later be loaded as a regular scene with <see cref="LoadScene(string)"/>.
+    /// Sets a data-driven loading screen from a scene XML asset (see <see cref="SceneParser"/>).
+    /// The file is parsed when the scene loads, so this can be called before the
+    /// <see cref="CoreEssentials.Assets.AssetManager"/> is initialized. The same file can later be
+    /// loaded as a regular scene with <see cref="LoadScene(string)"/>.
     /// </summary>
-    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "LoadingScene.xml").</param>
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "loading.xml").</param>
     public void SetLoadingScene(string sceneAssetName)
-        => SetLoadingScene(new DataDrivenScene(SceneParser.LoadFromAsset(sceneAssetName)));
+        => SetLoadingScene(new DataDrivenScene(sceneAssetName));
 
     /// <summary>
-    /// Loads a data-driven scene from a scene XML asset (see <see cref="SceneParser"/>),
-    /// wrapping it in a <see cref="DataDrivenScene"/> and transitioning to it.
+    /// Loads a data-driven scene from a scene XML asset (see <see cref="SceneParser"/>), wrapping it in a
+    /// <see cref="DataDrivenScene"/> and transitioning to it. The file is parsed when the scene loads, so this
+    /// can be called before the <see cref="CoreEssentials.Assets.AssetManager"/> is initialized (e.g. right after
+    /// game construction, ahead of <c>Run()</c>).
     /// </summary>
-    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "MainMenu.xml").</param>
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "HomeScene.xml").</param>
     public void LoadScene(string sceneAssetName)
-        => LoadScene(new DataDrivenScene(SceneParser.LoadFromAsset(sceneAssetName)));
+        => LoadScene(new DataDrivenScene(sceneAssetName));
 
     /// <summary>
     /// Loads the specified scene with a transition.

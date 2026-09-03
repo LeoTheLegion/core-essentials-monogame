@@ -343,6 +343,34 @@ AudioManager.Instance.SetMasterVolume(0.5f);
 3. Press Enter to start the game and transition to the GameplayScene
 4. Use WASD to control the player character
 
+## Smoke-Running a Scene from the Command Line
+
+The playground supports two command-line arguments for launching a specific data-driven scene and letting it run unattended — handy for verifying a scene boots without manually opening the window and closing it:
+
+```bash
+# Launch a specific scene (defaults to HomeScene.xml) and let it run until you close it
+dotnet run --project CoreEssentials.Playground -- --scene CharacterScene.xml
+
+# Close the game automatically after 5 seconds of runtime
+dotnet run --project CoreEssentials.Playground -- --scene PhysicsEntityScene.xml --run-for 5
+```
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `--scene <file>` | No | The scene XML asset to launch (e.g., `CharacterScene.xml`). Defaults to `HomeScene.xml`. |
+| `--run-for <seconds>` | No | How long (in seconds) to keep running before the game closes itself. Omit to run indefinitely, as usual. |
+
+`--run-for` is opt-in: when it is not supplied the game runs exactly as before, until closed. Unknown arguments are ignored with a console note.
+
+To exercise **every** data-driven scene at once (any `Content/*.xml` whose root element is `<Scene>`), use the runner script:
+
+```bash
+./scripts/run-all-scenes.ps1                # run each scene for 5 seconds
+./scripts/run-all-scenes.ps1 -Seconds 8     # run each scene for 8 seconds
+```
+
+It builds the playground, launches each scene with a fixed `--run-for`, and prints a per-scene PASS/FAIL summary (a scene passes when its process exits cleanly). Exit code is non-zero if any scene fails to launch.
+
 ## Next Steps
 
 - Add more entities to your game

@@ -40,6 +40,12 @@ namespace CoreEssentials
         private float _fixedUpdateTime;
 
         /// <summary>
+        /// Optional auto-exit timer. When set, the game closes itself once the deadline is reached,
+        /// enabling unattended smoke-runs of a scene. Null (the default) means run indefinitely.
+        /// </summary>
+        private AutoExitTimer? _autoExitTimer;
+
+        /// <summary>
         /// Gets the GraphicsDeviceManager for this game.
         /// </summary>
         public GraphicsDeviceManager Graphics => _graphics;
@@ -48,6 +54,18 @@ namespace CoreEssentials
         /// Gets the <see cref="SceneManager"/> responsible for managing game scenes.
         /// </summary>
         public SceneManager SceneManager { get; private set; }
+
+        /// <summary>
+        /// Enables an opt-in auto-exit: once the given number of seconds of elapsed game time has
+        /// passed, the game calls <see cref="Game.Exit"/> and the process terminates. This is intended for
+        /// unattended smoke-runs (e.g., launching a scene from the command line and letting it run for a
+        /// few seconds). When never called, the game runs indefinitely exactly as before.
+        /// </summary>
+        /// <param name="seconds">How long (in seconds) to keep running before auto-exiting. Must be positive.</param>
+        public void EnableAutoExit(double seconds)
+        {
+            _autoExitTimer = new AutoExitTimer(seconds);
+        }
 
         /// <summary>
         /// Initializes a new instance of the MainGame class.
@@ -153,6 +171,15 @@ namespace CoreEssentials
             AudioManager.Instance.Update(gameTime);
             
             Debug.StickyLog.Update(gameTime);
+
+            // Opt-in auto-exit (smoke-run): only ticks when a deadline was set, so the default
+            // game loop is untouched. When the duration elapses, close the game cleanly.
+            if (_autoExitTimer != null)
+            {
+                _autoExitTimer.Tick((float)gameTime.ElapsedGameTime.TotalMilliseconds);
+                if (_autoExitTimer.IsExpired)
+                    this.Exit();
+            }
 
             base.Update(gameTime);
 

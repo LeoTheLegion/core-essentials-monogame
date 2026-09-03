@@ -201,6 +201,56 @@ namespace CoreEssentials.Tests.SceneManagement
             }
         }
 
+        // ──────────────────────── Deferred-parse constructor (boot before Run()) ────────────────────────
+
+        [Fact]
+        public void DataDrivenScene_FromAssetName_DoesNotParseUntilLoad()
+        {
+            // Arrange — a scene requested by asset name, the way Program.cs does it right after
+            // construction and BEFORE MainGame.LoadContent() has initialized the AssetManager. The
+            // asset file is intentionally NOT written yet: if construction parsed eagerly it would
+            // throw here (missing asset / uninitialized AssetManager). Deferral means it doesn't.
+            var scene = new DataDrivenScene("DeferredBootProbe.xml");
+
+            // Act — now that assets are available (as they are once LoadContent has run), load the scene.
+            WriteContentAsset("DeferredBootProbe.xml", @"<Scene>
+  <GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""DDSEntity"" Id=""booted"" />
+      </Entities>
+    </System>
+  </GameSystems>
+</Scene>");
+
+            var helper = new CoroutineTestHelper();
+            try
+            {
+                AssetManager.Init(new MockContentManager());
+
+                scene.Load();
+                for (int i = 0; i < 30 && !scene.IsLoaded; i++)
+                    helper.Tick();
+
+                // Assert — the deferred definition resolved during load and instantiated its entity.
+                Assert.True(scene.IsLoaded);
+                var entitySystem = scene.GetGameSystem<EntitySystem>();
+                Assert.NotNull(entitySystem.FindById("booted"));
+            }
+            finally
+            {
+                helper.Cleanup();
+            }
+        }
+
+        [Fact]
+        public void DataDrivenScene_FromAssetName_NullOrEmpty_Throws()
+        {
+            string? nullName = null;
+            Assert.Throws<ArgumentNullException>(() => new DataDrivenScene(nullName));
+            Assert.Throws<ArgumentNullException>(() => new DataDrivenScene("   "));
+        }
+
         // ──────────────────────────── Helpers ────────────────────────────
 
         private static float ProgressOf(DataDrivenScene scene)

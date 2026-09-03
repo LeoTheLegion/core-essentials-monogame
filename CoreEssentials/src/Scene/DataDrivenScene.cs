@@ -19,11 +19,13 @@ namespace CoreEssentials.Scenes;
 /// </summary>
 public class DataDrivenScene : Scene
 {
-    private readonly SceneDefinition _definition;
+    private SceneDefinition? _definition;
+    private readonly string? _assetName;
     private GameSystem[] _systems = Array.Empty<GameSystem>();
 
-    /// <summary>The parsed definition this scene was created from.</summary>
-    public SceneDefinition Definition => _definition;
+    /// <summary>The parsed definition this scene was created from. For scenes built from an asset name,
+    /// the definition is resolved lazily on first access (during the scene's load phase).</summary>
+    public SceneDefinition Definition => EnsureDefinition();
 
     /// <summary>Creates a data-driven scene from a parsed definition (see <see cref="SceneParser"/>).</summary>
     /// <exception cref="InvalidOperationException">Thrown when a system that is not an
@@ -31,8 +33,37 @@ public class DataDrivenScene : Scene
     /// <c>&lt;System Type="EntitySystem"&gt;</c>.</exception>
     public DataDrivenScene(SceneDefinition definition)
     {
-        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+        _definition = Validate(definition ?? throw new ArgumentNullException(nameof(definition)));
+    }
 
+    /// <summary>
+    /// Creates a data-driven scene whose definition is parsed from a scene XML asset when the scene
+    /// loads. Use this (via <see cref="SceneManager.LoadScene(string)"/> / <see cref="SceneManager.SetLoadingScene(string)"/>)
+    /// so a scene can be requested before the <see cref="CoreEssentials.Assets.AssetManager"/> is
+    /// initialized — e.g. immediately after game construction, ahead of <c>Run()</c>. The file is read
+    /// during the scene's load phase, once assets are available.
+    /// </summary>
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "HomeScene.xml").</param>
+    public DataDrivenScene(string sceneAssetName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneAssetName))
+            throw new ArgumentNullException(nameof(sceneAssetName));
+
+        _assetName = sceneAssetName;
+    }
+
+    /// <summary>Resolves the definition on first use, parsing from the asset name when it was not
+    /// supplied at construction. Safe to call repeatedly.</summary>
+    private SceneDefinition EnsureDefinition()
+    {
+        if (_definition == null)
+            _definition = Validate(SceneParser.LoadFromAsset(_assetName!));
+
+        return _definition;
+    }
+
+    private static SceneDefinition Validate(SceneDefinition definition)
+    {
         foreach (var systemDef in definition.Systems)
         {
             if ((systemDef.Prefabs.Count > 0 || systemDef.Entities.Count > 0) && systemDef.SystemType != typeof(EntitySystem))
@@ -40,6 +71,8 @@ public class DataDrivenScene : Scene
                     $"System '{systemDef.TypeName}' declares prefabs or entities but is not an EntitySystem — " +
                     "content can only live inside <System Type=\"EntitySystem\">.");
         }
+
+        return definition;
     }
 
     /// <summary>Reflectively instantiates every system declared by the definition, in document order.
@@ -47,7 +80,7 @@ public class DataDrivenScene : Scene
     /// their parameterless constructor.</summary>
     protected override GameSystem[] LoadGameSystems()
     {
-        var defs = _definition.Systems;
+        var defs = EnsureDefinition().Systems;
         _systems = new GameSystem[defs.Count];
         for (int i = 0; i < defs.Count; i++)
         {
@@ -106,7 +139,7 @@ public class DataDrivenScene : Scene
     /// </summary>
     protected override IEnumerator OnStartCoroutine()
     {
-        var defs = _definition.Systems;
+        var defs = EnsureDefinition().Systems;
         for (int i = 0; i < defs.Count; i++)
         {
             var systemDef = defs[i];
