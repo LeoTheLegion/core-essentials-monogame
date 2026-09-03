@@ -241,86 +241,6 @@ public class CommandBindingTests : IDisposable
         Assert.Null(ex);
     }
 
-    // ──────────────────────────── LoadSceneFromXml integration ────────────────────────────
-
-    [Fact]
-    public void LoadSceneFromXml_BindWiring_EndToEnd()
-    {
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""ClickCounterEntity"" Id=""counter"">
-                    <Components>
-                        <Component Type=""SignalComponent"" />
-                    </Components>
-                    <Bind Event=""Signaled"" Command=""OnClicked"" />
-                </EntityDefinition>
-            </Scene>";
-
-        var roots = EntitySerializer.LoadSceneFromXml(xml, _system, CreateTestFactory());
-
-        Assert.Single(roots);
-        var counter = (ClickCounterEntity)roots[0];
-        var signal = (SignalComponent)counter.GetComponent<SignalComponent>()!;
-
-        signal.RaiseSignal();
-
-        Assert.Equal(1, counter.ClickCount);
-    }
-
-    [Fact]
-    public void LoadSceneFromXml_BindInsideComponentsElement_IsApplied()
-    {
-        // Binds nested inside <Components> (sibling of <Component>) must be found too.
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""ClickCounterEntity"" Id=""counter"">
-                    <Components>
-                        <Component Type=""SignalComponent"" />
-                        <Bind Event=""Signaled"" Command=""OnClicked"" />
-                    </Components>
-                </EntityDefinition>
-            </Scene>";
-
-        var roots = EntitySerializer.LoadSceneFromXml(xml, _system, CreateTestFactory());
-        var counter = (ClickCounterEntity)roots[0];
-        var signal = (SignalComponent)counter.GetComponent<SignalComponent>()!;
-
-        signal.RaiseSignal();
-
-        Assert.Equal(1, counter.ClickCount);
-    }
-
-    [Fact]
-    public void LoadSceneFromXml_ReferenceOntoComponent_ResolvesTarget()
-    {
-        // A component-level <Reference> should resolve the entity by Id and set it on the component.
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""LabelLikeEntity"" Id=""label"">
-                    <Position X=""0"" Y=""0"" />
-                </EntityDefinition>
-                <EntityDefinition Type=""KeeperEntity"" Id=""keeper"">
-                    <Components>
-                        <Component Type=""ScoreKeeperComponent"" />
-                    </Components>
-                    <References>
-                        <Reference Name=""Target"" TargetId=""label"" />
-                    </References>
-                </EntityDefinition>
-            </Scene>";
-
-        var roots = EntitySerializer.LoadSceneFromXml(xml, _system, CreateTestFactory());
-
-        var keeper = (KeeperEntity)_system.FindById("keeper")!;
-        var label = (LabelLikeEntity)_system.FindById("label")!;
-        var keeperComponent = (ScoreKeeperComponent)keeper.GetComponent<ScoreKeeperComponent>()!;
-
-        Assert.Same(label, keeperComponent.Target);
-
-        keeperComponent.Bump();
-        Assert.Equal("Score: 1", label.LastText);
-    }
-
     // ──────────────────────────── Component factory regression ────────────────────────────
 
     [Fact]
@@ -336,31 +256,6 @@ public class CommandBindingTests : IDisposable
         Assert.NotNull(factory.Create("AnchorComponent"));
     }
 
-    [Fact]
-    public void LoadScene_CustomFactoryWithBuiltInComponents_AttachesAll()
-    {
-        // Regression: a custom factory that only registers its own components used to
-        // silently drop every built-in component from the scene (no canvas, no widgets).
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Serialization.PlainEntity"" Id=""root"">
-                    <Components>
-                        <Component Type=""CanvasComponent"" />
-                        <Component Type=""ScoreKeeperComponent"" />
-                    </Components>
-                </EntityDefinition>
-            </Scene>";
-
-        var factory = new DefaultComponentFactory();
-        factory.Register("ScoreKeeperComponent", () => new ScoreKeeperComponent());
-
-        var roots = EntitySerializer.LoadSceneFromXml(xml, _system, factory);
-
-        var root = (PlainEntity)roots.Single(r => r.Id == "root");
-        Assert.NotNull(root.GetComponent<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CanvasComponent>());
-        Assert.NotNull(root.GetComponent<ScoreKeeperComponent>());
-    }
-
     // ──────────────────────────── Component discovery (Unity-style) ────────────────────────────
 
     [Fact]
@@ -371,29 +266,6 @@ public class CommandBindingTests : IDisposable
         var component = factory.Create("DiscoveryFixtureComponent");
 
         Assert.IsType<DiscoveryFixtureComponent>(component);
-    }
-
-    [Fact]
-    public void LoadScene_DiscoveredComponent_AttachesWithoutRegistration()
-    {
-        // The whole point: a custom component written in code is usable from XML with no
-        // factory registration at all.
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Serialization.PlainEntity"" Id=""root"">
-                    <Components>
-                        <Component Type=""DiscoveryFixtureComponent"" />
-                    </Components>
-                </EntityDefinition>
-            </Scene>";
-
-        var roots = EntitySerializer.LoadSceneFromXml(xml, _system, new DefaultComponentFactory());
-
-        var root = (PlainEntity)roots.Single(r => r.Id == "root");
-        var discovered = (DiscoveryFixtureComponent)root.GetComponent<DiscoveryFixtureComponent>()!;
-
-        discovered.Increment();
-        Assert.Equal(1, discovered.Count);
     }
 
     [Fact]
@@ -416,15 +288,6 @@ public class CommandBindingTests : IDisposable
     }
 
     // ──────────────────────────── Helpers ────────────────────────────
-
-    /// <summary>Factory registering the test fixture components by their short names.</summary>
-    private static IComponentFactory CreateTestFactory()
-    {
-        var factory = new DefaultComponentFactory();
-        factory.Register("SignalComponent", () => new SignalComponent());
-        factory.Register("ScoreKeeperComponent", () => new ScoreKeeperComponent());
-        return factory;
-    }
 
     private static XElement BuildDefinition(string innerXml) =>
         XElement.Parse($"<EntityDefinition>{innerXml}</EntityDefinition>");
@@ -480,26 +343,6 @@ public class PayloadComponent : EntityComponent
     public void RaisePong(EventArgs args) => Ponged?.Invoke(this, args);
 }
 
-/// <summary>Component holding an entity reference, settable from XML via &lt;Reference&gt;.</summary>
-public class ScoreKeeperComponent : EntityComponent
-{
-    public Entity? Target;
-    public int Value;
-
-    public void Bump()
-    {
-        Value++;
-        if (Target is LabelLikeEntity label)
-            label.LastText = $"Score: {Value}";
-    }
-}
-
-/// <summary>Entity mimicking a label that a command handler can update.</summary>
-public class LabelLikeEntity : Entity
-{
-    public string? LastText;
-}
-
 /// <summary>Component whose handler throws — used to verify the bridge swallows errors.</summary>
 public class ExplodingComponent : EntityComponent
 {
@@ -509,18 +352,6 @@ public class ExplodingComponent : EntityComponent
 
     /// <summary>Raises <see cref="Boom"/>.</summary>
     public void RaiseBoom() => Boom?.Invoke();
-}
-
-/// <summary>Scene-loadable entity with a public command handler (must be non-private for the assembly scan).</summary>
-public class ClickCounterEntity : Entity
-{
-    public int ClickCount;
-    public void OnClicked() => ClickCount++;
-}
-
-/// <summary>Scene-loadable entity hosting the ScoreKeeperComponent.</summary>
-public class KeeperEntity : Entity
-{
 }
 
 /// <summary>Discovered by the assembly scan — never explicitly registered anywhere.</summary>

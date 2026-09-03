@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.IO;
+using System.Linq;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
@@ -482,185 +483,62 @@ public class EntitySerializerTests
 
     #endregion
 
-    #region Scene Loading Tests (T3)
+    #region Existing-Component Override Tests
 
     [Fact]
-    public void LoadSceneFromXml_WithValidScene_ShouldReturnEntities()
+    public void LoadEntity_WithExistingComponentPropertyColor_ShouldModifyNotDuplicate()
     {
+        // An entity whose OnStart() creates a SpriteComponent (White) must have its
+        // properties modified by XML instead of getting a duplicate component.
         var system = CreateEntitySystem();
         var xml = @"
-            <Scene>
-                <EntityDefinition Type=""TestEntity"" Id=""player"">
-                    <Position X=""100"" Y=""200"" />
-                </EntityDefinition>
-                <EntityDefinition Type=""TestEntity"" Id=""enemy"">
-                    <Position X=""300"" Y=""400"" />
-                </EntityDefinition>
-            </Scene>";
+            <Entity>
+                <Position X=""50"" Y=""50"" />
+                <Components>
+                    <Component Type=""SpriteComponent"">
+                        <Properties>
+                            <Property Name=""Color"" Value=""Red"" />
+                        </Properties>
+                    </Component>
+                </Components>
+            </Entity>";
 
-        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
-        Assert.Equal(2, entities.Count);
-    }
+        var entity = EntitySerializer.LoadEntity<EntityWithPreCreatedComponent>(xml, system);
 
-    [Fact]
-    public void LoadSceneFromXml_WithChildren_ShouldCreateHierarchy()
-    {
-        var system = CreateEntitySystem();
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""TestEntity"" Id=""parent"">
-                    <Position X=""0"" Y=""0"" />
-                    <Children>
-                        <EntityDefinition Type=""TestEntity"" Id=""child1"">
-                            <Position X=""10"" Y=""20"" />
-                        </EntityDefinition>
-                        <EntityDefinition Type=""TestEntity"" Id=""child2"">
-                            <Position X=""30"" Y=""40"" />
-                        </EntityDefinition>
-                    </Children>
-                </EntityDefinition>
-            </Scene>";
-
-        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
-
-        Assert.Single(entities);
-        Assert.Equal(2, entities[0].Children.Count);
-    }
-
-    [Fact]
-    public void LoadSceneFromXml_WithTagsAndComponents_ShouldConfigureEntities()
-    {
-        var system = CreateEntitySystem();
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""TestEntity"" Id=""player"">
-                    <Position X=""50"" Y=""50"" />
-                    <Tags>
-                        <Tag Name=""Player"" />
-                        <Tag Name=""Controllable"" />
-                    </Tags>
-                    <Components>
-                        <Component Type=""SpriteComponent"" />
-                    </Components>
-                </EntityDefinition>
-            </Scene>";
-
-        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
-
-        Assert.Single(entities);
-        Assert.True(entities[0].HasTag("Player"));
-        Assert.True(entities[0].HasTag("Controllable"));
-        Assert.NotNull(entities[0].GetComponent<SpriteComponent>());
-    }
-
-    [Fact]
-    public void LoadSceneFromXml_EmptyScene_ShouldReturnEmptyList()
-    {
-        var system = CreateEntitySystem();
-        var xml = "<Scene></Scene>";
-
-        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
-        Assert.Empty(entities);
-    }
-
-    [Fact]
-    public void LoadSceneFromFile_WithValidFile_ShouldLoadScene()
-    {
-        var system = CreateEntitySystem();
-        var tempFile = Path.GetTempFileName();
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""TestEntity"" Id=""entity1"">
-                    <Position X=""100"" Y=""200"" />
-                </EntityDefinition>
-            </Scene>";
-        File.WriteAllText(tempFile, xml);
-
-        var entities = EntitySerializer.LoadSceneFromFile(tempFile, system);
-
-        Assert.Single(entities);
-        Assert.Equal(100f, entities[0].Position.X);
-
-        File.Delete(tempFile);
-    }
-
-    [Fact]
-    public void LoadSceneFromFile_MissingFile_ShouldThrowFileNotFoundException()
-    {
-        var system = CreateEntitySystem();
-
-        Assert.Throws<FileNotFoundException>(() =>
-            EntitySerializer.LoadSceneFromFile("/nonexistent/scene.xml", system));
-    }
-
-    [Fact]
-    public void LoadSceneFromXml_InvalidRoot_ShouldThrowFormatException()
-    {
-        var system = CreateEntitySystem();
-        var xml = @"<Entity>
-            <Position X=""0"" Y=""0"" />
-        </Entity>";
-
-        Assert.Throws<FormatException>(() =>
-            EntitySerializer.LoadSceneFromXml(xml, system));
-    }
-
-    [Fact]
-    public void LoadSceneFromXml_WithComponentPropertyColor_ShouldSetColorOnExistingComponent()
-    {
-        // This tests the case where an entity's OnStart() creates a SpriteComponent (White)
-        // and XML should modify its properties instead of adding a duplicate or throwing
-        var system = CreateEntitySystem();
-        var xml = @"
-            <Scene>
-                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntitySerializerTests+EntityWithPreCreatedComponent"" Id=""coloredEntity"">
-                    <Position X=""50"" Y=""50"" />
-                    <Components>
-                        <Component Type=""SpriteComponent"">
-                            <Properties>
-                                <Property Name=""Color"" Value=""Red"" />
-                            </Properties>
-                        </Component>
-                    </Components>
-                </EntityDefinition>
-            </Scene>";
-
-        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
-
-        Assert.Single(entities);
-        var sprite = entities[0].GetComponent<SpriteComponent>();
+        Assert.NotNull(entity);
+        // Exactly one SpriteComponent — the OnStart-created one, modified in place.
+        Assert.Single(entity.Components.OfType<SpriteComponent>());
+        var sprite = entity.GetComponent<SpriteComponent>();
         Assert.NotNull(sprite);
         Assert.Equal(Color.Red, sprite.Color);
     }
 
     [Fact]
-    public void LoadSceneFromXml_WithMultipleComponentProperties_ShouldApplyAll()
+    public void LoadEntity_WithExistingComponentMultipleProperties_ShouldApplyAll()
     {
-        // Tests that XML properties override existing component properties set in OnStart
+        // XML properties override existing component properties set in OnStart.
         var system = CreateEntitySystem();
         var xml = @"
-            <Scene>
-                <EntityDefinition Type=""CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntitySerializerTests+EntityWithPreCreatedComponent"" Id=""configured"">
-                    <Position X=""100"" Y=""200"" />
-                    <Components>
-                        <Component Type=""SpriteComponent"">
-                            <Properties>
-                                <Property Name=""Color"" Value=""Green"" />
-                                <Property Name=""Scale"" Value=""2,2"" />
-                            </Properties>
-                        </Component>
-                    </Components>
-                </EntityDefinition>
-            </Scene>";
+            <Entity>
+                <Position X=""100"" Y=""200"" />
+                <Components>
+                    <Component Type=""SpriteComponent"">
+                        <Properties>
+                            <Property Name=""Color"" Value=""Green"" />
+                            <Property Name=""Scale"" Value=""2,2"" />
+                        </Properties>
+                    </Component>
+                </Components>
+            </Entity>";
 
-        var entities = EntitySerializer.LoadSceneFromXml(xml, system);
+        var entity = EntitySerializer.LoadEntity<EntityWithPreCreatedComponent>(xml, system);
 
-        Assert.Single(entities);
-        var sprite = entities[0].GetComponent<SpriteComponent>();
+        Assert.NotNull(entity);
+        var sprite = entity.GetComponent<SpriteComponent>();
         Assert.NotNull(sprite);
         Assert.Equal(Color.Green, sprite.Color);
         // Scale is now on Entity, not SpriteComponent
-        Assert.Equal(new Vector2(2f, 2f), entities[0].Scale);
+        Assert.Equal(new Vector2(2f, 2f), entity.Scale);
     }
 
     #endregion
