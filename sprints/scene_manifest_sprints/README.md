@@ -35,7 +35,7 @@ Declare a game's scenes up front in a single XML file — Unity-style "Scenes In
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
 | 1 | [Scene Manifest Parsing](Sprint_1_Scene_Manifest_Parsing.md) | 3 | ✅ Done (2026-09-04) | `SceneManifest`: parse + validate the two-list format, pure data, no behavior change |
-| 2 | [Core Enforcement + Migration](Sprint_2_Core_Enforcement_And_Migration.md) | 7 | ⬜ Not started | Core enforces the manifest (unregistered scenes can't load); per-scene loading screens; full test/playground migration |
+| 2 | [Core Enforcement + Migration](Sprint_2_Core_Enforcement_And_Migration.md) | 7 | ✅ Done (2026-09-04) | Core enforces the manifest (unregistered scenes can't load); per-scene loading screens; full test/playground migration |
 | 3 | [Navigation API + Tooling](Sprint_3_Navigation_API_And_Tooling.md) | 5 | ⬜ Not started | `SceneManager.NextScene()`/`PreviousScene()` over the manifest (clamped, with events); harness reads the manifest as the authoritative list; docs |
 
 ## Why This?

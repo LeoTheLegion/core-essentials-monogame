@@ -68,6 +68,10 @@ namespace CoreEssentials.Tests.SceneManagement
             {
                 AssetManager.Init(new MockContentManager());
                 var manager = new SceneManager();
+                // Name-based loads are now gated by a manifest: register the home scene + its loading screen.
+                manager.SetManifest(SceneManifestFixture.Build(
+                    new[] { new SceneManifestFixture.GameScene("HomeScene.xml") },
+                    defaultLoadingScreen: "loading.xml"));
                 manager.SetLoadingScene("loading.xml");
                 manager.LoadScene("HomeScene.xml");
 

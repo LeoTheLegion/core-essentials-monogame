@@ -90,6 +90,9 @@
 #begin PhysicsEntityScene.xml
 /copy:PhysicsEntityScene.xml
 
+#begin scenes.xml
+/copy:scenes.xml
+
 #begin SoundButtonTemplate.xml
 /copy:SoundButtonTemplate.xml
 

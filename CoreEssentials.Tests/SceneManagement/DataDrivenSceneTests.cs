@@ -122,6 +122,10 @@ namespace CoreEssentials.Tests.SceneManagement
             {
                 AssetManager.Init(new MockContentManager());
                 var manager = new SceneManager();
+                // Name-based loads are now gated by a manifest: register the target scene + its loading screen.
+                manager.SetManifest(SceneManifestFixture.Build(
+                    new[] { new SceneManifestFixture.GameScene("DataDrivenTargetScene_A.xml") },
+                    defaultLoadingScreen: "DataDrivenLoadingScreen_A.xml"));
                 manager.SetLoadingScene("DataDrivenLoadingScreen_A.xml");
                 manager.LoadScene("DataDrivenTargetScene_A.xml");
 
@@ -174,6 +178,10 @@ namespace CoreEssentials.Tests.SceneManagement
             {
                 AssetManager.Init(new MockContentManager());
                 var manager = new SceneManager();
+                // Name-based loads are now gated by a manifest: register the target scene + its loading screen.
+                manager.SetManifest(SceneManifestFixture.Build(
+                    new[] { new SceneManifestFixture.GameScene("DataDrivenTargetScene_B.xml") },
+                    defaultLoadingScreen: "DataDrivenLoadingScreen_B.xml"));
                 manager.SetLoadingScene("DataDrivenLoadingScreen_B.xml");
                 manager.LoadScene("DataDrivenTargetScene_B.xml");
 

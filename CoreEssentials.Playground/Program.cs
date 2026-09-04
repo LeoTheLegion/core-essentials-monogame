@@ -31,6 +31,11 @@ if (options.NoFocusPause)
 // Boot purely from data files. The loading screen and the first scene are both strict-format XML
 // assets staged into Content/ — no C# LoadingScene or scene subclass. Screen size is set once here
 // rather than per-scene. The launch scene defaults to HomeScene.xml but can be overridden via --scene.
+//
+// The core enforces the scene manifest: every name-based load must reference an entry in scenes.xml,
+// and the manifest must be configured before any name-based load. The startup scene is the first
+// <GameScenes> entry; Next/Previous navigation walks that list.
+game.SceneManager.SetManifestAsset("scenes.xml");
 game.SceneManager.SetLoadingScene("loading.xml");
 game.SceneManager.LoadScene(options.Scene);
 

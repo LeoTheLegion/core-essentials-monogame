@@ -27,6 +27,11 @@ public class DataDrivenScene : Scene
     /// the definition is resolved lazily on first access (during the scene's load phase).</summary>
     public SceneDefinition Definition => EnsureDefinition();
 
+    /// <summary>The scene XML asset name this scene was created from, or null when it was created
+    /// directly from a parsed <see cref="SceneDefinition"/>. Used by the scene manifest to enforce that
+    /// only registered scenes are loaded by name.</summary>
+    public string? AssetName => _assetName;
+
     /// <summary>Creates a data-driven scene from a parsed definition (see <see cref="SceneParser"/>).</summary>
     /// <exception cref="InvalidOperationException">Thrown when a system that is not an
     /// <see cref="EntitySystem"/> declares prefabs or entities — content can only live inside
