@@ -67,6 +67,23 @@ Scenes can display loading progress using the `UpdateLoadingProgress` method:
 UpdateLoadingProgress(0.5f, "Loading assets...");
 ```
 
+### Transition lifecycle & canvas registration
+
+When a loading screen is set (`SetLoadingScene`), a transition runs this sequence:
+
+1. The current scene is unloaded.
+2. The **loading screen** is loaded and becomes the active scene — its label/progress cover the screen.
+3. The **target scene** loads in the background while the loading screen stays on top.
+4. Once the target finishes loading, the loading screen is **unloaded** and the target becomes current.
+
+The loading screen is retained (not discarded) so it can be reloaded cheaply on the next transition — but it is *unloaded* after each swap rather than left loaded. This matters because of how canvases register:
+
+- A canvas joins the **global GUI render list** only when its owning scene first pumps it (its first `Update`), and leaves when the scene unloads (the canvas's `CleanUp`).
+- Because a still-loading target scene is not yet current, its components are never pumped, so **its canvases do not register while it loads** — the new scene cannot show through during the load.
+- Because the loading screen is unloaded after the swap, **its canvas detaches** and stops rendering on top of the new scene.
+
+This is why neither a black-box overlay nor manual hide/show bookkeeping is needed: the loading screen's own label covers the screen for exactly as long as it should.
+
 ## Data-Driven Scenes
 
 A scene can run entirely from a data file — no C# subclass needed. `SceneManager.LoadScene("MyScene.xml")` parses the file into a `DataDrivenScene`, which reflects its game systems, registers prefabs, and instantiates entities. The same file can also serve as the loading screen:

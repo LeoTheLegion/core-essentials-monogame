@@ -254,11 +254,17 @@ public class SceneManager
         
         // Target scene is loaded, switch to it
         Console.WriteLine($"Target scene loaded, switching from loading screen to: {_nextScene.GetType().Name}");
-        
-        // No need to unload loading screen as we'll reuse it
+
+        // Unload the loading screen before swapping so its canvas detaches from the global GUI and
+        // stops rendering on top of the new scene. It is retained as _loadingScene and simply reloaded
+        // (cheaply) at the start of the next transition — keeping it loaded here would leave its canvas
+        // registered in the global render list forever, since nothing pumps it once it stops being current.
+        Console.WriteLine("Unloading loading screen");
+        _loadingScene.Unload();
+
         _currentScene = _nextScene;
         _nextScene = null;
-        
+
         // Transition complete
         _isTransitioning = false;
         Console.WriteLine("Scene transition complete");

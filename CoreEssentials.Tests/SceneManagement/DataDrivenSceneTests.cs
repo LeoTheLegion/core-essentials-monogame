@@ -127,11 +127,19 @@ namespace CoreEssentials.Tests.SceneManagement
 
                 Assert.True(manager.IsTransitioning);
 
-                // Act — drive the transition to completion
+                // Act — drive the transition to completion. Sample the loading screen's progress while it
+                // is still live (before the swap unloads it), since the loading scene is now unloaded after
+                // the transition so its systems are no longer reachable.
+                var loadingScreen = manager.LoadingScene as DataDrivenScene;
+                Assert.NotNull(loadingScreen);
+                float lastProgress = 0f;
                 for (int i = 0; i < 40 && manager.IsTransitioning; i++)
                 {
                     helper.Tick();
                     manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.016), TimeSpan.FromSeconds(0.016)));
+
+                    if (loadingScreen!.IsLoaded)
+                        lastProgress = ProgressOf(loadingScreen);
                 }
 
                 // Assert — transition completed and the target data scene is now current
@@ -144,10 +152,8 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.NotNull(hero);
                 Assert.Equal(new Vector2(5, 6), hero.Position);
 
-                // The loading screen's progress component observed the whole transition up to 1.0
-                var loadingScreen = manager.LoadingScene as DataDrivenScene;
-                Assert.NotNull(loadingScreen);
-                Assert.Equal(1.0f, ProgressOf(loadingScreen!));
+                // The loading screen's progress component observed the whole transition up to 1.0 (captured live).
+                Assert.Equal(1.0f, lastProgress);
             }
             finally
             {

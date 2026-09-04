@@ -73,11 +73,18 @@ namespace CoreEssentials.Tests.SceneManagement
 
                 Assert.True(manager.IsTransitioning);
 
-                // Act — drive the transition to completion, exactly as Program.cs boots the game
+                // Act — drive the transition to completion, exactly as Program.cs boots the game.
+                // Sample the loading screen's progress while it is still live (before the swap unloads it).
+                var loadingScreen = manager.LoadingScene as DataDrivenScene;
+                Assert.NotNull(loadingScreen);
+                float lastProgress = 0f;
                 for (int i = 0; i < 40 && manager.IsTransitioning; i++)
                 {
                     helper.Tick();
                     manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.016), TimeSpan.FromSeconds(0.016)));
+
+                    if (loadingScreen!.IsLoaded)
+                        lastProgress = ProgressOf(loadingScreen);
                 }
 
                 // Assert — the transition completed and the home data scene is now current
@@ -89,10 +96,9 @@ namespace CoreEssentials.Tests.SceneManagement
                 var title = entitySystem.FindById("homeTitle");
                 Assert.NotNull(title);
 
-                // The data-driven loading screen's progress component observed the whole transition up to 1.0
-                var loadingScreen = manager.LoadingScene as DataDrivenScene;
-                Assert.NotNull(loadingScreen);
-                Assert.Equal(1.0f, ProgressOf(loadingScreen!));
+                // The data-driven loading screen's progress component observed the whole transition up to 1.0.
+                // It is now unloaded (so its canvas stops rendering), but we captured its final live value.
+                Assert.Equal(1.0f, lastProgress);
             }
             finally
             {
