@@ -9,6 +9,7 @@ Let every data-driven scene be smoke-run unattended: launch it from the command 
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
 | 1 | [Scene Smoke-Run Harness](Sprint_1_Scene_Smoke_Run_Harness.md) | 4 | ✅ Done (2026-09-03) | `--scene`/`--run-for` CLI args, opt-in auto-exit, `run-all-scenes.ps1`, and the boot-path bug fix it exposed |
+| 2 | [No Focus Pause](Sprint_2_No_Focus_Pause.md) | 1 | ✅ Done (2026-09-03) | Opt-in `--no-focus-pause` flag so unattended runs keep background audio playing when the window loses focus |
 
 ## Why This?
 

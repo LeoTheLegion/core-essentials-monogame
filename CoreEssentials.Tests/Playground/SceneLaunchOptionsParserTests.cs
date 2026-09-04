@@ -13,6 +13,7 @@ namespace CoreEssentials.Tests.Playground
 
             Assert.Equal(SceneLaunchOptionsParser.DefaultScene, options.Scene);
             Assert.Null(options.RunForSeconds);
+            Assert.False(options.NoFocusPause);
         }
 
         [Fact]
@@ -60,12 +61,41 @@ namespace CoreEssentials.Tests.Playground
         }
 
         [Fact]
+        public void Parse_NoFocusPauseFlag_SetsNoFocusPause()
+        {
+            var options = SceneLaunchOptionsParser.Parse(new[] { "--no-focus-pause" });
+
+            Assert.True(options.NoFocusPause);
+            Assert.Equal(SceneLaunchOptionsParser.DefaultScene, options.Scene);
+            Assert.Null(options.RunForSeconds);
+        }
+
+        [Fact]
+        public void Parse_NoFocusPauseFlag_WithOtherOptions_SetsAll()
+        {
+            var options = SceneLaunchOptionsParser.Parse(new[] { "--scene", "CharacterScene.xml", "--run-for", "6", "--no-focus-pause" });
+
+            Assert.Equal("CharacterScene.xml", options.Scene);
+            Assert.Equal(6.0, options.RunForSeconds);
+            Assert.True(options.NoFocusPause);
+        }
+
+        [Fact]
+        public void Parse_NoFocusPauseFlag_AppearsMultipleTimes_StillTrue()
+        {
+            var options = SceneLaunchOptionsParser.Parse(new[] { "--no-focus-pause", "--no-focus-pause" });
+
+            Assert.True(options.NoFocusPause);
+        }
+
+        [Fact]
         public void Parse_UnknownFlag_IsIgnoredAndDefaultsRemain()
         {
             var options = SceneLaunchOptionsParser.Parse(new[] { "--verbose", "--scene", "BallScene.xml" });
 
             Assert.Equal("BallScene.xml", options.Scene);
             Assert.Null(options.RunForSeconds);
+            Assert.False(options.NoFocusPause);
         }
 
         [Fact]

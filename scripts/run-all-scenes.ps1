@@ -10,10 +10,12 @@
 #   ./scripts/run-all-scenes.ps1                 # run each scene for 5 seconds
 #   ./scripts/run-all-scenes.ps1 -Seconds 8      # run each scene for 8 seconds
 #   ./scripts/run-all-scenes.ps1 -Scenes HomeScene.xml,PhysicsEntityScene.xml
+#   ./scripts/run-all-scenes.ps1 -NoFocusPause   # keep audio playing if the window loses focus
 #
 param(
     [double]$Seconds = 5.0,
-    [string[]]$Scenes = @()
+    [string[]]$Scenes = @(),
+    [switch]$NoFocusPause = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,7 +52,9 @@ $results = @()
 foreach ($scene in $sceneFiles) {
     Write-Host "`n=== Running scene: $scene (for $Seconds s) ===" -ForegroundColor Cyan
 
-    $output = & dotnet run --project $project --no-build --nologo -- "--scene" $scene "--run-for" $Seconds 2>&1
+    $runArgs = @("--scene", $scene, "--run-for", $Seconds)
+    if ($NoFocusPause) { $runArgs += "--no-focus-pause" }
+    $output = & dotnet run --project $project --no-build --nologo -- $runArgs 2>&1
     $code = $LASTEXITCODE
 
     if ($code -eq 0) {

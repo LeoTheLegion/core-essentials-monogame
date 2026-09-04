@@ -46,6 +46,13 @@ namespace CoreEssentials
         private AutoExitTimer? _autoExitTimer;
 
         /// <summary>
+        /// When true, window focus changes do not pause/resume the game's systems — so audio keeps
+        /// playing even when the window is unfocused. Set for unattended smoke-runs where the window
+        /// may never hold foreground. False (the default) preserves normal focus-pause behavior.
+        /// </summary>
+        private bool _ignoreFocusForPause;
+
+        /// <summary>
         /// Gets the GraphicsDeviceManager for this game.
         /// </summary>
         public GraphicsDeviceManager Graphics => _graphics;
@@ -65,6 +72,17 @@ namespace CoreEssentials
         public void EnableAutoExit(double seconds)
         {
             _autoExitTimer = new AutoExitTimer(seconds);
+        }
+
+        /// <summary>
+        /// Enables ignoring window focus changes for pausing purposes: when the window loses or gains
+        /// focus, the game will NOT pause or resume its systems. This keeps audio (and other
+        /// focus-paused systems) running during unattended smoke-runs where the window may never hold
+        /// foreground. No-op to call multiple times; the default behavior is preserved until called.
+        /// </summary>
+        public void EnableIgnoreFocusForPause()
+        {
+            _ignoreFocusForPause = true;
         }
 
         /// <summary>
@@ -108,6 +126,12 @@ namespace CoreEssentials
         protected override void OnDeactivated(object sender, EventArgs args)
         {
             base.OnDeactivated(sender, args);
+
+            // Focus-pause is suppressed for unattended runs (e.g. --no-focus-pause), so audio keeps
+            // playing even when the window loses foreground.
+            if (_ignoreFocusForPause)
+                return;
+
             SceneManager.OnApplicationPause(true);
         }
 
@@ -115,11 +139,17 @@ namespace CoreEssentials
         /// Called when the game window regains focus.
         /// Fires app-wide resume so all <see cref="IPausableGameSystem"/> instances can resume work.
         /// </summary>
-        /// <param name="sender">The game instance.</param>
-        /// <param name="args">The event arguments.</param>
+        /// <param name="sender">The sender.</param>
+        /// <param name="args">The event args.</param>
         protected override void OnActivated(object sender, EventArgs args)
         {
             base.OnActivated(sender, args);
+
+            // Mirror OnDeactivated: when focus-pause is suppressed we never paused, so there is
+            // nothing to resume.
+            if (_ignoreFocusForPause)
+                return;
+
             SceneManager.OnApplicationPause(false);
         }
 

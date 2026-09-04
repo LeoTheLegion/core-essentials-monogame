@@ -345,7 +345,7 @@ AudioManager.Instance.SetMasterVolume(0.5f);
 
 ## Smoke-Running a Scene from the Command Line
 
-The playground supports two command-line arguments for launching a specific data-driven scene and letting it run unattended — handy for verifying a scene boots without manually opening the window and closing it:
+The playground supports command-line arguments for launching a specific data-driven scene and letting it run unattended — handy for verifying a scene boots without manually opening the window and closing it:
 
 ```bash
 # Launch a specific scene (defaults to HomeScene.xml) and let it run until you close it
@@ -353,14 +353,18 @@ dotnet run --project CoreEssentials.Playground -- --scene CharacterScene.xml
 
 # Close the game automatically after 5 seconds of runtime
 dotnet run --project CoreEssentials.Playground -- --scene PhysicsEntityScene.xml --run-for 5
+
+# Keep background audio playing even if the window loses focus (for unattended runs)
+dotnet run --project CoreEssentials.Playground -- --scene CharacterScene.xml --run-for 8 --no-focus-pause
 ```
 
 | Argument | Required | Description |
 |----------|----------|-------------|
 | `--scene <file>` | No | The scene XML asset to launch (e.g., `CharacterScene.xml`). Defaults to `HomeScene.xml`. |
 | `--run-for <seconds>` | No | How long (in seconds) to keep running before the game closes itself. Omit to run indefinitely, as usual. |
+| `--no-focus-pause` | No | A flag (no value). When set, window focus changes do **not** pause/resume the game's systems, so background audio keeps playing even when the window is unfocused. Useful for unattended smoke-runs where the window may never hold foreground. |
 
-`--run-for` is opt-in: when it is not supplied the game runs exactly as before, until closed. Unknown arguments are ignored with a console note.
+All arguments are opt-in: when omitted, the game runs exactly as before — until closed, with normal focus-pause behavior. Unknown arguments are ignored with a console note.
 
 To exercise **every** data-driven scene at once (any `Content/*.xml` whose root element is `<Scene>`), use the runner script:
 
