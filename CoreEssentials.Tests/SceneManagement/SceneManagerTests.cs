@@ -123,8 +123,8 @@ namespace CoreEssentials.Tests.SceneManagement
             // Act
             manager.LoadScene(scene);
             
-            // Assert - Scene should be set as the next scene
-            Assert.Equal(scene, manager.NextScene);
+            // Assert - Scene should be set as the pending scene
+            Assert.Equal(scene, manager.PendingScene);
             
             // Clean up
             helper.Cleanup();
@@ -145,7 +145,7 @@ namespace CoreEssentials.Tests.SceneManagement
             
             // Assert - Transition should be in progress
             Assert.True(manager.IsTransitioning);
-            Assert.Equal(newScene, manager.NextScene);
+            Assert.Equal(newScene, manager.PendingScene);
             
             // Process multiple updates to ensure transition completes
             for (int i = 0; i < 20; i++) // Increased number of updates to ensure completion
@@ -163,7 +163,7 @@ namespace CoreEssentials.Tests.SceneManagement
             
             // After sufficient updates, transition should be complete
             Assert.False(manager.IsTransitioning);
-            Assert.Null(manager.NextScene);
+            Assert.Null(manager.PendingScene);
             
             // The current scene should be set and fully loaded
             Assert.NotNull(manager.CurrentScene);
@@ -210,7 +210,7 @@ namespace CoreEssentials.Tests.SceneManagement
             
             // After sufficient updates, verify the transition completed
             Assert.False(manager.IsTransitioning);
-            Assert.Null(manager.NextScene);
+            Assert.Null(manager.PendingScene);
             
             // The current scene should now be the target scene
             Assert.NotNull(manager.CurrentScene);

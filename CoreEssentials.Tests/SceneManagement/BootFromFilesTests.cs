@@ -93,7 +93,7 @@ namespace CoreEssentials.Tests.SceneManagement
 
                 // Assert — the transition completed and the home data scene is now current
                 Assert.False(manager.IsTransitioning);
-                Assert.Null(manager.NextScene);
+                Assert.Null(manager.PendingScene);
                 var current = manager.CurrentScene as DataDrivenScene;
                 Assert.NotNull(current);
                 var entitySystem = current.GetGameSystem<EntitySystem>();

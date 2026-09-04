@@ -56,10 +56,28 @@ public class SceneManager
     private string? _manifestAssetName;
 
     /// <summary>
+    /// The pending navigation-completion event, if any (set by <see cref="NextScene"/>/<see cref="PreviousScene"/>,
+    /// fired once the transition they started has swapped in the new scene).
+    /// </summary>
+    private Action<string>? _pendingNavigationEvent;
+
+    /// <summary>
     /// The scene manifest this manager enforces, or null when none has been provided. Name-based loads
     /// (<see cref="LoadScene(string)"/> / <see cref="SetLoadingScene(string)"/>) require a manifest.
     /// </summary>
     public SceneManifest? Manifest => _manifest;
+
+    /// <summary>
+    /// Fired when navigation forward via <see cref="NextScene"/> has completed and the next scene is current,
+    /// passing the new scene's asset name (or type name for unnamed scenes).
+    /// </summary>
+    public event Action<string>? SceneAdvanced;
+
+    /// <summary>
+    /// Fired when navigation back via <see cref="PreviousScene"/> has completed and the previous scene is current,
+    /// passing the new scene's asset name (or type name for unnamed scenes).
+    /// </summary>
+    public event Action<string>? SceneRetreated;
 
     /// <summary>
     /// Gets the scene XML asset name this manifest was registered from, or null.
@@ -79,10 +97,11 @@ public class SceneManager
     public Scene? CurrentScene => _currentScene;
     
     /// <summary>
-    /// Gets the next scene to be loaded.
+    /// Gets the scene that is currently being transitioned to, or null when no transition is in progress.
+    /// (Renamed from NextScene so that name could be taken by the <see cref="NextScene()"/> navigation method.)
     /// </summary>
-    /// <returns>The next scene.</returns>
-    public Scene? NextScene => _nextScene;
+    /// <returns>The pending scene.</returns>
+    public Scene? PendingScene => _nextScene;
 
     /// <summary>
     /// Gets the loading screen scene used during transitions, or null when none is set.
@@ -194,6 +213,107 @@ public class SceneManager
     }
 
     /// <summary>
+    /// Advances to the next scene in the manifest's ordered <c>&lt;GameScenes&gt;</c> list (±1 from the current
+    /// scene, clamped) and transitions to it via the normal path — so per-scene loading screens apply. Clamping:
+    /// calling this on the last scene is a no-op with a console note. It is also a no-op when there is no
+    /// manifest, when the current scene is not tracked in the manifest (e.g. loaded object-based), or when a
+    /// transition is already in progress. When the navigation succeeds, <see cref="SceneAdvanced"/> fires once
+    /// the new scene has been swapped in.
+    /// </summary>
+    public void NextScene()
+    {
+        var target = ResolveNavigationTarget(+1);
+        if (target == null) return;
+
+        _pendingNavigationEvent = SceneAdvanced;
+        LoadScene(target);
+    }
+
+    /// <summary>
+    /// Retreats to the previous scene in the manifest's ordered <c>&lt;GameScenes&gt;</c> list (±1 from the
+    /// current scene, clamped) and transitions to it via the normal path — so per-scene loading screens apply.
+    /// Clamping: calling this on the first scene is a no-op with a console note. It is also a no-op when there
+    /// is no manifest, when the current scene is not tracked in the manifest (e.g. loaded object-based), or
+    /// when a transition is already in progress. When the navigation succeeds, <see cref="SceneRetreated"/>
+    /// fires once the new scene has been swapped in.
+    /// </summary>
+    public void PreviousScene()
+    {
+        var target = ResolveNavigationTarget(-1);
+        if (target == null) return;
+
+        _pendingNavigationEvent = SceneRetreated;
+        LoadScene(target);
+    }
+
+    /// <summary>
+    /// Resolves the manifest-tracked scene name to navigate to, or null (with a console note) when navigation
+    /// is not possible: no manifest, a transition already in progress, or a current scene that is not a
+    /// registered entry. The result is clamped to the ends of the list.
+    /// </summary>
+    private string? ResolveNavigationTarget(int direction)
+    {
+        // Navigation is a runtime call, so it must not force the deferred asset parse (that happens on the
+        // first transition). If the manifest has not been resolved yet, there is nothing to navigate over.
+        if (_manifest == null)
+        {
+            Console.WriteLine("Navigation ignored: no scene manifest is configured (or it has not been resolved yet).");
+            return null;
+        }
+
+        var manifest = _manifest;
+
+        if (_isTransitioning)
+        {
+            Console.WriteLine("Navigation ignored: a scene transition is already in progress.");
+            return null;
+        }
+
+        if (_currentScene is not DataDrivenScene { AssetName: { } name })
+        {
+            Console.WriteLine($"Navigation ignored: the current scene ({_currentScene?.GetType().Name ?? "none"}) is not tracked in the scene manifest.");
+            return null;
+        }
+
+        var index = manifest.IndexOf(name);
+        if (index < 0)
+        {
+            Console.WriteLine($"Navigation ignored: the current scene '{name}' is not registered in the scene manifest.");
+            return null;
+        }
+
+        var targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= manifest.GameScenes.Count)
+        {
+            Console.WriteLine(direction > 0
+                ? $"Already at the last scene ('{name}'); NextScene() is a no-op."
+                : $"Already at the first scene ('{name}'); PreviousScene() is a no-op.");
+            return null;
+        }
+
+        return manifest.GameScenes[targetIndex].Name;
+    }
+
+    /// <summary>
+    /// Fires the pending navigation-completion event (if any) with the new current scene's display name, and
+    /// clears it. Called at both completion points of the transition coroutine.
+    /// </summary>
+    private void CompleteNavigation()
+    {
+        var completed = _pendingNavigationEvent;
+        _pendingNavigationEvent = null;
+        if (completed != null && _currentScene != null)
+            completed(DescribeScene(_currentScene));
+    }
+
+    /// <summary>
+    /// A scene's display name for events: its asset name when it is a named data-driven scene, otherwise its
+    /// type name.
+    /// </summary>
+    private static string DescribeScene(Scene scene)
+        => scene is DataDrivenScene { AssetName: { } name } ? name : scene.GetType().Name;
+
+    /// <summary>
     /// Throws when no manifest has been configured at all — i.e. neither a parsed manifest nor a deferred
     /// asset name. Called synchronously by the name-based load overloads so "no manifest provided" fails fast
     /// at the call site rather than deep in the transition coroutine.
@@ -292,6 +412,7 @@ public class SceneManager
             _nextScene = null;
             _isTransitioning = false;
             Console.WriteLine("Direct scene transition complete");
+            CompleteNavigation();
             yield break;
         }
 
@@ -333,6 +454,7 @@ public class SceneManager
         _nextScene = null;
         _isTransitioning = false;
         Console.WriteLine("Scene transition complete");
+        CompleteNavigation();
     }
 
     /// <summary>

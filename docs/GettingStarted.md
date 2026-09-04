@@ -343,6 +343,62 @@ AudioManager.Instance.SetMasterVolume(0.5f);
 3. Press Enter to start the game and transition to the GameplayScene
 4. Use WASD to control the player character
 
+## Data-Driven Games: Declaring Your Scenes (scenes.xml)
+
+If your scenes are data files (XML) rather than C# classes, you must also declare **which scenes exist** in a scene manifest — `Content/scenes.xml`. The core enforces it: every name-based load (`SceneManager.LoadScene("...")`) must reference an entry, and a missing or malformed file errors out at boot.
+
+Create the file (and register it in your content pipeline like any other XML asset):
+
+```xml
+<!-- Content/scenes.xml -->
+<Scenes>
+    <GameScenes>
+        <Scene Name="MainMenu.xml" />
+        <Scene Name="Level01.xml" LoadingScreen="loading_main.xml" />
+        <Scene Name="Level02.xml" />
+    </GameScenes>
+    <LoadingScenes>
+        <LoadingScene Name="loading_main.xml" Default="true" />
+    </LoadingScenes>
+</Scenes>
+```
+
+Rules:
+
+- **The first `<Scene>` is your startup scene** — there is no `Startup` attribute.
+- A scene's `LoadingScreen` attribute names the loading screen used when transitioning *into* that scene; without it, the `Default="true"` screen (or none) is used.
+- Duplicate names, undeclared loading-screen references, or multiple defaults are rejected at parse time with a message naming the offender.
+
+Then register it before your first name-based load:
+
+```csharp
+protected override void Initialize()
+{
+    base.Initialize();
+
+    // Deferred: the file is read once assets are available (after LoadContent).
+    SceneManager.SetManifestAsset("scenes.xml");
+
+    // Load the startup scene — the first <Scene> in scenes.xml.
+    SceneManager.LoadScene("MainMenu.xml");
+}
+```
+
+With the manifest in place you get **ordered navigation for free** — ±1 through `<GameScenes>`, clamped at both ends, using the normal transition path (so per-scene loading screens apply):
+
+```csharp
+// In a level scene: advance to the next level when the player wins.
+SceneManager.NextScene();
+
+// In a menu: go back on Escape.
+Input.Keyboard.KeyReleased += (s, e) => { if (e.Key == Keys.Escape) SceneManager.PreviousScene(); };
+
+// Optional: react to completed navigation.
+SceneManager.SceneAdvanced += name => Console.WriteLine($"Entered {name}");
+```
+
+`NextScene()` on the last scene and `PreviousScene()` on the first are no-ops with a console note. The full format reference lives in [SceneManifest.md](./SceneManifest.md) and the enforcement/navigation details in [SceneManagement.md](./SceneManagement.md).
+
 ## Smoke-Running a Scene from the Command Line
 
 The playground supports command-line arguments for launching a specific data-driven scene and letting it run unattended — handy for verifying a scene boots without manually opening the window and closing it:
@@ -366,14 +422,14 @@ dotnet run --project CoreEssentials.Playground -- --scene CharacterScene.xml --r
 
 All arguments are opt-in: when omitted, the game runs exactly as before — until closed, with normal focus-pause behavior. Unknown arguments are ignored with a console note.
 
-To exercise **every** data-driven scene at once (any `Content/*.xml` whose root element is `<Scene>`), use the runner script:
+To exercise **every registered** data-driven scene at once, use the runner script:
 
 ```bash
-./scripts/run-all-scenes.ps1                # run each scene for 5 seconds
-./scripts/run-all-scenes.ps1 -Seconds 8     # run each scene for 8 seconds
+./scripts/run-all-scenes.ps1                # run each registered scene for 5 seconds
+./scripts/run-all-scenes.ps1 -Seconds 8     # run each registered scene for 8 seconds
 ```
 
-It builds the playground, launches each scene with a fixed `--run-for`, and prints a per-scene PASS/FAIL summary (a scene passes when its process exits cleanly). Exit code is non-zero if any scene fails to launch.
+The scene list comes from your **scene manifest** (`scenes.xml`, the `<GameScenes>` entries in order) — the same authoritative list the core enforces. A missing manifest aborts the harness, and any `Content/*.xml` whose root is `<Scene>` but which is *not* registered anywhere in the manifest is surfaced as a warning (and skipped). The script builds the playground, launches each scene with a fixed `--run-for`, and prints a per-scene PASS/FAIL summary (a scene passes when its process exits cleanly). Exit code is non-zero if any scene fails to launch.
 
 ## Next Steps
 

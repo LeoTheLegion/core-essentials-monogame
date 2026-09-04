@@ -2,13 +2,16 @@
 #
 # Scene smoke-run harness.
 #
-# Launches every data-driven scene (any Content XML whose root element is <Scene>) for a fixed
-# number of seconds, then lets the game auto-exit. A scene "passes" when its process exits cleanly
-# (exit code 0); a non-zero exit means it threw while booting or running and is reported as failed.
+# Launches every scene registered in the scene manifest (CoreEssentials.Playground/Content/scenes.xml,
+# the <GameScenes> list, in order) for a fixed number of seconds, then lets the game auto-exit. A
+# scene "passes" when its process exits cleanly (exit code 0); a non-zero exit means it threw while
+# booting or running and is reported as failed. The manifest is authoritative — consistent with the
+# core's enforcement: a missing manifest aborts, and <Scene> files on disk that are not registered
+# anywhere in the manifest are surfaced as a warning (and skipped).
 #
 # Usage:
-#   ./scripts/run-all-scenes.ps1                 # run each scene for 5 seconds
-#   ./scripts/run-all-scenes.ps1 -Seconds 8      # run each scene for 8 seconds
+#   ./scripts/run-all-scenes.ps1                 # run each registered scene for 5 seconds
+#   ./scripts/run-all-scenes.ps1 -Seconds 8      # run each registered scene for 8 seconds
 #   ./scripts/run-all-scenes.ps1 -Scenes HomeScene.xml,PhysicsEntityScene.xml
 #   ./scripts/run-all-scenes.ps1 -NoFocusPause   # keep audio playing if the window loses focus
 #
@@ -23,23 +26,49 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $contentDir = Join-Path $repoRoot "CoreEssentials.Playground/Content"
 $project = Join-Path $repoRoot "CoreEssentials.Playground"
+$manifestPath = Join-Path $contentDir "scenes.xml"
 
 if (-not (Test-Path $contentDir)) {
     Write-Error "Content directory not found: $contentDir"
 }
 
-# Discover scenes: any XML file whose first non-empty line contains a <Scene element.
-function Get-SceneFiles {
+# The scene manifest is the authoritative list of scenes — the core enforces it, so a missing file
+# aborts the harness rather than falling back to globbing.
+if (-not (Test-Path $manifestPath)) {
+    Write-Error "Scene manifest not found at $manifestPath. Create it (see docs/SceneManifest.md) — the core requires it for name-based scene loads."
+}
+
+# The registered game scenes: <GameScenes> entries in scenes.xml, in order.
+function Get-RegisteredScenes {
+    [xml]$manifest = Get-Content $manifestPath
+    @($manifest.Scenes.GameScenes.Scene) | ForEach-Object { $_.Name }
+}
+
+# Warning pass: <Scene>-rooted XML files on disk that are not registered anywhere in the manifest
+# (neither as a game scene nor a loading screen). These are skipped but surfaced.
+function Get-UnregisteredSceneFiles {
+    [xml]$manifest = Get-Content $manifestPath
+    $registered = @{}
+    foreach ($s in @($manifest.Scenes.GameScenes.Scene)) { $registered[$s.Name] = $true }
+    foreach ($l in @($manifest.Scenes.LoadingScenes.LoadingScene)) {
+        if ($null -ne $l) { $registered[$l.Name] = $true }
+    }
+
     Get-ChildItem -Path $contentDir -Filter *.xml | ForEach-Object {
         $head = (Get-Content $_.FullName -TotalCount 3) -join ' '
-        if ($head -match '<Scene') { $_.Name }
+        if ($head -match '<Scene' -and -not $registered.ContainsKey($_.Name)) { $_.Name }
     }
 }
 
-$sceneFiles = if ($Scenes.Count -gt 0) { $Scenes } else { Get-SceneFiles }
+$sceneFiles = if ($Scenes.Count -gt 0) { $Scenes } else { Get-RegisteredScenes }
 
 if ($sceneFiles.Count -eq 0) {
-    Write-Error "No scenes found to run."
+    Write-Error "No scenes registered in the manifest at $manifestPath."
+}
+
+$unregistered = @(Get-UnregisteredSceneFiles)
+if ($unregistered.Count -gt 0) {
+    Write-Warning ("Scene files on disk are not registered in scenes.xml (skipped): {0}" -f ($unregistered -join ', '))
 }
 
 Write-Host "Building playground..." -ForegroundColor Cyan
