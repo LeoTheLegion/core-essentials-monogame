@@ -224,37 +224,49 @@ public class SendMessageTests : IDisposable
     // ──────────────────────────── Prefab-style template instantiation ────────────────────────────
 
     [Fact]
-    public void Entity_InstantiateTemplate_SpawnsPrefabInSameSystem()
+    public void Entity_InstantiatePrefab_SpawnsPrefabInSameSystem()
     {
-        RegisterHostTemplate("host");
+        RegisterHostPrefab("host");
         var parent = _system.CreateEntity<PlainHostEntity>();
 
-        var prefab = parent.InstantiateTemplate("host", new Vector2(10, 20));
+        var prefab = parent.InstantiatePrefab("host", new Vector2(10, 20));
 
         Assert.NotNull(prefab);
         Assert.Same(_system, prefab!.GetEntitySystem());
     }
 
     [Fact]
-    public void Component_InstantiateTemplate_SpawnsPrefabInOwnersSystem()
+    public void Component_InstantiatePrefab_SpawnsPrefabInOwnersSystem()
     {
-        RegisterHostTemplate("host");
+        RegisterHostPrefab("host");
         var host = _system.CreateEntity<PlainHostEntity>();
         var spawner = (PingComponent)host.AddComponent(new PingComponent());
 
-        var prefab = spawner.InstantiateTemplate("host", Vector2.Zero);
+        var prefab = spawner.InstantiatePrefab("host", Vector2.Zero);
 
         Assert.NotNull(prefab);
         Assert.Same(_system, prefab!.GetEntitySystem());
     }
 
     [Fact]
-    public void InstantiateTemplate_Detached_ReturnsNull()
+    public void InstantiatePrefab_Detached_ReturnsNull()
     {
-        RegisterHostTemplate("host");
+        RegisterHostPrefab("host");
         var detachedHost = new PlainHostEntity();
 
-        Assert.Null(detachedHost.InstantiateTemplate("host", Vector2.Zero));
+        Assert.Null(detachedHost.InstantiatePrefab("host", Vector2.Zero));
+    }
+
+    [Fact]
+    public void Obsolete_InstantiateTemplate_ShimStillWorks()
+    {
+#pragma warning disable CS0618 // Intentionally exercising the obsolete shim
+        RegisterHostPrefab("host");
+        var parent = _system.CreateEntity<PlainHostEntity>();
+        var prefab = parent.InstantiateTemplate("host", Vector2.Zero);
+#pragma warning restore CS0618
+
+        Assert.NotNull(prefab);
     }
 
     // ──────────────────────────── Binds on template instantiation ────────────────────────────
@@ -262,10 +274,10 @@ public class SendMessageTests : IDisposable
     [Fact]
     public void Template_BindElement_WiresCommandOnInstantiation()
     {
-        _system.RegisterTemplate("signaler", CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityTemplateLoader.LoadFromXml(
-            @"<EntityTemplate Type=""SignalingEntity"">
+        _system.RegisterPrefab("signaler", CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityPrefabLoader.LoadFromXml(
+            @"<Prefab Type=""SignalingEntity"">
                 <Bind Event=""Signaled"" Command=""OnSignalReceived"" />
-            </EntityTemplate>"));
+            </Prefab>"));
 
         var entity = (SignalingEntity)_system.Instantiate("signaler", Vector2.Zero);
 
@@ -277,12 +289,12 @@ public class SendMessageTests : IDisposable
     [Fact]
     public void Template_BindElement_WiresEachInstantiationIndependently()
     {
-        _system.RegisterTemplate("signaler", CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityTemplateLoader.LoadFromXml(
-            @"<EntityTemplate Type=""SignalingEntity"">
+        _system.RegisterPrefab("signaler", CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityPrefabLoader.LoadFromXml(
+            @"<Prefab Type=""SignalingEntity"">
                 <Components>
                     <Bind Event=""Signaled"" Command=""OnSignalReceived"" />
                 </Components>
-            </EntityTemplate>"));
+            </Prefab>"));
 
         var first = (SignalingEntity)_system.Instantiate("signaler", Vector2.Zero);
         var second = (SignalingEntity)_system.Instantiate("signaler", Vector2.Zero);
@@ -293,8 +305,8 @@ public class SendMessageTests : IDisposable
         Assert.Equal(0, second.ReceivedCount);
     }
 
-    private void RegisterHostTemplate(string name) =>
-        _system.RegisterTemplate(name, new CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.EntityTemplate
+    private void RegisterHostPrefab(string name) =>
+        _system.RegisterPrefab(name, new CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.Prefab
         {
             Type = nameof(PlainHostEntity)
         });

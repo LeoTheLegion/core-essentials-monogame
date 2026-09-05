@@ -15,6 +15,13 @@ public class CanvasImpl : ContainerWidget, ICanvas
     private Vector2 _position;
     private bool _isScreenSpace;
 
+    /// <summary>
+    /// Tracks whether this canvas is currently registered in the global GUI root. Registration is
+    /// deferred until the first pump (<see cref="Update"/>), so a canvas only renders once its owning
+    /// scene actually starts updating — not while it is still loading or after it has been unloaded.
+    /// </summary>
+    private bool _isRegistered;
+
     /// <inheritdoc />
     public bool IsScreenSpace
     {
@@ -33,7 +40,22 @@ public class CanvasImpl : ContainerWidget, ICanvas
         _isScreenSpace = isScreenSpace;
         _position = Vector2.Zero;
         _manager = EngineResolver.GetEngine();
+        // Registration into the global GUI is deferred to the first Update() — see EnsureRegistered.
+    }
+
+    /// <summary>
+    /// Registers this canvas in the global GUI root on first use. A canvas belongs to a scene and is
+    /// pumped only while that scene is current, so its first pump is the moment it should start
+    /// rendering. Deferring registration (rather than doing it in the constructor) keeps canvases of
+    /// a still-loading or already-unloaded scene out of the global render list. Safe to call repeatedly.
+    /// </summary>
+    private void EnsureRegistered()
+    {
+        if (_isRegistered)
+            return;
+
         _manager.AddWidget(this);
+        _isRegistered = true;
     }
 
     /// <summary>
@@ -81,6 +103,9 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// <inheritdoc />
     public void Update(GameTime gameTime)
     {
+        // First pump = the owning scene is now live, so attach to the global GUI from here on.
+        EnsureRegistered();
+
         if (!_isScreenSpace)
         {
             var camera = CoreEssentials.Camera.Camera.MainCamera;
@@ -101,6 +126,10 @@ public class CanvasImpl : ContainerWidget, ICanvas
     public void CleanUp()
     {
         ClearChildren();
-        _manager.RemoveWidget(this);
+        if (_isRegistered)
+        {
+            _manager.RemoveWidget(this);
+            _isRegistered = false;
+        }
     }
 }

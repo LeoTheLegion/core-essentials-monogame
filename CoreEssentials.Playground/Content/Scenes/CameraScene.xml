@@ -1,0 +1,68 @@
+<Scene>
+    <!--
+        Camera demo, fully data-driven (strict scene format).
+
+        A CameraEntity provides WASD pan / Q-E zoom / R reset for free; a PlayerEntity is moved with
+        the arrow keys. The follow toggle is a shell entity carrying CameraFollowToggleComponent,
+        whose camera / target / info-label links are declared with <Reference> (resolved after attach).
+        Pressing F toggles the camera following the player and refreshes the info text.
+
+        Controls: WASD pan, Q/E zoom, R reset, F follow toggle, arrow keys move the player,
+        + returns to the character scene file.
+    -->
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Entities>
+                <!-- The camera (default position/speed) registered as the main camera on attach. -->
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.CameraEntity" Id="camera">
+                    <Position X="0" Y="0" />
+                </EntityDefinition>
+
+                <!-- The player the camera can follow, moved with the arrow keys. -->
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.PlayerEntity" Id="player">
+                    <Position X="400" Y="300" />
+                </EntityDefinition>
+
+                <!-- Control instructions; the follow toggle keeps its "(ON)/(OFF)" line current. -->
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.TextEntity" Id="cameraInfoText">
+                    <Position X="10" Y="10" />
+                    <EntityOverrides>
+                        <Property Name="Text" Value="Camera Controls:&#10;WASD: Move Camera&#10;Q/E: Zoom In/Out&#10;R: Reset Camera&#10;F: Follow Player (OFF)&#10;Arrow Keys: Move Player" />
+                        <Property Name="Color" Value="White" />
+                        <Property Name="Alignment" Value="Left" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <!-- F toggles the camera following the player and updates the info text. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="followToggle">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.CameraFollowToggleComponent">
+                            <Properties>
+                                <Property Name="ToggleKey" Value="F" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                    <References>
+                        <Reference Name="Camera" TargetId="camera" />
+                        <Reference Name="FollowTarget" TargetId="player" />
+                        <Reference Name="InfoLabel" TargetId="cameraInfoText" />
+                    </References>
+                </EntityDefinition>
+
+                <!-- Navigation: + goes to the character scene file. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navCharacter">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="OemPlus" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/CharacterScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>

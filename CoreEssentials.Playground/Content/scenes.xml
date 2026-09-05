@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Scene manifest for the playground game.
+
+    - <GameScenes> lists every scene the game can load, in order. The FIRST entry is the startup scene.
+    - Next/Previous navigation walks this list (clamped at both ends).
+    - A scene's LoadingScreen attribute names the loading screen used when transitioning INTO that scene;
+      if absent, the default loading screen is used.
+    - <LoadingScenes> lists the loading screens; exactly one may be marked Default="true".
+
+    Loaded and enforced by the core: SceneManager.SetManifestAsset("scenes.xml") must be called before
+    any name-based LoadScene/SetLoadingScene call, and every name-based load must reference an entry here.
+-->
+<Scenes>
+    <GameScenes>
+        <Scene Name="Scenes/HomeScene.xml" />
+        <Scene Name="Scenes/CharacterScene.xml" />
+        <Scene Name="Scenes/CameraScene.xml" />
+        <Scene Name="Scenes/GuiAnchorDemo.xml" />
+        <Scene Name="Scenes/LabelAlignmentDemoScene.xml" />
+        <Scene Name="Scenes/PhysicsEntityScene.xml" />
+        <Scene Name="Scenes/SendMessageDemoScene.xml" />
+    </GameScenes>
+    <LoadingScenes>
+        <LoadingScene Name="Scenes/loading.xml" Default="true" />
+    </LoadingScenes>
+</Scenes>

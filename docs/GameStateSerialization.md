@@ -488,5 +488,5 @@ This eliminates redundancy - previously each entity stored its own scale, now it
 ## See Also
 
 - [Entity System Documentation](EntitySystem.md)
-- [Entity Templates](EntityTemplates.md)
+- [Prefabs](Prefabs.md)
 - [Physics System](PhysicsSystem.md)

@@ -1,0 +1,227 @@
+<Scene>
+    <!--
+        Character / audio demo, fully data-driven (strict scene format).
+
+        Two characters (a static sprite and an animated walk cycle) plus a column of GUI buttons.
+        The text and button widgets come from registered templates (TextPrefab / SoundButtonPrefab /
+        VolumeButtonPrefab); each instance is configured purely with <EntityOverrides> — no per-ID C#
+        setup. Background music, the debug overlay, and all key-driven audio/volume/navigation are
+        inert shells carrying Sprint-4/5d behavior components, so the whole scene is declared from data:
+
+          Q/W/E  play footstep one-shots (SoundKeyComponent x3)
+          Z/X    set master volume to 10% / 100% (VolumeKeyComponent x2)
+          F3     toggles entity debug visualization (DebugToggleComponent, starts ON)
+          +      navigates to the physics scene file
+          M      navigates to the SendMessage demo file
+
+        The music shell plays "song1_sound.xml" on attach and pauses/resumes with app focus
+        (MusicComponent); navigation shells stop it on detach when their scene unloads.
+    -->
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Prefabs>
+                <Prefab Name="TextPrefab" Asset="Templates/TextTemplate.xml" />
+                <Prefab Name="SoundButtonPrefab" Asset="Templates/SoundButtonTemplate.xml" />
+                <Prefab Name="VolumeButtonPrefab" Asset="Templates/VolumeButtonTemplate.xml" />
+            </Prefabs>
+            <Entities>
+                <!-- Static character (left). -->
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.CharacterEntity" Id="staticCharacter">
+                    <Position X="320" Y="360" />
+                    <Tags>
+                        <Tag Name="Character" />
+                        <Tag Name="Static" />
+                    </Tags>
+                </EntityDefinition>
+
+                <!-- Animated character (right). -->
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.AnimatedCharacterEntity" Id="animatedCharacter">
+                    <Position X="960" Y="360" />
+                    <Tags>
+                        <Tag Name="Character" />
+                        <Tag Name="Animated" />
+                    </Tags>
+                </EntityDefinition>
+
+                <!-- Top instruction line. -->
+                <EntityDefinition Source="TextPrefab" Id="infoText">
+                    <Position X="640" Y="20" />
+                    <EntityOverrides>
+                        <Property Name="Text" Value="Press Q, W, E for sound effects | Z, X to change volume | M for SendMessage demo | + for physics scene | Or use the buttons on the left" />
+                        <Property Name="Color" Value="White" />
+                        <Property Name="Alignment" Value="Center" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <!-- Bottom caption. -->
+                <EntityDefinition Source="TextPrefab" Id="characterInfoText">
+                    <Position X="640" Y="680" />
+                    <EntityOverrides>
+                        <Property Name="Text" Value="Static Character (Left) | Animated Character (Right)" />
+                        <Property Name="Color" Value="LightGreen" />
+                        <Property Name="Alignment" Value="Center" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <!-- Sound buttons (left column). -->
+                <EntityDefinition Source="SoundButtonPrefab" Id="footstep1Button">
+                    <Position X="100" Y="100" />
+                    <EntityOverrides>
+                        <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
+                        <Property Name="ButtonText" Value="Footstep 1" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <EntityDefinition Source="SoundButtonPrefab" Id="footstep2Button">
+                    <Position X="100" Y="150" />
+                    <EntityOverrides>
+                        <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
+                        <Property Name="ButtonText" Value="Footstep 2" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <EntityDefinition Source="SoundButtonPrefab" Id="footstep3Button">
+                    <Position X="100" Y="200" />
+                    <EntityOverrides>
+                        <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
+                        <Property Name="ButtonText" Value="Footstep 3" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <!-- Volume buttons (left column). -->
+                <EntityDefinition Source="VolumeButtonPrefab" Id="volumeLowButton">
+                    <Position X="100" Y="250" />
+                    <EntityOverrides>
+                        <Property Name="VolumeLevel" Value="0.1" />
+                        <Property Name="ButtonText" Value="Volume: 10%" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <EntityDefinition Source="VolumeButtonPrefab" Id="volumeHighButton">
+                    <Position X="100" Y="300" />
+                    <EntityOverrides>
+                        <Property Name="VolumeLevel" Value="1.0" />
+                        <Property Name="ButtonText" Value="Volume: 100%" />
+                    </EntityOverrides>
+                </EntityDefinition>
+
+                <!-- Background music; pauses/resumes with app focus, stops on scene unload. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="music">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.MusicComponent">
+                            <Properties>
+                                <Property Name="MusicAsset" Value="Audio/song1_sound.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Entity debug visualization, ON at start; F3 toggles it. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="debugToggle">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.DebugToggleComponent">
+                            <Properties>
+                                <Property Name="StartEnabled" Value="true" />
+                                <Property Name="ShowEntityBounds" Value="true" />
+                                <Property Name="ShowEntityIds" Value="true" />
+                                <Property Name="ShowEntityTags" Value="true" />
+                                <Property Name="ShowEntityHierarchy" Value="true" />
+                                <Property Name="ShowEntityPosition" Value="true" />
+                                <Property Name="DebugFontAsset" Value="Fonts/base" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Q/W/E footstep one-shots (one shell per key). -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="soundKeyQ">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="Q" />
+                                <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="soundKeyW">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="W" />
+                                <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="soundKeyE">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="E" />
+                                <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Z/X master volume. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="volumeKeyZ">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.VolumeKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="Z" />
+                                <Property Name="Volume" Value="0.1" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="volumeKeyX">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.VolumeKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="X" />
+                                <Property Name="Volume" Value="1.0" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Navigation: + goes to the physics scene, M to the SendMessage demo. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navPhysics">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="OemPlus" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/PhysicsEntityScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navSendMessage">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="M" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/SendMessageDemoScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>

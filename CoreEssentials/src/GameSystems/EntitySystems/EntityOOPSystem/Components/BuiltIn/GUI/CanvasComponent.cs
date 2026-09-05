@@ -64,6 +64,13 @@ public class CanvasComponent : EntityComponent
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="CanvasComponent"/> class with a screen-space canvas.
+    /// Required so prefab/scene instantiation — which creates components via a parameterless constructor —
+    /// can build this component. (An optional-parameter-only constructor does not count as parameterless.)
+    /// </summary>
+    public CanvasComponent() : this(true) { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CanvasComponent"/> class.
     /// </summary>
     /// <param name="isScreenSpace">If true (default) the canvas renders in screen space; if false it renders

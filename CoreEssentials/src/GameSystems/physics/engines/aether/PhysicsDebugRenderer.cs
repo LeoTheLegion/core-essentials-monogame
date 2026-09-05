@@ -27,6 +27,16 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     private bool _disposed;
 
     /// <summary>
+    /// Initializes a new instance of the PhysicsDebugRenderer class without an explicit engine.
+    /// The sibling <see cref="PhysicsEngine"/> is resolved from the scene lazily on first use,
+    /// which lets data-driven scenes declare <c>&lt;System Type="PhysicsDebugRenderer"/&gt;</c>
+    /// next to a <c>&lt;System Type="PhysicsEngine"/&gt;</c> without constructor wiring.
+    /// </summary>
+    public PhysicsDebugRenderer()
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the PhysicsDebugRenderer class.
     /// </summary>
     /// <param name="engine">The Aether-backed physics engine whose world will be visualized.</param>
@@ -34,6 +44,22 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     {
         if (engine == null)
             throw new ArgumentNullException(nameof(engine));
+        _debugView = new DebugView(engine.AetherWorld);
+        // Sensible defaults: show shapes, joints, and contact points.
+        _debugView.AppendFlags(DebugViewFlags.ContactPoints);
+    }
+
+    /// <summary>
+    /// Ensures the underlying Aether <see cref="DebugView"/> exists, resolving the sibling
+    /// <see cref="PhysicsEngine"/> from the scene when this instance was created without one.
+    /// </summary>
+    private void EnsureDebugView()
+    {
+        if (_debugView != null) return;
+
+        var engine = Scene?.GetGameSystem<PhysicsEngine>()
+            ?? throw new InvalidOperationException(
+                "PhysicsDebugRenderer has no physics engine — declare a <System Type=\"PhysicsEngine\"/> in the scene.");
         _debugView = new DebugView(engine.AetherWorld);
         // Sensible defaults: show shapes, joints, and contact points.
         _debugView.AppendFlags(DebugViewFlags.ContactPoints);
@@ -74,7 +100,10 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     /// Gets the underlying Aether <see cref="DebugView"/> for advanced configuration
     /// (colors, panel positions, per-category flags).
     /// </summary>
-    public DebugView DebugView => _debugView!;
+    public DebugView DebugView
+    {
+        get { EnsureDebugView(); return _debugView!; }
+    }
 
     /// <summary>
     /// Gets or sets which categories of debug data to render (shapes, joints, AABBs,
@@ -82,8 +111,8 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     /// </summary>
     public DebugViewFlags Flags
     {
-        get => _debugView!.Flags;
-        set => _debugView!.Flags = value;
+        get { EnsureDebugView(); return _debugView!.Flags; }
+        set { EnsureDebugView(); _debugView!.Flags = value; }
     }
 
     /// <summary>
@@ -94,6 +123,8 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     public void LoadContent()
     {
         if (_contentLoaded) return;
+
+        EnsureDebugView();
 
         var game = Game;
         if (game == null)
@@ -109,9 +140,10 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     /// <param name="spriteBatch">The SpriteBatch used for drawing (unused by the Aether primitive batch, kept for interface compatibility).</param>
     public void Draw(SpriteBatch spriteBatch)
     {
-        if (!IsEnabled || _debugView == null)
+        if (!IsEnabled)
             return;
 
+        EnsureDebugView();
         if (!_contentLoaded)
             LoadContent();
 

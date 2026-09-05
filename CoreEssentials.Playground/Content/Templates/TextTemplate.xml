@@ -1,0 +1,6 @@
+<Prefab Type="CoreEssentials.Playground.Entities.TextEntity" Rotation="0" Sort="100" Active="true">
+    <Tags>
+        <Tag Name="UI" />
+        <Tag Name="Text" />
+    </Tags>
+</Prefab>

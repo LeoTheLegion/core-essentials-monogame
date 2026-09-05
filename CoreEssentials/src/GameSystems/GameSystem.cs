@@ -22,8 +22,13 @@ namespace CoreEssentials.GameSystems
         /// </remarks>
         public MainGame? Game => _scene?.SceneManager?.Game;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GameSystem"/> class.
+        /// <summary>        /// Gets the Scene this system belongs to, or null if no scene has been assigned yet.
+        /// Gives system and component code access to sibling systems and the SceneManager
+        /// (e.g. <c>Scene?.SceneManager.TransitionProgress</c>).
+        /// </summary>
+        public Scene? Scene => _scene;
+
+        /// <summary>        /// Initializes a new instance of the <see cref="GameSystem"/> class.
         /// This protected constructor is intended for use by derived system types.
         /// </summary>
         protected GameSystem()

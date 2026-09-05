@@ -13,10 +13,10 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin ball_sprite.xml
-/copy:ball_sprite.xml
+#begin Sprites/ball_sprite.xml
+/copy:Sprites/ball_sprite.xml
 
-#begin Ball.png
+#begin Sprites/Ball.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -26,17 +26,17 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Ball.png
+/build:Sprites/Ball.png
 
-#begin BallTemplate.xml
-/copy:BallTemplate.xml
+#begin Templates/BallTemplate.xml
+/copy:Templates/BallTemplate.xml
 
-#begin base.spritefont
+#begin Fonts/base.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
-/build:base.spritefont
+/build:Fonts/base.spritefont
 
 #begin DiagnosticsFont.spritefont
 /importer:FontDescriptionImporter
@@ -45,10 +45,10 @@
 /processorParam:TextureFormat=Compressed
 /build:DiagnosticsFont.spritefont
 
-#begin character_anim_walk.xml
-/copy:character_anim_walk.xml
+#begin Sprites/character_anim_walk.xml
+/copy:Sprites/character_anim_walk.xml
 
-#begin character_malePerson_sheetHD.png
+#begin Sprites/character_malePerson_sheetHD.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -58,77 +58,95 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:character_malePerson_sheetHD.png
+/build:Sprites/character_malePerson_sheetHD.png
 
-#begin character_sheet.xml
-/copy:character_sheet.xml
+#begin Sprites/character_sheet.xml
+/copy:Sprites/character_sheet.xml
 
-#begin character_sprite.xml
-/copy:character_sprite.xml
+#begin Sprites/character_sprite.xml
+/copy:Sprites/character_sprite.xml
 
-#begin CharacterScene.xml
-/copy:CharacterScene.xml
+#begin Scenes/CameraScene.xml
+/copy:Scenes/CameraScene.xml
 
-#begin CharacterTemplate.xml
-/copy:CharacterTemplate.xml
+#begin Scenes/CharacterScene.xml
+/copy:Scenes/CharacterScene.xml
 
-#begin PingPrefabTemplate.xml
-/copy:PingPrefabTemplate.xml
+#begin Templates/CharacterTemplate.xml
+/copy:Templates/CharacterTemplate.xml
 
-#begin SendMessageDemoScene.xml
-/copy:SendMessageDemoScene.xml
+#begin Scenes/LabelAlignmentDemoScene.xml
+/copy:Scenes/LabelAlignmentDemoScene.xml
 
-#begin PhysicsConfig.xml
-/copy:PhysicsConfig.xml
+#begin Templates/PingPrefabTemplate.xml
+/copy:Templates/PingPrefabTemplate.xml
 
-#begin SoundButtonTemplate.xml
-/copy:SoundButtonTemplate.xml
+#begin Scenes/SendMessageDemoScene.xml
+/copy:Scenes/SendMessageDemoScene.xml
 
-#begin VolumeButtonTemplate.xml
-/copy:VolumeButtonTemplate.xml
+#begin Config/PhysicsConfig.xml
+/copy:Config/PhysicsConfig.xml
 
-#begin TextTemplate.xml
-/copy:TextTemplate.xml
+#begin Scenes/PhysicsEntityScene.xml
+/copy:Scenes/PhysicsEntityScene.xml
 
-#begin footstep00.ogg
+#begin scenes.xml
+/copy:scenes.xml
+
+#begin Templates/SoundButtonTemplate.xml
+/copy:Templates/SoundButtonTemplate.xml
+
+#begin Templates/VolumeButtonTemplate.xml
+/copy:Templates/VolumeButtonTemplate.xml
+
+#begin Templates/TextTemplate.xml
+/copy:Templates/TextTemplate.xml
+
+#begin Audio/footstep00.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
-/build:footstep00.ogg
+/build:Audio/footstep00.ogg
 
-#begin footstep01.ogg
+#begin Audio/footstep01.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
-/build:footstep01.ogg
+/build:Audio/footstep01.ogg
 
-#begin footstep02.ogg
+#begin Audio/footstep02.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
-/build:footstep02.ogg
+/build:Audio/footstep02.ogg
 
-#begin footstep1_sound.xml
-/copy:footstep1_sound.xml
+#begin Audio/footstep1_sound.xml
+/copy:Audio/footstep1_sound.xml
 
-#begin footstep2_sound.xml
-/copy:footstep2_sound.xml
+#begin Audio/footstep2_sound.xml
+/copy:Audio/footstep2_sound.xml
 
-#begin footstep3_sound.xml
-/copy:footstep3_sound.xml
+#begin Audio/footstep3_sound.xml
+/copy:Audio/footstep3_sound.xml
 
-#begin Goblins_Den_(Regular).wav
+#begin Audio/Goblins_Den_(Regular).wav
 /importer:WavImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
-/build:Goblins_Den_(Regular).wav
+/build:Audio/Goblins_Den_(Regular).wav
 
-#begin GuiAnchorDemo.xml
-/copy:GuiAnchorDemo.xml
+#begin Scenes/GuiAnchorDemo.xml
+/copy:Scenes/GuiAnchorDemo.xml
+
+#begin Scenes/loading.xml
+/copy:Scenes/loading.xml
+
+#begin Scenes/HomeScene.xml
+/copy:Scenes/HomeScene.xml
 
 #begin layout/main.xml
 /copy:layout/main.xml
 
-#begin song1_sound.xml
-/copy:song1_sound.xml
+#begin Audio/song1_sound.xml
+/copy:Audio/song1_sound.xml
 

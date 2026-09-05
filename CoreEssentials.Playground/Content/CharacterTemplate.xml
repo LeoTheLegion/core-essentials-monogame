@@ -1,6 +1,0 @@
-<EntityTemplate Type="CoreEssentials.Playground.CharacterEntity" Rotation="0" Sort="0" Active="true">
-    <Tags>
-        <Tag Name="Character" />
-        <Tag Name="Static" />
-    </Tags>
-</EntityTemplate>

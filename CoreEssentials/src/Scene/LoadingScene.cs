@@ -97,7 +97,7 @@ namespace CoreEssentials.Scenes
             spriteBatch.Begin();
             
             // Draw loading progress bar if we're transitioning to another scene
-            if (SceneManager != null && SceneManager.NextScene != null)
+            if (SceneManager != null && SceneManager.PendingScene != null)
             {
                 float progress = SceneManager.TransitionProgress;
                 

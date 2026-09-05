@@ -1,0 +1,37 @@
+<Scene>
+    <!--
+        Data-driven loading screen (Sprint 5a). Boots purely from this file — no C# LoadingScene.
+
+        Strict scene format: <Scene> -> <GameSystems> -> <System Type="EntitySystem">.
+        A single flat entity owns the canvas AND carries a centered label plus the
+        TransitionProgressComponent, which mirrors SceneManager.TransitionProgress each frame and
+        keeps its own LabelComponent's text in sync as a live percentage (0% -> 100%).
+
+        NOTE: kept as one flat entity on purpose. DataDrivenScene currently instantiates nested
+        <Children> definitions independently (attaching components before the parent link exists),
+        so a nested LabelComponent cannot yet find an ancestor CanvasComponent. See Sprint 5a notes
+        / open bug — GUI scenes with nested labels need that fixed first.
+    -->
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Entities>
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="loadingLabel">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CanvasComponent" />
+                        <Component Type="LabelComponent">
+                            <Properties>
+                                <Property Name="Text" Value="Loading..." />
+                                <Property Name="TextColor" Value="White" />
+                                <Property Name="Scale" Value="2,2" />
+                                <Property Name="HorizontalAlignment" Value="Center" />
+                                <Property Name="VerticalAlignment" Value="Center" />
+                            </Properties>
+                        </Component>
+                        <Component Type="TransitionProgressComponent" />
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>

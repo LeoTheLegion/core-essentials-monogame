@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,6 +9,7 @@ using CoreEssentials.Assets;
 using CoreEssentials.Camera;
 using CoreEssentials.Debugging;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Spatial;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.Coroutines;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
@@ -41,10 +43,10 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     private readonly Dictionary<Type, object> _pools = new();
 
     /// <summary>
-    /// Cache of registered entity templates for fast instantiation.
-    /// Maps template names to their corresponding EntityTemplate blueprint.
+    /// Cache of registered prefabs for fast instantiation.
+    /// Maps prefab names to their corresponding blueprints.
     /// </summary>
-    private readonly Dictionary<string, Serialization.EntityTemplate> _templates = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Prefab> _prefabs = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The spatial grid for fast spatial queries.
@@ -916,43 +918,185 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Registers an entity template from an XML asset.
+    /// Registers a prefab from an XML asset. Re-registering the same name replaces the
+    /// previous definition and logs a warning — registration is idempotent by design.
     /// </summary>
-    /// <param name="name">The unique name to assign to this template.</param>
-    /// <param name="assetName">The name of the XML asset containing the <c>&lt;EntityTemplate&gt;</c> definition.</param>
-    public void RegisterTemplate(string name, string assetName)
+    /// <param name="name">The unique name to assign to this prefab.</param>
+    /// <param name="assetName">The name of the XML asset containing the <c>&lt;Prefab&gt;</c> definition.</param>
+    public void RegisterPrefab(string name, string assetName)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Template name cannot be empty.", nameof(name));
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Prefab name cannot be empty.", nameof(name));
         if (string.IsNullOrWhiteSpace(assetName)) throw new ArgumentException("Asset name cannot be empty.", nameof(assetName));
 
-        var template = Serialization.EntityTemplateLoader.LoadFromAsset(assetName);
-        _templates[name] = template;
+        var prefab = Serialization.EntityPrefabLoader.LoadFromAsset(assetName);
+        RegisterPrefab(name, prefab);
     }
+
+    /// <summary>
+    /// Registers an already-constructed prefab under the given name (e.g. one parsed with
+    /// <see cref="Serialization.EntityPrefabLoader.LoadFromXml"/>).
+    /// Re-registering the same name replaces the previous definition and logs a warning.
+    /// </summary>
+    /// <param name="name">The name to instantiate the prefab by.</param>
+    /// <param name="prefab">The prefab to register.</param>
+    public void RegisterPrefab(string name, Prefab prefab)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Prefab name cannot be empty.", nameof(name));
+
+        bool replaced = _prefabs.ContainsKey(name);
+        _prefabs[name] = prefab ?? throw new ArgumentNullException(nameof(prefab));
+        if (replaced)
+            Console.WriteLine($"[EntitySystem] RegisterPrefab: '{name}' was already registered — replacing with the new definition.");
+    }
+
+    /// <summary>
+    /// Registers a prefab from an XML asset.
+    /// </summary>
+    /// <param name="name">The unique name to assign to this template.</param>
+    /// <param name="assetName">The name of the XML asset containing the <c>&lt;Prefab&gt;</c> definition.</param>
+    [Obsolete("Renamed to RegisterPrefab. Will be removed in a future release.")]
+    public void RegisterTemplate(string name, string assetName) => RegisterPrefab(name, assetName);
 
     /// <summary>
     /// Registers an already-constructed template under the given name (e.g. one parsed with
-    /// <see cref="Serialization.EntityTemplateLoader.LoadFromXml"/>).
+    /// <see cref="Serialization.EntityPrefabLoader.LoadFromXml"/>).
     /// </summary>
     /// <param name="name">The name to instantiate the template by.</param>
     /// <param name="template">The template to register.</param>
-    public void RegisterTemplate(string name, Serialization.EntityTemplate template)
+    [Obsolete("Renamed to RegisterPrefab. Will be removed in a future release.")]
+    public void RegisterTemplate(string name, Serialization.EntityTemplate template) => RegisterPrefab(name, template);
+
+    /// <summary>
+    /// Returns true if a prefab with the given name is registered.
+    /// </summary>
+    /// <param name="name">The prefab name to look up (case-insensitive).</param>
+    public bool HasPrefab(string name)
+        => !string.IsNullOrWhiteSpace(name) && _prefabs.ContainsKey(name);
+
+    /// <summary>
+    /// Tries to retrieve the registered prefab under the given name without instantiating it.
+    /// Read-only: callers receive the live instance, so treat it as immutable (clone before mutating).
+    /// </summary>
+    /// <param name="name">The registered prefab name.</param>
+    /// <param name="prefab">When true, the registered prefab; otherwise null.</param>
+    /// <returns>True when a prefab is registered under the given name.</returns>
+    public bool TryGetPrefab(string name, out Prefab? prefab)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Template name cannot be empty.", nameof(name));
-        _templates[name] = template ?? throw new ArgumentNullException(nameof(template));
+        if (!string.IsNullOrWhiteSpace(name) && _prefabs.TryGetValue(name, out var found))
+        {
+            prefab = found;
+            return true;
+        }
+
+        prefab = null;
+        return false;
     }
 
     /// <summary>
-    /// Instantiates an entity from a registered template at the specified position.
+    /// Instantiates a prefab straight from a Content XML asset with zero registration calls.
+    /// On first use the asset is loaded and cached under its base name (the file name without
+    /// extension), so subsequent instantiations reuse the parsed prefab. An explicit
+    /// <see cref="RegisterPrefab"/> call for the same name always wins over the lazy cache.
     /// </summary>
-    /// <param name="templateName">The name of the registered template to use.</param>
+    /// <param name="assetName">The name of the XML asset containing the prefab definition.</param>
     /// <param name="position">The world position to place the instantiated entity.</param>
     /// <returns>The newly created entity.</returns>
-    public Entity Instantiate(string templateName, Vector2 position)
-    {
-        if (!_templates.TryGetValue(templateName, out var template))
-            throw new KeyNotFoundException($"Entity template '{templateName}' is not registered.");
+    public Entity InstantiateFromAsset(string assetName, Vector2 position)
+        => InstantiateFromAsset(assetName, position, null, null);
 
-        return Serialization.EntityTemplateLoader.Instantiate(template, this, position);
+    /// <summary>
+    /// Instantiates a prefab straight from a Content XML asset with zero registration calls,
+    /// applying per-instantiation component property overrides. See <see cref="InstantiateFromAsset(string, Vector2)"/>
+    /// for the lazy-registration semantics.
+    /// </summary>
+    /// <param name="assetName">The name of the XML asset containing the prefab definition.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <param name="overrides">Optional map of component type name → property name → value string.</param>
+    /// <returns>The newly created entity.</returns>
+    public Entity InstantiateFromAsset(string assetName, Vector2 position,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides)
+        => InstantiateFromAsset(assetName, position, overrides, null);
+
+    /// <summary>
+    /// Instantiates a prefab straight from a Content XML asset with zero registration calls,
+    /// applying per-instantiation component and entity-level property overrides. See
+    /// <see cref="InstantiateFromAsset(string, Vector2)"/> for the lazy-registration semantics.
+    /// </summary>
+    /// <param name="assetName">The name of the XML asset containing the prefab definition.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <param name="overrides">Optional map of component type name → property name → value string.</param>
+    /// <param name="entityOverrides">
+    /// Optional map of entity property name → value string, applied to the created entity itself
+    /// (not a component) before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </param>
+    /// <returns>The newly created entity.</returns>
+    public Entity InstantiateFromAsset(string assetName, Vector2 position,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides,
+        IReadOnlyDictionary<string, string>? entityOverrides)
+    {
+        if (string.IsNullOrWhiteSpace(assetName)) throw new ArgumentException("Asset name cannot be empty.", nameof(assetName));
+
+        var prefabName = Path.GetFileNameWithoutExtension(assetName);
+        if (!HasPrefab(prefabName))
+            RegisterPrefab(prefabName, assetName);
+
+        return Instantiate(prefabName, position, overrides, entityOverrides);
+    }
+
+    /// <summary>
+    /// Instantiates an entity from a registered prefab at the specified position.
+    /// </summary>
+    /// <param name="prefabName">The name of the registered prefab to use.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <returns>The newly created entity.</returns>
+    public Entity Instantiate(string prefabName, Vector2 position)
+        => Instantiate(prefabName, position, null, null);
+
+    /// <summary>
+    /// Instantiates an entity from a registered prefab at the specified position,
+    /// applying per-instantiation component property overrides. Overrides are merged into a
+    /// copy of the prefab before any component is attached, so components see the final values
+    /// in <c>OnAttach</c>. The registered prefab itself is never mutated.
+    /// </summary>
+    /// <param name="prefabName">The name of the registered prefab to use.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <param name="overrides">
+    /// Optional map of component type name → property name → value string.
+    /// A component key matching an existing prefab component merges into it;
+    /// a key matching no component adds a new component definition.
+    /// </param>
+    /// <returns>The newly created entity.</returns>
+    public Entity Instantiate(string prefabName, Vector2 position,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides)
+        => Instantiate(prefabName, position, overrides, null);
+
+    /// <summary>
+    /// Instantiates an entity from a registered prefab at the specified position, applying
+    /// per-instantiation component and entity-level property overrides. Both are merged into a
+    /// copy of the prefab before any component is attached or started, so components and the entity
+    /// itself see the final values in <c>OnStart</c>/<c>OnAttach</c>. The registered prefab is never mutated.
+    /// </summary>
+    /// <param name="prefabName">The name of the registered prefab to use.</param>
+    /// <param name="position">The world position to place the instantiated entity.</param>
+    /// <param name="overrides">
+    /// Optional map of component type name → property name → value string.
+    /// A component key matching an existing prefab component merges into it;
+    /// a key matching no component adds a new component definition.
+    /// </param>
+    /// <param name="entityOverrides">
+    /// Optional map of entity property name → value string, applied to the created entity itself
+    /// (not a component) before <c>OnStart</c>/<c>OnAttach</c>.
+    /// </param>
+    /// <returns>The newly created entity.</returns>
+    public Entity Instantiate(string prefabName, Vector2 position,
+        IReadOnlyDictionary<string, Dictionary<string, string>>? overrides,
+        IReadOnlyDictionary<string, string>? entityOverrides)
+    {
+        if (!_prefabs.TryGetValue(prefabName, out var prefab))
+            throw new KeyNotFoundException($"Prefab '{prefabName}' is not registered.");
+
+        var effective = Serialization.PrefabOverrides.Apply(prefab, overrides, entityOverrides);
+        return Serialization.EntityPrefabLoader.Instantiate(effective, this, position);
     }
 
     /// <summary>
@@ -998,7 +1142,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         _tagIndex.Clear();
         _idIndex.Clear();
         _pools.Clear();
-        _templates.Clear();
+        _prefabs.Clear();
         _pendingSpawns.Clear();
         _spatialGrid?.Clear();
     }
