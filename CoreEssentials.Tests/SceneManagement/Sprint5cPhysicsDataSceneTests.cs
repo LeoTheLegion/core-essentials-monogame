@@ -46,7 +46,7 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal(3, scene.Systems.Count);
 
             Assert.Equal(typeof(PhysicsEngine), scene.Systems[0].SystemType);
-            Assert.Equal("PhysicsConfig.xml", scene.Systems[0].ConfigAsset);
+            Assert.Equal("Config/PhysicsConfig.xml", scene.Systems[0].ConfigAsset);
 
             Assert.Equal(typeof(EntitySystem), scene.Systems[1].SystemType);
 
@@ -102,7 +102,7 @@ namespace CoreEssentials.Tests.SceneManagement
         {
             StageContentFile("Scenes/PhysicsEntityScene.xml");
             StageContentFile("Templates/BallTemplate.xml");
-            StageContentFile("PhysicsConfig.xml");
+            StageContentFile("Config/PhysicsConfig.xml");
             StageContentFile("Sprites/ball_sprite.xml");
 
             var helper = new CoroutineTestHelper();

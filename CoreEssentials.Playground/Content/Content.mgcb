@@ -31,12 +31,12 @@
 #begin Templates/BallTemplate.xml
 /copy:Templates/BallTemplate.xml
 
-#begin base.spritefont
+#begin Fonts/base.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
-/build:base.spritefont
+/build:Fonts/base.spritefont
 
 #begin DiagnosticsFont.spritefont
 /importer:FontDescriptionImporter
@@ -84,8 +84,8 @@
 #begin Scenes/SendMessageDemoScene.xml
 /copy:Scenes/SendMessageDemoScene.xml
 
-#begin PhysicsConfig.xml
-/copy:PhysicsConfig.xml
+#begin Config/PhysicsConfig.xml
+/copy:Config/PhysicsConfig.xml
 
 #begin Scenes/PhysicsEntityScene.xml
 /copy:Scenes/PhysicsEntityScene.xml

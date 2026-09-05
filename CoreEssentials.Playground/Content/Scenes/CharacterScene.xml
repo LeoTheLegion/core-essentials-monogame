@@ -129,7 +129,7 @@
                                 <Property Name="ShowEntityTags" Value="true" />
                                 <Property Name="ShowEntityHierarchy" Value="true" />
                                 <Property Name="ShowEntityPosition" Value="true" />
-                                <Property Name="DebugFontAsset" Value="base" />
+                                <Property Name="DebugFontAsset" Value="Fonts/base" />
                             </Properties>
                         </Component>
                     </Components>

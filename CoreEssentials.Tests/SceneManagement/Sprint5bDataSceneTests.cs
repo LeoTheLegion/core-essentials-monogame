@@ -133,9 +133,9 @@ namespace CoreEssentials.Tests.SceneManagement
             var helper = new CoroutineTestHelper();
             try
             {
-                // PingReceiverComponent.OnAttach loads the "base" font — register a mock for it.
+                // PingReceiverComponent.OnAttach loads the "Fonts/base" font — register a mock for it.
                 var content = new MockContentManager();
-                content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
                 var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/SendMessageDemoScene.xml"));
 

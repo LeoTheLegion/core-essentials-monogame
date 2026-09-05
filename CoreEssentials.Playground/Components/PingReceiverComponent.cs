@@ -30,7 +30,7 @@ public class PingReceiverComponent : EntityComponent, IDrawableComponent
     public override void OnAttach()
     {
         base.OnAttach();
-        _font = AssetManager.LoadAsset<FontAsset>("base");
+        _font = AssetManager.LoadAsset<FontAsset>("Fonts/base");
     }
 
     public override void Update(GameTime gameTime)

@@ -2,7 +2,7 @@
     <!--
         Physics demo, fully data-driven (strict scene format).
 
-        <System Type="PhysicsEngine" Config="PhysicsConfig.xml"/> creates the Aether engine from a
+        <System Type="PhysicsEngine" Config="Config/PhysicsConfig.xml"/> creates the Aether engine from a
         declarative config (gravity, solver iterations, named collision categories). The entity system
         registers the ball prefab and instantiates three inert shells carrying the Sprint-4 physics
         behavior components: PhysicsSpawnComponent (regular + VIP balls + world border),
@@ -13,7 +13,7 @@
         Controls: F1 toggles the physics debug overlay; + navigates to the camera scene file.
     -->
     <GameSystems>
-        <System Type="PhysicsEngine" Config="PhysicsConfig.xml" />
+        <System Type="PhysicsEngine" Config="Config/PhysicsConfig.xml" />
 
         <System Type="EntitySystem">
             <Prefabs>

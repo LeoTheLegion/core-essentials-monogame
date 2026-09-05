@@ -100,7 +100,7 @@ namespace CoreEssentials.Tests.SceneManagement
             var debug = FindById(sys.Entities, "debugToggle");
             var debugComp = debug!.DeclaredComponents.First(c => c.Type.Contains("DebugToggleComponent"));
             Assert.Equal("true", debugComp.Properties["StartEnabled"]);
-            Assert.Equal("base", debugComp.Properties["DebugFontAsset"]);
+            Assert.Equal("Fonts/base", debugComp.Properties["DebugFontAsset"]);
 
             // Key-driven audio: three sound keys + two volume keys.
             var q = FindById(sys.Entities, "soundKeyQ")!;
@@ -133,7 +133,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 WriteContentAsset("CharacterScene_LoadVariant.xml", stripped);
 
                 var content = new MockContentManager();
-                content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
                 var scene = new DataDrivenScene(SceneParser.LoadFromAsset("CharacterScene_LoadVariant.xml"));
 
@@ -211,7 +211,7 @@ namespace CoreEssentials.Tests.SceneManagement
             try
             {
                 var content = new MockContentManager();
-                content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
                 var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/CameraScene.xml"));
 
@@ -300,7 +300,7 @@ namespace CoreEssentials.Tests.SceneManagement
             try
             {
                 var content = new MockContentManager();
-                content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
                 var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/LabelAlignmentDemoScene.xml"));
 

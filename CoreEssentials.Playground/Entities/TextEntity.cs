@@ -48,7 +48,7 @@ public class TextEntity : Entity
         base.OnStart();
         
         // Load the font asset
-        _font = AssetManager.LoadAsset<FontAsset>("base");
+        _font = AssetManager.LoadAsset<FontAsset>("Fonts/base");
     }
 
     public override void Render(SpriteBatch _spriteBatch)
