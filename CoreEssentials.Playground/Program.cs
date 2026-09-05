@@ -36,7 +36,7 @@ if (options.NoFocusPause)
 // and the manifest must be configured before any name-based load. The startup scene is the first
 // <GameScenes> entry; Next/Previous navigation walks that list.
 game.SceneManager.SetManifestAsset("scenes.xml");
-game.SceneManager.SetLoadingScene("loading.xml");
+game.SceneManager.SetLoadingScene("Scenes/loading.xml");
 game.SceneManager.LoadScene(options.Scene);
 
 game.Run();

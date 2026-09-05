@@ -53,7 +53,7 @@ namespace CoreEssentials.Tests.SceneManagement
             StageContentFile("VolumeButtonTemplate.xml");
             AssetManager.Init(new MockContentManager());
 
-            var scene = SceneParser.Parse(ReadSourceContentFile("CharacterScene.xml"));
+            var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/CharacterScene.xml"));
 
             Assert.Single(scene.Systems);
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
@@ -109,14 +109,14 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal("0.1", z.DeclaredComponents.First(c => c.Type.Contains("VolumeKeyComponent")).Properties["Volume"]);
 
             // Navigation targets are scene asset-name strings.
-            Assert.Equal("PhysicsEntityScene.xml", NavTarget(FindById(sys.Entities, "navPhysics")!));
-            Assert.Equal("SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
+            Assert.Equal("Scenes/PhysicsEntityScene.xml", NavTarget(FindById(sys.Entities, "navPhysics")!));
+            Assert.Equal("Scenes/SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
         }
 
         [Fact]
         public void CharacterScene_Loads_AsDataDrivenScene_WithCharactersAndButtons()
         {
-            StageContentFile("CharacterScene.xml");
+            StageContentFile("Scenes/CharacterScene.xml");
             StageContentFile("TextTemplate.xml");
             StageContentFile("SoundButtonTemplate.xml");
             StageContentFile("VolumeButtonTemplate.xml");
@@ -129,7 +129,7 @@ namespace CoreEssentials.Tests.SceneManagement
             try
             {
                 // Music playback throws headlessly (null SoundEffect), so load a music-stripped copy.
-                var stripped = StripEntity(ReadSourceContentFile("CharacterScene.xml"), "music");
+                var stripped = StripEntity(ReadSourceContentFile("Scenes/CharacterScene.xml"), "music");
                 WriteContentAsset("CharacterScene_LoadVariant.xml", stripped);
 
                 var content = new MockContentManager();
@@ -171,7 +171,7 @@ namespace CoreEssentials.Tests.SceneManagement
         [Fact]
         public void CameraScene_Parses_AsStrictScene_WithCameraPlayerAndFollowToggle()
         {
-            var scene = SceneParser.Parse(ReadSourceContentFile("CameraScene.xml"));
+            var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/CameraScene.xml"));
 
             Assert.Single(scene.Systems);
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
@@ -196,13 +196,13 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal("cameraInfoText", RefTarget(follow, "InfoLabel"));
 
             // Navigation target.
-            Assert.Equal("CharacterScene.xml", NavTarget(FindById(sys.Entities, "navCharacter")!));
+            Assert.Equal("Scenes/CharacterScene.xml", NavTarget(FindById(sys.Entities, "navCharacter")!));
         }
 
         [Fact]
         public void CameraScene_Loads_AsDataDrivenScene_WithReferencesResolved()
         {
-            StageContentFile("CameraScene.xml");
+            StageContentFile("Scenes/CameraScene.xml");
             StageContentFile("character_sprite.xml");
             StageContentFile("character_anim_walk.xml");
             StageContentFile("character_sheet.xml");
@@ -213,7 +213,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 var content = new MockContentManager();
                 content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
-                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("CameraScene.xml"));
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/CameraScene.xml"));
 
                 scene.Load();
                 for (int i = 0; i < 60 && !scene.IsLoaded; i++)
@@ -250,7 +250,7 @@ namespace CoreEssentials.Tests.SceneManagement
         [Fact]
         public void LabelAlignmentDemo_Parses_AsStrictScene_WithHudPanelAndOverlay()
         {
-            var scene = SceneParser.Parse(ReadSourceContentFile("LabelAlignmentDemoScene.xml"));
+            var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/LabelAlignmentDemoScene.xml"));
 
             Assert.Single(scene.Systems);
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
@@ -288,13 +288,13 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Contains(overlay!.DeclaredComponents, c => c.Type.Contains("LabelAlignmentDebugOverlayComponent"));
 
             // Navigation target.
-            Assert.Equal("SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
+            Assert.Equal("Scenes/SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
         }
 
         [Fact]
         public void LabelAlignmentDemo_Loads_AsDataDrivenScene_WithHudPanelAndOrbit()
         {
-            StageContentFile("LabelAlignmentDemoScene.xml");
+            StageContentFile("Scenes/LabelAlignmentDemoScene.xml");
 
             var helper = new CoroutineTestHelper();
             try
@@ -302,7 +302,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 var content = new MockContentManager();
                 content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
-                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("LabelAlignmentDemoScene.xml"));
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/LabelAlignmentDemoScene.xml"));
 
                 scene.Load();
                 for (int i = 0; i < 60 && !scene.IsLoaded; i++)
@@ -438,9 +438,9 @@ namespace CoreEssentials.Tests.SceneManagement
 
         private static void WriteContentAsset(string fileName, string xml)
         {
-            var contentDir = Path.Combine(AppContext.BaseDirectory, "Content");
-            Directory.CreateDirectory(contentDir);
-            File.WriteAllText(Path.Combine(contentDir, fileName), xml);
+            var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, xml);
         }
     }
 }

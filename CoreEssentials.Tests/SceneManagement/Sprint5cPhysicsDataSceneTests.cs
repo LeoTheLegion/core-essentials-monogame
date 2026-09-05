@@ -38,7 +38,7 @@ namespace CoreEssentials.Tests.SceneManagement
         [Fact]
         public void PhysicsEntityScene_Parses_AsStrictScene_WithThreeSystemsInOrder()
         {
-            var xml = ReadSourceContentFile("PhysicsEntityScene.xml");
+            var xml = ReadSourceContentFile("Scenes/PhysicsEntityScene.xml");
 
             var scene = SceneParser.Parse(xml);
 
@@ -58,7 +58,7 @@ namespace CoreEssentials.Tests.SceneManagement
         [Fact]
         public void PhysicsEntityScene_Parses_BallPrefabAndComponentKnobs()
         {
-            var xml = ReadSourceContentFile("PhysicsEntityScene.xml");
+            var xml = ReadSourceContentFile("Scenes/PhysicsEntityScene.xml");
 
             var scene = SceneParser.Parse(xml);
             var entitySystem = scene.Systems[1];
@@ -94,13 +94,13 @@ namespace CoreEssentials.Tests.SceneManagement
             // Navigation target is a scene asset-name string (no C# Type reference).
             var nav = FindById(entitySystem.Entities, "navCamera");
             Assert.NotNull(nav);
-            Assert.Equal("CameraScene.xml", NavTarget(nav!));
+            Assert.Equal("Scenes/CameraScene.xml", NavTarget(nav!));
         }
 
         [Fact]
         public void PhysicsEntityScene_Loads_AsDataDrivenScene_WithEngineBallsAndGui()
         {
-            StageContentFile("PhysicsEntityScene.xml");
+            StageContentFile("Scenes/PhysicsEntityScene.xml");
             StageContentFile("BallTemplate.xml");
             StageContentFile("PhysicsConfig.xml");
             StageContentFile("ball_sprite.xml");
@@ -109,7 +109,7 @@ namespace CoreEssentials.Tests.SceneManagement
             try
             {
                 AssetManager.Init(new MockContentManager());
-                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("PhysicsEntityScene.xml"));
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/PhysicsEntityScene.xml"));
 
                 scene.Load();
                 for (int i = 0; i < 60 && !scene.IsLoaded; i++)
@@ -212,9 +212,9 @@ namespace CoreEssentials.Tests.SceneManagement
 
         private static void WriteContentAsset(string fileName, string xml)
         {
-            var contentDir = Path.Combine(AppContext.BaseDirectory, "Content");
-            Directory.CreateDirectory(contentDir);
-            File.WriteAllText(Path.Combine(contentDir, fileName), xml);
+            var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, xml);
         }
 
         /// <summary>Returns every entity the system currently knows about (top-level + spawned children).</summary>

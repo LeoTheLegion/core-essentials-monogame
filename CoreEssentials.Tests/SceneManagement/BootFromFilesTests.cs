@@ -37,7 +37,7 @@ namespace CoreEssentials.Tests.SceneManagement
         public void RealLoadingXml_Parses_AsStrictScene_WithLabelAndProgress()
         {
             // Arrange — the actual file that ships in Content/
-            var xml = ReadSourceContentFile("loading.xml");
+            var xml = ReadSourceContentFile("Scenes/loading.xml");
 
             // Act
             var scene = SceneParser.Parse(xml);
@@ -58,10 +58,10 @@ namespace CoreEssentials.Tests.SceneManagement
         public void Boot_FromRealFiles_TransitionCompletesAndSwapsScenes()
         {
             // Arrange — stage the REAL loading + home files into the content dir the AssetManager reads
-            var loadingXml = ReadSourceContentFile("loading.xml");
-            var homeXml = ReadSourceContentFile("HomeScene.xml");
-            WriteContentAsset("loading.xml", loadingXml);
-            WriteContentAsset("HomeScene.xml", homeXml);
+            var loadingXml = ReadSourceContentFile("Scenes/loading.xml");
+            var homeXml = ReadSourceContentFile("Scenes/HomeScene.xml");
+            WriteContentAsset("Scenes/loading.xml", loadingXml);
+            WriteContentAsset("Scenes/HomeScene.xml", homeXml);
 
             var helper = new CoroutineTestHelper();
             try
@@ -70,10 +70,10 @@ namespace CoreEssentials.Tests.SceneManagement
                 var manager = new SceneManager();
                 // Name-based loads are now gated by a manifest: register the home scene + its loading screen.
                 manager.SetManifest(SceneManifestFixture.Build(
-                    new[] { new SceneManifestFixture.GameScene("HomeScene.xml") },
-                    defaultLoadingScreen: "loading.xml"));
-                manager.SetLoadingScene("loading.xml");
-                manager.LoadScene("HomeScene.xml");
+                    new[] { new SceneManifestFixture.GameScene("Scenes/HomeScene.xml") },
+                    defaultLoadingScreen: "Scenes/loading.xml"));
+                manager.SetLoadingScene("Scenes/loading.xml");
+                manager.LoadScene("Scenes/HomeScene.xml");
 
                 Assert.True(manager.IsTransitioning);
 
@@ -172,9 +172,9 @@ namespace CoreEssentials.Tests.SceneManagement
 
         private static void WriteContentAsset(string fileName, string xml)
         {
-            var contentDir = Path.Combine(AppContext.BaseDirectory, "Content");
-            Directory.CreateDirectory(contentDir);
-            File.WriteAllText(Path.Combine(contentDir, fileName), xml);
+            var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, xml);
         }
     }
 }

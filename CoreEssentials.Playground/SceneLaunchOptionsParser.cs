@@ -10,7 +10,7 @@ namespace CoreEssentials.Playground;
 public sealed class SceneLaunchOptions
 {
     /// <summary>
-    /// Gets the name of the scene XML asset to load (e.g., <c>"HomeScene.xml"</c>).
+    /// Gets the name of the scene XML asset to load (e.g., <c>"Scenes/HomeScene.xml"</c>).
     /// </summary>
     public string Scene { get; }
 
@@ -37,7 +37,7 @@ public sealed class SceneLaunchOptions
 /// <summary>
 /// Parses the playground's command-line arguments. Supports three options:
 /// <list type="bullet">
-/// <item><c>--scene &lt;file&gt;</c> — the scene XML asset to launch (defaults to <c>"HomeScene.xml"</c>).</item>
+/// <item><c>--scene &lt;file&gt;</c> — the scene XML asset to launch (defaults to <c>"Scenes/HomeScene.xml"</c>).</item>
 /// <item><c>--run-for &lt;seconds&gt;</c> — how long to keep running before auto-exiting (optional; default is to run indefinitely).</item>
 /// <item><c>--no-focus-pause</c> — ignore window focus changes for pausing, so audio keeps playing even when the window is unfocused (a flag with no value; useful for unattended smoke-runs).</item>
 /// </list>
@@ -48,7 +48,7 @@ public sealed class SceneLaunchOptions
 public static class SceneLaunchOptionsParser
 {
     /// <summary>The scene launched when no <c>--scene</c> argument is supplied.</summary>
-    public const string DefaultScene = "HomeScene.xml";
+    public const string DefaultScene = "Scenes/HomeScene.xml";
 
     private const string SceneFlag = "--scene";
     private const string RunForFlag = "--run-for";

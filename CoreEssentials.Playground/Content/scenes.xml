@@ -13,15 +13,15 @@
 -->
 <Scenes>
     <GameScenes>
-        <Scene Name="HomeScene.xml" />
-        <Scene Name="CharacterScene.xml" />
-        <Scene Name="CameraScene.xml" />
-        <Scene Name="GuiAnchorDemo.xml" />
-        <Scene Name="LabelAlignmentDemoScene.xml" />
-        <Scene Name="PhysicsEntityScene.xml" />
-        <Scene Name="SendMessageDemoScene.xml" />
+        <Scene Name="Scenes/HomeScene.xml" />
+        <Scene Name="Scenes/CharacterScene.xml" />
+        <Scene Name="Scenes/CameraScene.xml" />
+        <Scene Name="Scenes/GuiAnchorDemo.xml" />
+        <Scene Name="Scenes/LabelAlignmentDemoScene.xml" />
+        <Scene Name="Scenes/PhysicsEntityScene.xml" />
+        <Scene Name="Scenes/SendMessageDemoScene.xml" />
     </GameScenes>
     <LoadingScenes>
-        <LoadingScene Name="loading.xml" Default="true" />
+        <LoadingScene Name="Scenes/loading.xml" Default="true" />
     </LoadingScenes>
 </Scenes>

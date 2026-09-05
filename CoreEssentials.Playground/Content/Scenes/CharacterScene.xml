@@ -204,7 +204,7 @@
                         <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="OemPlus" />
-                                <Property Name="TargetSceneAsset" Value="PhysicsEntityScene.xml" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/PhysicsEntityScene.xml" />
                             </Properties>
                         </Component>
                     </Components>
@@ -216,7 +216,7 @@
                         <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="M" />
-                                <Property Name="TargetSceneAsset" Value="SendMessageDemoScene.xml" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/SendMessageDemoScene.xml" />
                             </Properties>
                         </Component>
                     </Components>

@@ -100,7 +100,7 @@
                         <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Escape" />
-                                <Property Name="TargetSceneAsset" Value="CharacterScene.xml" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/CharacterScene.xml" />
                             </Properties>
                         </Component>
                     </Components>

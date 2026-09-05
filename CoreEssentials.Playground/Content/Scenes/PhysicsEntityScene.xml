@@ -88,7 +88,7 @@
                         <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="OemPlus" />
-                                <Property Name="TargetSceneAsset" Value="CameraScene.xml" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/CameraScene.xml" />
                             </Properties>
                         </Component>
                     </Components>

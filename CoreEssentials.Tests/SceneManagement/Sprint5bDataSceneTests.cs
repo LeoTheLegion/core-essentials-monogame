@@ -37,7 +37,7 @@ namespace CoreEssentials.Tests.SceneManagement
         [Fact]
         public void GuiAnchorDemo_Parses_AsStrictScene_WithCameraAndNavigation()
         {
-            var xml = ReadSourceContentFile("GuiAnchorDemo.xml");
+            var xml = ReadSourceContentFile("Scenes/GuiAnchorDemo.xml");
 
             var scene = SceneParser.Parse(xml);
 
@@ -56,20 +56,20 @@ namespace CoreEssentials.Tests.SceneManagement
             var navSend = FindById(scene.Systems[0].Entities, "navSendMessage");
             Assert.NotNull(navPhysics);
             Assert.NotNull(navSend);
-            Assert.Equal("PhysicsEntityScene.xml", NavTarget(navPhysics!));
-            Assert.Equal("SendMessageDemoScene.xml", NavTarget(navSend!));
+            Assert.Equal("Scenes/PhysicsEntityScene.xml", NavTarget(navPhysics!));
+            Assert.Equal("Scenes/SendMessageDemoScene.xml", NavTarget(navSend!));
         }
 
         [Fact]
         public void GuiAnchorDemo_Loads_AsDataDrivenScene_WithHudAndCamera()
         {
-            StageContentFile("GuiAnchorDemo.xml");
+            StageContentFile("Scenes/GuiAnchorDemo.xml");
 
             var helper = new CoroutineTestHelper();
             try
             {
                 AssetManager.Init(new MockContentManager());
-                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("GuiAnchorDemo.xml"));
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/GuiAnchorDemo.xml"));
 
                 scene.Load();
                 for (int i = 0; i < 40 && !scene.IsLoaded; i++)
@@ -98,7 +98,7 @@ namespace CoreEssentials.Tests.SceneManagement
         [Fact]
         public void SendMessageDemo_Parses_AsStrictScene_WithPrefabAndControls()
         {
-            var xml = ReadSourceContentFile("SendMessageDemoScene.xml");
+            var xml = ReadSourceContentFile("Scenes/SendMessageDemoScene.xml");
 
             var scene = SceneParser.Parse(xml);
 
@@ -121,13 +121,13 @@ namespace CoreEssentials.Tests.SceneManagement
             // Navigation target is a scene asset-name string.
             var nav = FindById(systemDef.Entities, "navCharacter");
             Assert.NotNull(nav);
-            Assert.Equal("CharacterScene.xml", NavTarget(nav!));
+            Assert.Equal("Scenes/CharacterScene.xml", NavTarget(nav!));
         }
 
         [Fact]
         public void SendMessageDemo_Loads_AsDataDrivenScene_WithReceiversAndNestedChild()
         {
-            StageContentFile("SendMessageDemoScene.xml");
+            StageContentFile("Scenes/SendMessageDemoScene.xml");
             StageContentFile("PingPrefabTemplate.xml");
 
             var helper = new CoroutineTestHelper();
@@ -137,7 +137,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 var content = new MockContentManager();
                 content.AddAsset<SpriteFont>("base", CoreEssentials.Tests.MockSpriteFont.Instance);
                 AssetManager.Init(content);
-                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("SendMessageDemoScene.xml"));
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/SendMessageDemoScene.xml"));
 
                 scene.Load();
                 for (int i = 0; i < 40 && !scene.IsLoaded; i++)
@@ -232,9 +232,9 @@ namespace CoreEssentials.Tests.SceneManagement
 
         private static void WriteContentAsset(string fileName, string xml)
         {
-            var contentDir = Path.Combine(AppContext.BaseDirectory, "Content");
-            Directory.CreateDirectory(contentDir);
-            File.WriteAllText(Path.Combine(contentDir, fileName), xml);
+            var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, xml);
         }
     }
 }

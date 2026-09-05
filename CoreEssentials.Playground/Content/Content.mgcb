@@ -66,29 +66,29 @@
 #begin character_sprite.xml
 /copy:character_sprite.xml
 
-#begin CameraScene.xml
-/copy:CameraScene.xml
+#begin Scenes/CameraScene.xml
+/copy:Scenes/CameraScene.xml
 
-#begin CharacterScene.xml
-/copy:CharacterScene.xml
+#begin Scenes/CharacterScene.xml
+/copy:Scenes/CharacterScene.xml
 
 #begin CharacterTemplate.xml
 /copy:CharacterTemplate.xml
 
-#begin LabelAlignmentDemoScene.xml
-/copy:LabelAlignmentDemoScene.xml
+#begin Scenes/LabelAlignmentDemoScene.xml
+/copy:Scenes/LabelAlignmentDemoScene.xml
 
 #begin PingPrefabTemplate.xml
 /copy:PingPrefabTemplate.xml
 
-#begin SendMessageDemoScene.xml
-/copy:SendMessageDemoScene.xml
+#begin Scenes/SendMessageDemoScene.xml
+/copy:Scenes/SendMessageDemoScene.xml
 
 #begin PhysicsConfig.xml
 /copy:PhysicsConfig.xml
 
-#begin PhysicsEntityScene.xml
-/copy:PhysicsEntityScene.xml
+#begin Scenes/PhysicsEntityScene.xml
+/copy:Scenes/PhysicsEntityScene.xml
 
 #begin scenes.xml
 /copy:scenes.xml
@@ -135,14 +135,14 @@
 /processorParam:Quality=Best
 /build:Goblins_Den_(Regular).wav
 
-#begin GuiAnchorDemo.xml
-/copy:GuiAnchorDemo.xml
+#begin Scenes/GuiAnchorDemo.xml
+/copy:Scenes/GuiAnchorDemo.xml
 
-#begin loading.xml
-/copy:loading.xml
+#begin Scenes/loading.xml
+/copy:Scenes/loading.xml
 
-#begin HomeScene.xml
-/copy:HomeScene.xml
+#begin Scenes/HomeScene.xml
+/copy:Scenes/HomeScene.xml
 
 #begin layout/main.xml
 /copy:layout/main.xml
