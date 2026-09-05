@@ -4,7 +4,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework.Input;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Plays a one-shot sound effect when a configured key is released. Both the key and the asset

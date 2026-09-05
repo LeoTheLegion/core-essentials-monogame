@@ -4,7 +4,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using Microsoft.Xna.Framework;
 
-namespace CoreEssentials.Playground
+namespace CoreEssentials.Playground.Entities
 {
     /// <summary>
     /// A character entity that demonstrates animated sprite functionality.

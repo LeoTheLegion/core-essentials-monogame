@@ -30,7 +30,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="ballSpawner">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.PhysicsSpawnComponent">
+                        <Component Type="CoreEssentials.Playground.Components.PhysicsSpawnComponent">
                             <Properties>
                                 <Property Name="BallPrefabName" Value="BallPrefab" />
                                 <Property Name="RegularBallCount" Value="5" />
@@ -55,7 +55,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="saveLoadButtons">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.SaveLoadButtonsComponent">
+                        <Component Type="CoreEssentials.Playground.Components.SaveLoadButtonsComponent">
                             <Properties>
                                 <Property Name="SaveFilePath" Value="PhysicsScene_Save.xml" />
                                 <Property Name="SaveButtonLabel" Value="Save Physics Scene" />
@@ -73,7 +73,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="debugOverlay">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.PhysicsDebugOverlayComponent">
+                        <Component Type="CoreEssentials.Playground.Components.PhysicsDebugOverlayComponent">
                             <Properties>
                                 <Property Name="ToggleKey" Value="F1" />
                             </Properties>
@@ -85,7 +85,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navCamera">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="OemPlus" />
                                 <Property Name="TargetSceneAsset" Value="CameraScene.xml" />

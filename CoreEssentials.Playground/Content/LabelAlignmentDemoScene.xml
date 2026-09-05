@@ -22,7 +22,7 @@
         <System Type="EntitySystem">
             <Entities>
                 <!-- Camera raised to a visible pan speed (the default 1 unit/s is imperceptible). -->
-                <EntityDefinition Type="CoreEssentials.Playground.CameraEntity" Id="camera">
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.CameraEntity" Id="camera">
                     <Position X="640" Y="360" />
                     <EntityOverrides>
                         <Property Name="CameraSpeed" Value="300" />
@@ -51,7 +51,7 @@
                                         <Property Name="HorizontalAlignment" Value="Left" />
                                     </Properties>
                                 </Component>
-                                <Component Type="CoreEssentials.Playground.HudLabelRefreshComponent">
+                                <Component Type="CoreEssentials.Playground.Components.HudLabelRefreshComponent">
                                     <Properties>
                                         <Property Name="TextTemplate" Value="LEFT   (W={w} H={h})" />
                                         <Property Name="IntervalSeconds" Value="0.5" />
@@ -71,7 +71,7 @@
                                         <Property Name="HorizontalAlignment" Value="Center" />
                                     </Properties>
                                 </Component>
-                                <Component Type="CoreEssentials.Playground.HudLabelRefreshComponent">
+                                <Component Type="CoreEssentials.Playground.Components.HudLabelRefreshComponent">
                                     <Properties>
                                         <Property Name="TextTemplate" Value="CENTER (W={w} H={h})" />
                                         <Property Name="IntervalSeconds" Value="0.5" />
@@ -91,7 +91,7 @@
                                         <Property Name="HorizontalAlignment" Value="Right" />
                                     </Properties>
                                 </Component>
-                                <Component Type="CoreEssentials.Playground.HudLabelRefreshComponent">
+                                <Component Type="CoreEssentials.Playground.Components.HudLabelRefreshComponent">
                                     <Properties>
                                         <Property Name="TextTemplate" Value="RIGHT  (W={w} H={h})" />
                                         <Property Name="IntervalSeconds" Value="0.5" />
@@ -125,7 +125,7 @@
                                 <Property Name="Height" Value="150" />
                             </Properties>
                         </Component>
-                        <Component Type="CoreEssentials.Playground.OrbitPanelComponent">
+                        <Component Type="CoreEssentials.Playground.Components.OrbitPanelComponent">
                             <Properties>
                                 <Property Name="CenterX" Value="640" />
                                 <Property Name="CenterY" Value="360" />
@@ -171,7 +171,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="debugOverlay">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.LabelAlignmentDebugOverlayComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.LabelAlignmentDebugOverlayComponent" />
                     </Components>
                 </EntityDefinition>
 
@@ -179,7 +179,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navSendMessage">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Escape" />
                                 <Property Name="TargetSceneAsset" Value="SendMessageDemoScene.xml" />

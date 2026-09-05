@@ -16,7 +16,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 #nullable enable
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Entities;
 
 public class Ball : Entity, ISaveableEntity
 {

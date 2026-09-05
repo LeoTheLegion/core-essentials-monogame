@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using System; // Added for event handlers
 using CoreEssentials.Inputs; // Added for Input class + CoreEssentials-owned KeyboardEventArgs
 
-namespace CoreEssentials.Playground
+namespace CoreEssentials.Playground.Entities
 {
     /// <summary>
     /// A playground entity that demonstrates camera control. Camera ownership lives in a built-in

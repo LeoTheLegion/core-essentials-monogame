@@ -3,7 +3,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework.Input;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Loads a data-driven scene when a configured key is released. The navigation target is the

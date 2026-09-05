@@ -2,7 +2,7 @@ using System;
 using CoreEssentials.Audio;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Plays a looping music track for the lifetime of its owning entity and pauses/resumes it when

@@ -3,7 +3,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework.Input;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Toggles entity debug visualization on the owning EntitySystem when a configured key is released.

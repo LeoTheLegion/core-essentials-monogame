@@ -5,7 +5,7 @@ using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Input layer for a camera owned by the built-in <see cref="CameraComponent"/> on the same entity.

@@ -2,9 +2,10 @@ using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.Inputs;
+using CoreEssentials.Playground.Entities;
 using Microsoft.Xna.Framework.Input;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Toggles a camera's follow of a target entity when a configured key (default F) is released, and

@@ -11,6 +11,8 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Internal;
 using CoreEssentials.Playground;
+using CoreEssentials.Playground.Entities;
+using CoreEssentials.Playground.Components;
 using CoreEssentials.Scenes;
 using CoreEssentials.Tests.Coroutines;
 
@@ -66,7 +68,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // Characters are typed entities with their tags.
             var staticChar = FindById(sys.Entities, "staticCharacter");
             Assert.NotNull(staticChar);
-            Assert.Equal("CoreEssentials.Playground.CharacterEntity", staticChar!.Type);
+            Assert.Equal("CoreEssentials.Playground.Entities.CharacterEntity", staticChar!.Type);
             Assert.Contains("Static", staticChar.Tags);
             var animated = FindById(sys.Entities, "animatedCharacter");
             Assert.NotNull(animated);
@@ -177,13 +179,13 @@ namespace CoreEssentials.Tests.SceneManagement
 
             // Camera + player are typed entities.
             var camera = FindById(sys.Entities, "camera");
-            Assert.Equal("CoreEssentials.Playground.CameraEntity", camera!.Type);
+            Assert.Equal("CoreEssentials.Playground.Entities.CameraEntity", camera!.Type);
             var player = FindById(sys.Entities, "player");
-            Assert.Equal("CoreEssentials.Playground.PlayerEntity", player!.Type);
+            Assert.Equal("CoreEssentials.Playground.Entities.PlayerEntity", player!.Type);
 
             // The info text is a typed TextEntity with multi-line text (newline preserved via &#10;).
             var info = FindById(sys.Entities, "cameraInfoText");
-            Assert.Equal("CoreEssentials.Playground.TextEntity", info!.Type);
+            Assert.Equal("CoreEssentials.Playground.Entities.TextEntity", info!.Type);
             Assert.Contains("\n", info.EntityOverrides["Text"]);
 
             // The follow toggle declares its three references.

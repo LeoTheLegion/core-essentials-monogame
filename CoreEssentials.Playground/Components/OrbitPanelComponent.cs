@@ -2,7 +2,7 @@ using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using Microsoft.Xna.Framework;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Moves its owning entity around an ellipse in world space, every frame. This ports the

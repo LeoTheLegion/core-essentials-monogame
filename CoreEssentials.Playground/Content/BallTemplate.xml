@@ -1,4 +1,4 @@
-<Prefab Type="CoreEssentials.Playground.Ball" Rotation="0" Sort="0" Active="true">
+<Prefab Type="CoreEssentials.Playground.Entities.Ball" Rotation="0" Sort="0" Active="true">
     <Tags>
         <Tag Name="Ball" />
         <Tag Name="Physical" />

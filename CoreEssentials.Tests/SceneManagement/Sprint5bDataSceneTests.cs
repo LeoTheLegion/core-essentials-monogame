@@ -10,6 +10,8 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Internal;
 using CoreEssentials.Playground;
+using CoreEssentials.Playground.Entities;
+using CoreEssentials.Playground.Components;
 using CoreEssentials.Scenes;
 using CoreEssentials.Tests.Coroutines;
 

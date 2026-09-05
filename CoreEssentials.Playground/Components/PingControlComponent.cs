@@ -5,7 +5,7 @@ using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Drives the SendMessage demo commands from a single entity, so the scene can be pure data.

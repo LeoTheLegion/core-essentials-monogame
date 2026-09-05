@@ -8,7 +8,7 @@ using System;
 
 #nullable enable
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Entities;
 
 /// <summary>
 /// A simple entity that displays a character from a sprite sheet.

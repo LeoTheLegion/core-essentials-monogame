@@ -4,10 +4,11 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+using CoreEssentials.Playground.Entities;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GameSystems.Physics.Types;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Declaratively reproduces the physics-demo ball spawning that used to live in a scene

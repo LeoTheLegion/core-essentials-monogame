@@ -12,6 +12,8 @@ using CoreEssentials.GameSystems.Physics.Types;
 using CoreEssentials.GUI.Types;
 using CoreEssentials.Inputs;
 using CoreEssentials.Playground;
+using CoreEssentials.Playground.Entities;
+using CoreEssentials.Playground.Components;
 
 namespace CoreEssentials.Tests.Playground;
 

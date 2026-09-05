@@ -6,7 +6,7 @@ using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GameSystems.Physics.Types;
 using CoreEssentials.Inputs;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Declaratively reproduces the physics debug overlay that used to live in a scene subclass, so

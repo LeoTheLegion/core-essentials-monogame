@@ -4,7 +4,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Entities;
 
 public class TextEntity : Entity
 {

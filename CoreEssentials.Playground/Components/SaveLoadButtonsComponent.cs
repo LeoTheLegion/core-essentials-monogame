@@ -5,7 +5,7 @@ using CoreEssentials.GUI;
 using CoreEssentials.GUI.Factory;
 using CoreEssentials.GUI.Types;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Declaratively reproduces the save/load GUI buttons that used to live in a scene subclass, so

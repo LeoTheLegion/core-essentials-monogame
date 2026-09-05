@@ -1,4 +1,4 @@
-<Prefab Type="CoreEssentials.Playground.VolumeButtonEntity" Rotation="0" Sort="100" Active="true">
+<Prefab Type="CoreEssentials.Playground.Entities.VolumeButtonEntity" Rotation="0" Sort="100" Active="true">
     <Tags>
         <Tag Name="UI" />
         <Tag Name="Volume" />

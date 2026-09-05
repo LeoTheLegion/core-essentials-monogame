@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using CoreEssentials.Inputs;
 using CoreEssentials.Timing; // Added for Time.DeltaTime
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Entities;
 
 public class PlayerEntity : CharacterEntity
 {

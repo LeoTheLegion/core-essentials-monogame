@@ -26,7 +26,7 @@
             </Prefabs>
             <Entities>
                 <!-- Static character (left). -->
-                <EntityDefinition Type="CoreEssentials.Playground.CharacterEntity" Id="staticCharacter">
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.CharacterEntity" Id="staticCharacter">
                     <Position X="320" Y="360" />
                     <Tags>
                         <Tag Name="Character" />
@@ -35,7 +35,7 @@
                 </EntityDefinition>
 
                 <!-- Animated character (right). -->
-                <EntityDefinition Type="CoreEssentials.Playground.AnimatedCharacterEntity" Id="animatedCharacter">
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.AnimatedCharacterEntity" Id="animatedCharacter">
                     <Position X="960" Y="360" />
                     <Tags>
                         <Tag Name="Character" />
@@ -109,7 +109,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="music">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.MusicComponent">
+                        <Component Type="CoreEssentials.Playground.Components.MusicComponent">
                             <Properties>
                                 <Property Name="MusicAsset" Value="song1_sound.xml" />
                             </Properties>
@@ -121,7 +121,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="debugToggle">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.DebugToggleComponent">
+                        <Component Type="CoreEssentials.Playground.Components.DebugToggleComponent">
                             <Properties>
                                 <Property Name="StartEnabled" Value="true" />
                                 <Property Name="ShowEntityBounds" Value="true" />
@@ -139,7 +139,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="soundKeyQ">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.SoundKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Q" />
                                 <Property Name="SoundAsset" Value="footstep1_sound.xml" />
@@ -151,7 +151,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="soundKeyW">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.SoundKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="W" />
                                 <Property Name="SoundAsset" Value="footstep2_sound.xml" />
@@ -163,7 +163,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="soundKeyE">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.SoundKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="E" />
                                 <Property Name="SoundAsset" Value="footstep3_sound.xml" />
@@ -176,7 +176,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="volumeKeyZ">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.VolumeKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.VolumeKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Z" />
                                 <Property Name="Volume" Value="0.1" />
@@ -188,7 +188,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="volumeKeyX">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.VolumeKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.VolumeKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="X" />
                                 <Property Name="Volume" Value="1.0" />
@@ -201,7 +201,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navPhysics">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="OemPlus" />
                                 <Property Name="TargetSceneAsset" Value="PhysicsEntityScene.xml" />
@@ -213,7 +213,7 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navSendMessage">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="M" />
                                 <Property Name="TargetSceneAsset" Value="SendMessageDemoScene.xml" />

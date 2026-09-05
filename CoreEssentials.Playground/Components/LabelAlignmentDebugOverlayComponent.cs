@@ -8,7 +8,7 @@ using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Draws a debug overlay that makes the invisible parts of a label-alignment demo visible: each

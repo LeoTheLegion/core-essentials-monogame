@@ -229,7 +229,7 @@
                     The entity's own input layer handles WASD/Q/E/R; only the speed is overridden
                     (the default of 1 world unit/second is imperceptible).
                 -->
-                <EntityDefinition Type="CoreEssentials.Playground.CameraEntity" Id="camera">
+                <EntityDefinition Type="CoreEssentials.Playground.Entities.CameraEntity" Id="camera">
                     <Position X="0" Y="0" />
                     <EntityOverrides>
                         <Property Name="CameraSpeed" Value="300" />
@@ -241,7 +241,7 @@
                     Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity"
                     Id="navPhysics">
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Escape" />
                                 <Property Name="TargetSceneAsset" Value="PhysicsEntityScene.xml" />
@@ -254,7 +254,7 @@
                     Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity"
                     Id="navSendMessage">
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="M" />
                                 <Property Name="TargetSceneAsset" Value="SendMessageDemoScene.xml" />

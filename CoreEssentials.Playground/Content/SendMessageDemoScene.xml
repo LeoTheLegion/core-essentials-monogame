@@ -77,7 +77,7 @@
                     Id="pingControl">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.PingControlComponent">
+                        <Component Type="CoreEssentials.Playground.Components.PingControlComponent">
                             <Properties>
                                 <Property Name="BroadcastKey" Value="Space" />
                                 <Property Name="MessageName" Value="OnPing" />
@@ -97,7 +97,7 @@
                     Id="navCharacter">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.NavigateOnKeyComponent">
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Escape" />
                                 <Property Name="TargetSceneAsset" Value="CharacterScene.xml" />

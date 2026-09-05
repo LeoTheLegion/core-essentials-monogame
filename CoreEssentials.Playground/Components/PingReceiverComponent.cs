@@ -4,7 +4,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace CoreEssentials.Playground;
+namespace CoreEssentials.Playground.Components;
 
 /// <summary>
 /// Demo component for the SendMessage scene: renders a short label at the owner's position and
