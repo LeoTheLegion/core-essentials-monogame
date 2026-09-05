@@ -48,9 +48,9 @@ namespace CoreEssentials.Tests.SceneManagement
         {
             // Parsing a <System> with <Prefab Asset=.../> loads each template through AssetManager,
             // so the content manager must be up and the templates staged.
-            StageContentFile("TextTemplate.xml");
-            StageContentFile("SoundButtonTemplate.xml");
-            StageContentFile("VolumeButtonTemplate.xml");
+            StageContentFile("Templates/TextTemplate.xml");
+            StageContentFile("Templates/SoundButtonTemplate.xml");
+            StageContentFile("Templates/VolumeButtonTemplate.xml");
             AssetManager.Init(new MockContentManager());
 
             var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/CharacterScene.xml"));
@@ -61,9 +61,9 @@ namespace CoreEssentials.Tests.SceneManagement
 
             // Three templates are registered as prefabs.
             Assert.Equal(3, sys.Prefabs.Count);
-            Assert.Contains(sys.Prefabs, p => p.Name == "TextPrefab" && p.Asset == "TextTemplate.xml");
-            Assert.Contains(sys.Prefabs, p => p.Name == "SoundButtonPrefab" && p.Asset == "SoundButtonTemplate.xml");
-            Assert.Contains(sys.Prefabs, p => p.Name == "VolumeButtonPrefab" && p.Asset == "VolumeButtonTemplate.xml");
+            Assert.Contains(sys.Prefabs, p => p.Name == "TextPrefab" && p.Asset == "Templates/TextTemplate.xml");
+            Assert.Contains(sys.Prefabs, p => p.Name == "SoundButtonPrefab" && p.Asset == "Templates/SoundButtonTemplate.xml");
+            Assert.Contains(sys.Prefabs, p => p.Name == "VolumeButtonPrefab" && p.Asset == "Templates/VolumeButtonTemplate.xml");
 
             // Characters are typed entities with their tags.
             var staticChar = FindById(sys.Entities, "staticCharacter");
@@ -117,9 +117,9 @@ namespace CoreEssentials.Tests.SceneManagement
         public void CharacterScene_Loads_AsDataDrivenScene_WithCharactersAndButtons()
         {
             StageContentFile("Scenes/CharacterScene.xml");
-            StageContentFile("TextTemplate.xml");
-            StageContentFile("SoundButtonTemplate.xml");
-            StageContentFile("VolumeButtonTemplate.xml");
+            StageContentFile("Templates/TextTemplate.xml");
+            StageContentFile("Templates/SoundButtonTemplate.xml");
+            StageContentFile("Templates/VolumeButtonTemplate.xml");
             // Character / player sprites load headlessly (0×0 frames) via this chain.
             StageContentFile("character_sprite.xml");
             StageContentFile("character_anim_walk.xml");

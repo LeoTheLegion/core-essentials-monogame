@@ -18,7 +18,7 @@
         <System Type="EntitySystem">
             <Prefabs>
                 <!-- All balls share this template: sprite + rigidbody + collider. -->
-                <Prefab Name="BallPrefab" Asset="BallTemplate.xml" />
+                <Prefab Name="BallPrefab" Asset="Templates/BallTemplate.xml" />
             </Prefabs>
             <Entities>
                 <!--

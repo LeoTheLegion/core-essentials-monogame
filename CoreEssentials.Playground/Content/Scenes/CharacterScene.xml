@@ -20,9 +20,9 @@
     <GameSystems>
         <System Type="EntitySystem">
             <Prefabs>
-                <Prefab Name="TextPrefab" Asset="TextTemplate.xml" />
-                <Prefab Name="SoundButtonPrefab" Asset="SoundButtonTemplate.xml" />
-                <Prefab Name="VolumeButtonPrefab" Asset="VolumeButtonTemplate.xml" />
+                <Prefab Name="TextPrefab" Asset="Templates/TextTemplate.xml" />
+                <Prefab Name="SoundButtonPrefab" Asset="Templates/SoundButtonTemplate.xml" />
+                <Prefab Name="VolumeButtonPrefab" Asset="Templates/VolumeButtonTemplate.xml" />
             </Prefabs>
             <Entities>
                 <!-- Static character (left). -->

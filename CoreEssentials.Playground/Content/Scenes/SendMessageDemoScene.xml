@@ -20,7 +20,7 @@
                 <!-- Prefab template from an XML content file: a plain GameObjectEntity shell
                 carrying
                      the receiver component, with a declarative <Bind> wiring Spawned -> OnSpawned. -->
-                <Prefab Name="PingPrefab" Asset="PingPrefabTemplate.xml" />
+                <Prefab Name="PingPrefab" Asset="Templates/PingPrefabTemplate.xml" />
             </Prefabs>
             <Entities>
                 <!-- Root-level receiver: a plain GameObjectEntity shell carrying the demo

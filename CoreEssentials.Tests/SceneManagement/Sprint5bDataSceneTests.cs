@@ -109,7 +109,7 @@ namespace CoreEssentials.Tests.SceneManagement
             var systemDef = scene.Systems[0];
             Assert.Single(systemDef.Prefabs);
             Assert.Equal("PingPrefab", systemDef.Prefabs[0].Name);
-            Assert.Equal("PingPrefabTemplate.xml", systemDef.Prefabs[0].Asset);
+            Assert.Equal("Templates/PingPrefabTemplate.xml", systemDef.Prefabs[0].Asset);
 
             // The control component declares the staggered spawn position.
             var control = FindById(systemDef.Entities, "pingControl");
@@ -128,7 +128,7 @@ namespace CoreEssentials.Tests.SceneManagement
         public void SendMessageDemo_Loads_AsDataDrivenScene_WithReceiversAndNestedChild()
         {
             StageContentFile("Scenes/SendMessageDemoScene.xml");
-            StageContentFile("PingPrefabTemplate.xml");
+            StageContentFile("Templates/PingPrefabTemplate.xml");
 
             var helper = new CoroutineTestHelper();
             try

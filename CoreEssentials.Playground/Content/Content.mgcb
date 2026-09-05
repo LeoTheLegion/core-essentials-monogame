@@ -28,8 +28,8 @@
 /processorParam:TextureFormat=Color
 /build:Ball.png
 
-#begin BallTemplate.xml
-/copy:BallTemplate.xml
+#begin Templates/BallTemplate.xml
+/copy:Templates/BallTemplate.xml
 
 #begin base.spritefont
 /importer:FontDescriptionImporter
@@ -72,14 +72,14 @@
 #begin Scenes/CharacterScene.xml
 /copy:Scenes/CharacterScene.xml
 
-#begin CharacterTemplate.xml
-/copy:CharacterTemplate.xml
+#begin Templates/CharacterTemplate.xml
+/copy:Templates/CharacterTemplate.xml
 
 #begin Scenes/LabelAlignmentDemoScene.xml
 /copy:Scenes/LabelAlignmentDemoScene.xml
 
-#begin PingPrefabTemplate.xml
-/copy:PingPrefabTemplate.xml
+#begin Templates/PingPrefabTemplate.xml
+/copy:Templates/PingPrefabTemplate.xml
 
 #begin Scenes/SendMessageDemoScene.xml
 /copy:Scenes/SendMessageDemoScene.xml
@@ -93,14 +93,14 @@
 #begin scenes.xml
 /copy:scenes.xml
 
-#begin SoundButtonTemplate.xml
-/copy:SoundButtonTemplate.xml
+#begin Templates/SoundButtonTemplate.xml
+/copy:Templates/SoundButtonTemplate.xml
 
-#begin VolumeButtonTemplate.xml
-/copy:VolumeButtonTemplate.xml
+#begin Templates/VolumeButtonTemplate.xml
+/copy:Templates/VolumeButtonTemplate.xml
 
-#begin TextTemplate.xml
-/copy:TextTemplate.xml
+#begin Templates/TextTemplate.xml
+/copy:Templates/TextTemplate.xml
 
 #begin footstep00.ogg
 /importer:OggImporter

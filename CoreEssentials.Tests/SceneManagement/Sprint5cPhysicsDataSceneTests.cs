@@ -66,7 +66,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // The ball prefab is registered from its template asset.
             Assert.Single(entitySystem.Prefabs);
             Assert.Equal("BallPrefab", entitySystem.Prefabs[0].Name);
-            Assert.Equal("BallTemplate.xml", entitySystem.Prefabs[0].Asset);
+            Assert.Equal("Templates/BallTemplate.xml", entitySystem.Prefabs[0].Asset);
 
             // The spawner declares every knob explicitly (self-documenting data).
             var spawn = FindById(entitySystem.Entities, "ballSpawner");
@@ -101,7 +101,7 @@ namespace CoreEssentials.Tests.SceneManagement
         public void PhysicsEntityScene_Loads_AsDataDrivenScene_WithEngineBallsAndGui()
         {
             StageContentFile("Scenes/PhysicsEntityScene.xml");
-            StageContentFile("BallTemplate.xml");
+            StageContentFile("Templates/BallTemplate.xml");
             StageContentFile("PhysicsConfig.xml");
             StageContentFile("ball_sprite.xml");
 
