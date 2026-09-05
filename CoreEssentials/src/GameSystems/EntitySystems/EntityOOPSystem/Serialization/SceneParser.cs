@@ -376,8 +376,8 @@ public static class SceneParser
     /// <summary>
     /// Parses the &lt;EntityOverrides&gt; element — a flat set of property → value pairs targeting
     /// writable public properties on the entity itself (not a component). This is the escape hatch for
-    /// entities that keep state directly on themselves (e.g. <c>TextEntity.Text</c>) with no component to
-    /// target via &lt;Overrides&gt;. Values are applied to the created entity before <c>OnStart</c>/<c>OnAttach</c>.
+    /// entities that keep state directly on themselves (e.g. an entity's own <c>CameraSpeed</c>) with no
+    /// component to target via &lt;Overrides&gt;. Values are applied to the created entity before <c>OnStart</c>/<c>OnAttach</c>.
     /// </summary>
     private static void ParseEntityOverrides(XElement element, EntityDefinition definition, XElement context)
     {

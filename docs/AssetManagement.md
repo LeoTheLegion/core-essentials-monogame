@@ -152,43 +152,35 @@ The FontAsset class uses MonoGame's built-in SpriteFont system. Font files shoul
 
 ### Text Alignment Example
 
-The `TextEntity` class in the playground demonstrates how to use FontAsset with different alignment options:
+The `TextComponent` in the playground demonstrates how to use a `FontAsset` with different alignment options. It is a plain `IDrawableComponent`, so it can be attached to any entity (typically a behavior-free `GameObjectEntity`) and declared purely from scene/prefab XML:
 
 ```csharp
-public class TextEntity : Entity
+public class TextComponent : EntityComponent, IDrawableComponent
 {
-    private FontAsset _font;
-    private string _text;
-    private Color _color;
-    private TextAlignment _alignment;
-    
-    public enum TextAlignment
+    private FontAsset? _font;
+
+    public string Text { get; set; } = "";
+    public Color Color { get; set; } = Color.White;
+    public enum TextAlignment { Left, Center, Right }
+    public TextAlignment Alignment { get; set; } = TextAlignment.Left;
+
+    public override void OnAttach()
     {
-        Left,
-        Center,
-        Right
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        
+        base.OnAttach();
         // Load the font asset
-        _font = AssetManager.LoadAsset<FontAsset>("base");
+        _font = AssetManager.LoadAsset<FontAsset>("Fonts/base");
     }
-    
-    public override void Render(SpriteBatch spriteBatch)
+
+    public void Draw(SpriteBatch spriteBatch)
     {
-        base.Render(spriteBatch);
-        
-        if (_font == null || _font.Font == null)
+        if (Owner == null || _font?.Font == null)
             return;
-            
-        Vector2 textSize = _font.MeasureStringVector(_text);
-        Vector2 drawPosition = _position;
-        
+
+        Vector2 textSize = _font.MeasureStringVector(Text);
+        Vector2 drawPosition = Owner.Position;
+
         // Apply alignment
-        switch (_alignment)
+        switch (Alignment)
         {
             case TextAlignment.Center:
                 drawPosition.X -= textSize.X / 2;
@@ -197,10 +189,22 @@ public class TextEntity : Entity
                 drawPosition.X -= textSize.X;
                 break;
         }
-        
-        spriteBatch.DrawString(_font.Font, _text, drawPosition, _color);
+
+        spriteBatch.DrawString(_font.Font, Text, drawPosition, Color);
     }
 }
+```
+
+Declared from XML (see `docs/XMLEntityDefinitions.md`):
+
+```xml
+<Component Type="CoreEssentials.Playground.Components.TextComponent">
+  <Properties>
+    <Property Name="Text" Value="Hello" />
+    <Property Name="Color" Value="White" />
+    <Property Name="Alignment" Value="Center" />
+  </Properties>
+</Component>
 ```
 
 ## XML-Based Asset Definitions

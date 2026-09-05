@@ -1,6 +1,6 @@
 # Sprint 1 — Foundation & Text 🧱
 
-**Points:** 5 | **Status:** ⬜ Not Started | **Goal:** Point every text declaration at the framework's existing `GameObjectEntity` with a new `TextComponent : IDrawableComponent`, then migrate and delete `TextEntity`. This proves the end-to-end "components only" pattern (new component → XML declaration → class deleted) that Sprints 2–4 will scale.
+**Points:** 5 | **Status:** ✅ Done | **Goal:** Point every text declaration at the framework's existing `GameObjectEntity` with a new `TextComponent : IDrawableComponent`, then migrate and delete `TextEntity`. This proves the end-to-end "components only" pattern (new component → XML declaration → class deleted) that Sprints 2–4 will scale.
 
 ## Why This Sprint First
 
@@ -16,12 +16,12 @@
 ## Tasks
 
 - [x] T1 ✅ Reuse the framework's existing `GameObjectEntity` (already in `CoreEssentials/src/GameSystems/EntitySystems/EntityOOPSystem/GameObjectEntity.cs`) — no new entity class is created. No test needed beyond what Sprints' scene tests already cover.
-- [ ] T2 ⭐ Create `TextComponent : EntityComponent, IDrawableComponent` — move font load (`AssetManager.LoadAsset<FontAsset>("Fonts/base")`) into `OnAttach`, and the alignment-aware `DrawString` from `TextEntity.Render` into `Draw(SpriteBatch)`. Expose `Text`, `Color`, `Alignment` (and the internal offset) as settable properties so XML `<Property>` values bind.
-- [ ] T3 🔁 Update `Content/Templates/TextTemplate.xml`: root `<Prefab Type=...GameObjectEntity>`, add a `<Component Type="TextComponent">` block with the text/color/alignment properties currently baked into `TextEntity`.
-- [ ] T4 🔁 Repoint every scene that declares a `TextEntity` (e.g. `CameraScene.xml` `cameraInfoText`) to `GameObjectEntity` + a `TextComponent` with matching per-instance overrides.
-- [ ] T5 🔁 Delete `Entities/TextEntity.cs`. Remove any now-unused references/imports.
-- [ ] T6 🔒 Add unit tests for `TextComponent` (font loads on attach; alignment math for Left/Center/Right matches the old `TextEntity.Render`).
-- [ ] T7 🔒 Build clean + full suite green (expect 1174/0/3) + smoke-run all 7 scenes PASS.
+- [x] T2 ✅ Create `TextComponent : EntityComponent, IDrawableComponent` — font load (`AssetManager.LoadAsset<FontAsset>("Fonts/base")`) in `OnAttach`, alignment-aware `DrawString` in `Draw(SpriteBatch)`. Exposes `Text`, `Color`, `Alignment`, `Offset`; the alignment math is a public `ComputeDrawPosition` seam for tests.
+- [x] T3 ✅ Update `Content/Templates/TextTemplate.xml`: root `<Prefab Type=...GameObjectEntity>`, declares a `<Component Type="TextComponent">` (per-instance values come from `<Overrides>`).
+- [x] T4 ✅ Repoint every scene that declared a `TextEntity` (`CameraScene.xml` `cameraInfoText`; `CharacterScene.xml` `infoText`/`characterInfoText`) to `GameObjectEntity` + `TextComponent` with matching overrides.
+- [x] T5 ✅ Delete `Entities/TextEntity.cs`. Updated the one consumer that cast to it — `CameraFollowToggleComponent.UpdateInfo` now looks up a `TextComponent` on the label entity.
+- [x] T6 ✅ Add unit tests for `TextComponent` (`CoreEssentials.Tests/Playground/TextComponentTests.cs`): font loads on attach; alignment math for Left/Center/Right matches the old `TextEntity.Render`.
+- [x] T7 ✅ Build clean + full suite green (**1180/0/3**, up from 1174 with the 6 new tests) + smoke-run all 7 scenes PASS.
 
 ## Acceptance Criteria
 

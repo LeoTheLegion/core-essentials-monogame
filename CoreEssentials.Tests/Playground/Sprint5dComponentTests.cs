@@ -90,7 +90,7 @@ public class Sprint5dPureComponentTests
 
     private class FollowProbe : CameraFollowToggleComponent
     {
-        /// <summary>Drives the real info-text substitution against a live TextEntity label.</summary>
+        /// <summary>Drives the real info-text substitution against a live TextComponent label.</summary>
         public void ProbeUpdate(bool following) => base.UpdateInfo(following);
     }
 
@@ -113,14 +113,25 @@ public class Sprint5dPureComponentTests
     [Fact]
     public void Follow_UpdateInfo_SubstitutesStateToken()
     {
-        var label = new TextEntity();
-        var comp = new FollowProbe { InfoTemplate = "state={state}", InfoLabel = label };
+        // TextComponent.OnAttach loads the shared font — register a mock so attach works headlessly.
+        var content = new MockContentManager();
+        content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
+        CoreEssentials.Assets.AssetManager.Init(content);
 
-        comp.ProbeUpdate(true);
-        Assert.Equal("state=ON", label.Text);
+        var system = new EntitySystem();
+        var label = system.CreateEntity<TestEntity>();
+        var text = (TextComponent)label.AddComponent(new TextComponent());
+        try
+        {
+            var comp = new FollowProbe { InfoTemplate = "state={state}", InfoLabel = label };
 
-        comp.ProbeUpdate(false);
-        Assert.Equal("state=OFF", label.Text);
+            comp.ProbeUpdate(true);
+            Assert.Equal("state=ON", text.Text);
+
+            comp.ProbeUpdate(false);
+            Assert.Equal("state=OFF", text.Text);
+        }
+        finally { label.RemoveComponent<TextComponent>(); }
     }
 
     // ── HudLabelRefreshComponent ──────────────────────────────────────────────────

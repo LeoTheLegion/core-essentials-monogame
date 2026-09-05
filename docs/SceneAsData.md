@@ -27,9 +27,15 @@ The root is `<Scene>`, which contains exactly one `<GameSystems>` element. Every
 
             <!-- One or more entity definitions (roots) -->
             <Entities>
-                <EntityDefinition Type="CoreEssentials.Playground.TextEntity" Id="title">
+                <EntityDefinition Type="GameObjectEntity" Id="title">
                     <Position X="100" Y="200" />
-                    <Text>Hello from data</Text>
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Properties>
+                                <Property Name="Text" Value="Hello from data" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <!-- Same thing, but built from a registered prefab with overrides -->
@@ -93,9 +99,15 @@ Nest `<EntityDefinition>` elements inside a `<Children>` element to build a pare
         <Component Type="CanvasComponent" />
     </Components>
     <Children>
-        <EntityDefinition Type="CoreEssentials.Playground.TextEntity" Id="score">
+        <EntityDefinition Type="GameObjectEntity" Id="score">
             <Position X="16" Y="16" />
-            <Text>Score: 0</Text>
+            <Components>
+                <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                    <Properties>
+                        <Property Name="Text" Value="Score: 0" />
+                    </Properties>
+                </Component>
+            </Components>
         </EntityDefinition>
     </Children>
 </EntityDefinition>
@@ -110,9 +122,8 @@ There are three ways to set a component's property from an entity definition, in
 Any attribute on `<EntityDefinition>` that is *not* one of the known attributes (`Type`, `Source`, `Id`, `Rotation`, `Sort`, `Active`) is treated as a **flat override** — it must resolve to exactly one writable component property with that name, or parsing fails.
 
 ```xml
-<EntityDefinition Type="CoreEssentials.Playground.TextEntity" Id="title">
-    <Text>Hello</Text>          <!-- resolves to LabelComponent/TextEntity.Text -->
-    <TextColor>Gold</TextColor> <!-- resolves to the single component exposing TextColor -->
+<EntityDefinition Source="Text" Id="title">
+    <Text>Hello</Text>          <!-- resolves to the prefab's TextComponent.Text -->
 </EntityDefinition>
 ```
 
@@ -134,7 +145,7 @@ When several components expose the same property name, target one explicitly by 
 
 ### 3. `<EntityOverrides>` (target the entity itself)
 
-Some entities keep state directly on themselves with no component to target — e.g. `TextEntity.Text`, or an entity's own `CameraSpeed`/`Scale`. Target those via `<EntityOverrides>`, which applies property → value pairs to the **entity** before `OnStart`/`OnAttach`:
+Some entities keep state directly on themselves with no component to target — e.g. an entity's own `CameraSpeed` or `Scale`. Target those via `<EntityOverrides>`, which applies property → value pairs to the **entity** before `OnStart`/`OnAttach`: (Text is now a `TextComponent`, so it is targeted with the flat or `<Overrides>` forms above, not `<EntityOverrides>`.)
 
 ```xml
 <EntityDefinition Type="CoreEssentials.Playground.CameraEntity" Id="cam">

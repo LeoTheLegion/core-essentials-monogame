@@ -46,21 +46,25 @@
                 <!-- Top instruction line. -->
                 <EntityDefinition Source="TextPrefab" Id="infoText">
                     <Position X="640" Y="20" />
-                    <EntityOverrides>
-                        <Property Name="Text" Value="Press Q, W, E for sound effects | Z, X to change volume | M for SendMessage demo | + for physics scene | Or use the buttons on the left" />
-                        <Property Name="Color" Value="White" />
-                        <Property Name="Alignment" Value="Center" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Property Name="Text" Value="Press Q, W, E for sound effects | Z, X to change volume | M for SendMessage demo | + for physics scene | Or use the buttons on the left" />
+                            <Property Name="Color" Value="White" />
+                            <Property Name="Alignment" Value="Center" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <!-- Bottom caption. -->
                 <EntityDefinition Source="TextPrefab" Id="characterInfoText">
                     <Position X="640" Y="680" />
-                    <EntityOverrides>
-                        <Property Name="Text" Value="Static Character (Left) | Animated Character (Right)" />
-                        <Property Name="Color" Value="LightGreen" />
-                        <Property Name="Alignment" Value="Center" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Property Name="Text" Value="Static Character (Left) | Animated Character (Right)" />
+                            <Property Name="Color" Value="LightGreen" />
+                            <Property Name="Alignment" Value="Center" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <!-- Sound buttons (left column). -->

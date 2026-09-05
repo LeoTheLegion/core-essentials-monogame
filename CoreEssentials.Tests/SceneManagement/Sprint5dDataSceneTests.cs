@@ -74,11 +74,13 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.NotNull(animated);
             Assert.Contains("Animated", animated!.Tags);
 
-            // Text instances are prefab-based and configured via EntityOverrides.
+            // Text instances are prefab-based and configured via component-targeted <Overrides>.
             var info = FindById(sys.Entities, "infoText");
             Assert.Equal("TextPrefab", info!.Source);
-            Assert.Equal("Center", info.EntityOverrides["Alignment"]);
-            Assert.Contains("Press Q, W, E", info.EntityOverrides["Text"]);
+            var textCompKey = typeof(CoreEssentials.Playground.Components.TextComponent).FullName!;
+            Assert.True(info.ResolvedOverrides.TryGetValue(textCompKey, out var textProps));
+            Assert.Equal("Center", textProps["Alignment"]);
+            Assert.Contains("Press Q, W, E", textProps["Text"]);
 
             // Sound buttons are prefab-based with sound + text overrides.
             var fs1 = FindById(sys.Entities, "footstep1Button");
@@ -152,8 +154,10 @@ namespace CoreEssentials.Tests.SceneManagement
                 var animated = entitySystem.FindById("animatedCharacter");
                 Assert.IsType<AnimatedCharacterEntity>(animated);
 
-                // Prefab-based buttons resolved to their concrete types.
-                Assert.IsType<TextEntity>(entitySystem.FindById("infoText"));
+                // Text is a plain game object carrying a TextComponent; buttons keep their classes.
+                var infoText = entitySystem.FindById("infoText");
+                Assert.NotNull(infoText);
+                Assert.NotNull(infoText!.GetComponent<TextComponent>());
                 Assert.IsType<SoundButtonEntity>(entitySystem.FindById("footstep1Button"));
                 Assert.IsType<VolumeButtonEntity>(entitySystem.FindById("volumeLowButton"));
 
@@ -183,10 +187,11 @@ namespace CoreEssentials.Tests.SceneManagement
             var player = FindById(sys.Entities, "player");
             Assert.Equal("CoreEssentials.Playground.Entities.PlayerEntity", player!.Type);
 
-            // The info text is a typed TextEntity with multi-line text (newline preserved via &#10;).
+            // The info text is a plain game object with a TextComponent carrying multi-line text (&#10;).
             var info = FindById(sys.Entities, "cameraInfoText");
-            Assert.Equal("CoreEssentials.Playground.Entities.TextEntity", info!.Type);
-            Assert.Contains("\n", info.EntityOverrides["Text"]);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", info!.Type);
+            var infoTextComp = info.DeclaredComponents.First(c => c.Type.Contains("TextComponent"));
+            Assert.Contains("\n", infoTextComp.Properties["Text"]);
 
             // The follow toggle declares its three references.
             var follow = FindById(sys.Entities, "followToggle");

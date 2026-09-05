@@ -27,7 +27,7 @@ namespace CoreEssentials.Playground.Components;
 /// </code>
 /// The linked entities are supplied via &lt;Reference&gt; (the strict parser resolves them into the
 /// <see cref="Camera"/>, <see cref="FollowTarget"/> and <see cref="InfoLabel"/> properties). The camera
-/// must be a <see cref="CameraEntity"/> and the label a <see cref="TextEntity"/>; anything else is
+/// must be a <see cref="CameraEntity"/> and the label must carry a <see cref="TextComponent"/>; anything else is
 /// ignored gracefully.
 /// </summary>
 public class CameraFollowToggleComponent : EntityComponent
@@ -41,7 +41,7 @@ public class CameraFollowToggleComponent : EntityComponent
     /// <summary>The entity the camera should follow when toggled on. Set via &lt;Reference Name="FollowTarget"/&gt;.</summary>
     public Entity? FollowTarget { get; set; }
 
-    /// <summary>Optional info label (a <see cref="TextEntity"/>). Set via &lt;Reference Name="InfoLabel"/&gt;.</summary>
+    /// <summary>Optional info label (an entity carrying a <see cref="TextComponent"/>). Set via &lt;Reference Name="InfoLabel"/&gt;.</summary>
     public Entity? InfoLabel { get; set; }
 
     /// <summary>
@@ -99,7 +99,8 @@ public class CameraFollowToggleComponent : EntityComponent
     /// <summary>Updates the info label's text to reflect the follow state. Virtual for tests.</summary>
     protected virtual void UpdateInfo(bool following)
     {
-        if (InfoLabel is TextEntity text)
+        var text = InfoLabel?.GetComponent<TextComponent>();
+        if (text != null)
             text.Text = InfoTemplate.Replace("{state}", following ? "ON" : "OFF");
     }
 

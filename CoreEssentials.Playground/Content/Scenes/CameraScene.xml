@@ -24,13 +24,17 @@
                 </EntityDefinition>
 
                 <!-- Control instructions; the follow toggle keeps its "(ON)/(OFF)" line current. -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.TextEntity" Id="cameraInfoText">
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="cameraInfoText">
                     <Position X="10" Y="10" />
-                    <EntityOverrides>
-                        <Property Name="Text" Value="Camera Controls:&#10;WASD: Move Camera&#10;Q/E: Zoom In/Out&#10;R: Reset Camera&#10;F: Follow Player (OFF)&#10;Arrow Keys: Move Player" />
-                        <Property Name="Color" Value="White" />
-                        <Property Name="Alignment" Value="Left" />
-                    </EntityOverrides>
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Properties>
+                                <Property Name="Text" Value="Camera Controls:&#10;WASD: Move Camera&#10;Q/E: Zoom In/Out&#10;R: Reset Camera&#10;F: Follow Player (OFF)&#10;Arrow Keys: Move Player" />
+                                <Property Name="Color" Value="White" />
+                                <Property Name="Alignment" Value="Left" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <!-- F toggles the camera following the player and updates the info text. -->
