@@ -36,6 +36,7 @@ CoreEssentials.Playground/
 │   └── XmlLayoutScene.cs           # ns CoreEssentials.Playground.Scenes (or removed if dead)
 └── Content/
     ├── scenes.xml                  # manifest — stays at Content root (registered by asset name "scenes.xml")
+    ├── DiagnosticsFont.spritefont  # stays at root — Aether's DebugView hardcodes content.Load<SpriteFont>("DiagnosticsFont")
     ├── Scenes/                     # <Scene>-rooted scene files + the loading screen
     │   ├── HomeScene.xml  CharacterScene.xml  CameraScene.xml  GuiAnchorDemo.xml
     │   ├── LabelAlignmentDemoScene.xml  PhysicsEntityScene.xml  SendMessageDemoScene.xml  loading.xml
@@ -47,8 +48,8 @@ CoreEssentials.Playground/
     │   └── character_sheet.xml  character_sprite.xml
     ├── Audio/                      # sound effect descriptors + OGG/WAV sources
     │   ├── footstep*_sound.xml  song1_sound.xml  footstep00-02.ogg  Goblins_Den_(Regular).wav
-    ├── Fonts/                      # spritefonts + raw font
-    │   ├── base.spritefont  DiagnosticsFont.spritefont  ComicMono.ttf
+    ├── Fonts/                      # spritefonts + raw font (DiagnosticsFont stays at root)
+    │   ├── base.spritefont  ComicMono.ttf
     └── Config/
         └── PhysicsConfig.xml
 ```
@@ -66,7 +67,7 @@ CoreEssentials.Playground/
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
 | 1 | [Code Organization](Sprint_1_Code_Organization.md) | 5 | ✅ Done | Move C# files into Entities/Components, update namespaces + usings, update all XML `Type=` references (scenes, templates, tests), removed dead `XmlLayoutScene` |
-| 2 | [Content Organization](Sprint_2_Content_Organization.md) | 5 | ⬜ Not started | Move content into Scenes/Templates/Sprites/Audio/Fonts/Config, update `Content.mgcb` paths + every asset-name reference (manifest, XML cross-refs, C# defaults), relocate save artifacts |
+| 2 | [Content Organization](Sprint_2_Content_Organization.md) | 5 | ✅ Done | Move content into Scenes/Templates/Sprites/Audio/Fonts/Config, update `Content.mgcb` paths + every asset-name reference (manifest, XML cross-refs, C# defaults). `DiagnosticsFont.spritefont` left at root (Aether hardcodes its key); save artifacts already gitignored |
 
 ## Risk Notes
 
