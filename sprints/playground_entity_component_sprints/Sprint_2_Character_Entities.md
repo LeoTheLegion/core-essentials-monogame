@@ -1,6 +1,6 @@
 # Sprint 2 — Character Entities 🏃
 
-**Points:** 5 | **Status:** ⬜ Not Started | **Goal:** Migrate `AnimatedCharacterEntity`, `CharacterEntity`, and `PlayerEntity` onto components, delete all three classes, and eliminate the `PlayerEntity : CharacterEntity` inheritance.
+**Points:** 5 | **Status:** ✅ Completed (2026-09-05) | **Goal:** Migrate `AnimatedCharacterEntity`, `CharacterEntity`, and `PlayerEntity` onto components, delete all three classes, and eliminate the `PlayerEntity : CharacterEntity` inheritance.
 
 ## Why These Three Together
 
@@ -20,15 +20,18 @@ The reusable pieces that don't exist yet are a **bounce tween component**, a **m
 
 ## Tasks
 
-- [ ] T1 ⭐ Create `BounceTweenComponent : EntityComponent` — encapsulate the `CharacterEntity` bounce (capture original Y on first frame, apply tweened offset). Expose amplitude/duration/easing/loop as properties.
-- [ ] T2 ⭐ Create `MoveByKeysComponent : EntityComponent` — arrow-key movement using `Input.Keyboard` + `Time.DeltaTime`; expose speed + key bindings as properties (mirrors the existing `CameraInputComponent` declarative style).
-- [ ] T3 ⭐ Add pause-scale behavior. `Entity.OnApplicationPause` forwards to components, so a small component (e.g. `PauseScaleComponent`) that scales the entity while paused covers both character entities. Confirm the forward path in `Entity.cs`.
-- [ ] T4 🔁 Update `Content/Templates/CharacterTemplate.xml` → `GameObjectEntity` + `SpriteComponent` (character sprite) + `BounceTweenComponent` (+ pause-scale).
-- [ ] T5 🔁 Update `Content/Scenes/CharacterScene.xml`: `staticCharacter` (`CharacterEntity`) and `animatedCharacter` (`AnimatedCharacterEntity`) → `GameObjectEntity` with the right component sets (animated uses `AnimationComponent` + walk; static uses bounce).
-- [ ] T6 🔁 Update `Content/Scenes/CameraScene.xml` `player` (`PlayerEntity`) → `GameObjectEntity` + character visual components + `MoveByKeysComponent`.
-- [ ] T7 🔁 Delete `Entities/CharacterEntity.cs`, `AnimatedCharacterEntity.cs`, `PlayerEntity.cs`; remove references/imports.
-- [ ] T8 🔒 Add unit tests: `BounceTweenComponent` (offset applied relative to captured Y), `MoveByKeysComponent` (each key moves the expected axis/direction), pause-scale component (scale toggles on pause state).
-- [ ] T9 🔒 Build clean + full suite green (expect 1174/0/3) + smoke-run all 7 scenes PASS.
+- [x] T1 ⭐ Create `BounceTweenComponent : EntityComponent` — encapsulate the `CharacterEntity` bounce (capture original Y on first frame, apply tweened offset). Expose amplitude/duration/easing/loop as properties.
+- [x] T2 ⭐ Create `MoveByKeysComponent : EntityComponent` — arrow-key movement using `Input.Keyboard` + `Time.DeltaTime`; expose speed + key bindings as properties (mirrors the existing `CameraInputComponent` declarative style).
+- [x] T3 ⭐ Add pause-scale behavior. `Entity.OnApplicationPause` forwards to components, so a small component (`PauseScaleComponent`) that scales the entity while paused covers both character entities. Forward path confirmed in `Entity.cs`.
+- [x] T3b ⭐ Create `CharacterSpriteLoader` (loads a sprite asset → hands it to a pre-declared `SpriteComponent`) and `CharacterWalkAnimation` (loads an animated sprite → wires the pre-declared `SpriteComponent` + `AnimationComponent`). Needed because `ParseValue` cannot bind a `Sprite` property from an XML string — the asset must be loaded in code.
+- [x] T4 🔁 Update `Content/Templates/CharacterTemplate.xml` → `GameObjectEntity` + `SpriteComponent` + `CharacterSpriteLoader` + `BounceTweenComponent` + `PauseScaleComponent`.
+- [x] T5 🔁 Update `Content/Scenes/CharacterScene.xml`: `staticCharacter` and `animatedCharacter` → `GameObjectEntity` with the right component sets (animated uses `AnimationComponent` + `CharacterWalkAnimation`; static uses `BounceTweenComponent`).
+- [x] T6 🔁 Update `Content/Scenes/CameraScene.xml` `player` → `GameObjectEntity` + character visual components + `MoveByKeysComponent`.
+- [x] T7 🔁 Delete `Entities/CharacterEntity.cs`, `AnimatedCharacterEntity.cs`, `PlayerEntity.cs`; remove references/imports.
+- [x] T8 🔒 Add unit tests (`CharacterComponentTests`, 11 tests): bounce (baseline capture + offset relative to Y, X untouched), move-by-keys (each key moves the expected axis/direction; no-op when idle), pause-scale (scale toggles on pause state; configured factor), sprite loader (assigns to pre-declared component; no-op without one), walk animation (wires siblings + plays). Also updated `Sprint5dDataSceneTests` for the new `GameObjectEntity` types.
+- [x] T9 🔒 Build clean + full suite green (1191/0/3) + smoke-run all 7 scenes PASS.
+
+> **Key design discovery:** a component must never *create* a sibling from `OnAttach` or `Update` — the entity iterates its live `_components` dictionary during both passes, so adding one throws "Collection was modified". The original entities added components in `OnStart` (the deferred-attach window), which is safe. Therefore the data-driven design **pre-declares** all sibling components in XML and has the behavior components only *configure* them (property sets + method calls). This is documented in [docs/CharacterComponents.md](../../docs/CharacterComponents.md).
 
 ## Acceptance Criteria
 
@@ -42,7 +45,10 @@ The reusable pieces that don't exist yet are a **bounce tween component**, a **m
 |------|--------|---------|
 | `Components/BounceTweenComponent.cs` | Create | Looping Y-bounce behavior |
 | `Components/MoveByKeysComponent.cs` | Create | Arrow-key movement |
-| `Components/PauseScaleComponent.cs` (or shared helper) | Create | Scale-while-paused behavior |
+| `Components/PauseScaleComponent.cs` | Create | Scale-while-paused behavior |
+| `Components/CharacterSpriteLoader.cs` | Create | Load sprite asset → hand to pre-declared SpriteComponent |
+| `Components/CharacterWalkAnimation.cs` | Create | Load animated sprite → wire SpriteComponent + AnimationComponent, play walk |
+| `docs/CharacterComponents.md` | Create | Usage, parameters, and examples for the new components |
 | `Content/Templates/CharacterTemplate.xml` | Modify | Repoint + declare components |
 | `Content/Scenes/CharacterScene.xml` | Modify | static + animated characters → components |
 | `Content/Scenes/CameraScene.xml` | Modify | player → components |

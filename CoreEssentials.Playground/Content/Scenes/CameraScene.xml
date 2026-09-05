@@ -18,9 +18,41 @@
                     <Position X="0" Y="0" />
                 </EntityDefinition>
 
-                <!-- The player the camera can follow, moved with the arrow keys. -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.PlayerEntity" Id="player">
+                <!-- The player the camera can follow, moved with the arrow keys. A plain game object
+                     carrying the character visual (sprite + inherited bounce) plus arrow-key movement. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="player">
                     <Position X="400" Y="300" />
+                    <Components>
+                        <!-- Owns rendering; the CharacterSpriteLoader hands it the loaded sprite. -->
+                        <Component Type="SpriteComponent">
+                            <Properties>
+                                <Property Name="Origin" Value="0.5,0.5" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
+                            <Properties>
+                                <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.BounceTweenComponent">
+                            <Properties>
+                                <Property Name="Amplitude" Value="50" />
+                                <Property Name="Duration" Value="1.5" />
+                                <Property Name="Loop" Value="true" />
+                                <Property Name="Reverse" Value="true" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.MoveByKeysComponent">
+                            <Properties>
+                                <Property Name="MoveSpeed" Value="1" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.PauseScaleComponent">
+                            <Properties>
+                                <Property Name="PausedScale" Value="1.5" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <!-- Control instructions; the follow toggle keeps its "(ON)/(OFF)" line current. -->

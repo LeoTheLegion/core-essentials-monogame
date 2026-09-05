@@ -25,22 +25,69 @@
                 <Prefab Name="VolumeButtonPrefab" Asset="Templates/VolumeButtonTemplate.xml" />
             </Prefabs>
             <Entities>
-                <!-- Static character (left). -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.CharacterEntity" Id="staticCharacter">
+                <!-- Static character (left): a plain game object carrying the sprite + bounce + pause-scale components. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="staticCharacter">
                     <Position X="320" Y="360" />
                     <Tags>
                         <Tag Name="Character" />
                         <Tag Name="Static" />
                     </Tags>
+                    <Components>
+                        <!-- Owns rendering; the CharacterSpriteLoader hands it the loaded sprite. -->
+                        <Component Type="SpriteComponent">
+                            <Properties>
+                                <Property Name="Origin" Value="0.5,0.5" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
+                            <Properties>
+                                <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.BounceTweenComponent">
+                            <Properties>
+                                <Property Name="Amplitude" Value="50" />
+                                <Property Name="Duration" Value="1.5" />
+                                <Property Name="Loop" Value="true" />
+                                <Property Name="Reverse" Value="true" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.PauseScaleComponent">
+                            <Properties>
+                                <Property Name="PausedScale" Value="1.5" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
-                <!-- Animated character (right). -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.AnimatedCharacterEntity" Id="animatedCharacter">
+                <!-- Animated character (right): a plain game object carrying the walk animation + pause-scale components. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="animatedCharacter">
                     <Position X="960" Y="360" />
                     <Tags>
                         <Tag Name="Character" />
                         <Tag Name="Animated" />
                     </Tags>
+                    <Components>
+                        <!-- Owns rendering; the CharacterWalkAnimation hands it the animated sprite. -->
+                        <Component Type="SpriteComponent">
+                            <Properties>
+                                <Property Name="Origin" Value="0.5,0.5" />
+                            </Properties>
+                        </Component>
+                        <!-- Pure controller that advances frames into the SpriteComponent. -->
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.CharacterWalkAnimation">
+                            <Properties>
+                                <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+                                <Property Name="AnimationName" Value="walk" />
+                            </Properties>
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.PauseScaleComponent">
+                            <Properties>
+                                <Property Name="PausedScale" Value="1.5" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <!-- Top instruction line. -->

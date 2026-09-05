@@ -65,14 +65,18 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Contains(sys.Prefabs, p => p.Name == "SoundButtonPrefab" && p.Asset == "Templates/SoundButtonTemplate.xml");
             Assert.Contains(sys.Prefabs, p => p.Name == "VolumeButtonPrefab" && p.Asset == "Templates/VolumeButtonTemplate.xml");
 
-            // Characters are typed entities with their tags.
+            // Characters are plain game objects carrying behavior components (Sprint 2 migration).
             var staticChar = FindById(sys.Entities, "staticCharacter");
             Assert.NotNull(staticChar);
-            Assert.Equal("CoreEssentials.Playground.Entities.CharacterEntity", staticChar!.Type);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", staticChar!.Type);
             Assert.Contains("Static", staticChar.Tags);
+            Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("CharacterSpriteLoader"));
+            Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("BounceTweenComponent"));
             var animated = FindById(sys.Entities, "animatedCharacter");
             Assert.NotNull(animated);
-            Assert.Contains("Animated", animated!.Tags);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", animated!.Type);
+            Assert.Contains("Animated", animated.Tags);
+            Assert.Contains(animated.DeclaredComponents, c => c.Type.EndsWith("CharacterWalkAnimation"));
 
             // Text instances are prefab-based and configured via component-targeted <Overrides>.
             var info = FindById(sys.Entities, "infoText");
@@ -146,13 +150,14 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.True(scene.IsLoaded);
                 var entitySystem = scene.GetGameSystem<EntitySystem>();
 
-                // Characters instantiated with their tags.
+                // Characters are plain game objects with their tags + behavior components.
                 var staticChar = entitySystem.FindById("staticCharacter");
                 Assert.NotNull(staticChar);
-                Assert.IsType<CharacterEntity>(staticChar);
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(staticChar);
                 Assert.True(staticChar!.HasTag("Static"));
+                Assert.NotNull(staticChar.GetComponent<BounceTweenComponent>());
                 var animated = entitySystem.FindById("animatedCharacter");
-                Assert.IsType<AnimatedCharacterEntity>(animated);
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(animated);
 
                 // Text is a plain game object carrying a TextComponent; buttons keep their classes.
                 var infoText = entitySystem.FindById("infoText");
@@ -181,11 +186,12 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
             var sys = scene.Systems[0];
 
-            // Camera + player are typed entities.
+            // Camera is a typed entity; the player is a plain game object with movement components.
             var camera = FindById(sys.Entities, "camera");
             Assert.Equal("CoreEssentials.Playground.Entities.CameraEntity", camera!.Type);
             var player = FindById(sys.Entities, "player");
-            Assert.Equal("CoreEssentials.Playground.Entities.PlayerEntity", player!.Type);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", player!.Type);
+            Assert.Contains(player.DeclaredComponents, c => c.Type.EndsWith("MoveByKeysComponent"));
 
             // The info text is a plain game object with a TextComponent carrying multi-line text (&#10;).
             var info = FindById(sys.Entities, "cameraInfoText");

@@ -1,6 +1,35 @@
-<Prefab Type="CoreEssentials.Playground.Entities.CharacterEntity" Rotation="0" Sort="0" Active="true">
+<Prefab Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="0" Sort="0" Active="true">
     <Tags>
         <Tag Name="Character" />
         <Tag Name="Static" />
     </Tags>
+    <Components>
+        <!-- Owns rendering; the CharacterSpriteLoader hands it the loaded sprite. -->
+        <Component Type="SpriteComponent">
+            <Properties>
+                <Property Name="Origin" Value="0.5,0.5" />
+            </Properties>
+        </Component>
+        <!-- Loads the character sprite and assigns it to the SpriteComponent. -->
+        <Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
+            <Properties>
+                <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
+            </Properties>
+        </Component>
+        <!-- Looping Y-bounce (the old CharacterEntity bob). -->
+        <Component Type="CoreEssentials.Playground.Components.BounceTweenComponent">
+            <Properties>
+                <Property Name="Amplitude" Value="50" />
+                <Property Name="Duration" Value="1.5" />
+                <Property Name="Loop" Value="true" />
+                <Property Name="Reverse" Value="true" />
+            </Properties>
+        </Component>
+        <!-- Scale up while the app is paused (focus lost). -->
+        <Component Type="CoreEssentials.Playground.Components.PauseScaleComponent">
+            <Properties>
+                <Property Name="PausedScale" Value="1.5" />
+            </Properties>
+        </Component>
+    </Components>
 </Prefab>

@@ -8,23 +8,36 @@ It replaces the old pattern of hand-rolling an `AnimatedSprite` + `AnimationStat
 
 ## Quick Start
 
-```csharp
-public class AnimatedCharacterEntity : Entity
-{
-    public override void OnStart()
-    {
-        base.OnStart();
+An animated entity is a plain `GameObjectEntity` carrying a `SpriteComponent`, an `AnimationComponent`,
+and the playground's `CharacterWalkAnimation` (see [Character Components](CharacterComponents.md)), which
+loads the sprite and plays the named walk cycle for you:
 
-        var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
-        AddComponent(new SpriteComponent(sprite));      // owns rendering + geometry
-        var animation = AddComponent(new AnimationComponent()); // pure controller
-        animation.AddAnimation("walk", sprite);
-        animation.Play("walk");
-    }
-}
+```xml
+<Component Type="SpriteComponent">
+    <Properties>
+        <Property Name="Origin" Value="0.5,0.5" />
+    </Properties>
+</Component>
+<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent" />
+<Component Type="CoreEssentials.Playground.Components.CharacterWalkAnimation">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+        <Property Name="AnimationName" Value="walk" />
+    </Properties>
+</Component>
 ```
 
-That's it. No `Render`, `Update`, or `GetSize` overrides. The base `Entity`:
+Or wire it up in code (no `Render`, `Update`, or `GetSize` overrides needed):
+
+```csharp
+var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
+AddComponent(new SpriteComponent(sprite));      // owns rendering + geometry
+var animation = AddComponent(new AnimationComponent()); // pure controller
+animation.AddAnimation("walk", sprite);
+animation.Play("walk");
+```
+
+Either way, the base `Entity`:
 - calls `AnimationComponent.Update` every frame (advances the animation and pushes the frame),
 - renders the current frame via the `SpriteComponent`,
 - resolves `GetSize()` / `GetOrigin()` through the `SpriteComponent`.

@@ -326,87 +326,34 @@ Sprite sprite2 = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
 ## Example from Playground
 
-The `CharacterScene` demonstrates asset usage:
+The `CharacterScene` demonstrates asset usage. Characters are plain `GameObjectEntity` instances whose
+sprites are loaded and rendered entirely by components (see [Character Components](CharacterComponents.md)) —
+no per-entity C#:
 
-```csharp
-public class CharacterEntity : Entity
-{
-    private Sprite _sprite;
-    
-    public CharacterEntity(Vector2 position)
-    {
-        _position = position;
-        
-        // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        Console.WriteLine("Character entity created!");
-    }
-    
-    public override void Render(SpriteBatch spriteBatch)
-    {
-        // Draw the character with the current frame
-        _sprite.Draw(
-            spriteBatch, 
-            _position, 
-            Color.White, 
-            0f, 
-            SpriteEffects.None, 
-            0f
-        );
-    }
-}
+```xml
+<!-- A static, bouncing character: the loader loads the sprite, the SpriteComponent renders it. -->
+<Component Type="SpriteComponent">
+    <Properties>
+        <Property Name="Origin" Value="0.5,0.5" />
+    </Properties>
+</Component>
+<Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
+    </Properties>
+</Component>
 
-public class AnimatedCharacterEntity : Entity
-{
-    private Sprite _sprite;
-    private AnimationState _animationState;
-    
-    public AnimatedCharacterEntity(Vector2 position)
-    {
-        _position = position;
-        
-        // Load the animated sprite (unified Sprite type)
-        _sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
-        
-        // Create animation state for this instance
-        _animationState = new AnimationState(_sprite);
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        Console.WriteLine("Animated character entity created!");
-    }
-    
-    public override void Update(GameTime gameTime)
-    {
-        base.Update(gameTime);
-        
-        // Update the animation
-        _animationState.Update(gameTime);
-    }
-    
-    public override void Render(SpriteBatch spriteBatch)
-    {
-        SpriteEffects effects = SpriteEffects.None;
-        
-        // Draw the animated character using the current animation state
-        _animationState.Draw(
-            spriteBatch, 
-            _position, 
-            Color.White,
-            0f,
-            effects,
-            0f
-        );
-    }
-}
+<!-- An animated character: the walk animation loads the sprite and drives the AnimationComponent. -->
+<Component Type="CoreEssentials.Playground.Components.CharacterWalkAnimation">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+        <Property Name="AnimationName" Value="walk" />
+    </Properties>
+</Component>
 ```
+
+The loader still calls `AssetManager.LoadAsset<Sprite>(...)` under the hood, so assets are cached and
+reference-counted exactly as before.
 
 ## Best Practices
 

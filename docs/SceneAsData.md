@@ -285,7 +285,7 @@ This release removes the legacy scene-load path and renames the prefab terminolo
 ```xml
 <!-- 0.19 (old — no longer supported) -->
 <Scene>
-    <EntityDefinition Type="PlayerEntity" Id="player"> ... </EntityDefinition>
+    <EntityDefinition Type="Hero" Id="player"> ... </EntityDefinition>
     <Template Source="ButtonTemplate.xml" X="100" Y="200" Id="btn" />
 </Scene>
 
@@ -297,7 +297,7 @@ This release removes the legacy scene-load path and renames the prefab terminolo
                 <Prefab Name="Button" Asset="ButtonTemplate.xml" />
             </Prefabs>
             <Entities>
-                <EntityDefinition Type="PlayerEntity" Id="player"> ... </EntityDefinition>
+                <EntityDefinition Type="Hero" Id="player"> ... </EntityDefinition>
                 <EntityDefinition Source="Button" Id="btn">
                     <Position X="100" Y="200" />
                 </EntityDefinition>

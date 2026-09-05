@@ -51,7 +51,7 @@ Content/                       # scene/prefab <Type=...> FQNs repointed at the f
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
 | 1 | [Foundation & Text](Sprint_1_Foundation_And_Text.md) | 5 | ✅ Done | Reuse the framework's `GameObjectEntity` + new `TextComponent`; migrate and delete `TextEntity`. Proves the end-to-end pattern. |
-| 2 | [Character Entities](Sprint_2_Character_Entities.md) | 5 | ⬜ Not started | Migrate `AnimatedCharacterEntity`, `CharacterEntity`, `PlayerEntity` to components (`BounceTweenComponent`, `MoveByKeysComponent`, pause behavior); delete the 3 classes and drop inheritance. |
+| 2 | [Character Entities](Sprint_2_Character_Entities.md) | 5 | ✅ Done | Migrate `AnimatedCharacterEntity`, `CharacterEntity`, `PlayerEntity` to components (`BounceTweenComponent`, `MoveByKeysComponent`, `PauseScaleComponent`, + sprite loaders); delete the 3 classes and drop inheritance. |
 | 3 | [GUI Buttons & Camera](Sprint_3_GUI_And_Camera.md) | 5 | ⬜ Not started | New `SoundButtonComponent` + `VolumeButtonComponent`; migrate `CameraEntity` onto existing camera components; delete the 3 classes. |
 | 4 | [Physics: Ball & WorldBorder](Sprint_4_Physics_Ball_And_Border.md) | 5 | ⬜ Not started | New `WorldBorderComponent` + `BallMovementComponent`; Ball save/load via generic component serialization (a thin `GameEntity : GameObjectEntity` shim); delete both classes. |
 
