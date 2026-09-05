@@ -13,16 +13,16 @@ They are the "interactive HUD" group and share a pattern (a declarative componen
 ## Target Outcome
 
 - New `SoundButtonComponent` and `VolumeButtonComponent` (each owns a Myra `Canvas`, builds a text button, wires the click handler).
-- Camera entities declared as `GameEntity` + `CameraComponent` + `CameraInputComponent` (+ `CameraFollowToggleComponent` where follow is used), replacing `CameraEntity`.
+- Camera entities declared as `GameObjectEntity` + `CameraComponent` + `CameraInputComponent` (+ `CameraFollowToggleComponent` where follow is used), replacing `CameraEntity`.
 - `Entities/SoundButtonEntity.cs`, `VolumeButtonEntity.cs`, `CameraEntity.cs` deleted.
 
 ## Tasks
 
 - [ ] T1 ⭐ Create `SoundButtonComponent : EntityComponent` — owns a `Canvas`, builds the text button in `OnAttach`, wires `Clicked` → `AudioManager.PlayOneShotSound(SoundAsset)`. Expose `SoundAsset` + `ButtonText` as settable properties (bindable from `<EntityOverrides>`). Clean up the canvas in `OnDetach`.
 - [ ] T2 ⭐ Create `VolumeButtonComponent : EntityComponent` — same shape; click → `AudioManager.SetMasterVolume(VolumeLevel)`. Expose `VolumeLevel` + `ButtonText`.
-- [ ] T3 🔁 Update `Content/Templates/SoundButtonTemplate.xml` and `VolumeButtonTemplate.xml` → `GameEntity` root + the respective `<Component>` with asset/text (or volume/text) properties.
+- [ ] T3 🔁 Update `Content/Templates/SoundButtonTemplate.xml` and `VolumeButtonTemplate.xml` → `GameObjectEntity` root + the respective `<Component>` with asset/text (or volume/text) properties.
 - [ ] T4 🔁 Repoint every scene that declares a sound/volume button to the new component form, preserving each button's per-instance overrides.
-- [ ] T5 ⭐ Migrate `CameraEntity` → `GameEntity` + `CameraComponent` + `CameraInputComponent` (+ `CameraFollowToggleComponent` where follow is used). Map `CameraEntity`'s public surface (`Move`, `Zoom`, `ResetCamera`, `SetFollowTarget`, `ToggleFollow`) onto the existing components; confirm each scene's camera usage (pan/zoom/reset/follow) is covered.
+- [ ] T5 ⭐ Migrate `CameraEntity` → `GameObjectEntity` + `CameraComponent` + `CameraInputComponent` (+ `CameraFollowToggleComponent` where follow is used). Map `CameraEntity`'s public surface (`Move`, `Zoom`, `ResetCamera`, `SetFollowTarget`, `ToggleFollow`) onto the existing components; confirm each scene's camera usage (pan/zoom/reset/follow) is covered.
 - [ ] T6 🔁 Update all scenes that declare a `CameraEntity` (`CameraScene.xml`, `GuiAnchorDemo.xml`, `LabelAlignmentDemoScene.xml`) to the component form.
 - [ ] T7 🔁 Delete `Entities/SoundButtonEntity.cs`, `VolumeButtonEntity.cs`, `CameraEntity.cs`; remove references/imports.
 - [ ] T8 🔒 Add unit tests: `SoundButtonComponent` (click plays the configured sound), `VolumeButtonComponent` (click sets master volume), and camera declaration coverage (a camera declared purely from XML pans/zooms/resets). Reuse existing camera-component test patterns where present.

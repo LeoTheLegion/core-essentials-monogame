@@ -10,12 +10,12 @@ They share the same building blocks (a character sprite + optional animation + o
 - `AnimatedCharacterEntity` = animated `SpriteComponent` + `AnimationComponent` (`walk`) + pause-scale. No movement.
 - `PlayerEntity : CharacterEntity` = character visual + **arrow-key movement** in `Update()`.
 
-The reusable pieces that don't exist yet are a **bounce tween component**, a **move-by-keys component**, and a small **pause-scale behavior**. Once those are components, each of the three entities is just `GameEntity` + a different set of `<Component>` declarations.
+The reusable pieces that don't exist yet are a **bounce tween component**, a **move-by-keys component**, and a small **pause-scale behavior**. Once those are components, each of the three entities is just `GameObjectEntity` + a different set of `<Component>` declarations.
 
 ## Target Outcome
 
 - New `BounceTweenComponent` (looping Y offset via `TweenComponent`), `MoveByKeysComponent` (arrow-key movement), and a small pause-scale behavior (component or shared helper).
-- `CharacterTemplate.xml`, `CharacterScene.xml`, and `CameraScene.xml` (`player`) repointed at `GameEntity` with the appropriate component sets.
+- `CharacterTemplate.xml`, `CharacterScene.xml`, and `CameraScene.xml` (`player`) repointed at `GameObjectEntity` with the appropriate component sets.
 - `Entities/CharacterEntity.cs`, `AnimatedCharacterEntity.cs`, `PlayerEntity.cs` deleted; inheritance removed.
 
 ## Tasks
@@ -23,9 +23,9 @@ The reusable pieces that don't exist yet are a **bounce tween component**, a **m
 - [ ] T1 ⭐ Create `BounceTweenComponent : EntityComponent` — encapsulate the `CharacterEntity` bounce (capture original Y on first frame, apply tweened offset). Expose amplitude/duration/easing/loop as properties.
 - [ ] T2 ⭐ Create `MoveByKeysComponent : EntityComponent` — arrow-key movement using `Input.Keyboard` + `Time.DeltaTime`; expose speed + key bindings as properties (mirrors the existing `CameraInputComponent` declarative style).
 - [ ] T3 ⭐ Add pause-scale behavior. `Entity.OnApplicationPause` forwards to components, so a small component (e.g. `PauseScaleComponent`) that scales the entity while paused covers both character entities. Confirm the forward path in `Entity.cs`.
-- [ ] T4 🔁 Update `Content/Templates/CharacterTemplate.xml` → `GameEntity` + `SpriteComponent` (character sprite) + `BounceTweenComponent` (+ pause-scale).
-- [ ] T5 🔁 Update `Content/Scenes/CharacterScene.xml`: `staticCharacter` (`CharacterEntity`) and `animatedCharacter` (`AnimatedCharacterEntity`) → `GameEntity` with the right component sets (animated uses `AnimationComponent` + walk; static uses bounce).
-- [ ] T6 🔁 Update `Content/Scenes/CameraScene.xml` `player` (`PlayerEntity`) → `GameEntity` + character visual components + `MoveByKeysComponent`.
+- [ ] T4 🔁 Update `Content/Templates/CharacterTemplate.xml` → `GameObjectEntity` + `SpriteComponent` (character sprite) + `BounceTweenComponent` (+ pause-scale).
+- [ ] T5 🔁 Update `Content/Scenes/CharacterScene.xml`: `staticCharacter` (`CharacterEntity`) and `animatedCharacter` (`AnimatedCharacterEntity`) → `GameObjectEntity` with the right component sets (animated uses `AnimationComponent` + walk; static uses bounce).
+- [ ] T6 🔁 Update `Content/Scenes/CameraScene.xml` `player` (`PlayerEntity`) → `GameObjectEntity` + character visual components + `MoveByKeysComponent`.
 - [ ] T7 🔁 Delete `Entities/CharacterEntity.cs`, `AnimatedCharacterEntity.cs`, `PlayerEntity.cs`; remove references/imports.
 - [ ] T8 🔒 Add unit tests: `BounceTweenComponent` (offset applied relative to captured Y), `MoveByKeysComponent` (each key moves the expected axis/direction), pause-scale component (scale toggles on pause state).
 - [ ] T9 🔒 Build clean + full suite green (expect 1174/0/3) + smoke-run all 7 scenes PASS.

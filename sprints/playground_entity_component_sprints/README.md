@@ -26,17 +26,18 @@ After the code-organization sprint, `Entities/` became a home for classes that a
 
 ```
 CoreEssentials.Playground/
-├── Entities/
-│   └── GameEntity.cs   # single concrete Entity subclass (parameterless ctor) — the instantiable type for all XML entities
-├── Components/               # + TextComponent, BounceTweenComponent, MoveByKeysComponent,
+├── Entities/                 # empty after Sprint 4 — all 8 class files deleted
+└── Components/               # + TextComponent, BounceTweenComponent, MoveByKeysComponent,
                               #   SoundButtonComponent, VolumeButtonComponent, WorldBorderComponent, BallMovementComponent
-└── Content/                  # scene/prefab <Type=...> FQNs repointed at GameEntity; behavior moved into <Component> blocks
+Content/                       # scene/prefab <Type=...> FQNs repointed at the framework's GameObjectEntity; behavior moved into <Component> blocks
 ```
 
-- **One shared concrete entity** replaces all 8 (because `Entity` is abstract and XML `Type=` must resolve to a concrete, instantiable type). All 8 class files are deleted.
+- **The framework already ships the shared concrete entity** — `CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity` ("a basic, behavior-free entity — the equivalent of Unity's plain GameObject"), already used by all 7 scenes for shell entities. All 8 playground class files are deleted; every scene/prefab `<Type=...>` is repointed at `GameObjectEntity`.
 - Every scene/prefab `<EntityDefinition Type=...>` / `<Prefab Type=...>` that referenced one of the 8 FQNs is repointed at the shared entity, with the former inline behavior expressed as declarative `<Component>` entries (with any needed properties).
 
-**Design invariant:** `GameEntity` is a **plain game object** — it carries *no* behavior of its own. From now on the only thing a scene can instantiate is a game object that gets everything from attached components. No new `Entity` subclasses are introduced for gameplay; if a behavior needs to exist, it becomes a component.
+**Design invariant:** every scene entity is a **plain game object** — it carries *no* behavior of its own; it gets everything from attached components. No new `Entity` subclasses are introduced for gameplay; if a behavior needs to exist, it becomes a component.
+
+> **Sprint 4 exception (framework constraint):** the framework's `GameObjectEntity` is a sealed-by-omission plain class in `CoreEssentials` that does not implement `ISaveableEntity`, and we do not modify framework code for this project. Since Ball must keep working save/load, Sprint 4 introduces the one playground-local subclass — `GameEntity : GameObjectEntity` implementing `ISaveableEntity` with *generic* serialization (transform + tags + each attached `ISerializableComponent`). It is plumbing, not gameplay behavior; only the Ball declaration uses it.
 
 ## Framework Facts That Make This Possible
 
@@ -49,7 +50,7 @@ CoreEssentials.Playground/
 
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
-| 1 | [Foundation & Text](Sprint_1_Foundation_And_Text.md) | 5 | ⬜ Not started | Introduce the shared concrete `GameEntity` + new `TextComponent`; migrate and delete `TextEntity`. Proves the end-to-end pattern. |
+| 1 | [Foundation & Text](Sprint_1_Foundation_And_Text.md) | 5 | ⬜ Not started | Introduce the shared concrete `GameObjectEntity` + new `TextComponent`; migrate and delete `TextEntity`. Proves the end-to-end pattern. |
 | 2 | [Character Entities](Sprint_2_Character_Entities.md) | 5 | ⬜ Not started | Migrate `AnimatedCharacterEntity`, `CharacterEntity`, `PlayerEntity` to components (`BounceTweenComponent`, `MoveByKeysComponent`, pause behavior); delete the 3 classes and drop inheritance. |
 | 3 | [GUI Buttons & Camera](Sprint_3_GUI_And_Camera.md) | 5 | ⬜ Not started | New `SoundButtonComponent` + `VolumeButtonComponent`; migrate `CameraEntity` onto existing camera components; delete the 3 classes. |
 | 4 | [Physics: Ball & WorldBorder](Sprint_4_Physics_Ball_And_Border.md) | 5 | ⬜ Not started | New `WorldBorderComponent` + `BallMovementComponent`; resolve Ball's save/load (generic component serialization vs. format-preserving); delete both classes. |
@@ -81,8 +82,8 @@ CoreEssentials.Playground/
 
 ## Confirmed Decisions
 
-1. **Shared concrete entity: `GameEntity : Entity`.** A single, behavior-less concrete class in `CoreEssentials.Playground.Entities` that exists only so the XML serializer can instantiate a game object (base `Entity` is abstract). It carries no logic — every capability comes from attached components. This is the one class that remains after all 8 are deleted; it is intentionally just "a game object with components." No further entity subclasses are introduced.
-2. **Ball save/load: Option (a) — generic component serialization.** `GameEntity` implements `ISaveableEntity`, and its `SaveState()/LoadState()` serialize the transform + tags + each attached `ISerializableComponent`'s state. This is the clean, future-proof path and matches the component-only goal. **Consequence:** the on-disk save format changes, so existing `GameStateSerialization` tests and any checked-in `*_Save.xml` fixtures must be updated in Sprint 4.
+1. **Shared concrete entity: reuse the framework's `GameObjectEntity`.** The framework already ships `CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity` — a behavior-less concrete class that exists so the XML serializer can instantiate a game object (base `Entity` is abstract). No new playground-local entity class is created for Sprints 1–3; every declaration is repointed at this FQN. The only exception is Sprint 4's thin `GameEntity : GameObjectEntity` save/load shim (see below).
+2. **Ball save/load: Option (a) — generic component serialization.** A thin `GameEntity : GameObjectEntity` implements `ISaveableEntity`, and its `SaveState()/LoadState()` serialize the transform + tags + each attached `ISerializableComponent`'s state (the framework's own `GameObjectEntity` cannot be extended for this without modifying framework code). This is the clean, future-proof path and matches the component-only goal. **Consequence:** the on-disk save format changes, so existing `GameStateSerialization` tests and any checked-in `*_Save.xml` fixtures must be updated in Sprint 4.
 
 ---
 *Created: 2026-09-05 | Part of Playground Entity → Components Project*
