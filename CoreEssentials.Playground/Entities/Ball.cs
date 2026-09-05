@@ -52,7 +52,7 @@ public class Ball : Entity, ISaveableEntity
         _spriteComponent = GetComponent<SpriteComponent>();
         if (_spriteComponent == null)
         {
-            var sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+            var sprite = AssetManager.LoadAsset<Sprite>("Sprites/ball_sprite.xml");
             _spriteComponent = new SpriteComponent(sprite);
             AddComponent(_spriteComponent);
 
@@ -67,7 +67,7 @@ public class Ball : Entity, ISaveableEntity
             // Assign sprite if it's null (e.g., component was created during deserialization without a sprite)
             if (_spriteComponent.Sprite == null)
             {
-                _spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>("ball_sprite.xml");
+                _spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>("Sprites/ball_sprite.xml");
             }
         }
 

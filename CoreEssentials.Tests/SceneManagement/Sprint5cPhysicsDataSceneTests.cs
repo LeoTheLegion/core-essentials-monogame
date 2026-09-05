@@ -103,7 +103,7 @@ namespace CoreEssentials.Tests.SceneManagement
             StageContentFile("Scenes/PhysicsEntityScene.xml");
             StageContentFile("Templates/BallTemplate.xml");
             StageContentFile("PhysicsConfig.xml");
-            StageContentFile("ball_sprite.xml");
+            StageContentFile("Sprites/ball_sprite.xml");
 
             var helper = new CoroutineTestHelper();
             try

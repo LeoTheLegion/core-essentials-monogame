@@ -67,7 +67,7 @@
                 <EntityDefinition Source="SoundButtonPrefab" Id="footstep1Button">
                     <Position X="100" Y="100" />
                     <EntityOverrides>
-                        <Property Name="SoundAsset" Value="footstep1_sound.xml" />
+                        <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
                         <Property Name="ButtonText" Value="Footstep 1" />
                     </EntityOverrides>
                 </EntityDefinition>
@@ -75,7 +75,7 @@
                 <EntityDefinition Source="SoundButtonPrefab" Id="footstep2Button">
                     <Position X="100" Y="150" />
                     <EntityOverrides>
-                        <Property Name="SoundAsset" Value="footstep2_sound.xml" />
+                        <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
                         <Property Name="ButtonText" Value="Footstep 2" />
                     </EntityOverrides>
                 </EntityDefinition>
@@ -83,7 +83,7 @@
                 <EntityDefinition Source="SoundButtonPrefab" Id="footstep3Button">
                     <Position X="100" Y="200" />
                     <EntityOverrides>
-                        <Property Name="SoundAsset" Value="footstep3_sound.xml" />
+                        <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
                         <Property Name="ButtonText" Value="Footstep 3" />
                     </EntityOverrides>
                 </EntityDefinition>
@@ -111,7 +111,7 @@
                     <Components>
                         <Component Type="CoreEssentials.Playground.Components.MusicComponent">
                             <Properties>
-                                <Property Name="MusicAsset" Value="song1_sound.xml" />
+                                <Property Name="MusicAsset" Value="Audio/song1_sound.xml" />
                             </Properties>
                         </Component>
                     </Components>
@@ -142,7 +142,7 @@
                         <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="Q" />
-                                <Property Name="SoundAsset" Value="footstep1_sound.xml" />
+                                <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
                             </Properties>
                         </Component>
                     </Components>
@@ -154,7 +154,7 @@
                         <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="W" />
-                                <Property Name="SoundAsset" Value="footstep2_sound.xml" />
+                                <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
                             </Properties>
                         </Component>
                     </Components>
@@ -166,7 +166,7 @@
                         <Component Type="CoreEssentials.Playground.Components.SoundKeyComponent">
                             <Properties>
                                 <Property Name="TriggerKey" Value="E" />
-                                <Property Name="SoundAsset" Value="footstep3_sound.xml" />
+                                <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
                             </Properties>
                         </Component>
                     </Components>

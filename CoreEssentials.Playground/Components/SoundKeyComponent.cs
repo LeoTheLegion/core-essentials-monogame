@@ -13,7 +13,7 @@ namespace CoreEssentials.Playground.Components;
 /// &lt;Component Type="SoundKeyComponent"&gt;
 ///   &lt;Properties&gt;
 ///     &lt;Property Name="TriggerKey" Value="Q" /&gt;
-///     &lt;Property Name="SoundAsset" Value="footstep1_sound.xml" /&gt;
+///     &lt;Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" /&gt;
 ///   &lt;/Properties&gt;
 /// &lt;/Component&gt;
 /// </code>
@@ -23,7 +23,7 @@ public class SoundKeyComponent : EntityComponent
     /// <summary>The key that triggers the sound. Defaults to Q.</summary>
     public Keys TriggerKey { get; set; } = Keys.Q;
 
-    /// <summary>The asset-name string of the one-shot sound to play (e.g., "footstep1_sound.xml").</summary>
+    /// <summary>The asset-name string of the one-shot sound to play (e.g., "Audio/footstep1_sound.xml").</summary>
     public string SoundAsset { get; set; } = string.Empty;
 
     private EventHandler<KeyboardEventArgs>? _onKeyReleased;

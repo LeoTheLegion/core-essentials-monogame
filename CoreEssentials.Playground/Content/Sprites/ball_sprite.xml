@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <SpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
   <SourceType>texture2d</SourceType>
-  <Source>ball</Source>
+  <Source>Sprites/ball</Source>
   <Size>
     <Width>64</Width>
     <Height>64</Height>

@@ -11,7 +11,7 @@ namespace CoreEssentials.Playground.Components;
 /// <code>
 /// &lt;Component Type="MusicComponent"&gt;
 ///   &lt;Properties&gt;
-///     &lt;Property Name="MusicAsset" Value="song1_sound.xml" /&gt;
+///     &lt;Property Name="MusicAsset" Value="Audio/song1_sound.xml" /&gt;
 ///   &lt;/Properties&gt;
 /// &lt;/Component&gt;
 /// </code>
@@ -21,7 +21,7 @@ namespace CoreEssentials.Playground.Components;
 /// </summary>
 public class MusicComponent : EntityComponent
 {
-    /// <summary>The asset-name string of the looping music track to play (e.g., "song1_sound.xml").</summary>
+    /// <summary>The asset-name string of the looping music track to play (e.g., "Audio/song1_sound.xml").</summary>
     public string MusicAsset { get; set; } = string.Empty;
 
     private string? _soundId;

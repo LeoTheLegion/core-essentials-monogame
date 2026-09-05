@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <SpriteSheetData xmlns="http://schemas.coreessentials.monogame/2025/spritesheet">
   <SourceType>texture2d</SourceType>
-  <Source>character_malePerson_sheetHD</Source>
+  <Source>Sprites/character_malePerson_sheetHD</Source>
   <Grid>
     <Rows>5</Rows>
     <Columns>9</Columns>

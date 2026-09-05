@@ -35,7 +35,7 @@ public class CharacterEntity : Entity
         base.OnStart();
         
         // Load the character sprite and render it via a SpriteComponent.
-        var sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
+        var sprite = AssetManager.LoadAsset<Sprite>("Sprites/character_sprite.xml");
         AddComponent(new SpriteComponent(sprite));
         
         // Add tween component for animations

@@ -83,7 +83,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // Sound buttons are prefab-based with sound + text overrides.
             var fs1 = FindById(sys.Entities, "footstep1Button");
             Assert.Equal("SoundButtonPrefab", fs1!.Source);
-            Assert.Equal("footstep1_sound.xml", fs1.EntityOverrides["SoundAsset"]);
+            Assert.Equal("Audio/footstep1_sound.xml", fs1.EntityOverrides["SoundAsset"]);
             Assert.Equal("Footstep 1", fs1.EntityOverrides["ButtonText"]);
 
             // Volume buttons carry a level + text.
@@ -94,7 +94,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // Music shell (present in the real file; stripped from the load variant below).
             var music = FindById(sys.Entities, "music");
             Assert.NotNull(music);
-            Assert.Equal("song1_sound.xml", music!.DeclaredComponents.First(c => c.Type.Contains("MusicComponent")).Properties["MusicAsset"]);
+            Assert.Equal("Audio/song1_sound.xml", music!.DeclaredComponents.First(c => c.Type.Contains("MusicComponent")).Properties["MusicAsset"]);
 
             // Debug toggle starts enabled with its font.
             var debug = FindById(sys.Entities, "debugToggle");
@@ -104,7 +104,7 @@ namespace CoreEssentials.Tests.SceneManagement
 
             // Key-driven audio: three sound keys + two volume keys.
             var q = FindById(sys.Entities, "soundKeyQ")!;
-            Assert.Equal("footstep1_sound.xml", q.DeclaredComponents.First(c => c.Type.Contains("SoundKeyComponent")).Properties["SoundAsset"]);
+            Assert.Equal("Audio/footstep1_sound.xml", q.DeclaredComponents.First(c => c.Type.Contains("SoundKeyComponent")).Properties["SoundAsset"]);
             var z = FindById(sys.Entities, "volumeKeyZ")!;
             Assert.Equal("0.1", z.DeclaredComponents.First(c => c.Type.Contains("VolumeKeyComponent")).Properties["Volume"]);
 
@@ -121,9 +121,9 @@ namespace CoreEssentials.Tests.SceneManagement
             StageContentFile("Templates/SoundButtonTemplate.xml");
             StageContentFile("Templates/VolumeButtonTemplate.xml");
             // Character / player sprites load headlessly (0×0 frames) via this chain.
-            StageContentFile("character_sprite.xml");
-            StageContentFile("character_anim_walk.xml");
-            StageContentFile("character_sheet.xml");
+            StageContentFile("Sprites/character_sprite.xml");
+            StageContentFile("Sprites/character_anim_walk.xml");
+            StageContentFile("Sprites/character_sheet.xml");
 
             var helper = new CoroutineTestHelper();
             try
@@ -203,9 +203,9 @@ namespace CoreEssentials.Tests.SceneManagement
         public void CameraScene_Loads_AsDataDrivenScene_WithReferencesResolved()
         {
             StageContentFile("Scenes/CameraScene.xml");
-            StageContentFile("character_sprite.xml");
-            StageContentFile("character_anim_walk.xml");
-            StageContentFile("character_sheet.xml");
+            StageContentFile("Sprites/character_sprite.xml");
+            StageContentFile("Sprites/character_anim_walk.xml");
+            StageContentFile("Sprites/character_sheet.xml");
 
             var helper = new CoroutineTestHelper();
             try
