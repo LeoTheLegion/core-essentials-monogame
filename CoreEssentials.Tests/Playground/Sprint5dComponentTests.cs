@@ -11,7 +11,6 @@ using CoreEssentials.GUI;
 using CoreEssentials.GUI.Internal;
 using CoreEssentials.GUI.Types;
 using CoreEssentials.Playground;
-using CoreEssentials.Playground.Entities;
 using CoreEssentials.Playground.Components;
 
 namespace CoreEssentials.Tests.Playground;

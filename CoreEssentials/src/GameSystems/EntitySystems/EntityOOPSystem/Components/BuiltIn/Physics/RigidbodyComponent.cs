@@ -124,10 +124,19 @@ public class RigidbodyComponent : EntityComponent
     private float _lastEntityRotation;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="RigidbodyComponent"/> class as a dynamic body.
+    /// A true parameterless constructor is required so data-driven (XML/prefab) instantiation — which
+    /// creates components via <c>Activator.CreateInstance</c> — can construct this component.
+    /// </summary>
+    public RigidbodyComponent() : this(RigidbodyType.Dynamic)
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="RigidbodyComponent"/> class.
     /// </summary>
     /// <param name="type">The type of rigidbody to create.</param>
-    public RigidbodyComponent(RigidbodyType type = RigidbodyType.Dynamic)
+    public RigidbodyComponent(RigidbodyType type)
     {
         Type = type;
         SyncFromPhysics = type == RigidbodyType.Dynamic;

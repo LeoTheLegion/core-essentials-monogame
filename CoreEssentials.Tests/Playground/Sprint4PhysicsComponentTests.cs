@@ -15,7 +15,6 @@ using CoreEssentials.GameSystems.Physics.Types;
 using CoreEssentials.Scenes;
 using CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
 using CoreEssentials.Playground.Components;
-using CoreEssentials.Playground.Entities;
 
 namespace CoreEssentials.Tests.Playground
 {
@@ -26,8 +25,9 @@ namespace CoreEssentials.Tests.Playground
     ///     BOTH the regular ("Player") and VIP ("Vip") categories resolved from the engine config.
     ///   • <see cref="BallMovementComponent"/> kicks + spins the owning rigidbody on a coroutine and
     ///     stops cleanly on detach.
-    ///   • <see cref="GameEntity"/> round-trips its transform, tags, and the specific component state it
-    ///     needs (sprite color + physics velocity) through the explicit save/load path.
+    ///   • <see cref="BallSaveComponent"/> round-trips a plain GameObjectEntity's transform, tags, and the
+    ///     specific component state it needs (sprite color + physics velocity) through the explicit
+    ///     save/load path — no entity subclass required.
     /// </summary>
     public class Sprint4PhysicsComponentTests : IDisposable
     {
@@ -143,24 +143,26 @@ namespace CoreEssentials.Tests.Playground
 
         #endregion
 
-        #region GameEntity save/load round-trip
+        #region Ball save/load round-trip (component + prefab)
 
         [Fact]
-        public void GameEntity_SaveLoad_RoundTrips_Transform_Tags_SpriteColor_AndVelocity()
+        public void Ball_SaveLoad_RoundTrips_Transform_Tags_SpriteColor_AndVelocity_ViaComponentAndPrefab()
         {
             var (scene, system, engine) = BuildWiredSystem(PlayerVipConfig());
+            RegisterBallPrefab(system);
             var tempFile = Path.GetTempFileName();
             try
             {
-                // Source: a fully hydrated ball with deterministic state.
-                var source = system.CreateEntity<GameEntity>();
+                // Source: a ball instantiated from the prefab, then given deterministic state. The
+                // random-scale roll in BallMovementComponent.OnAttach runs at instantiate time (scale is
+                // still One), so we override it explicitly afterward — mirroring a VIP/explicit scale.
+                var source = system.Instantiate("BallTest", Vector2.Zero);
                 source.SetId("ball_test");
                 source.Position = new Vector2(100, 200);
                 source.Rotation = 30f;
                 source.Scale = new Vector2(2, 2);
                 source.SetSort(5);
                 source.SetActive(true);
-                source.SetTag("Ball");
 
                 source.GetComponent<SpriteComponent>()!.Color = new Color(10, 20, 30);
 
@@ -171,16 +173,20 @@ namespace CoreEssentials.Tests.Playground
 
                 GameStateSerializer.SaveState(system, tempFile);
 
-                // Load into a fresh system — the serializer creates a bare GameEntity (OnStart runs),
-                // then LoadState restores the saved state on top of it.
+                // Load into a fresh system with the same prefab registered — the serializer instantiates
+                // from the prefab (OnAttach runs), sets the saved Id, then BallSaveComponent.LoadState
+                // restores the saved state on top of it.
                 var (loadScene, loadSystem, loadEngine) = BuildWiredSystem(PlayerVipConfig());
+                RegisterBallPrefab(loadSystem);
                 GameStateSerializer.LoadState(loadSystem, tempFile);
 
                 var loaded = loadSystem.GetEntities().FirstOrDefault(e => e.Id == "ball_test");
                 Assert.NotNull(loaded);
-                Assert.IsType<GameEntity>(loaded);
+                Assert.IsType<GameObjectEntity>(loaded);
+                // The save component is what makes the plain entity saveable.
+                Assert.NotNull(loaded!.GetComponent<BallSaveComponent>());
 
-                Assert.Equal(new Vector2(100, 200), loaded!.Position);
+                Assert.Equal(new Vector2(100, 200), loaded.Position);
                 Assert.Equal(30f, loaded.Rotation, 0.01f);
                 Assert.Equal(new Vector2(2, 2), loaded.Scale);
                 Assert.Equal(5, loaded.GetSort());
@@ -204,6 +210,25 @@ namespace CoreEssentials.Tests.Playground
             }
         }
 
+        [Fact]
+        public void Ball_SaveComponentWithoutPrefab_FailsFastOnSave()
+        {
+            var (scene, system, engine) = BuildWiredSystem(PlayerVipConfig());
+            try
+            {
+                // A hand-created ball carrying a save component but NO registered prefab must fail fast.
+                var ball = system.CreateEntity<GameObjectEntity>();
+                ball.SetId("ball_noprefab");
+                ball.AddComponent(new BallSaveComponent());
+
+                Assert.Throws<InvalidOperationException>(() => GameStateSerializer.SaveState(system, Path.GetTempFileName()));
+            }
+            finally
+            {
+                engine.Dispose();
+            }
+        }
+
         #endregion
 
         #region Helpers
@@ -211,6 +236,23 @@ namespace CoreEssentials.Tests.Playground
         /// <summary>A config with the same named categories as the shipping PhysicsConfig.xml.</summary>
         private static PhysicsConfig PlayerVipConfig() => PhysicsConfig.LoadFromXml(
             "<PhysicsConfig><Categories><Category Name=\"Player\" /><Category Name=\"Vip\" /></Categories></PhysicsConfig>");
+
+        /// <summary>
+        /// Registers a ball prefab (plain GameObjectEntity + BallSaveComponent) for round-trip tests.
+        /// The sprite asset is intentionally omitted so no content load is required in the headless test.
+        /// </summary>
+        private static void RegisterBallPrefab(EntitySystem system)
+        {
+            system.RegisterPrefab("BallTest", EntityPrefabLoader.LoadFromXml(
+                "<Prefab Type=\"CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity\">" +
+                "<Tags><Tag Name=\"Ball\" /><Tag Name=\"Physical\" /></Tags>" +
+                "<Components>" +
+                "<Component Type=\"SpriteComponent\"><Properties><Property Name=\"Color\" Value=\"White\" /><Property Name=\"Origin\" Value=\"0.5,0.5\" /></Properties></Component>" +
+                "<Component Type=\"RigidbodyComponent\"><Properties><Property Name=\"FixedRotation\" Value=\"false\" /><Property Name=\"Mass\" Value=\"1.0\" /></Properties></Component>" +
+                "<Component Type=\"ColliderComponent\"><Properties><Property Name=\"ShapeType\" Value=\"Circle\" /><Property Name=\"Restitution\" Value=\"1.0\" /><Property Name=\"Offset\" Value=\"0,1\" /></Properties></Component>" +
+                "<Component Type=\"BallSaveComponent\" />" +
+                "</Components></Prefab>"));
+        }
 
         /// <summary>
         /// Builds a headless scene with an EntitySystem + PhysicsEngine wired together, mirroring the

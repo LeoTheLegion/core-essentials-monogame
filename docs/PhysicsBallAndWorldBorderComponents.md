@@ -6,9 +6,9 @@ components, and both classes have been deleted. This page documents the three pi
 them:
 
 - [`WorldBorderComponent`](#worldbordercomponent) — builds the four static arena borders.
-- [`BallMovementComponent`](#ballmovementcomponent) — the random "kick + spin" ball movement.
-- [`GameEntity`](#gameentity--the-saveload-shim) — the thin save/load shim that lets a plain
-  component-composed entity round-trip through the generic serializer.
+- [`BallMovementComponent`](#ballmovementcomponent) — the random "kick + spin" ball movement (+ random display scale).
+- [`BallSaveComponent`](#ballsavecomponent) — the playground-owned save component that lets a plain
+  `GameObjectEntity` round-trip through the framework serializer.
 
 ## WorldBorderComponent
 
@@ -45,10 +45,12 @@ programmatically at startup (`CreateWorldBorderEntity`) so its size tracks the c
 ## BallMovementComponent
 
 Gives the owning entity (a ball carrying a built-in `RigidbodyComponent`) the random movement that
-used to live in the hand-written ball: a coroutine that repeatedly applies a random-direction
-impulse plus a random angular (spin) impulse, waiting a random number of seconds between kicks.
-On detach it stops all of its coroutines. When no `RigidbodyComponent` is attached the component is
-inert.
+used to live in the hand-written ball: on attach it rolls a random display scale for the ball (so
+balls come in varied sizes) — but only when the owner's scale is still the default `(1, 1)`, so an
+explicit/VIP scale or a scale restored from a save wins — and starts a coroutine that repeatedly
+applies a random-direction impulse plus a random angular (spin) impulse, waiting a random number of
+seconds between kicks. On detach it stops all of its coroutines. When no `RigidbodyComponent` is
+attached the component is inert.
 
 ### Parameters
 
@@ -67,37 +69,36 @@ inert.
 
 No properties are required — the defaults reproduce the original ball's behavior.
 
-## GameEntity — the save/load shim
+## BallSaveComponent
 
-The framework's `GameStateSerializer` only saves entities that implement `ISaveableEntity`, by
-calling *their* `SaveState()`/`LoadState()`. The framework's own `GameObjectEntity` does not
-implement that interface, and this project does not modify framework code. So the physics ball is
-declared as a thin playground-local subclass:
+The framework's `GameStateSerializer` saves an entity iff it carries an `ISaveableComponent`, by
+calling *that component's* `SaveState()`/`LoadState()`. The ball is a plain `GameObjectEntity`, so
+its saveability comes entirely from attaching this playground-owned component — no entity subclass:
 
 ```csharp
-public class GameEntity : GameObjectEntity, ISaveableEntity
+public class BallSaveComponent : EntityComponent, ISaveableComponent
 ```
 
 It uses **explicit** serialization — the ball saves exactly the state it needs to restore:
 
-- `SaveState()` writes the entity transform (position/rotation/scale/sort/active), its tags, and
+- `SaveState()` writes the owner's transform (position/rotation/scale/sort/active), its tags, and
   the specific state of the components a ball needs — sprite color/asset (`<SpriteState/>`),
   rigidbody mass + velocity (`<RigidbodyState/>`), and collider settings (`<ColliderState/>`).
-  Each value is read by name from the component's public properties; there is no per-component
-  serialization interface.
+  Each value is read by name from the sibling component's public properties; there is no
+  per-component serialization interface. The framework serializer stamps the authoritative
+  `Prefab="..."` attribute on the returned element.
 - `LoadState()` restores them. Before applying a `RigidbodyComponent`'s saved velocity, it calls
   `CreateBody()` first (if the body does not yet exist) so the linear/angular velocity lands on a
   real body at the restored position.
 
-`GameEntity.OnStart` also owns the ball's runtime hydration (mirroring the old hand-written ball):
-it rolls a random display scale for fresh balls, loads the ball sprite synchronously, and creates
-any missing `RigidbodyComponent`/`ColliderComponent`. Each addition is guarded by "only if not
-already present", so a deserialized ball is never double-hydrated.
+The ball's runtime hydration is now fully data-driven: the prefab declares every component, and
+`sprites`/collider/rigidbody are created by their own `OnAttach`. The random display scale lives in
+`BallMovementComponent.OnAttach` (guarded so explicit/VIP/loaded scales win).
 
 ### Ball declaration (from `Content/Templates/BallTemplate.xml`)
 
 ```xml
-<Prefab Type="CoreEssentials.Playground.Entities.GameEntity" Rotation="0" Sort="0" Active="true">
+<Prefab Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="0" Sort="0" Active="true">
     <Tags>
         <Tag Name="Ball" />
         <Tag Name="Physical" />
@@ -105,6 +106,7 @@ already present", so a deserialized ball is never double-hydrated.
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
+                <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
                 <Property Name="Color" Value="White" />
                 <Property Name="Origin" Value="0.5,0.5" />
             </Properties>
@@ -115,22 +117,27 @@ already present", so a deserialized ball is never double-hydrated.
                 <Property Name="Mass" Value="1.0" />
             </Properties>
         </Component>
+        <!-- Fully declared in XML (possible after the parameterless ctor + settable ShapeType). -->
         <Component Type="ColliderComponent">
             <Properties>
+                <Property Name="ShapeType" Value="Circle" />
                 <Property Name="Restitution" Value="1.0" />
+                <Property Name="Offset" Value="0,1" />
             </Properties>
         </Component>
         <Component Type="BallMovementComponent" />
+        <!-- Saves/loads this ball through the framework serializer. -->
+        <Component Type="BallSaveComponent" />
     </Components>
 </Prefab>
 ```
 
 ### Save format
 
-A saved ball now looks like this (the generic per-component shape):
+A saved ball now looks like this (the component-based shape, with the authoritative `Prefab` attribute):
 
 ```xml
-<Entity Id="ball_1234" Type="CoreEssentials.Playground.Entities.GameEntity" Rotation="70.07" Sort="0" Active="true">
+<Entity Id="ball_1234" Prefab="BallPrefab" Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="70.07" Sort="0" Active="true">
     <Position X="1088.8" Y="688.2" />
     <Scale X="0.79" Y="0.79" />
     <Tags>
@@ -153,8 +160,9 @@ the old format is obsolete and should be regenerated by saving in-game after thi
     `Player|Vip` mask, and creates none for an invalid size.
   - `BallMovementComponent` applies an impulse on tick and stops cleanly on detach; it is inert
     without a rigidbody.
-  - A full `GameEntity` save/load round-trip: transform, tags, sprite color, and physics
-    linear/angular velocity all survive through the generic serializer.
+  - A full ball save/load round-trip through the component + prefab path: transform, tags, sprite
+    color, and physics linear/angular velocity all survive. A hand-created ball with a save component
+    but no registered prefab fails fast on save.
 - `CoreEssentials.Tests/SceneManagement/Sprint5cPhysicsDataSceneTests.cs` — asserts the data-driven
-  scene spawns 8 `GameEntity` balls (5 regular + 3 VIP) and a border carrying a
-  `WorldBorderComponent`.
+  scene spawns 8 plain `GameObjectEntity` balls carrying a `BallSaveComponent` (5 regular + 3 VIP)
+  and a border carrying a `WorldBorderComponent`.

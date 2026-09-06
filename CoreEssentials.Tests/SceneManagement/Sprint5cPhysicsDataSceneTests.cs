@@ -10,7 +10,6 @@ using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Internal;
 using CoreEssentials.Playground;
-using CoreEssentials.Playground.Entities;
 using CoreEssentials.Playground.Components;
 using CoreEssentials.Scenes;
 using CoreEssentials.Tests.Coroutines;
@@ -137,11 +136,13 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.NotNull(entitySystem.FindById("saveLoadButtons")!.GetComponent<SaveLoadButtonsComponent>());
                 Assert.NotNull(entitySystem.FindById("debugOverlay")!.GetComponent<PhysicsDebugOverlayComponent>());
 
-                // The spawner actually spawned: 5 regular + 3 VIP balls, plus a world border.
+                // The spawner actually spawned: 5 regular + 3 VIP balls, plus a world border. Balls are
+                // plain GameObjectEntity carrying a BallSaveComponent (no entity subclass).
                 var vipBlue = entitySystem.FindById("vip_ball_blue");
                 Assert.NotNull(vipBlue);
-                Assert.IsType<GameEntity>(vipBlue);
-                var totalBalls = AllEntities(entitySystem).Count(e => e is GameEntity);
+                Assert.IsType<GameObjectEntity>(vipBlue);
+                Assert.NotNull(vipBlue!.GetComponent<BallSaveComponent>());
+                var totalBalls = AllEntities(entitySystem).Count(e => e.GetComponent<BallSaveComponent>() != null);
                 Assert.Equal(8, totalBalls);
 
                 // The world border shell carries the WorldBorderComponent (4 static bodies).
