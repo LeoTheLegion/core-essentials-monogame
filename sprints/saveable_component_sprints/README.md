@@ -36,12 +36,12 @@ CoreEssentials.Playground/Components/
 
 | Sprint | Name | Points | Status | Description |
 |--------|------|--------|--------|-------------|
-| 1 | [Framework: Component-Based Saving](Sprint_1_Framework_SaveableComponent.md) | 5 | ⬜ Not started | New `ISaveableComponent` interface; `Entity.PrefabName` recorded at `Instantiate`; prefab-based `GameStateSerializer` (save writes `Prefab=`, load instantiates from prefab, throws without one); `[Obsolete] ISaveableEntity` + test migration; `ColliderComponent` parameterless ctor + settable `ShapeType`. |
-| 2 | [Playground: Ball Save Component](Sprint_2_Playground_BallSaveComponent.md) | 5 | ⬜ Not started | New playground `BallSaveComponent` (generic transform + tags + per-component serialization); ball prefab back to plain `GameObjectEntity` with an XML-declared collider; **delete `GameEntity.cs`**; tests, docs, smoke-run. |
+| 1 | [Framework: Component-Based Saving](Sprint_1_Framework_SaveableComponent.md) | 5 | ✅ Done | New `ISaveableComponent` interface; `Entity.PrefabName` recorded at `Instantiate`; prefab-based `GameStateSerializer` (save writes `Prefab=`, load instantiates from prefab, throws without one); `[Obsolete] ISaveableEntity` + test migration; `ColliderComponent` parameterless ctor + settable `ShapeType`. |
+| 2 | [Playground: Ball Save Component](Sprint_2_Playground_BallSaveComponent.md) | 5 | ✅ Done | New playground `BallSaveComponent` (generic transform + tags + per-component serialization); ball prefab back to plain `GameObjectEntity` with an XML-declared collider; **delete `GameEntity.cs`**; tests, docs, smoke-run. |
 
 ## Point Summary
 
-- **Total:** 10 points across 2 sprints (~5 each).
+- **Total:** 10 points across 2 sprints (~5 each) — both complete.
 - **Timeline estimate:** ~1 focused day per sprint → ~2 working days.
 - **Ordering rationale:** the framework core (Sprint 1) is independently shippable and keeps the suite green with the old save path still exercised by migrated tests; Sprint 2 then deletes the `GameEntity` shim it replaces, so no sprint ends in a broken intermediate state.
 
