@@ -38,7 +38,7 @@ public enum ColliderShapeType
 /// Component that adds collision detection to an entity by managing an ICollider.
 /// Requires a RigidbodyComponent on the same entity to create the collider on.
 /// </summary>
-public class ColliderComponent : EntityComponent, ISerializableComponent
+public class ColliderComponent : EntityComponent
 {
     private ICollider? _collider;
 
@@ -329,65 +329,5 @@ public class ColliderComponent : EntityComponent, ISerializableComponent
         CreateCollider();
     }
 
-    /// <summary>
-    /// Serializes the collider component's state to an XML element.
-    /// </summary>
-    /// <returns>An XML element containing the component's serialized state.</returns>
-    public XElement SerializeToXml()
-    {
-        return new XElement("ColliderState",
-            new XAttribute("ShapeType", ShapeType.ToString()),
-            new XAttribute("Friction", Friction),
-            new XAttribute("Restitution", Restitution),
-            new XAttribute("Categories", Categories.ToString()),
-            new XAttribute("CollidesWith", CollidesWith.ToString()),
-            new XAttribute("OffsetX", Offset.X),
-            new XAttribute("OffsetY", Offset.Y),
-            ShapeType == ColliderShapeType.Circle ? new XAttribute("Radius", Radius) : null,
-            ShapeType == ColliderShapeType.Rectangle ? new XAttribute("SizeX", Size.X) : null,
-            ShapeType == ColliderShapeType.Rectangle ? new XAttribute("SizeY", Size.Y) : null
-        );
-    }
-
-    /// <summary>
-    /// Deserializes the collider component's state from an XML element.
-    /// </summary>
-    /// <param name="element">The XML element containing the component's state.</param>
-    public void DeserializeFromXml(XElement element)
-    {
-        Friction = float.Parse(element.Attribute("Friction")?.Value ?? "0.5");
-        Restitution = float.Parse(element.Attribute("Restitution")?.Value ?? "0.5");
-        Categories = ParseCategory(element.Attribute("Categories")?.Value, CollisionCategory.Cat1);
-        CollidesWith = ParseCategory(element.Attribute("CollidesWith")?.Value, CollisionCategory.All);
-
-        Offset = new Vector2(
-            float.Parse(element.Attribute("OffsetX")?.Value ?? "0"),
-            float.Parse(element.Attribute("OffsetY")?.Value ?? "0")
-        );
-
-        if (ShapeType == ColliderShapeType.Circle)
-        {
-            Radius = float.Parse(element.Attribute("Radius")?.Value ?? "1");
-        }
-        else if (ShapeType == ColliderShapeType.Rectangle)
-        {
-            Size = new Vector2(
-                float.Parse(element.Attribute("SizeX")?.Value ?? "1"),
-                float.Parse(element.Attribute("SizeY")?.Value ?? "1")
-            );
-        }
-    }
-
-    /// <summary>
-    /// Parses a flags-enum category value from a string, falling back to <paramref name="fallback"/> on any parse failure.
-    /// </summary>
-    /// <param name="value">The category string (e.g. "Cat1" or "Cat1, Cat2").</param>
-    /// <param name="fallback">The value to return when <paramref name="value"/> is null, empty, or unparseable.</param>
-    private static CollisionCategory ParseCategory(string? value, CollisionCategory fallback)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return fallback;
-
-        return Enum.TryParse<CollisionCategory>(value, ignoreCase: true, out var parsed) ? parsed : fallback;
-    }
 }
+

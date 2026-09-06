@@ -8,6 +8,7 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+using CoreEssentials.GameSystems.Physics.Types;
 using CoreEssentials.Utils;
 
 #nullable enable
@@ -15,15 +16,15 @@ using CoreEssentials.Utils;
 namespace CoreEssentials.Playground.Entities;
 
 /// <summary>
-/// A thin, behavior-light entity that implements <see cref="ISaveableEntity"/> with GENERIC
+/// A thin, behavior-light entity that implements <see cref="ISaveableEntity"/> with EXPLICIT
 /// serialization: it saves its transform (position/rotation/scale/sort/active), its tags, and the
-/// serialized state of every attached <see cref="ISerializableComponent"/>. Any component that
-/// implements <see cref="ISerializableComponent"/> (the built-in sprite/rigidbody/collider components
-/// do) round-trips for free — no per-entity save/load code needed.
+/// specific state of the components a ball needs to restore — sprite color/asset, rigidbody mass +
+/// velocity, and collider settings. Each value is read by name from the component's public
+/// properties; there is no per-component serialization interface.
 /// <para>
 /// This exists because the framework's own <see cref="GameObjectEntity"/> cannot be extended without
 /// modifying framework code; the physics-demo ball is declared as this type so its state (including
-/// physics velocity and sprite color) survives save/load through the generic path.
+/// physics velocity and sprite color) survives save/load through the explicit path.
 /// </para>
 /// <para>
 /// It also owns the ball's runtime component hydration in <see cref="OnStart"/> — mirroring the old
@@ -38,19 +39,6 @@ public class GameEntity : GameObjectEntity, ISaveableEntity
 {
     /// <summary>The asset name of the ball sprite, loaded when hydrating a fresh entity.</summary>
     private const string BallSpriteAsset = "Sprites/ball_sprite.xml";
-
-    /// <summary>
-    /// Maps each known serializable component type to the element name its
-    /// <see cref="ISerializableComponent.SerializeToXml"/> emits, so <see cref="LoadState"/> can find
-    /// the matching saved element without re-serializing. Unknown types fall back to a live
-    /// <c>SerializeToXml()</c> name probe.
-    /// </summary>
-    private static readonly Dictionary<Type, string> StateElementNames = new()
-    {
-        [typeof(SpriteComponent)] = "SpriteState",
-        [typeof(RigidbodyComponent)] = "RigidbodyState",
-        [typeof(ColliderComponent)] = "ColliderState",
-    };
 
     public override void OnStart()
     {
@@ -152,9 +140,10 @@ public class GameEntity : GameObjectEntity, ISaveableEntity
     }
 
     /// <summary>
-    /// Saves this entity's state: transform, tags, and the serialized state of every attached
-    /// <see cref="ISerializableComponent"/> (e.g. <c>&lt;SpriteState/&gt;</c>,
-    /// <c>&lt;RigidbodyState/&gt;</c>, <c>&lt;ColliderState/&gt;</c>).
+    /// Saves this entity's state: transform, tags, and the specific state of the components a ball
+    /// needs to restore — sprite color/asset (<c>&lt;SpriteState/&gt;</c>), rigidbody mass + velocity
+    /// (<c>&lt;RigidbodyState/&gt;</c>), and collider settings (<c>&lt;ColliderState/&gt;</c>). Each
+    /// value is read by name from the component's public properties.
     /// </summary>
     public XElement SaveState()
     {
@@ -177,23 +166,61 @@ public class GameEntity : GameObjectEntity, ISaveableEntity
             )
         );
 
-        // Generic per-component serialization: every serializable component contributes its own element.
-        foreach (var component in Components)
+        // Explicit per-component serialization: each component a ball needs to restore contributes
+        // its own element, read by name from the component's public properties.
+        if (TryGetComponent<SpriteComponent>(out var sprite) && sprite != null)
         {
-            if (component is ISerializableComponent serializable)
-            {
-                element.Add(serializable.SerializeToXml());
-            }
+            element.Add(new XElement("SpriteState",
+                new XAttribute("ColorR", sprite.Color.R),
+                new XAttribute("ColorG", sprite.Color.G),
+                new XAttribute("ColorB", sprite.Color.B),
+                new XAttribute("ColorA", sprite.Color.A),
+                new XAttribute("OriginX", sprite.Origin.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("OriginY", sprite.Origin.Y.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Effects", sprite.Effects.ToString()),
+                new XAttribute("LayerDepth", sprite.LayerDepth.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("SortOrderOverride", sprite.SortOrderOverride.HasValue ? sprite.SortOrderOverride.Value.ToString(CultureInfo.InvariantCulture) : "-1"),
+                new XAttribute("AnimationFrame", sprite.AnimationFrame),
+                new XAttribute("SpriteAsset", sprite.SpriteAsset ?? "")
+            ));
+        }
+
+        if (TryGetComponent<RigidbodyComponent>(out var rigidbody) && rigidbody != null)
+        {
+            element.Add(new XElement("RigidbodyState",
+                new XAttribute("Type", rigidbody.Type.ToString()),
+                new XAttribute("Mass", rigidbody.Mass.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("FixedRotation", rigidbody.FixedRotation),
+                new XAttribute("SyncFromPhysics", rigidbody.SyncFromPhysics),
+                new XAttribute("LinearVelocityX", rigidbody.LinearVelocity.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("LinearVelocityY", rigidbody.LinearVelocity.Y.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("AngularVelocity", rigidbody.AngularVelocity.ToString(CultureInfo.InvariantCulture))
+            ));
+        }
+
+        if (TryGetComponent<ColliderComponent>(out var collider) && collider != null)
+        {
+            element.Add(new XElement("ColliderState",
+                new XAttribute("ShapeType", collider.ShapeType.ToString()),
+                new XAttribute("Friction", collider.Friction.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Restitution", collider.Restitution.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Categories", collider.Categories.ToString()),
+                new XAttribute("CollidesWith", collider.CollidesWith.ToString()),
+                new XAttribute("OffsetX", collider.Offset.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("OffsetY", collider.Offset.Y.ToString(CultureInfo.InvariantCulture)),
+                collider.ShapeType == ColliderShapeType.Circle ? new XAttribute("Radius", collider.Radius.ToString(CultureInfo.InvariantCulture)) : null,
+                collider.ShapeType == ColliderShapeType.Rectangle ? new XAttribute("SizeX", collider.Size.X.ToString(CultureInfo.InvariantCulture)) : null,
+                collider.ShapeType == ColliderShapeType.Rectangle ? new XAttribute("SizeY", collider.Size.Y.ToString(CultureInfo.InvariantCulture)) : null
+            ));
         }
 
         return element;
     }
 
     /// <summary>
-    /// Restores this entity's state from XML: transform, tags, and each attached
-    /// <see cref="ISerializableComponent"/> (matched by the element name its
-    /// <c>SerializeToXml</c> emits). Called by the serializer after <see cref="OnStart"/>, so the
-    /// built-in components are guaranteed to exist.
+    /// Restores this entity's state from XML: transform, tags, and the specific component state
+    /// (sprite color/asset, rigidbody mass + velocity, collider settings). Called by the serializer
+    /// after <see cref="OnStart"/>, so the built-in components are guaranteed to exist.
     /// </summary>
     public void LoadState(XElement element)
     {
@@ -204,53 +231,124 @@ public class GameEntity : GameObjectEntity, ISaveableEntity
         RestoreActiveState(element);
         RestoreTags(element);
 
-        // Generic per-component deserialization. The rigidbody body is created at the RESTORED
+        // Explicit per-component deserialization. The rigidbody body is created at the RESTORED
         // position before its velocity is applied, so the physics world re-anchors to the saved
         // state (and the sync snapshot is seeded correctly, avoiding a false "external move").
-        foreach (var component in Components)
+        var spriteEl = element.Element("SpriteState");
+        if (spriteEl != null && TryGetComponent<SpriteComponent>(out var sprite) && sprite != null)
         {
-            if (component is not ISerializableComponent serializable) continue;
+            byte r = byte.Parse(spriteEl.Attribute("ColorR")?.Value ?? "255");
+            byte g = byte.Parse(spriteEl.Attribute("ColorG")?.Value ?? "255");
+            byte b = byte.Parse(spriteEl.Attribute("ColorB")?.Value ?? "255");
+            byte a = byte.Parse(spriteEl.Attribute("ColorA")?.Value ?? "255");
+            sprite.Color = new Microsoft.Xna.Framework.Color(r, g, b, a);
 
-            var stateElement = element.Element(StateElementName(component));
-            if (stateElement == null) continue;
+            float ox = float.Parse(spriteEl.Attribute("OriginX")?.Value ?? "0.5");
+            float oy = float.Parse(spriteEl.Attribute("OriginY")?.Value ?? "0.5");
+            sprite.Origin = new Microsoft.Xna.Framework.Vector2(ox, oy);
 
-            if (component is RigidbodyComponent rigidbody && !rigidbody.IsBodyCreated)
-            {
-                // Ensure the body exists at the restored position before velocity is applied.
+            string effectsStr = spriteEl.Attribute("Effects")?.Value ?? "";
+            if (!string.IsNullOrEmpty(effectsStr) && Enum.TryParse<Microsoft.Xna.Framework.Graphics.SpriteEffects>(effectsStr, out var fx))
+                sprite.Effects = fx;
+
+            string ldStr = spriteEl.Attribute("LayerDepth")?.Value ?? "0";
+            if (!string.IsNullOrEmpty(ldStr))
+                sprite.LayerDepth = float.Parse(ldStr);
+
+            string soStr = spriteEl.Attribute("SortOrderOverride")?.Value ?? "-1";
+            if (int.TryParse(soStr, out int so) && so >= 0)
+                sprite.SortOrderOverride = so;
+            else
+                sprite.SortOrderOverride = null;
+
+            string afStr = spriteEl.Attribute("AnimationFrame")?.Value ?? "0";
+            if (!string.IsNullOrEmpty(afStr))
+                sprite.AnimationFrame = int.Parse(afStr);
+
+            sprite.SpriteAsset = spriteEl.Attribute("SpriteAsset")?.Value ?? "";
+        }
+
+        var rbEl = element.Element("RigidbodyState");
+        if (rbEl != null && TryGetComponent<RigidbodyComponent>(out var rigidbody) && rigidbody != null)
+        {
+            string massStr = rbEl.Attribute("Mass")?.Value ?? "1.0";
+            if (!string.IsNullOrEmpty(massStr))
+                rigidbody.Mass = float.Parse(massStr);
+
+            string frStr = rbEl.Attribute("FixedRotation")?.Value ?? "false";
+            if (!string.IsNullOrEmpty(frStr))
+                rigidbody.FixedRotation = bool.Parse(frStr);
+
+            string sfStr = rbEl.Attribute("SyncFromPhysics")?.Value ?? "true";
+            if (!string.IsNullOrEmpty(sfStr))
+                rigidbody.SyncFromPhysics = bool.Parse(sfStr);
+
+            // Ensure the body exists at the restored position before velocity is applied.
+            if (!rigidbody.IsBodyCreated)
                 rigidbody.CreateBody();
-            }
 
-            serializable.DeserializeFromXml(stateElement);
+            string lvx = rbEl.Attribute("LinearVelocityX")?.Value;
+            string lvy = rbEl.Attribute("LinearVelocityY")?.Value;
+            if (!string.IsNullOrEmpty(lvx) && !string.IsNullOrEmpty(lvy))
+                rigidbody.SetLinearVelocity(new Microsoft.Xna.Framework.Vector2(float.Parse(lvx), float.Parse(lvy)));
+
+            string av = rbEl.Attribute("AngularVelocity")?.Value;
+            if (!string.IsNullOrEmpty(av))
+                rigidbody.AngularVelocity = float.Parse(av);
+        }
+
+        var colEl = element.Element("ColliderState");
+        if (colEl != null && TryGetComponent<ColliderComponent>(out var collider) && collider != null)
+        {
+            string fricStr = colEl.Attribute("Friction")?.Value ?? "0.5";
+            if (!string.IsNullOrEmpty(fricStr))
+                collider.Friction = float.Parse(fricStr);
+
+            string restStr = colEl.Attribute("Restitution")?.Value ?? "0.5";
+            if (!string.IsNullOrEmpty(restStr))
+                collider.Restitution = float.Parse(restStr);
+
+            string catStr = colEl.Attribute("Categories")?.Value;
+            if (!string.IsNullOrWhiteSpace(catStr) && Enum.TryParse<CollisionCategory>(catStr, ignoreCase: true, out var cats))
+                collider.Categories = cats;
+
+            string cwStr = colEl.Attribute("CollidesWith")?.Value;
+            if (!string.IsNullOrWhiteSpace(cwStr) && Enum.TryParse<CollisionCategory>(cwStr, ignoreCase: true, out var cws))
+                collider.CollidesWith = cws;
+
+            float offX = float.Parse(colEl.Attribute("OffsetX")?.Value ?? "0");
+            float offY = float.Parse(colEl.Attribute("OffsetY")?.Value ?? "0");
+            collider.Offset = new Microsoft.Xna.Framework.Vector2(offX, offY);
+
+            if (collider.ShapeType == ColliderShapeType.Circle)
+            {
+                string radStr = colEl.Attribute("Radius")?.Value ?? "1";
+                if (!string.IsNullOrEmpty(radStr))
+                    collider.Radius = float.Parse(radStr);
+            }
+            else if (collider.ShapeType == ColliderShapeType.Rectangle)
+            {
+                float sx = float.Parse(colEl.Attribute("SizeX")?.Value ?? "1");
+                float sy = float.Parse(colEl.Attribute("SizeY")?.Value ?? "1");
+                collider.Size = new Microsoft.Xna.Framework.Vector2(sx, sy);
+            }
         }
 
         // A deserialized sprite component carries its asset name but not the loaded sprite — load it
         // now so the entity renders (and the collider's per-frame auto-size can measure it).
-        var spriteComponent = GetComponent<SpriteComponent>();
-        if (spriteComponent != null && spriteComponent.Sprite == null && !string.IsNullOrWhiteSpace(spriteComponent.SpriteAsset))
+        if (TryGetComponent<SpriteComponent>(out var spriteComp) && spriteComp != null
+            && spriteComp.Sprite == null && !string.IsNullOrWhiteSpace(spriteComp.SpriteAsset))
         {
             try
             {
-                spriteComponent.Sprite = AssetManager.LoadAsset<Sprite>(spriteComponent.SpriteAsset);
-                RegisterForInstancedRendering(spriteComponent.Sprite);
+                spriteComp.Sprite = AssetManager.LoadAsset<Sprite>(spriteComp.SpriteAsset);
+                RegisterForInstancedRendering(spriteComp.Sprite);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[GameEntity] Could not load sprite asset '{spriteComponent.SpriteAsset}': {ex.Message}");
+                Console.WriteLine($"[GameEntity] Could not load sprite asset '{spriteComp.SpriteAsset}': {ex.Message}");
             }
         }
-    }
-
-    /// <summary>Resolves the saved-state element name for a component type.</summary>
-    private static string StateElementName(EntityComponent component)
-    {
-        if (StateElementNames.TryGetValue(component.GetType(), out var name))
-            return name;
-
-        // Unknown serializable component — probe its live serialization for the element name.
-        if (component is ISerializableComponent serializable)
-            return serializable.SerializeToXml().Name.LocalName;
-
-        throw new InvalidOperationException($"Component '{component.GetType().Name}' is not serializable.");
     }
 
     private void RestorePosition(XElement element)

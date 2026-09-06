@@ -101,18 +101,6 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Null(comp.Sprite);
         }
 
-        [Fact]
-        public void SpriteComponent_Serialize_RoundTripsSpriteAsset()
-        {
-            var comp = new SpriteComponent { SpriteAsset = "Sprites/hero.xml" };
-            var xml = comp.SerializeToXml();
-            var restored = new SpriteComponent();
-
-            restored.DeserializeFromXml(xml);
-
-            Assert.Equal("Sprites/hero.xml", restored.SpriteAsset);
-        }
-
         // ===== AnimationComponent.SpriteAsset =====
 
         [Fact]

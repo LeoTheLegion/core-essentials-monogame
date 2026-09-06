@@ -98,12 +98,7 @@ entity.Scale = new Vector2(2, 2);
 
 ## Serialization
 
-`AnimationComponent` implements `ISerializableComponent`. It persists:
-- the animation names and their sprite **asset names**,
-- the current animation name,
-- per-animation speed and loop state.
-
-On restore, sprite assets are reloaded in `OnAttach` (after the component is attached to the entity), so the component works with XML entity/scene loading.
+The component does **not** serialize itself. If a game needs to persist animation state, its save component reads the public surface — `Animations`, `CurrentAnimation`, and per-animation speed via `GetAnimation(name)` — and writes exactly what it needs. On restore, sprite assets are reloaded in `OnAttach` (after the component is attached to the entity), so the component works with XML entity/scene loading.
 
 ```xml
 <Component Type="AnimationComponent">

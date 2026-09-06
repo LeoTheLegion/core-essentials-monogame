@@ -146,10 +146,11 @@ public class Player : Entity, ISaveableEntity
 
 Below is an illustration of the **bespoke** approach: an entity that writes its own custom state
 element. This is still valid when you need to serialize something no component exposes. For a
-component-composed entity (the common case), prefer the **generic** approach instead — a thin
-`GameEntity : GameObjectEntity, ISaveableEntity` shim serializes transform + tags + every attached
-`ISerializableComponent` for free. See [Physics Ball & World Border Components](./PhysicsBallAndWorldBorderComponents.md)
-for the playground's real ball, which uses that generic path.
+component-composed entity (the common case), prefer the **explicit** approach instead — a thin
+`GameEntity : GameObjectEntity, ISaveableEntity` shim serializes transform + tags + the specific
+state of the components it needs (sprite color/asset, rigidbody velocity, collider settings) by
+reading each component's public properties. See [Physics Ball & World Border Components](./PhysicsBallAndWorldBorderComponents.md)
+for the playground's real ball, which uses that explicit path.
 
 ```csharp
 public class Ball : Entity, ISaveableEntity
@@ -248,9 +249,10 @@ public class Ball : Entity, ISaveableEntity
 ### Physics Entity Example (Ball — generic per-component serialization)
 
 The playground's physics ball is a `GameEntity` (a thin `GameObjectEntity` + `ISaveableEntity` shim).
-Its save shape is the **generic** one: transform + tags, plus one element per attached
-`ISerializableComponent`. Adding a new serializable component to the entity requires no new
-save/load code — it round-trips automatically.
+Its save shape is **explicit**: transform + tags, plus one element for each component the ball needs
+to restore (`<SpriteState/>`, `<RigidbodyState/>`, `<ColliderState/>`). Each value is read by name
+from the component's public properties — adding a new saved field means adding it to `GameEntity`'s
+save/load code.
 
 ```xml
 <Entity Id="vip_ball_blue" Type="CoreEssentials.Playground.Entities.GameEntity" Rotation="-2.4139123" Sort="0" Active="true">
@@ -443,12 +445,13 @@ public class SaveGameManager
 - If an entity implements ISaveableEntity but isn't in the save file, it will be removed
 - To preserve runtime entities (UI, cameras), don't implement ISaveableEntity
 
-## Built-In Serializable Components
+## Component State Elements
 
-The following components implement `ISerializableComponent` and are automatically saved/loaded:
+A save component (e.g. the playground's `GameEntity`) writes these elements by reading each built-in
+component's public properties. The element shapes below are what a save component emits and restores:
 
 ### SpriteComponent
-Saves visual properties of the sprite.
+Visual properties of the sprite.
 ```xml
 <SpriteState 
   ColorR="255" ColorG="0" ColorB="0" ColorA="255"
@@ -459,7 +462,7 @@ Saves visual properties of the sprite.
 **Note:** Scale is now stored on the `Entity` base class, not in SpriteComponent.
 
 ### RigidbodyComponent
-Saves physics body properties and velocity.
+Physics body properties and velocity.
 ```xml
 <RigidbodyState 
   Type="Dynamic"
@@ -470,7 +473,7 @@ Saves physics body properties and velocity.
 ```
 
 ### ColliderComponent
-Saves collider shape and material properties.
+Collider shape and material properties.
 ```xml
 <ColliderState 
   ShapeType="Circle"

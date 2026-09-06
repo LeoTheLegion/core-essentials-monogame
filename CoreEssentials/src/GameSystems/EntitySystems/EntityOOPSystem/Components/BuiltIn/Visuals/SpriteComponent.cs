@@ -13,7 +13,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.Bu
 /// In the hybrid rendering model, this component provides an additional draw path
 /// alongside the existing Entity.Render() method.
 /// </summary>
-public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawableComponent
+public class SpriteComponent : EntityComponent, IDrawableComponent
 {
     /// <summary>
     /// Gets or sets the sprite to render.
@@ -131,80 +131,5 @@ public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawabl
     public int GetEffectiveSortOrder()
     {
         return SortOrderOverride ?? Owner.GetSort();
-    }
-
-    /// <summary>
-    /// Serializes the sprite component's state to an XML element.
-    /// </summary>
-    /// <returns>An XML element containing the component's serialized state.</returns>
-    public XElement SerializeToXml()
-    {
-        return new XElement("SpriteState",
-            new XAttribute("ColorR", Color.R),
-            new XAttribute("ColorG", Color.G),
-            new XAttribute("ColorB", Color.B),
-            new XAttribute("ColorA", Color.A),
-            new XAttribute("OriginX", Origin.X),
-            new XAttribute("OriginY", Origin.Y),
-            new XAttribute("Effects", Effects.ToString()),
-            new XAttribute("LayerDepth", LayerDepth),
-            new XAttribute("SortOrderOverride", SortOrderOverride.HasValue ? SortOrderOverride.Value.ToString() : "-1"),
-            new XAttribute("AnimationFrame", AnimationFrame),
-            new XAttribute("SpriteAsset", SpriteAsset ?? "")
-        );
-    }
-
-    /// <summary>
-    /// Deserializes the sprite component's state from an XML element.
-    /// </summary>
-    /// <param name="element">The XML element containing the component's state.</param>
-    public void DeserializeFromXml(XElement element)
-    {
-        var colorR = byte.Parse(element.Attribute("ColorR")?.Value ?? "255");
-        var colorG = byte.Parse(element.Attribute("ColorG")?.Value ?? "255");
-        var colorB = byte.Parse(element.Attribute("ColorB")?.Value ?? "255");
-        var colorA = byte.Parse(element.Attribute("ColorA")?.Value ?? "255");
-        Color = new Color(colorR, colorG, colorB, colorA);
-
-        Origin = new Vector2(
-            float.Parse(element.Attribute("OriginX")?.Value ?? "0.5"),
-            float.Parse(element.Attribute("OriginY")?.Value ?? "0.5")
-        );
-
-        string effectsAttr = GetAttribute(element, "Effects");
-        if (!string.IsNullOrEmpty(effectsAttr) && Enum.TryParse<SpriteEffects>(effectsAttr, out var effects))
-        {
-            Effects = effects;
-        }
-
-        string layerDepthAttr = GetAttribute(element, "LayerDepth");
-        if (!string.IsNullOrEmpty(layerDepthAttr))
-        {
-            LayerDepth = float.Parse(layerDepthAttr);
-        }
-
-        string sortOrderValue = GetAttribute(element, "SortOrderOverride", "-1");
-        if (int.TryParse(sortOrderValue, out int sortOrder) && sortOrder >= 0)
-        {
-            SortOrderOverride = sortOrder;
-        }
-        else
-        {
-            SortOrderOverride = null;
-        }
-
-        string animationFrameAttr = GetAttribute(element, "AnimationFrame");
-        if (!string.IsNullOrEmpty(animationFrameAttr))
-        {
-            AnimationFrame = int.Parse(animationFrameAttr);
-        }
-
-        SpriteAsset = GetAttribute(element, "SpriteAsset");
-    }
-
-    /// <summary>Gets the attribute value or a default fallback.</summary>
-    private static string GetAttribute(XElement element, string name, string @default = "")
-    {
-        return element.Attribute(name)?.Value ?? @default;
     }
 }

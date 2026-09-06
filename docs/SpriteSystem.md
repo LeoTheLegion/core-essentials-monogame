@@ -140,7 +140,7 @@ through the `AssetManager` on attach:
 </Component>
 ```
 
-Both properties round-trip through component serialization (`SerializeToXml` / `DeserializeFromXml`).
+Both properties are settable public properties, so a save component can persist them by reading the values directly (the sprite asset itself is reloaded in `OnAttach` from its `SpriteAsset` name).
 
 ## Instanced Rendering / Batching
 

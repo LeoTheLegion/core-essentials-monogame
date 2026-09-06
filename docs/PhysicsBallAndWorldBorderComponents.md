@@ -78,17 +78,16 @@ declared as a thin playground-local subclass:
 public class GameEntity : GameObjectEntity, ISaveableEntity
 ```
 
-It uses **generic** serialization — no per-entity save/load code:
+It uses **explicit** serialization — the ball saves exactly the state it needs to restore:
 
 - `SaveState()` writes the entity transform (position/rotation/scale/sort/active), its tags, and
-  the serialized state of **every attached `ISerializableComponent`** (the built-in
-  `SpriteComponent`, `RigidbodyComponent`, and `ColliderComponent` all implement it).
-- `LoadState()` restores them. Before deserializing a `RigidbodyComponent` whose body does not yet
-  exist, it calls `CreateBody()` first so the saved linear/angular velocity is applied to a real
-  body at the restored position.
-
-Any component that implements `ISerializableComponent` round-trips for free — adding one to a
-`GameEntity` requires no new save/load code.
+  the specific state of the components a ball needs — sprite color/asset (`<SpriteState/>`),
+  rigidbody mass + velocity (`<RigidbodyState/>`), and collider settings (`<ColliderState/>`).
+  Each value is read by name from the component's public properties; there is no per-component
+  serialization interface.
+- `LoadState()` restores them. Before applying a `RigidbodyComponent`'s saved velocity, it calls
+  `CreateBody()` first (if the body does not yet exist) so the linear/angular velocity lands on a
+  real body at the restored position.
 
 `GameEntity.OnStart` also owns the ball's runtime hydration (mirroring the old hand-written ball):
 it rolls a random display scale for fresh balls, loads the ball sprite synchronously, and creates

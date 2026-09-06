@@ -26,8 +26,8 @@ namespace CoreEssentials.Tests.Playground
     ///     BOTH the regular ("Player") and VIP ("Vip") categories resolved from the engine config.
     ///   • <see cref="BallMovementComponent"/> kicks + spins the owning rigidbody on a coroutine and
     ///     stops cleanly on detach.
-    ///   • <see cref="GameEntity"/> round-trips its transform, tags, and every attached
-    ///     ISerializableComponent (sprite color + physics velocity) through the generic save/load path.
+    ///   • <see cref="GameEntity"/> round-trips its transform, tags, and the specific component state it
+    ///     needs (sprite color + physics velocity) through the explicit save/load path.
     /// </summary>
     public class Sprint4PhysicsComponentTests : IDisposable
     {

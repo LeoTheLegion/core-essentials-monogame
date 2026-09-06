@@ -17,11 +17,10 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.Bu
 /// (<see cref="Entity.GetSize"/>, <see cref="Entity.GetOrigin"/>). An entity that uses this
 /// component must also attach a <see cref="SpriteComponent"/>.
 /// </summary>
-public class AnimationComponent : EntityComponent, ISerializableComponent
+public class AnimationComponent : EntityComponent
 {
     private readonly Dictionary<string, AnimationState> _animations = new();
     private readonly Dictionary<string, Sprite> _sprites = new();
-    private readonly Dictionary<string, string> _assetNames = new();
     private string? _currentAnimation;
 
     /// <summary>
@@ -73,9 +72,7 @@ public class AnimationComponent : EntityComponent, ISerializableComponent
 
     /// <summary>
     /// Called when the component is attached to an entity. Loads and plays a declaratively declared
-    /// <see cref="SpriteAsset"/> (if any), then reloads sprite assets for animations that were restored
-    /// from deserialization (which happens before attachment, when the <see cref="AssetManager"/> may
-    /// not have been able to resolve them yet).
+    /// <see cref="SpriteAsset"/> (if any).
     /// </summary>
     public override void OnAttach()
     {
@@ -97,32 +94,6 @@ public class AnimationComponent : EntityComponent, ISerializableComponent
                 Console.WriteLine($"[AnimationComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
             }
         }
-
-        // Reload sprites for animations restored from deserialization (their states are backed
-        // by the shared placeholder until the real asset is resolved here).
-        foreach (var name in _assetNames.Keys.ToList())
-        {
-            if (!_animations.TryGetValue(name, out var state))
-                continue;
-
-            if (state.Sprite == null || state.Sprite.Name == PlaceholderSprite.Name)
-            {
-                try
-                {
-                    var sprite = AssetManager.LoadAsset<Sprite>(_assetNames[name]);
-                    _sprites[name] = sprite;
-                    state.SetSprite(sprite);
-                }
-                catch (Exception)
-                {
-                    // Asset unavailable (e.g. AssetManager not initialized); leave unresolved.
-                }
-            }
-        }
-
-        // If a current animation was restored, start it playing.
-        if (CurrentAnimationState != null)
-            CurrentAnimationState.Play();
     }
 
     /// <summary>
@@ -141,7 +112,6 @@ public class AnimationComponent : EntityComponent, ISerializableComponent
 
         _animations[name] = new AnimationState(sprite);
         _sprites[name] = sprite;
-        _assetNames[name] = sprite.Name;
     }
 
     /// <summary>
@@ -221,68 +191,4 @@ public class AnimationComponent : EntityComponent, ISerializableComponent
         }
     }
 
-    /// <summary>
-    /// Serializes the component's state to an XML element.
-    /// Persists animation names + asset names, the current animation name, and per-animation
-    /// speed/loop state.
-    /// </summary>
-    public XElement SerializeToXml()
-    {
-        return new XElement("AnimationComponentState",
-            new XAttribute("CurrentAnimation", _currentAnimation ?? ""),
-            _animations.Select(pair =>
-            {
-                var name = pair.Key;
-                var animState = pair.Value;
-                return new XElement("Animation",
-                    new XAttribute("Name", name),
-                    new XAttribute("AssetName", _assetNames.TryGetValue(name, out var asset) ? asset : ""),
-                    new XAttribute("Speed", animState.Speed.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                    new XAttribute("Looping", animState.IsLooping));
-            })
-        );
-    }
-
-    /// <summary>
-    /// Deserializes the component's state from an XML element.
-    /// Restores animation names + asset names (sprites are reloaded in <see cref="OnAttach"/>),
-    /// the current animation name, and per-animation speed/loop state.
-    /// </summary>
-    public void DeserializeFromXml(XElement element)
-    {
-        _animations.Clear();
-        _sprites.Clear();
-        _assetNames.Clear();
-
-        string current = element.Attribute("CurrentAnimation")?.Value ?? "";
-        _currentAnimation = string.IsNullOrEmpty(current) ? null : current;
-
-        foreach (var animElement in element.Elements("Animation"))
-        {
-            string? name = animElement.Attribute("Name")?.Value;
-            string? assetName = animElement.Attribute("AssetName")?.Value;
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(assetName))
-                continue;
-
-            _assetNames[name] = assetName;
-
-            // Create a placeholder state until the sprite is reloaded in OnAttach.
-            if (!_animations.ContainsKey(name))
-            {
-                _animations[name] = new AnimationState(PlaceholderSprite);
-            }
-
-            var state = _animations[name];
-            if (float.TryParse(animElement.Attribute("Speed")?.Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float speed))
-                state.Speed = speed;
-            if (bool.TryParse(animElement.Attribute("Looping")?.Value, out bool looping))
-                state.IsLooping = looping;
-        }
-    }
-
-    /// <summary>
-    /// A shared placeholder sprite used to back deserialized animation states until their real
-    /// sprite asset is reloaded in <see cref="OnAttach"/>.
-    /// </summary>
-    private static readonly Sprite PlaceholderSprite = new Sprite("__placeholder__");
 }

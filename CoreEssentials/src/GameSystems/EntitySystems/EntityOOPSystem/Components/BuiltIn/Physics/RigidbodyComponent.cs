@@ -34,7 +34,7 @@ public enum RigidbodyType
 /// Component that adds physics behavior to an entity by managing an IPhysicsBody.
 /// Syncs entity Position/Rotation with the physics body and vice versa.
 /// </summary>
-public class RigidbodyComponent : EntityComponent, ISerializableComponent
+public class RigidbodyComponent : EntityComponent
 {
     private IPhysicsBody? _body;
     private bool _bodyCreated;
@@ -322,53 +322,6 @@ public class RigidbodyComponent : EntityComponent, ISerializableComponent
         catch
         {
             return null;
-        }
-    }
-
-    /// <summary>
-    /// Serializes the rigidbody component's state to an XML element.
-    /// </summary>
-    /// <returns>An XML element containing the component's serialized state.</returns>
-    public XElement SerializeToXml()
-    {
-        var body = RawBody;
-        return new XElement("RigidbodyState",
-            new XAttribute("Type", Type.ToString()),
-            new XAttribute("Mass", _mass),
-            new XAttribute("FixedRotation", _fixedRotation),
-            new XAttribute("SyncFromPhysics", SyncFromPhysics),
-            body != null ? new XAttribute("LinearVelocityX", body.LinearVelocity.X) : null,
-            body != null ? new XAttribute("LinearVelocityY", body.LinearVelocity.Y) : null,
-            body != null ? new XAttribute("AngularVelocity", body.AngularVelocity) : null
-        );
-    }
-
-    /// <summary>
-    /// Deserializes the rigidbody component's state from an XML element.
-    /// </summary>
-    /// <param name="element">The XML element containing the component's state.</param>
-    public void DeserializeFromXml(XElement element)
-    {
-        _mass = float.Parse(element.Attribute("Mass")?.Value ?? "1.0");
-        _fixedRotation = bool.Parse(element.Attribute("FixedRotation")?.Value ?? "false");
-        SyncFromPhysics = bool.Parse(element.Attribute("SyncFromPhysics")?.Value ?? "true");
-
-        // Store velocity to apply after body is created
-        var linearVelX = element.Attribute("LinearVelocityX")?.Value;
-        var linearVelY = element.Attribute("LinearVelocityY")?.Value;
-        var angularVel = element.Attribute("AngularVelocity")?.Value;
-
-        if (_body != null && !string.IsNullOrEmpty(linearVelX) && !string.IsNullOrEmpty(linearVelY))
-        {
-            _body.SetLinearVelocity(new Vector2(
-                float.Parse(linearVelX),
-                float.Parse(linearVelY)
-            ));
-        }
-
-        if (_body != null && !string.IsNullOrEmpty(angularVel))
-        {
-            _body.AngularVelocity = float.Parse(angularVel);
         }
     }
 }

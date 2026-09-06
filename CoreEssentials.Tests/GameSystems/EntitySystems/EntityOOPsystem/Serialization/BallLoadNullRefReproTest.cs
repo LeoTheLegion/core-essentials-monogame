@@ -143,7 +143,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 
                 // Verify XML contains component info
                 var xml = File.ReadAllText(tempFile);
-                // Components should be serialized if they implement ISerializableComponent
+                // Components are persisted only if a save component explicitly writes them
                 // SpriteComponent doesn't implement it, so no component XML
                 
                 // Load
