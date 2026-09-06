@@ -23,14 +23,10 @@
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="player">
                     <Position X="400" Y="300" />
                     <Components>
-                        <!-- Owns rendering; the CharacterSpriteLoader hands it the loaded sprite. -->
+                        <!-- Owns rendering; SpriteAsset loads the sprite via the AssetManager on attach. -->
                         <Component Type="SpriteComponent">
                             <Properties>
                                 <Property Name="Origin" Value="0.5,0.5" />
-                            </Properties>
-                        </Component>
-                        <Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
-                            <Properties>
                                 <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
                             </Properties>
                         </Component>

@@ -62,5 +62,22 @@ The reusable pieces that don't exist yet are a **bounce tween component**, a **m
 - **Animation wiring:** `AnimatedCharacterEntity` calls `animation.AddAnimation("walk", sprite)` + `Play("walk")`. Confirm this can be expressed declaratively (check `AnimationComponent`'s `ISerializableComponent` surface) or add a thin declarative hook; if not cleanly declarable, keep a minimal `OnAttach` wiring in a dedicated component rather than resurrecting an entity class.
 - **Verify no scene depends on the concrete types** for casting/typing (e.g. `GetComponent` chains that assumed `PlayerEntity`). Grep for the three FQNs across code + XML before deleting.
 
+## Follow-up (2026-09-05): loader components retired in favor of built-in `SpriteAsset`
+
+The T3b glue components (`CharacterSpriteLoader`, `CharacterWalkAnimation`) existed only because the
+framework's XML binding (`SerializationUtils.ParseValue`) cannot turn a string into a `Sprite` object.
+That gap is now closed **in the framework**: the built-in `SpriteComponent` gained a `SpriteAsset`
+string property (loaded via `AssetManager` on attach; an explicitly assigned sprite always wins) and
+the built-in `AnimationComponent` gained `SpriteAsset` + `AnimationName` (loads, registers, and plays
+on attach; code-registered animations win). Both round-trip through component serialization.
+
+Consequently:
+- `Components/CharacterSpriteLoader.cs` and `Components/CharacterWalkAnimation.cs` are **deleted**.
+- The XML scenes/template declare visuals directly on the built-in components (see updated examples in
+  [docs/SpriteSystem.md](../../docs/SpriteSystem.md), [docs/AnimationComponent.md](../../docs/AnimationComponent.md),
+  [docs/CharacterComponents.md](../../docs/CharacterComponents.md)).
+- New framework tests: `SpriteAssetTests` (9 tests) cover load-on-attach, code-wins precedence,
+  missing-asset tolerance, and serialization round-trip.
+
 ---
-*Created: 2026-09-05 | Part of Playground Entity → Components Project*
+*Created: 2026-09-05 | Updated: 2026-09-05 (built-in SpriteAsset follow-up) | Part of Playground Entity → Components Project*

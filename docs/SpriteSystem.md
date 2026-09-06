@@ -104,6 +104,44 @@ The idiomatic way to render a sprite is through a `SpriteComponent` (see [Entity
 AddComponent(new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball_sprite.xml")));
 ```
 
+### Declarative loading via `SpriteAsset`
+
+A `Sprite` is a runtime object, so XML scene/prefab files can't reference it directly — the string→asset
+bridge lives in code. The built-in components close that gap with plain string properties resolved
+through the `AssetManager` on attach:
+
+- **`SpriteComponent.SpriteAsset`** — loads the named sprite and assigns it to `Sprite`. A sprite
+  assigned explicitly in code always wins over the asset. A missing asset is logged and swallowed
+  (the component attaches with a null sprite).
+- **`AnimationComponent.SpriteAsset` + `AnimationName`** — loads the named animated sprite, registers
+  it as an animation under `AnimationName`, and starts playing it. Code-registered animations under
+  that name win over the asset.
+
+```xml
+<!-- Static: one component declares its own visual -->
+<Component Type="SpriteComponent">
+    <Properties>
+        <Property Name="Origin" Value="0.5,0.5" />
+        <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
+    </Properties>
+</Component>
+
+<!-- Animated: the same asset drives both rendering and the walk cycle -->
+<Component Type="SpriteComponent">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+    </Properties>
+</Component>
+<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+        <Property Name="AnimationName" Value="walk" />
+    </Properties>
+</Component>
+```
+
+Both properties round-trip through component serialization (`SerializeToXml` / `DeserializeFromXml`).
+
 ## Instanced Rendering / Batching
 
 `Sprite.Texture` exposes the underlying texture for entities that use texture-based batching. For `spritesheet` sources `Texture` is `null` (the sheet is not batched directly), so such entities render through the no-texture path.

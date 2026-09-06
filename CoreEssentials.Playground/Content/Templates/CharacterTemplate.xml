@@ -4,15 +4,10 @@
         <Tag Name="Static" />
     </Tags>
     <Components>
-        <!-- Owns rendering; the CharacterSpriteLoader hands it the loaded sprite. -->
+        <!-- Owns rendering; SpriteAsset loads the sprite via the AssetManager on attach. -->
         <Component Type="SpriteComponent">
             <Properties>
                 <Property Name="Origin" Value="0.5,0.5" />
-            </Properties>
-        </Component>
-        <!-- Loads the character sprite and assigns it to the SpriteComponent. -->
-        <Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
-            <Properties>
                 <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
             </Properties>
         </Component>

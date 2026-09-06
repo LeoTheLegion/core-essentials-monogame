@@ -328,23 +328,20 @@ Sprite sprite2 = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
 The `CharacterScene` demonstrates asset usage. Characters are plain `GameObjectEntity` instances whose
 sprites are loaded and rendered entirely by components (see [Character Components](CharacterComponents.md)) —
-no per-entity C#:
+no per-entity C#. The built-in components declare their visuals with a string `SpriteAsset` property,
+resolved through the `AssetManager` on attach:
 
 ```xml
-<!-- A static, bouncing character: the loader loads the sprite, the SpriteComponent renders it. -->
+<!-- A static, bouncing character: the SpriteComponent loads its own sprite and renders it. -->
 <Component Type="SpriteComponent">
     <Properties>
         <Property Name="Origin" Value="0.5,0.5" />
-    </Properties>
-</Component>
-<Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
-    <Properties>
         <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
     </Properties>
 </Component>
 
 <!-- An animated character: the walk animation loads the sprite and drives the AnimationComponent. -->
-<Component Type="CoreEssentials.Playground.Components.CharacterWalkAnimation">
+<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent">
     <Properties>
         <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
         <Property Name="AnimationName" Value="walk" />
@@ -352,8 +349,9 @@ no per-entity C#:
 </Component>
 ```
 
-The loader still calls `AssetManager.LoadAsset<Sprite>(...)` under the hood, so assets are cached and
-reference-counted exactly as before.
+Both properties call `AssetManager.LoadAsset<Sprite>(...)` under the hood, so assets are cached and
+reference-counted exactly as before. Because the AssetManager caches by name, a static sprite and an
+animation referencing the same asset share one loaded instance.
 
 ## Best Practices
 

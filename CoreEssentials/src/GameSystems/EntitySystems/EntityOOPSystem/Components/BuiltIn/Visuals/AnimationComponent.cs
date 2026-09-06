@@ -51,6 +51,20 @@ public class AnimationComponent : EntityComponent, ISerializableComponent
         _currentAnimation != null && _sprites.TryGetValue(_currentAnimation, out var sprite) ? sprite : null;
 
     /// <summary>
+    /// Gets or sets the asset name of a sprite to load via the <see cref="AssetManager"/> (e.g. "Sprites/walk.xml").
+    /// When set, <see cref="OnAttach"/> loads the asset and registers it as an animation named
+    /// <see cref="AnimationName"/>, then starts playing it — so data-driven (XML) entities can declare a
+    /// full walk cycle with plain string properties instead of per-game glue components. Only applied
+    /// when no animation is already registered under that name (code-registered animations always win).
+    /// </summary>
+    public string SpriteAsset { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the name used to register and play the <see cref="SpriteAsset"/> animation (default "walk").
+    /// </summary>
+    public string AnimationName { get; set; } = "walk";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="AnimationComponent"/> class.
     /// </summary>
     public AnimationComponent()
@@ -58,14 +72,31 @@ public class AnimationComponent : EntityComponent, ISerializableComponent
     }
 
     /// <summary>
-    /// Called when the component is attached to an entity.
-    /// Reloads sprite assets for animations that were restored from deserialization
-    /// (which happens before attachment, when the <see cref="AssetManager"/> may not have
-    /// been able to resolve them yet).
+    /// Called when the component is attached to an entity. Loads and plays a declaratively declared
+    /// <see cref="SpriteAsset"/> (if any), then reloads sprite assets for animations that were restored
+    /// from deserialization (which happens before attachment, when the <see cref="AssetManager"/> may
+    /// not have been able to resolve them yet).
     /// </summary>
     public override void OnAttach()
     {
         base.OnAttach();
+
+        // Resolve a declaratively declared sprite asset: load it, register it under AnimationName,
+        // and start playing. Skipped when an animation is already registered under that name —
+        // code-registered animations always win over XML-declared ones.
+        if (!string.IsNullOrWhiteSpace(SpriteAsset) && !_animations.ContainsKey(AnimationName))
+        {
+            try
+            {
+                var sprite = AssetManager.LoadAsset<Sprite>(SpriteAsset);
+                AddAnimation(AnimationName, sprite);
+                Play(AnimationName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AnimationComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
+            }
+        }
 
         // Reload sprites for animations restored from deserialization (their states are backed
         // by the shared placeholder until the real asset is resolved here).

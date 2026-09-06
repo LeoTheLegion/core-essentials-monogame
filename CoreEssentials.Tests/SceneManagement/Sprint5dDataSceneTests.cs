@@ -66,17 +66,19 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Contains(sys.Prefabs, p => p.Name == "VolumeButtonPrefab" && p.Asset == "Templates/VolumeButtonTemplate.xml");
 
             // Characters are plain game objects carrying behavior components (Sprint 2 migration).
+            // Visuals are declared on the built-in SpriteComponent/AnimationComponent via their
+            // SpriteAsset properties — no per-game loader components.
             var staticChar = FindById(sys.Entities, "staticCharacter");
             Assert.NotNull(staticChar);
             Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", staticChar!.Type);
             Assert.Contains("Static", staticChar.Tags);
-            Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("CharacterSpriteLoader"));
+            Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("SpriteComponent") && c.Properties["SpriteAsset"] == "Sprites/character_sprite.xml");
             Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("BounceTweenComponent"));
             var animated = FindById(sys.Entities, "animatedCharacter");
             Assert.NotNull(animated);
             Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", animated!.Type);
             Assert.Contains("Animated", animated.Tags);
-            Assert.Contains(animated.DeclaredComponents, c => c.Type.EndsWith("CharacterWalkAnimation"));
+            Assert.Contains(animated.DeclaredComponents, c => c.Type.EndsWith("AnimationComponent") && c.Properties["SpriteAsset"] == "Sprites/character_anim_walk.xml" && c.Properties["AnimationName"] == "walk");
 
             // Text instances are prefab-based and configured via component-targeted <Overrides>.
             var info = FindById(sys.Entities, "infoText");
@@ -151,13 +153,19 @@ namespace CoreEssentials.Tests.SceneManagement
                 var entitySystem = scene.GetGameSystem<EntitySystem>();
 
                 // Characters are plain game objects with their tags + behavior components.
+                // Visuals come from the built-in SpriteAsset properties: the sprite is loaded on attach.
                 var staticChar = entitySystem.FindById("staticCharacter");
                 Assert.NotNull(staticChar);
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(staticChar);
                 Assert.True(staticChar!.HasTag("Static"));
                 Assert.NotNull(staticChar.GetComponent<BounceTweenComponent>());
+                Assert.Equal("Sprites/character_sprite.xml", staticChar.GetComponent<SpriteComponent>()!.Sprite?.Name);
                 var animated = entitySystem.FindById("animatedCharacter");
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(animated);
+                Assert.Equal("Sprites/character_anim_walk.xml", animated!.GetComponent<SpriteComponent>()!.Sprite?.Name);
+                var walkAnim = animated.GetComponent<AnimationComponent>()!;
+                Assert.Contains("walk", walkAnim.Animations);
+                Assert.Equal("walk", walkAnim.CurrentAnimation);
 
                 // Text is a plain game object carrying a TextComponent; buttons keep their classes.
                 var infoText = entitySystem.FindById("infoText");

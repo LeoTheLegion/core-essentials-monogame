@@ -1,3 +1,4 @@
+using System;
 using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +19,15 @@ public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawabl
     /// Gets or sets the sprite to render.
     /// </summary>
     public Sprite? Sprite { get; set; }
+
+    /// <summary>
+    /// Gets or sets the asset name of a sprite to load via the <see cref="AssetManager"/> (e.g. "Sprites/hero.xml").
+    /// Resolved once in <see cref="OnAttach"/> and assigned to <see cref="Sprite"/> — but only when no
+    /// explicit <see cref="Sprite"/> was set already, so a sprite assigned in code always wins. This lets
+    /// data-driven (XML) entities declare their visual with a plain string property instead of needing a
+    /// per-game loader component to bridge the string → asset gap.
+    /// </summary>
+    public string SpriteAsset { get; set; } = "";
 
     /// <summary>
     /// Gets or sets the origin point for rotation and positioning, as a fraction of the sprite size.
@@ -69,6 +79,29 @@ public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawabl
     }
 
     /// <summary>
+    /// Resolves <see cref="SpriteAsset"/> (if set) through the <see cref="AssetManager"/> and assigns it
+    /// to <see cref="Sprite"/> — unless a sprite was already assigned explicitly. Runs once on attach,
+    /// which is the earliest point at which XML-declared properties are final. Failures are logged and
+    /// swallowed so a missing asset never breaks entity attachment.
+    /// </summary>
+    public override void OnAttach()
+    {
+        base.OnAttach();
+
+        if (string.IsNullOrWhiteSpace(SpriteAsset) || Sprite != null)
+            return;
+
+        try
+        {
+            Sprite = AssetManager.LoadAsset<Sprite>(SpriteAsset);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SpriteComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Draws the sprite using the entity's transform.
     /// Call this method from Entity.Render() or EntitySystem.Draw() to render this component.
     /// </summary>
@@ -116,7 +149,8 @@ public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawabl
             new XAttribute("Effects", Effects.ToString()),
             new XAttribute("LayerDepth", LayerDepth),
             new XAttribute("SortOrderOverride", SortOrderOverride.HasValue ? SortOrderOverride.Value.ToString() : "-1"),
-            new XAttribute("AnimationFrame", AnimationFrame)
+            new XAttribute("AnimationFrame", AnimationFrame),
+            new XAttribute("SpriteAsset", SpriteAsset ?? "")
         );
     }
 
@@ -164,6 +198,8 @@ public class SpriteComponent : EntityComponent, ISerializableComponent, IDrawabl
         {
             AnimationFrame = int.Parse(animationFrameAttr);
         }
+
+        SpriteAsset = GetAttribute(element, "SpriteAsset");
     }
 
     /// <summary>Gets the attribute value or a default fallback.</summary>

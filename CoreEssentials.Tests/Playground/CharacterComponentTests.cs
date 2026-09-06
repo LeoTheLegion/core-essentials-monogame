@@ -15,9 +15,10 @@ namespace CoreEssentials.Tests.Playground;
 ///   • <see cref="BounceTweenComponent"/> — looping eased Y-bounce (baseline captured on first update).
 ///   • <see cref="MoveByKeysComponent"/> — arrow-key movement.
 ///   • <see cref="PauseScaleComponent"/> — scale-while-paused.
-///   • <see cref="CharacterSpriteLoader"/> / <see cref="CharacterWalkAnimation"/> — sprite mounting.
+/// Visuals are declared on the built-in SpriteComponent/AnimationComponent via their SpriteAsset
+/// properties (covered by SpriteAssetTests in the framework test suite).
 /// Movement and bounce math are exercised via the components' virtual seams so no live keyboard or
-/// frame clock is required; sprite loading is proven headlessly with a mock content manager.
+/// frame clock is required.
 /// </summary>
 public class CharacterComponentTests
 {
@@ -37,14 +38,6 @@ public class CharacterComponentTests
 
         protected override float GetDeltaTime() => PinnedDelta;
         protected override bool IsKeyHeld(Keys key) => KeyHeld && key == HeldKey;
-    }
-
-    /// <summary>Registers a mock sprite asset so OnAttach's LoadAsset works headlessly.</summary>
-    private static void InitSprite(string assetName)
-    {
-        var content = new MockContentManager();
-        content.AddAsset<Sprite>(assetName, new Sprite(assetName));
-        AssetManager.Init(content);
     }
 
     // ─────────────── BounceTweenComponent ───────────────
@@ -166,69 +159,5 @@ public class CharacterComponentTests
 
         comp.OnApplicationPause(true);
         Assert.Equal(new Vector2(2f, 2f), entity.Scale);
-    }
-
-    // ─────────────── CharacterSpriteLoader ───────────────
-
-    [Fact]
-    public void SpriteLoader_OnAttach_LoadsAsset_WithoutThrowing()
-    {
-        InitSprite("Sprites/character_sprite.xml");
-        var system = new EntitySystem();
-        var entity = system.CreateEntity<TestEntity>();
-        Assert.Null(Record.Exception(() =>
-            entity.AddComponent(new CharacterSpriteLoader { SpriteAsset = "Sprites/character_sprite.xml" })));
-    }
-
-    [Fact]
-    public void SpriteLoader_FirstUpdate_AssignsSpriteToPreDeclaredComponent()
-    {
-        InitSprite("Sprites/character_sprite.xml");
-        var system = new EntitySystem();
-        var entity = system.CreateEntity<TestEntity>();
-
-        // The SpriteComponent is declared in XML alongside the loader; the loader only configures it.
-        var spriteComp = (SpriteComponent)entity.AddComponent(new SpriteComponent());
-        Assert.Null(spriteComp.Sprite);
-        entity.AddComponent(new CharacterSpriteLoader { SpriteAsset = "Sprites/character_sprite.xml" });
-
-        // The assignment is deferred to the first update (a component must not create a sibling).
-        entity.Update(new GameTime());
-
-        Assert.NotNull(spriteComp.Sprite);
-    }
-
-    [Fact]
-    public void SpriteLoader_NoSpriteComponent_IsNoOp()
-    {
-        InitSprite("Sprites/character_sprite.xml");
-        var system = new EntitySystem();
-        var entity = system.CreateEntity<TestEntity>();
-        entity.AddComponent(new CharacterSpriteLoader { SpriteAsset = "Sprites/character_sprite.xml" });
-
-        // With no pre-declared SpriteComponent the loader does nothing (and never creates one).
-        Assert.Null(Record.Exception(() => entity.Update(new GameTime())));
-        Assert.Null(entity.GetComponent<SpriteComponent>());
-    }
-
-    // ─────────────── CharacterWalkAnimation ───────────────
-
-    [Fact]
-    public void WalkAnimation_FirstUpdate_WiresPreDeclaredSiblingsAndPlaysAnimation()
-    {
-        InitSprite("Sprites/character_anim_walk.xml");
-        var system = new EntitySystem();
-        var entity = system.CreateEntity<TestEntity>();
-
-        // Both siblings are declared in XML; the component only configures them.
-        var spriteComp = (SpriteComponent)entity.AddComponent(new SpriteComponent());
-        var anim = (AnimationComponent)entity.AddComponent(new AnimationComponent());
-        entity.AddComponent(new CharacterWalkAnimation { SpriteAsset = "Sprites/character_anim_walk.xml", AnimationName = "walk" });
-
-        entity.Update(new GameTime());
-
-        Assert.NotNull(spriteComp.Sprite);
-        Assert.Contains("walk", anim.Animations);
-        Assert.Equal("walk", anim.CurrentAnimation);
     }
 }

@@ -8,18 +8,18 @@ It replaces the old pattern of hand-rolling an `AnimatedSprite` + `AnimationStat
 
 ## Quick Start
 
-An animated entity is a plain `GameObjectEntity` carrying a `SpriteComponent`, an `AnimationComponent`,
-and the playground's `CharacterWalkAnimation` (see [Character Components](CharacterComponents.md)), which
-loads the sprite and plays the named walk cycle for you:
+An animated entity is a plain `GameObjectEntity` carrying a `SpriteComponent` and an
+`AnimationComponent`. The component's declarative `SpriteAsset` + `AnimationName` properties load the
+sprite through the `AssetManager` on attach, register it under `AnimationName`, and start playing it:
 
 ```xml
 <Component Type="SpriteComponent">
     <Properties>
         <Property Name="Origin" Value="0.5,0.5" />
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
     </Properties>
 </Component>
-<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent" />
-<Component Type="CoreEssentials.Playground.Components.CharacterWalkAnimation">
+<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent">
     <Properties>
         <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
         <Property Name="AnimationName" Value="walk" />
@@ -55,6 +55,8 @@ Either way, the base `Entity`:
 | `CurrentAnimation` | The name of the active animation (get/set). |
 | `CurrentAnimationState` | The `AnimationState` of the current animation, or `null`. |
 | `Sprite` | The `Sprite` backing the current animation, or `null`. |
+| `SpriteAsset` | Declarative asset name loaded on attach and registered/played as `AnimationName`. Skipped when an animation is already registered under that name. |
+| `AnimationName` | Name used to register and play the `SpriteAsset` animation (default `walk`). |
 
 ### Switching Animations
 

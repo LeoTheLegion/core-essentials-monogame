@@ -33,14 +33,10 @@
                         <Tag Name="Static" />
                     </Tags>
                     <Components>
-                        <!-- Owns rendering; the CharacterSpriteLoader hands it the loaded sprite. -->
+                        <!-- Owns rendering; SpriteAsset loads the sprite via the AssetManager on attach. -->
                         <Component Type="SpriteComponent">
                             <Properties>
                                 <Property Name="Origin" Value="0.5,0.5" />
-                            </Properties>
-                        </Component>
-                        <Component Type="CoreEssentials.Playground.Components.CharacterSpriteLoader">
-                            <Properties>
                                 <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
                             </Properties>
                         </Component>
@@ -68,15 +64,16 @@
                         <Tag Name="Animated" />
                     </Tags>
                     <Components>
-                        <!-- Owns rendering; the CharacterWalkAnimation hands it the animated sprite. -->
+                        <!-- Owns rendering; SpriteAsset loads the animated sprite via the AssetManager on attach. -->
                         <Component Type="SpriteComponent">
                             <Properties>
                                 <Property Name="Origin" Value="0.5,0.5" />
+                                <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
                             </Properties>
                         </Component>
-                        <!-- Pure controller that advances frames into the SpriteComponent. -->
-                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent" />
-                        <Component Type="CoreEssentials.Playground.Components.CharacterWalkAnimation">
+                        <!-- Pure controller that advances frames into the SpriteComponent;
+                             SpriteAsset/AnimationName load, register and play the walk cycle on attach. -->
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent">
                             <Properties>
                                 <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
                                 <Property Name="AnimationName" Value="walk" />
