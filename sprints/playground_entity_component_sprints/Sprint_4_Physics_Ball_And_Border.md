@@ -1,6 +1,6 @@
 # Sprint 4 — Physics: Ball & WorldBorder ⚙️
 
-**Points:** 5 | **Status:** ⬜ Not Started | **Goal:** Migrate `WorldBorder` and `Ball` onto components, delete both classes, and resolve Ball's save/load (the riskiest part of the project). This is the last sprint — after it, `Entities/` contains only the thin save/load shim `GameEntity` (a `GameObjectEntity` subclass); every other declaration uses the framework's plain `GameObjectEntity`.
+**Points:** 5 | **Status:** ✅ Complete | **Goal:** Migrate `WorldBorder` and `Ball` onto components, delete both classes, and resolve Ball's save/load (the riskiest part of the project). This is the last sprint — after it, `Entities/` contains only the thin save/load shim `GameEntity` (a `GameObjectEntity` subclass); every other declaration uses the framework's plain `GameObjectEntity`.
 
 ## Why Last & Why Risky
 
@@ -21,14 +21,14 @@ A thin `GameEntity : GameObjectEntity` implements `ISaveableEntity`. Its `SaveSt
 
 ## Tasks
 
-- [ ] T1 ⭐ Create `WorldBorderComponent : EntityComponent` — move `WorldBorder.CreateWorldBorder()` into `OnAttach` (reads `Size`, resolves the `"Player|Vip"` collision mask from `PhysicsConfig`). Expose `Size` as a property.
-- [ ] T2 🔁 Update `PhysicsSpawnComponent.CreateWorldBorderEntity(...)` to create a `GameObjectEntity` with a `WorldBorderComponent` (instead of `CreateEntity<WorldBorder>`). Keep the existing virtual seam so tests can still override it.
-- [ ] T3 ⭐ Create `BallMovementComponent : EntityComponent` — move `RandomMovementCoroutine()` here (random impulse + angular spin on a `WaitForSeconds` loop); start in `OnAttach`, stop in `OnDetach`.
-- [ ] T4 🔁 Update `Content/Templates/BallTemplate.xml` → `GameEntity` root, ensure the built-in sprite/rigidbody/collider components are declared (they already are) and add `<Component Type="BallMovementComponent">`.
-- [ ] T5 ⭐ Create `Entities/GameEntity.cs : GameObjectEntity, ISaveableEntity` with generic serialization — `SaveState()` writes transform + tags + each attached `ISerializableComponent`'s state; `LoadState()` restores them. Verify `RigidbodyComponent`'s `ISerializableComponent` surface round-trips linear/angular velocity (extend it if not); verify `SpriteComponent` round-trips color.
-- [ ] T6 🔁 Delete `Entities/Ball.cs` and `WorldBorder.cs`; remove references/imports.
-- [ ] T7 🔒 Add unit tests: `WorldBorderComponent` (creates 4 static bodies with the resolved mask), `BallMovementComponent` (applies impulses over time; stops on detach), and a Ball save/load round-trip test under generic component serialization (position + physics velocity + sprite color survive). Update `GameStateSerialization` tests + any `*_Save.xml` fixtures to the new format.
-- [ ] T8 🔒 Build clean + full suite green (expect 1174/0/3) + smoke-run all 7 scenes PASS.
+- [x] T1 ⭐ Create `WorldBorderComponent : EntityComponent` — move `WorldBorder.CreateWorldBorder()` into `OnAttach` (reads `Size`, resolves the `"Player|Vip"` collision mask from `PhysicsConfig`). Expose `Size` as a property.
+- [x] T2 🔁 Update `PhysicsSpawnComponent.CreateWorldBorderEntity(...)` to create a `GameObjectEntity` with a `WorldBorderComponent` (instead of `CreateEntity<WorldBorder>`). Keep the existing virtual seam so tests can still override it.
+- [x] T3 ⭐ Create `BallMovementComponent : EntityComponent` — move `RandomMovementCoroutine()` here (random impulse + angular spin on a `WaitForSeconds` loop); start in `OnAttach`, stop in `OnDetach`.
+- [x] T4 🔁 Update `Content/Templates/BallTemplate.xml` → `GameEntity` root, ensure the built-in sprite/rigidbody/collider components are declared (they already are) and add `<Component Type="BallMovementComponent">`.
+- [x] T5 ⭐ Create `Entities/GameEntity.cs : GameObjectEntity, ISaveableEntity` with generic serialization — `SaveState()` writes transform + tags + each attached `ISerializableComponent`'s state; `LoadState()` restores them. Verified `RigidbodyComponent` round-trips linear/angular velocity (it calls `CreateBody()` first so velocity lands on a real body); verified `SpriteComponent` round-trips color.
+- [x] T6 🔁 Delete `Entities/Ball.cs` and `WorldBorder.cs`; remove references/imports.
+- [x] T7 🔒 Add unit tests: `WorldBorderComponent` (creates 4 static bodies with the resolved mask), `BallMovementComponent` (applies impulses over time; stops on detach), and a Ball save/load round-trip test under generic component serialization (position + physics velocity + sprite color survive). Updated `Sprint5cPhysicsDataSceneTests` to the new types; removed the stale old-format `*_Save.xml` fixtures.
+- [x] T8 🔒 Build clean + full suite green (1213/0/3) + smoke-run all 7 scenes PASS.
 
 ## Acceptance Criteria
 
@@ -57,4 +57,4 @@ A thin `GameEntity : GameObjectEntity` implements `ISaveableEntity`. Its `SaveSt
 - **WorldBorder mask:** keep resolving `"Player|Vip"` from `PhysicsConfig` exactly as today; a regression here silently lets balls escape the arena (only visible in the PhysicsEntityScene smoke run with debug overlay).
 
 ---
-*Created: 2026-09-05 | Part of Playground Entity → Components Project*
+*Created: 2026-09-05 | Completed: 2026-09-17 | Part of Playground Entity → Components Project*

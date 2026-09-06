@@ -1,4 +1,4 @@
-<Prefab Type="CoreEssentials.Playground.Entities.Ball" Rotation="0" Sort="0" Active="true">
+<Prefab Type="CoreEssentials.Playground.Entities.GameEntity" Rotation="0" Sort="0" Active="true">
     <Tags>
         <Tag Name="Ball" />
         <Tag Name="Physical" />
@@ -21,5 +21,7 @@
                 <Property Name="Restitution" Value="1.0" />
             </Properties>
         </Component>
+        <!-- Random kick + spin movement (port of the old hand-written ball's coroutine). -->
+        <Component Type="BallMovementComponent" />
     </Components>
 </Prefab>

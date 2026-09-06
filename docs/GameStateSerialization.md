@@ -142,7 +142,14 @@ public class Player : Entity, ISaveableEntity
 }
 ```
 
-### Example: Physics Entity (Ball)
+### Example: Bespoke Per-Entity State
+
+Below is an illustration of the **bespoke** approach: an entity that writes its own custom state
+element. This is still valid when you need to serialize something no component exposes. For a
+component-composed entity (the common case), prefer the **generic** approach instead — a thin
+`GameEntity : GameObjectEntity, ISaveableEntity` shim serializes transform + tags + every attached
+`ISerializableComponent` for free. See [Physics Ball & World Border Components](./PhysicsBallAndWorldBorderComponents.md)
+for the playground's real ball, which uses that generic path.
 
 ```csharp
 public class Ball : Entity, ISaveableEntity
@@ -238,17 +245,24 @@ public class Ball : Entity, ISaveableEntity
 </Entity>
 ```
 
-### Physics Entity Example (Ball)
+### Physics Entity Example (Ball — generic per-component serialization)
+
+The playground's physics ball is a `GameEntity` (a thin `GameObjectEntity` + `ISaveableEntity` shim).
+Its save shape is the **generic** one: transform + tags, plus one element per attached
+`ISerializableComponent`. Adding a new serializable component to the entity requires no new
+save/load code — it round-trips automatically.
+
 ```xml
-<Entity Id="vip_ball_blue" Type="CoreEssentials.Playground.Ball" Rotation="-2.4139123" Sort="0" Active="true">
+<Entity Id="vip_ball_blue" Type="CoreEssentials.Playground.Entities.GameEntity" Rotation="-2.4139123" Sort="0" Active="true">
   <Position X="583.62" Y="250.98" />
   <Scale X="2" Y="2" />
   <Tags>
     <Tag Name="Ball" />
     <Tag Name="Physical" />
   </Tags>
-  <Physics LinearVelocityX="-51.93" LinearVelocityY="-108.18" AngularVelocity="-2.34" />
-  <Sprite Color="4294901760" />
+  <SpriteState ColorR="255" ColorG="174" ColorB="201" ColorA="255" OriginX="0.5" OriginY="0.5" Effects="" LayerDepth="0" SortOrderOverride="-1" AnimationFrame="0" SpriteAsset="Sprites/ball_sprite.xml" />
+  <RigidbodyState Type="Dynamic" Mass="4" FixedRotation="False" SyncFromPhysics="True" LinearVelocityX="-51.93" LinearVelocityY="-108.18" AngularVelocity="-2.34" />
+  <ColliderState ShapeType="Circle" Friction="0.2" Restitution="1" Categories="Cat2" CollidesWith="Cat2" OffsetX="0" OffsetY="1" Radius="96" />
 </Entity>
 ```
 

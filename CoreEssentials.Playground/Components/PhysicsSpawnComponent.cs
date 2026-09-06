@@ -4,7 +4,6 @@ using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
-using CoreEssentials.Playground.Entities;
 using CoreEssentials.GameSystems.Physics.Engines.Aether;
 using CoreEssentials.GameSystems.Physics.Types;
 
@@ -197,11 +196,19 @@ public class PhysicsSpawnComponent : EntityComponent
     }
 
     /// <summary>
-    /// Creates the world border entity at the given position/size. Virtual so unit tests can observe
-    /// the request without a live EntitySystem.
+    /// Creates the world border entity at the given position/size: a plain GameObjectEntity carrying
+    /// a WorldBorderComponent (the border construction itself lives in the component). Virtual so
+    /// unit tests can observe the request without a live EntitySystem.
     /// </summary>
     protected virtual void CreateWorldBorderEntity(Vector2 position, Vector2 size)
-        => EntitySystem?.CreateEntity<WorldBorder>(position, size);
+    {
+        var border = EntitySystem?.CreateEntity<GameObjectEntity>();
+        if (border == null) return;
+
+        // Set the position before attaching so the component's OnAttach builds the bodies there.
+        border.Position = position;
+        border.AddComponent(new WorldBorderComponent { Size = size });
+    }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
 

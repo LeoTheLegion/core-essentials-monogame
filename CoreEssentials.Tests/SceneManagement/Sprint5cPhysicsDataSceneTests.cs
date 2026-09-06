@@ -140,12 +140,12 @@ namespace CoreEssentials.Tests.SceneManagement
                 // The spawner actually spawned: 5 regular + 3 VIP balls, plus a world border.
                 var vipBlue = entitySystem.FindById("vip_ball_blue");
                 Assert.NotNull(vipBlue);
-                Assert.IsType<Ball>(vipBlue);
-                var totalBalls = AllEntities(entitySystem).Count(e => e is Ball);
+                Assert.IsType<GameEntity>(vipBlue);
+                var totalBalls = AllEntities(entitySystem).Count(e => e is GameEntity);
                 Assert.Equal(8, totalBalls);
 
-                // The world border was created and configured against the engine's config.
-                var border = AllEntities(entitySystem).FirstOrDefault(e => e is WorldBorder);
+                // The world border shell carries the WorldBorderComponent (4 static bodies).
+                var border = AllEntities(entitySystem).FirstOrDefault(e => e.GetComponent<WorldBorderComponent>() != null);
                 Assert.NotNull(border);
             }
             finally
