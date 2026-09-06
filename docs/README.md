@@ -87,6 +87,7 @@ namespace YourGame
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)
 - [Audio System](./AudioSystem.md)
+  - [Audio Components (Per-Entity Sources & Listener)](./AudioComponents.md)
 - [Debugging Tools](./DebuggingTools.md)
 - [XML Documentation](./XMLDocumentation.md)
 

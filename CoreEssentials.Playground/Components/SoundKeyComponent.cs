@@ -1,6 +1,7 @@
 using System;
 using CoreEssentials.Audio;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework.Input;
 
@@ -53,10 +54,18 @@ public class SoundKeyComponent : EntityComponent
         PlaySound(SoundAsset);
     }
 
+    private AudioSourceComponent? _source;
+
     /// <summary>
-    /// Plays the configured one-shot sound. Virtual so unit tests can observe the requested asset
-    /// name without driving real audio playback.
+    /// Plays the configured one-shot by routing it through a built-in
+    /// <see cref="AudioSourceComponent"/> hosted on the owning entity (created lazily, never
+    /// auto-playing). Virtual so unit tests can observe the requested asset name without driving
+    /// real audio playback.
     /// </summary>
     protected virtual void PlaySound(string soundAsset)
-        => AudioManager.Instance.PlayOneShotSound(soundAsset);
+    {
+        if (Owner == null || string.IsNullOrEmpty(soundAsset)) return;
+        var source = _source ??= Owner.AddComponent(new AudioSourceComponent { PlayOnAttach = false });
+        source.PlayOneShot(soundAsset);
+    }
 }

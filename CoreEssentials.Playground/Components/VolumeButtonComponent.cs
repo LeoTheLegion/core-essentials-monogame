@@ -2,6 +2,7 @@ using System;
 using CoreEssentials.Audio;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+// (BuiltIn already provides both ButtonComponent and AudioListenerComponent.)
 
 namespace CoreEssentials.Playground.Components;
 
@@ -51,12 +52,17 @@ public class VolumeButtonComponent : EntityComponent
     }
 
     /// <summary>
-    /// Sets the master audio volume. Virtual so unit tests can observe the requested level without
-    /// driving real audio.
+    /// Sets the master audio volume, routing through the scene's active built-in
+    /// <see cref="AudioListenerComponent"/> when one is present (falling back to the raw
+    /// <see cref="AudioManager"/> otherwise). Virtual so unit tests can observe the requested level
+    /// without driving real audio.
     /// </summary>
     protected virtual void SetVolume(float volumeLevel)
     {
-        AudioManager.Instance.SetMasterVolume(volumeLevel);
-        Console.WriteLine($"[VolumeButtonComponent] Volume set to {volumeLevel * 100}%");
+        var listener = AudioListenerComponent.ActiveListener;
+        if (listener != null)
+            listener.MasterVolume = volumeLevel;
+        else
+            AudioManager.Instance.SetMasterVolume(volumeLevel);
     }
 }

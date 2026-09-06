@@ -9,6 +9,7 @@ using Xunit;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.Audio;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Types;
 using CoreEssentials.Playground.Components;
@@ -18,8 +19,8 @@ namespace CoreEssentials.Tests.Playground;
 /// <summary>
 /// Sprint 3 (playground entity → components) — unit tests for the new GUI-button and camera
 /// components that replace the hand-written SoundButtonEntity / VolumeButtonEntity / CameraEntity:
-/// SoundButtonComponent + VolumeButtonComponent (thin Clicked subscribers onto a pre-declared
-/// ButtonComponent) and CameraFollowComponent (follow lerp + toggle), plus the follow-gating in
+/// VolumeButtonComponent (a thin Clicked subscriber onto a pre-declared ButtonComponent that now
+/// routes through the built-in AudioListenerComponent) and CameraFollowComponent (follow lerp + toggle), plus the follow-gating in
 /// CameraInputComponent and the rewired CameraFollowToggleComponent. External side effects are
 /// captured through the components' virtual seams; button clicks are raised via the component's
 /// Clicked event field, so no live Myra input pipeline is required.
@@ -67,11 +68,11 @@ public class Sprint3GuiAndCameraComponentTests : IDisposable
 
     // ── Recording subclasses (capture the virtual seams) ─────────────────────────
 
-    private class RecordingSoundButton : SoundButtonComponent
+    private class RecordingSource : AudioSourceComponent
     {
-        public int Plays;
+        public int OneShots;
         public string? LastAsset;
-        protected override void PlaySound(string soundAsset) { Plays++; LastAsset = soundAsset; }
+        protected override string? PlayOneShotClip(string asset, AudioChannel channel) { OneShots++; LastAsset = asset; return "oneshot-id"; }
     }
 
     private class RecordingVolumeButton : VolumeButtonComponent
@@ -106,60 +107,24 @@ public class Sprint3GuiAndCameraComponentTests : IDisposable
         return true;
     }
 
-    // ── SoundButtonComponent ──────────────────────────────────────────────────────
+    // ── AudioSourceComponent (data-driven sound-button bind target) ───────────────
 
     [Fact]
-    public void SoundButton_Click_PlaysConfiguredSound()
+    public void AudioSource_PlayOneShotNow_PlaysConfiguredAsset()
     {
-        var entity = new TestEntity();
-        entity.AddComponent(new CanvasComponent());
-        var button = (ButtonComponent)entity.AddComponent(new ButtonComponent("Footstep 1"));
-        var comp = (RecordingSoundButton)entity.AddComponent(new RecordingSoundButton
-        {
-            SoundAsset = "Audio/footstep1_sound.xml"
-        });
-        try
-        {
-            Assert.True(TryRaiseClicked(button));
-
-            Assert.Equal(1, comp.Plays);
-            Assert.Equal("Audio/footstep1_sound.xml", comp.LastAsset);
-        }
-        finally { entity.RemoveComponent<RecordingSoundButton>(); }
+        var comp = new RecordingSource { SoundAsset = "Audio/footstep1_sound.xml" };
+        comp.PlayOneShotNow();
+        Assert.Equal(1, comp.OneShots);
+        Assert.Equal("Audio/footstep1_sound.xml", comp.LastAsset);
     }
 
     [Fact]
-    public void SoundButton_NoButtonComponent_DoesNotThrowAndNeverPlays()
+    public void AudioSource_PlayOneShotNow_EmptyAsset_DoesNothing()
     {
-        var entity = new TestEntity();
-        var comp = (RecordingSoundButton)entity.AddComponent(new RecordingSoundButton
-        {
-            SoundAsset = "Audio/footstep1_sound.xml"
-        });
-        try
-        {
-            // No ButtonComponent on the entity → attach is a no-op; nothing to click anyway.
-            Assert.Equal(0, comp.Plays);
-        }
-        finally { entity.RemoveComponent<RecordingSoundButton>(); }
-    }
-
-    [Fact]
-    public void SoundButton_Detach_UnsubscribesFromClicked()
-    {
-        var entity = new TestEntity();
-        entity.AddComponent(new CanvasComponent());
-        var button = (ButtonComponent)entity.AddComponent(new ButtonComponent("Footstep 1"));
-        var comp = (RecordingSoundButton)entity.AddComponent(new RecordingSoundButton
-        {
-            SoundAsset = "Audio/footstep1_sound.xml"
-        });
-
-        entity.RemoveComponent<RecordingSoundButton>();
-
-        // Our subscriber is gone — no handler remains on the component's Clicked event.
-        Assert.False(TryRaiseClicked(button));
-        Assert.Equal(0, comp.Plays);
+        var comp = new RecordingSource();
+        comp.PlayOneShotNow();
+        Assert.Equal(0, comp.OneShots);
+        Assert.Null(comp.LastAsset);
     }
 
     // ── VolumeButtonComponent ─────────────────────────────────────────────────────

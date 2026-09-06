@@ -15,8 +15,10 @@
           +      navigates to the physics scene file
           M      navigates to the SendMessage demo file
 
-        The music shell plays "song1_sound.xml" on attach and pauses/resumes with app focus
-        (MusicComponent); navigation shells stop it on detach when their scene unloads.
+        The music shell plays "song1_sound.xml" on attach and pauses/resumes with app focus via the
+        built-in AudioSourceComponent; navigation shells stop it on detach when their scene unloads.
+        Sound buttons are fully data-driven: the template carries an AudioSourceComponent wired via a
+        declarative &lt;Bind Event="Clicked" Command="PlayOneShotNow"/&gt; — no per-button C#.
     -->
     <GameSystems>
         <System Type="EntitySystem">
@@ -119,7 +121,7 @@
                         <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
                             <Property Name="Text" Value="Footstep 1" />
                         </Component>
-                        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent">
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AudioSourceComponent">
                             <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
                         </Component>
                     </Overrides>
@@ -131,7 +133,7 @@
                         <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
                             <Property Name="Text" Value="Footstep 2" />
                         </Component>
-                        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent">
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AudioSourceComponent">
                             <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
                         </Component>
                     </Overrides>
@@ -143,7 +145,7 @@
                         <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
                             <Property Name="Text" Value="Footstep 3" />
                         </Component>
-                        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent">
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AudioSourceComponent">
                             <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
                         </Component>
                     </Overrides>
@@ -174,13 +176,15 @@
                     </Overrides>
                 </EntityDefinition>
 
-                <!-- Background music; pauses/resumes with app focus, stops on scene unload. -->
+                <!-- Background music; plays on attach, pauses/resumes with app focus, stops on scene unload. -->
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="music">
                     <Position X="0" Y="0" />
                     <Components>
-                        <Component Type="CoreEssentials.Playground.Components.MusicComponent">
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AudioSourceComponent">
                             <Properties>
-                                <Property Name="MusicAsset" Value="Audio/song1_sound.xml" />
+                                <Property Name="SoundAsset" Value="Audio/song1_sound.xml" />
+                                <Property Name="Loop" Value="true" />
+                                <Property Name="Channel" Value="Music" />
                             </Properties>
                         </Component>
                     </Components>

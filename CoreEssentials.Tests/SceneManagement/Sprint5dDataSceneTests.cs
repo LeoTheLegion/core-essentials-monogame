@@ -88,14 +88,15 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Contains("Press Q, W, E", textProps["Text"]);
 
             // Sound buttons are prefab-based and configured via component-targeted <Overrides>:
-            // the text on the built-in ButtonComponent, the asset on the SoundButtonComponent.
+            // the text on the built-in ButtonComponent, the asset on the built-in AudioSourceComponent
+            // (the template wires Clicked → PlayOneShotNow declaratively, so no behavior component).
             var fs1 = FindById(sys.Entities, "footstep1Button");
             Assert.Equal("SoundButtonPrefab", fs1!.Source);
             var buttonKey = typeof(ButtonComponent).FullName!;
             Assert.True(fs1.ResolvedOverrides.TryGetValue(buttonKey, out var fs1ButtonProps));
             Assert.Equal("Footstep 1", fs1ButtonProps["Text"]);
-            var soundKey = typeof(SoundButtonComponent).FullName!;
-            Assert.True(fs1.ResolvedOverrides.TryGetValue(soundKey, out var fs1SoundProps));
+            var sourceKey = typeof(AudioSourceComponent).FullName!;
+            Assert.True(fs1.ResolvedOverrides.TryGetValue(sourceKey, out var fs1SoundProps));
             Assert.Equal("Audio/footstep1_sound.xml", fs1SoundProps["SoundAsset"]);
 
             // Volume buttons carry a level + text (same component-targeted pattern).
@@ -107,10 +108,14 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.True(volLow.ResolvedOverrides.TryGetValue(volumeKey, out var volProps));
             Assert.Equal("0.1", volProps["VolumeLevel"]);
 
-            // Music shell (present in the real file; stripped from the load variant below).
+            // Music shell (present in the real file; stripped from the load variant below) is a
+            // built-in AudioSourceComponent with looping + the Music channel.
             var music = FindById(sys.Entities, "music");
             Assert.NotNull(music);
-            Assert.Equal("Audio/song1_sound.xml", music!.DeclaredComponents.First(c => c.Type.Contains("MusicComponent")).Properties["MusicAsset"]);
+            var musicSource = music!.DeclaredComponents.First(c => c.Type.Contains("AudioSourceComponent"));
+            Assert.Equal("Audio/song1_sound.xml", musicSource.Properties["SoundAsset"]);
+            Assert.Equal("true", musicSource.Properties["Loop"]);
+            Assert.Equal("Music", musicSource.Properties["Channel"]);
 
             // Debug toggle starts enabled with its font.
             var debug = FindById(sys.Entities, "debugToggle");
@@ -184,7 +189,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 var footstep1 = entitySystem.FindById("footstep1Button");
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(footstep1);
                 Assert.Equal("Footstep 1", footstep1!.GetComponent<ButtonComponent>()!.Text);
-                Assert.Equal("Audio/footstep1_sound.xml", footstep1.GetComponent<SoundButtonComponent>()!.SoundAsset);
+                Assert.Equal("Audio/footstep1_sound.xml", footstep1.GetComponent<AudioSourceComponent>()!.SoundAsset);
 
                 var volumeLow = entitySystem.FindById("volumeLowButton");
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(volumeLow);

@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Xunit;
+using CoreEssentials.Audio;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
@@ -66,16 +68,22 @@ public class PlaygroundBehaviorComponentTests
         }
     }
 
-    private class RecordingMusic : MusicComponent
+    private class RecordingSource : AudioSourceComponent
     {
-        public string? PlayedAsset;
+        public string? ResolvedAsset;
         public string? PausedId;
         public string? ResumedId;
         public string? StoppedId;
-        protected override string PlayMusic(string musicAsset) { PlayedAsset = musicAsset; return "music-id"; }
-        protected override void PauseMusic(string soundId) => PausedId = soundId;
-        protected override void ResumeMusic(string soundId) => ResumedId = soundId;
-        protected override void StopMusic(string soundId) => StoppedId = soundId;
+        protected override AudioClip? ResolveClip(string asset)
+        {
+            if (string.IsNullOrWhiteSpace(asset)) return null;
+            ResolvedAsset = asset;
+            return new AudioClip(asset);
+        }
+        protected override string? PlayClip(AudioClip clip, AudioChannel channel) => "music-id";
+        protected override void PauseInstance(string id) => PausedId = id;
+        protected override void ResumeInstance(string id) => ResumedId = id;
+        protected override void StopInstance(string id) => StoppedId = id;
     }
 
     private class RecordingCameraInput : CameraInputComponent
@@ -272,42 +280,42 @@ public class PlaygroundBehaviorComponentTests
         finally { entity.RemoveComponent<RecordingDebug>(); }
     }
 
-    // ── MusicComponent ────────────────────────────────────────────────────────────
+    // ── AudioSourceComponent (built-in music) ─────────────────────────────────────
 
     [Fact]
-    public void Music_PlaysOnAttach_StopsOnDetach()
+    public void AudioSource_PlaysOnAttach_StopsOnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingMusic)entity.AddComponent(new RecordingMusic());
+        var comp = (RecordingSource)entity.AddComponent(new RecordingSource());
         try
         {
-            // OnAttach already ran at AddComponent time, but MusicAsset was empty then.
-            Assert.Null(comp.PlayedAsset);
+            // OnAttach already ran at AddComponent time, but SoundAsset was empty then.
+            Assert.Null(comp.ResolvedAsset);
 
             // Simulate a configured track: re-drive attach by detaching/re-attaching with asset set.
-            entity.RemoveComponent<RecordingMusic>();
-            var comp2 = (RecordingMusic)entity.AddComponent(new RecordingMusic { MusicAsset = "song1_sound.xml" });
+            entity.RemoveComponent<RecordingSource>();
+            var comp2 = (RecordingSource)entity.AddComponent(new RecordingSource { SoundAsset = "song1_sound.xml" });
             try
             {
-                Assert.Equal("song1_sound.xml", comp2.PlayedAsset);
+                Assert.Equal("song1_sound.xml", comp2.ResolvedAsset);
 
                 // Detach stops the track.
-                entity.RemoveComponent<RecordingMusic>();
+                entity.RemoveComponent<RecordingSource>();
                 Assert.Equal("music-id", comp2.StoppedId);
             }
-            finally { if (entity.HasComponent<RecordingMusic>()) entity.RemoveComponent<RecordingMusic>(); }
+            finally { if (entity.HasComponent<RecordingSource>()) entity.RemoveComponent<RecordingSource>(); }
         }
-        finally { if (entity.HasComponent<RecordingMusic>()) entity.RemoveComponent<RecordingMusic>(); }
+        finally { if (entity.HasComponent<RecordingSource>()) entity.RemoveComponent<RecordingSource>(); }
     }
 
     [Fact]
-    public void Music_PauseResume_ForwardedFromEntity()
+    public void AudioSource_PauseResume_ForwardedFromEntity()
     {
         var entity = new TestEntity();
-        var comp = (RecordingMusic)entity.AddComponent(new RecordingMusic { MusicAsset = "song1_sound.xml" });
+        var comp = (RecordingSource)entity.AddComponent(new RecordingSource { SoundAsset = "song1_sound.xml" });
         try
         {
-            Assert.Equal("song1_sound.xml", comp.PlayedAsset);
+            Assert.Equal("song1_sound.xml", comp.ResolvedAsset);
 
             // Entity forwards OnApplicationPause to its components.
             entity.OnApplicationPause(true);
@@ -316,21 +324,21 @@ public class PlaygroundBehaviorComponentTests
             entity.OnApplicationPause(false);
             Assert.Equal("music-id", comp.ResumedId);
         }
-        finally { entity.RemoveComponent<RecordingMusic>(); }
+        finally { entity.RemoveComponent<RecordingSource>(); }
     }
 
     [Fact]
-    public void Music_EmptyAsset_DoesNotPlay()
+    public void AudioSource_EmptyAsset_DoesNotPlay()
     {
         var entity = new TestEntity();
-        var comp = (RecordingMusic)entity.AddComponent(new RecordingMusic());
+        var comp = (RecordingSource)entity.AddComponent(new RecordingSource());
         try
         {
-            Assert.Null(comp.PlayedAsset);
+            Assert.Null(comp.ResolvedAsset);
             entity.OnApplicationPause(true);
             Assert.Null(comp.PausedId);
         }
-        finally { entity.RemoveComponent<RecordingMusic>(); }
+        finally { entity.RemoveComponent<RecordingSource>(); }
     }
 
     // ── CameraInputComponent ──────────────────────────────────────────────────────

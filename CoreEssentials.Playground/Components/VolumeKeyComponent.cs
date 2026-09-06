@@ -1,6 +1,7 @@
 using System;
 using CoreEssentials.Audio;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework.Input;
 
@@ -54,9 +55,17 @@ public class VolumeKeyComponent : EntityComponent
     }
 
     /// <summary>
-    /// Sets the master volume. Virtual so unit tests can observe the requested value without
-    /// driving real audio playback.
+    /// Sets the master volume, routing through the scene's active built-in
+    /// <see cref="AudioListenerComponent"/> when one is present (falling back to the raw
+    /// <see cref="AudioManager"/> otherwise). Virtual so unit tests can observe the requested
+    /// value without driving real audio.
     /// </summary>
     protected virtual void SetVolume(float volume)
-        => AudioManager.Instance.SetMasterVolume(volume);
+    {
+        var listener = AudioListenerComponent.ActiveListener;
+        if (listener != null)
+            listener.MasterVolume = volume;
+        else
+            AudioManager.Instance.SetMasterVolume(volume);
+    }
 }

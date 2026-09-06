@@ -8,7 +8,14 @@
         <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CanvasComponent" />
         <!-- The clickable text button; per-instance Text comes from &lt;Overrides&gt;. -->
         <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent" />
-        <!-- Subscribes to the button's Clicked event and plays the configured one-shot sound. -->
-        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent" />
+        <!-- Per-entity audio source; SoundAsset is set per-instance via &lt;Overrides&gt;. Never auto-plays. -->
+        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AudioSourceComponent">
+            <Properties>
+                <Property Name="PlayOnAttach" Value="false" />
+                <Property Name="Channel" Value="Sfx" />
+            </Properties>
+        </Component>
+        <!-- Declarative wiring: clicking the button fires the source's one-shot (no per-button C#). -->
+        <Bind Event="Clicked" Command="PlayOneShotNow" />
     </Components>
 </Prefab>
