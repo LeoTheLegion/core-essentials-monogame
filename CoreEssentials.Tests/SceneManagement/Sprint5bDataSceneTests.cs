@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Xunit;
@@ -45,11 +46,14 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Single(scene.Systems);
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
 
-            // The camera is a data entity with its speed overridden (default 1 is imperceptible).
+            // The camera is a plain game object carrying the camera + input components, with its
+            // pan speed raised on the input component (default 1 is imperceptible).
             var camera = FindById(scene.Systems[0].Entities, "camera");
             Assert.NotNull(camera);
-            Assert.Contains("CameraSpeed", camera!.EntityOverrides.Keys);
-            Assert.Equal("300", camera.EntityOverrides["CameraSpeed"]);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", camera!.Type);
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraComponent"));
+            var camInput = camera.DeclaredComponents.First(c => c.Type.EndsWith("CameraInputComponent"));
+            Assert.Equal("300", camInput.Properties["MoveSpeed"]);
 
             // Navigation targets are scene asset-name strings (no C# Type references).
             var navPhysics = FindById(scene.Systems[0].Entities, "navPhysics");
@@ -84,10 +88,11 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.NotNull(hud!.GetComponent<CanvasComponent>());
                 Assert.Equal(new Vector2(0, 0), hud.Position);
 
-                // The camera loaded as a real CameraEntity with the overridden speed.
-                var camera = entitySystem.FindById("camera") as CameraEntity;
+                // The camera loaded as a plain game object whose input component carries the speed.
+                var camera = entitySystem.FindById("camera");
                 Assert.NotNull(camera);
-                Assert.Equal(300f, camera!.CameraSpeed);
+                Assert.NotNull(camera!.GetComponent<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent>());
+                Assert.Equal(300f, camera.GetComponent<CameraInputComponent>()!.MoveSpeed);
             }
             finally
             {

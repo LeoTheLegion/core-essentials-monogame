@@ -226,14 +226,19 @@
                 <!--
                     Camera so the world-space panel can be panned around (WASD) to show that its
                     anchored children stay pinned inside it in world space, not screen space.
-                    The entity's own input layer handles WASD/Q/E/R; only the speed is overridden
-                    (the default of 1 world unit/second is imperceptible).
+                    CameraComponent owns the camera and CameraInputComponent handles WASD/Q/E/R;
+                    only the pan speed is raised (the default of 1 world unit/second is imperceptible).
                 -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.CameraEntity" Id="camera">
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="camera">
                     <Position X="0" Y="0" />
-                    <EntityOverrides>
-                        <Property Name="CameraSpeed" Value="300" />
-                    </EntityOverrides>
+                    <Components>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.CameraInputComponent">
+                            <Properties>
+                                <Property Name="MoveSpeed" Value="300" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <!-- Navigation keys: pure data, resolved via SceneManager.LoadScene(string). -->

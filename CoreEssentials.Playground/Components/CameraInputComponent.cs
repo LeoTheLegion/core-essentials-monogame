@@ -78,10 +78,15 @@ public class CameraInputComponent : EntityComponent
         var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         // Pan the owning entity — the CameraComponent anchors the camera to it each late update.
-        if (IsKeyHeld(LeftKey)) Owner.Position += new Vector2(-MoveSpeed, 0f) * dt;
-        if (IsKeyHeld(RightKey)) Owner.Position += new Vector2(MoveSpeed, 0f) * dt;
-        if (IsKeyHeld(UpKey)) Owner.Position += new Vector2(0f, -MoveSpeed) * dt;
-        if (IsKeyHeld(DownKey)) Owner.Position += new Vector2(0f, MoveSpeed) * dt;
+        // Manual panning is ignored while a sibling CameraFollowComponent is following a target
+        // (the follow lerp owns the position in that state).
+        if (!IsFollowing())
+        {
+            if (IsKeyHeld(LeftKey)) Owner.Position += new Vector2(-MoveSpeed, 0f) * dt;
+            if (IsKeyHeld(RightKey)) Owner.Position += new Vector2(MoveSpeed, 0f) * dt;
+            if (IsKeyHeld(UpKey)) Owner.Position += new Vector2(0f, -MoveSpeed) * dt;
+            if (IsKeyHeld(DownKey)) Owner.Position += new Vector2(0f, MoveSpeed) * dt;
+        }
 
         var camera = Owner.GetComponent<CameraComponent>();
         if (camera != null)
@@ -123,4 +128,11 @@ public class CameraInputComponent : EntityComponent
     /// live keyboard state.
     /// </summary>
     protected virtual bool IsKeyHeld(Keys key) => Input.Keyboard.IsKeyDown(key);
+
+    /// <summary>
+    /// Whether a sibling <see cref="CameraFollowComponent"/> is currently following a target, in which
+    /// case manual panning is suspended. Virtual so unit tests can simulate the follow state.
+    /// </summary>
+    protected virtual bool IsFollowing()
+        => Owner?.GetComponent<CameraFollowComponent>() is { FollowingTarget: true };
 }

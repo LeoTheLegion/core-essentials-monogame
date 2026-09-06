@@ -4,8 +4,9 @@
 
         Two characters (a static sprite and an animated walk cycle) plus a column of GUI buttons.
         The text and button widgets come from registered templates (TextPrefab / SoundButtonPrefab /
-        VolumeButtonPrefab); each instance is configured purely with <EntityOverrides> — no per-ID C#
-        setup. Background music, the debug overlay, and all key-driven audio/volume/navigation are
+        VolumeButtonPrefab); each instance is configured purely with component-targeted <Overrides>
+        (button Text on the built-in ButtonComponent, SoundAsset/VolumeLevel on the behavior
+        components) — no per-ID C# setup. Background music, the debug overlay, and all key-driven audio/volume/navigation are
         inert shells carrying Sprint-4/5d behavior components, so the whole scene is declared from data:
 
           Q/W/E  play footstep one-shots (SoundKeyComponent x3)
@@ -114,43 +115,63 @@
                 <!-- Sound buttons (left column). -->
                 <EntityDefinition Source="SoundButtonPrefab" Id="footstep1Button">
                     <Position X="100" Y="100" />
-                    <EntityOverrides>
-                        <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
-                        <Property Name="ButtonText" Value="Footstep 1" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
+                            <Property Name="Text" Value="Footstep 1" />
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent">
+                            <Property Name="SoundAsset" Value="Audio/footstep1_sound.xml" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <EntityDefinition Source="SoundButtonPrefab" Id="footstep2Button">
                     <Position X="100" Y="150" />
-                    <EntityOverrides>
-                        <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
-                        <Property Name="ButtonText" Value="Footstep 2" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
+                            <Property Name="Text" Value="Footstep 2" />
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent">
+                            <Property Name="SoundAsset" Value="Audio/footstep2_sound.xml" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <EntityDefinition Source="SoundButtonPrefab" Id="footstep3Button">
                     <Position X="100" Y="200" />
-                    <EntityOverrides>
-                        <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
-                        <Property Name="ButtonText" Value="Footstep 3" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
+                            <Property Name="Text" Value="Footstep 3" />
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent">
+                            <Property Name="SoundAsset" Value="Audio/footstep3_sound.xml" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <!-- Volume buttons (left column). -->
                 <EntityDefinition Source="VolumeButtonPrefab" Id="volumeLowButton">
                     <Position X="100" Y="250" />
-                    <EntityOverrides>
-                        <Property Name="VolumeLevel" Value="0.1" />
-                        <Property Name="ButtonText" Value="Volume: 10%" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
+                            <Property Name="Text" Value="Volume: 10%" />
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.VolumeButtonComponent">
+                            <Property Name="VolumeLevel" Value="0.1" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <EntityDefinition Source="VolumeButtonPrefab" Id="volumeHighButton">
                     <Position X="100" Y="300" />
-                    <EntityOverrides>
-                        <Property Name="VolumeLevel" Value="1.0" />
-                        <Property Name="ButtonText" Value="Volume: 100%" />
-                    </EntityOverrides>
+                    <Overrides>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent">
+                            <Property Name="Text" Value="Volume: 100%" />
+                        </Component>
+                        <Component Type="CoreEssentials.Playground.Components.VolumeButtonComponent">
+                            <Property Name="VolumeLevel" Value="1.0" />
+                        </Component>
+                    </Overrides>
                 </EntityDefinition>
 
                 <!-- Background music; pauses/resumes with app focus, stops on scene unload. -->

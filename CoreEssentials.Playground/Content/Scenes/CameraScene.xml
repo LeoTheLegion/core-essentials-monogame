@@ -2,7 +2,8 @@
     <!--
         Camera demo, fully data-driven (strict scene format).
 
-        A CameraEntity provides WASD pan / Q-E zoom / R reset for free; a PlayerEntity is moved with
+        A plain game object carrying CameraComponent + CameraInputComponent + CameraFollowComponent
+        provides WASD pan / Q-E zoom / R reset for free; a PlayerEntity is moved with
         the arrow keys. The follow toggle is a shell entity carrying CameraFollowToggleComponent,
         whose camera / target / info-label links are declared with <Reference> (resolved after attach).
         Pressing F toggles the camera following the player and refreshes the info text.
@@ -13,9 +14,16 @@
     <GameSystems>
         <System Type="EntitySystem">
             <Entities>
-                <!-- The camera (default position/speed) registered as the main camera on attach. -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.CameraEntity" Id="camera">
+                <!-- The camera (default position/speed) registered as the main camera on attach.
+                     CameraComponent owns the camera, CameraInputComponent adds WASD/QE/R input,
+                     and CameraFollowComponent lerps toward its referenced target when following. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="camera">
                     <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.CameraInputComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.CameraFollowComponent" />
+                    </Components>
                 </EntityDefinition>
 
                 <!-- The player the camera can follow, moved with the arrow keys. A plain game object

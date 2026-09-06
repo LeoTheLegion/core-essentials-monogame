@@ -145,12 +145,12 @@ When several components expose the same property name, target one explicitly by 
 
 ### 3. `<EntityOverrides>` (target the entity itself)
 
-Some entities keep state directly on themselves with no component to target — e.g. an entity's own `CameraSpeed` or `Scale`. Target those via `<EntityOverrides>`, which applies property → value pairs to the **entity** before `OnStart`/`OnAttach`: (Text is now a `TextComponent`, so it is targeted with the flat or `<Overrides>` forms above, not `<EntityOverrides>`.)
+Some entities keep state directly on themselves with no component to target — e.g. an entity's own `Scale` or `Rotation`. Target those via `<EntityOverrides>`, which applies property → value pairs to a **public writable property on the entity type** before `OnStart`/`OnAttach`: (Text is now a `TextComponent`, so it is targeted with the flat or `<Overrides>` forms above, not `<EntityOverrides>`.)
 
 ```xml
-<EntityDefinition Type="CoreEssentials.Playground.CameraEntity" Id="cam">
+<EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="bigLabel">
     <EntityOverrides>
-        <Property Name="CameraSpeed" Value="300" />
+        <Property Name="Scale" Value="2.0,2.0" />
     </EntityOverrides>
 </EntityDefinition>
 ```
@@ -234,7 +234,7 @@ game.SceneManager.LoadScene("HomeScene.xml");
 
 ## Complete Example
 
-A small menu scene with a shared HUD prefab, a bound button, and an entity-level override:
+A small menu scene with a component-built camera, a shared button prefab, and a bound button:
 
 ```xml
 <Scene>
@@ -244,11 +244,18 @@ A small menu scene with a shared HUD prefab, a bound button, and an entity-level
                 <Prefab Name="Button" Asset="ButtonTemplate.xml" />
             </Prefabs>
             <Entities>
-                <EntityDefinition Type="CoreEssentials.Playground.CameraEntity" Id="cam">
+                <!-- A camera is a plain game object: CameraComponent owns the camera,
+                     CameraInputComponent adds WASD/QE/R input (MoveSpeed raised from the default 1). -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="cam">
                     <Position X="640" Y="360" />
-                    <EntityOverrides>
-                        <Property Name="CameraSpeed" Value="300" />
-                    </EntityOverrides>
+                    <Components>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.CameraInputComponent">
+                            <Properties>
+                                <Property Name="MoveSpeed" Value="300" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <EntityDefinition Source="Button" Id="startButton">

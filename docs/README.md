@@ -82,6 +82,7 @@ namespace YourGame
   - [Physics Transform Sync](./PhysicsTransformSync.md)
 - [GUI System](./GUISystem.md)
   - [GUI Entity Components](./GUIComponents.md)
+  - [GUI Button & Camera Components (Playground)](./GuiButtonAndCameraComponents.md)
 - [Coroutines](./Coroutines.md)
 - [Input Handling](./InputHandling.md)
 - [Audio System](./AudioSystem.md)

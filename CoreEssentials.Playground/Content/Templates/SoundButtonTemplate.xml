@@ -1,6 +1,14 @@
-<Prefab Type="CoreEssentials.Playground.Entities.SoundButtonEntity" Rotation="0" Sort="100" Active="true">
+<Prefab Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="0" Sort="100" Active="true">
     <Tags>
         <Tag Name="UI" />
         <Tag Name="Sound" />
     </Tags>
+    <Components>
+        <!-- Owns the screen-space canvas this button renders into. -->
+        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CanvasComponent" />
+        <!-- The clickable text button; per-instance Text comes from &lt;Overrides&gt;. -->
+        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.ButtonComponent" />
+        <!-- Subscribes to the button's Clicked event and plays the configured one-shot sound. -->
+        <Component Type="CoreEssentials.Playground.Components.SoundButtonComponent" />
+    </Components>
 </Prefab>

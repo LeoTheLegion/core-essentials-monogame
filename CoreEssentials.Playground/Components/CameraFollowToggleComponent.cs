@@ -2,7 +2,6 @@ using System;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.Inputs;
-using CoreEssentials.Playground.Entities;
 using Microsoft.Xna.Framework.Input;
 
 namespace CoreEssentials.Playground.Components;
@@ -26,16 +25,16 @@ namespace CoreEssentials.Playground.Components;
 /// &lt;/EntityDefinition&gt;
 /// </code>
 /// The linked entities are supplied via &lt;Reference&gt; (the strict parser resolves them into the
-/// <see cref="Camera"/>, <see cref="FollowTarget"/> and <see cref="InfoLabel"/> properties). The camera
-/// must be a <see cref="CameraEntity"/> and the label must carry a <see cref="TextComponent"/>; anything else is
-/// ignored gracefully.
+/// <see cref="Camera"/>, <see cref="FollowTarget"/> and <see cref="InfoLabel"/> properties). The camera must
+/// carry a <see cref="CameraFollowComponent"/> and the label must carry a <see cref="TextComponent"/>;
+/// anything else is ignored gracefully.
 /// </summary>
 public class CameraFollowToggleComponent : EntityComponent
 {
     /// <summary>The key that toggles follow mode. Defaults to F.</summary>
     public Keys ToggleKey { get; set; } = Keys.F;
 
-    /// <summary>The camera entity (a <see cref="CameraEntity"/>). Set via &lt;Reference Name="Camera"/&gt;.</summary>
+    /// <summary>The camera entity (carrying a <see cref="CameraFollowComponent"/>). Set via &lt;Reference Name="Camera"/&gt;.</summary>
     public Entity? Camera { get; set; }
 
     /// <summary>The entity the camera should follow when toggled on. Set via &lt;Reference Name="FollowTarget"/&gt;.</summary>
@@ -89,11 +88,11 @@ public class CameraFollowToggleComponent : EntityComponent
     /// </summary>
     protected virtual void DoToggle()
     {
-        var camera = Camera as CameraEntity;
-        if (camera == null || FollowTarget == null) return;
+        var follow = Camera?.GetComponent<CameraFollowComponent>();
+        if (follow == null || FollowTarget == null) return;
 
-        camera.ToggleFollow(FollowTarget);
-        UpdateInfo(camera.FollowingTarget);
+        follow.ToggleFollow(FollowTarget);
+        UpdateInfo(follow.FollowingTarget);
     }
 
     /// <summary>Updates the info label's text to reflect the follow state. Virtual for tests.</summary>
@@ -107,7 +106,8 @@ public class CameraFollowToggleComponent : EntityComponent
     /// <summary>Refreshes the info label to reflect the current follow state (e.g. after references resolve).</summary>
     public void RefreshInfo()
     {
-        if (Camera is CameraEntity camera)
-            UpdateInfo(camera.FollowingTarget);
+        var follow = Camera?.GetComponent<CameraFollowComponent>();
+        if (follow != null)
+            UpdateInfo(follow.FollowingTarget);
     }
 }

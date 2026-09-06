@@ -15,18 +15,23 @@
         A LabelAlignmentDebugOverlayComponent draws each canvas's bounds, each label's rendered bounds
         in its own color, and a white cross at the reference point its alignment targets.
 
-        Controls: WASD pan, Q/E zoom, R reset (built into CameraEntity); Esc returns to the SendMessage
+        Controls: WASD pan, Q/E zoom, R reset (CameraInputComponent); Esc returns to the SendMessage
         demo.
     -->
     <GameSystems>
         <System Type="EntitySystem">
             <Entities>
                 <!-- Camera raised to a visible pan speed (the default 1 unit/s is imperceptible). -->
-                <EntityDefinition Type="CoreEssentials.Playground.Entities.CameraEntity" Id="camera">
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="camera">
                     <Position X="640" Y="360" />
-                    <EntityOverrides>
-                        <Property Name="CameraSpeed" Value="300" />
-                    </EntityOverrides>
+                    <Components>
+                        <Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent" />
+                        <Component Type="CoreEssentials.Playground.Components.CameraInputComponent">
+                            <Properties>
+                                <Property Name="MoveSpeed" Value="300" />
+                            </Properties>
+                        </Component>
+                    </Components>
                 </EntityDefinition>
 
                 <!-- Screen-space HUD root at the origin; its canvas is the viewport. -->

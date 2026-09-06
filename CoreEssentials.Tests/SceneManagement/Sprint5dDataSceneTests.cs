@@ -88,16 +88,25 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal("Center", textProps["Alignment"]);
             Assert.Contains("Press Q, W, E", textProps["Text"]);
 
-            // Sound buttons are prefab-based with sound + text overrides.
+            // Sound buttons are prefab-based and configured via component-targeted <Overrides>:
+            // the text on the built-in ButtonComponent, the asset on the SoundButtonComponent.
             var fs1 = FindById(sys.Entities, "footstep1Button");
             Assert.Equal("SoundButtonPrefab", fs1!.Source);
-            Assert.Equal("Audio/footstep1_sound.xml", fs1.EntityOverrides["SoundAsset"]);
-            Assert.Equal("Footstep 1", fs1.EntityOverrides["ButtonText"]);
+            var buttonKey = typeof(ButtonComponent).FullName!;
+            Assert.True(fs1.ResolvedOverrides.TryGetValue(buttonKey, out var fs1ButtonProps));
+            Assert.Equal("Footstep 1", fs1ButtonProps["Text"]);
+            var soundKey = typeof(SoundButtonComponent).FullName!;
+            Assert.True(fs1.ResolvedOverrides.TryGetValue(soundKey, out var fs1SoundProps));
+            Assert.Equal("Audio/footstep1_sound.xml", fs1SoundProps["SoundAsset"]);
 
-            // Volume buttons carry a level + text.
+            // Volume buttons carry a level + text (same component-targeted pattern).
             var volLow = FindById(sys.Entities, "volumeLowButton");
             Assert.Equal("VolumeButtonPrefab", volLow!.Source);
-            Assert.Equal("0.1", volLow.EntityOverrides["VolumeLevel"]);
+            Assert.True(volLow.ResolvedOverrides.TryGetValue(buttonKey, out var volButtonProps));
+            Assert.Equal("Volume: 10%", volButtonProps["Text"]);
+            var volumeKey = typeof(VolumeButtonComponent).FullName!;
+            Assert.True(volLow.ResolvedOverrides.TryGetValue(volumeKey, out var volProps));
+            Assert.Equal("0.1", volProps["VolumeLevel"]);
 
             // Music shell (present in the real file; stripped from the load variant below).
             var music = FindById(sys.Entities, "music");
@@ -167,12 +176,21 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.Contains("walk", walkAnim.Animations);
                 Assert.Equal("walk", walkAnim.CurrentAnimation);
 
-                // Text is a plain game object carrying a TextComponent; buttons keep their classes.
+                // Text is a plain game object carrying a TextComponent; buttons are plain game
+                // objects carrying the built-in canvas/button components + the behavior components.
                 var infoText = entitySystem.FindById("infoText");
                 Assert.NotNull(infoText);
                 Assert.NotNull(infoText!.GetComponent<TextComponent>());
-                Assert.IsType<SoundButtonEntity>(entitySystem.FindById("footstep1Button"));
-                Assert.IsType<VolumeButtonEntity>(entitySystem.FindById("volumeLowButton"));
+
+                var footstep1 = entitySystem.FindById("footstep1Button");
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(footstep1);
+                Assert.Equal("Footstep 1", footstep1!.GetComponent<ButtonComponent>()!.Text);
+                Assert.Equal("Audio/footstep1_sound.xml", footstep1.GetComponent<SoundButtonComponent>()!.SoundAsset);
+
+                var volumeLow = entitySystem.FindById("volumeLowButton");
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(volumeLow);
+                Assert.Equal("Volume: 10%", volumeLow!.GetComponent<ButtonComponent>()!.Text);
+                Assert.Equal(0.1f, volumeLow.GetComponent<VolumeButtonComponent>()!.VolumeLevel, 3);
 
                 // The debug toggle attached to its shell.
                 Assert.NotNull(entitySystem.FindById("debugToggle")!.GetComponent<DebugToggleComponent>());
@@ -194,9 +212,13 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
             var sys = scene.Systems[0];
 
-            // Camera is a typed entity; the player is a plain game object with movement components.
+            // Camera is a plain game object carrying the camera/input/follow components; the
+            // player is a plain game object with movement components.
             var camera = FindById(sys.Entities, "camera");
-            Assert.Equal("CoreEssentials.Playground.Entities.CameraEntity", camera!.Type);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", camera!.Type);
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraComponent"));
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraInputComponent"));
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraFollowComponent"));
             var player = FindById(sys.Entities, "player");
             Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", player!.Type);
             Assert.Contains(player.DeclaredComponents, c => c.Type.EndsWith("MoveByKeysComponent"));
@@ -241,10 +263,13 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.True(scene.IsLoaded);
                 var entitySystem = scene.GetGameSystem<EntitySystem>();
 
-                // The camera registered its inner Camera instance as the main camera on attach.
-                var camera = entitySystem.FindById("camera") as CameraEntity;
+                // The camera is a plain game object whose CameraComponent registered its inner
+                // Camera instance as the main camera on attach.
+                var camera = entitySystem.FindById("camera");
                 Assert.NotNull(camera);
-                Assert.Same(camera!.Camera, CoreEssentials.Camera.Camera.MainCamera);
+                var cameraComp = camera!.GetComponent<CameraComponent>();
+                Assert.NotNull(cameraComp);
+                Assert.Same(cameraComp!.Camera, CoreEssentials.Camera.Camera.MainCamera);
 
                 // The player instantiated at its authored position.
                 var player = entitySystem.FindById("player");
@@ -275,9 +300,11 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
             var sys = scene.Systems[0];
 
-            // Camera speed is overridden (the default 1 unit/s is imperceptible).
+            // Camera pan speed is raised on its input component (the default 1 unit/s is imperceptible).
             var camera = FindById(sys.Entities, "camera");
-            Assert.Equal("300", camera!.EntityOverrides["CameraSpeed"]);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", camera!.Type);
+            var camInput = camera.DeclaredComponents.First(c => c.Type.Contains("CameraInputComponent"));
+            Assert.Equal("300", camInput.Properties["MoveSpeed"]);
 
             // The screen-space HUD root has four children (three labels + info).
             var hud = FindById(sys.Entities, "hudRoot");
@@ -330,9 +357,11 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.True(scene.IsLoaded);
                 var entitySystem = scene.GetGameSystem<EntitySystem>();
 
-                // Camera speed override applied.
-                var camera = entitySystem.FindById("camera") as CameraEntity;
-                Assert.Equal(300f, camera!.CameraSpeed);
+                // Camera pan speed applied on the input component.
+                var camera = entitySystem.FindById("camera");
+                Assert.NotNull(camera);
+                Assert.NotNull(camera!.GetComponent<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent>());
+                Assert.Equal(300f, camera.GetComponent<CameraInputComponent>()!.MoveSpeed);
 
                 // HUD root: screen-space canvas with four child hosts.
                 var hud = entitySystem.FindById("hudRoot");
