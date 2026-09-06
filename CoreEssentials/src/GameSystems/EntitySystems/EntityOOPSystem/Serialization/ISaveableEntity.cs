@@ -1,3 +1,4 @@
+using System;
 using System.Xml.Linq;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
@@ -32,6 +33,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization
 /// }
 /// </code>
 /// </remarks>
+[Obsolete("Use ISaveableComponent — attach a save component to the entity instead of implementing this interface. This OOP path is retained only for legacy saves and will be removed in a future release.")]
 public interface ISaveableEntity
 {
     /// <summary>

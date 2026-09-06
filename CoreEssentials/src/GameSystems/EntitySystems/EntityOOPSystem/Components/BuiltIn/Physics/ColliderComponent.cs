@@ -43,9 +43,12 @@ public class ColliderComponent : EntityComponent
     private ICollider? _collider;
 
     /// <summary>
-    /// Gets the type of collider shape.
+    /// Gets or sets the type of collider shape. This is a creation-time property: set it before the
+    /// collider is created (before attach / before the physics body exists). Changing it on an
+    /// already-created collider does not rebuild the fixture — call <see cref="CreateCollider"/> again
+    /// after updating the shape-appropriate properties (<see cref="Radius"/>, <see cref="Size"/>, etc.).
     /// </summary>
-    public ColliderShapeType ShapeType { get; }
+    public ColliderShapeType ShapeType { get; set; } = ColliderShapeType.Circle;
 
     /// <summary>
     /// Gets the underlying collider. Returns null until the collider is created.
@@ -140,6 +143,18 @@ public class ColliderComponent : EntityComponent
             if (collider != null)
                 collider.OnSeparation -= value;
         }
+    }
+
+    /// <summary>
+    /// Initializes a new instance with defaults (circle of radius 1 at the origin). Use this with
+    /// property assignment — e.g. from XML via the prefab loader — to set <see cref="ShapeType"/>,
+    /// <see cref="Radius"/>, <see cref="Size"/>, <see cref="Vertices"/> and material properties.
+    /// </summary>
+    public ColliderComponent()
+    {
+        ShapeType = ColliderShapeType.Circle;
+        Radius = 1f;
+        Offset = Vector2.Zero;
     }
 
     /// <summary>
@@ -258,10 +273,14 @@ public class ColliderComponent : EntityComponent
         switch (ShapeType)
         {
             case ColliderShapeType.Circle:
+                if (Radius <= 0f)
+                    throw new InvalidOperationException("Circle collider requires a positive Radius.");
                 _collider = body.CreateCircleCollider(Radius, Offset);
                 break;
 
             case ColliderShapeType.Rectangle:
+                if (Size.X <= 0f || Size.Y <= 0f)
+                    throw new InvalidOperationException("Rectangle collider requires a positive Size.");
                 _collider = body.CreateRectangleCollider(Size, Offset);
                 break;
 

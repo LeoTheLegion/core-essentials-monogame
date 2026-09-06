@@ -158,12 +158,19 @@ public static class GameStateSerializer
     /// </summary>
     private static void LoadEntityAndChildrenState(Entity entity, XElement entityElement, EntitySystem system, Dictionary<string, Entity> idToEntity)
     {
-        if (entity is not ISaveableEntity saveable)
+        // Component path wins: an ISaveableComponent handles the restore. Otherwise fall back to
+        // the legacy ISaveableEntity interface (old saves / entities that have not migrated yet).
+        var saveComponent = FindSaveComponent(entity);
+        if (saveComponent != null)
         {
-            return;
+            saveComponent.LoadState(entityElement);
         }
-
-        saveable.LoadState(entityElement);
+        else if (entity is ISaveableEntity legacy)
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            legacy.LoadState(entityElement);
+#pragma warning restore CS0618
+        }
 
         var childrenElement = entityElement.Element(ChildrenElement);
         if (childrenElement == null)
@@ -174,10 +181,7 @@ public static class GameStateSerializer
         foreach (var childElement in childrenElement.Elements(EntityElement))
         {
             var childEntity = ResolveOrCreateEntity(childElement, system, idToEntity);
-            if (childEntity is ISaveableEntity childSaveable)
-            {
-                childSaveable.LoadState(childElement);
-            }
+            LoadEntityAndChildrenState(childEntity, childElement, system, idToEntity);
             entity.AddChild(childEntity);
         }
     }
@@ -208,12 +212,6 @@ public static class GameStateSerializer
     private static Entity ResolveOrCreateEntity(XElement element, EntitySystem system, Dictionary<string, Entity> idToEntity)
     {
         var id = element.Attribute("Id")?.Value;
-        var typeName = element.Attribute("Type")?.Value;
-
-        if (string.IsNullOrWhiteSpace(typeName))
-        {
-            throw new FormatException($"Entity element missing 'Type' attribute.");
-        }
 
         // Already resolved this ID during this load pass
         if (!string.IsNullOrWhiteSpace(id) && idToEntity.TryGetValue(id, out var cached))
@@ -221,7 +219,7 @@ public static class GameStateSerializer
             return cached;
         }
 
-        // Check if an entity with this ID already exists in the system
+        // Check if an entity with this ID already exists in the system (update in place)
         if (!string.IsNullOrWhiteSpace(id))
         {
             var existing = system.GetEntities().FirstOrDefault(e => e.Id == id);
@@ -230,6 +228,35 @@ public static class GameStateSerializer
                 idToEntity[id] = existing;
                 return existing;
             }
+        }
+
+        // NEW PATH: the element carries a Prefab → recreate via Instantiate so prefab-declared
+        // components come back automatically. The prefab must already be registered.
+        var prefabName = element.Attribute("Prefab")?.Value;
+        if (!string.IsNullOrWhiteSpace(prefabName))
+        {
+            if (!system.HasPrefab(prefabName))
+            {
+                throw new KeyNotFoundException(
+                    $"Prefab '{prefabName}' referenced by saved entity '{id ?? "?"}' is not registered. " +
+                    $"Register the prefab (or its scene) before loading this save.");
+            }
+
+            var position = ReadPosition(element);
+            var entity = system.Instantiate(prefabName, position);
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                entity.SetId(id);
+                idToEntity[id] = entity;
+            }
+            return entity;
+        }
+
+        // LEGACY PATH: no Prefab attribute → create by Type reflection (old save files).
+        var typeName = element.Attribute("Type")?.Value;
+        if (string.IsNullOrWhiteSpace(typeName))
+        {
+            throw new FormatException($"Entity element missing 'Prefab' or 'Type' attribute.");
         }
 
         // Create new entity using reflection — OnStart runs, components are initialized
@@ -264,22 +291,35 @@ public static class GameStateSerializer
 
     private static XDocument CreateGameStateDocument(EntitySystem system)
     {
-        // Only save entities that implement ISaveableEntity and have an ID
+        // Saveable = has an ISaveableComponent (new path) OR implements ISaveableEntity (legacy).
         var saveables = system.GetEntities()
-            .Where(e => e is ISaveableEntity && !string.IsNullOrWhiteSpace(e.Id))
+            .Where(e => IsSaveable(e) && !string.IsNullOrWhiteSpace(e.Id))
             .ToList();
 
-        // Enforce: ISaveableEntity instances must have an ID
+        // Every saveable entity must have an ID.
         var missingId = system.GetEntities()
-            .Where(e => e is ISaveableEntity && string.IsNullOrWhiteSpace(e.Id))
+            .Where(e => IsSaveable(e) && string.IsNullOrWhiteSpace(e.Id))
             .ToList();
 
         if (missingId.Any())
         {
             var types = string.Join(", ", missingId.Select(e => e.GetType().Name));
             throw new InvalidOperationException(
-                $"ISaveableEntity instances must have an ID set before saving. " +
+                $"Saveable entities must have an ID set before saving. " +
                 $"Missing IDs on: {types}");
+        }
+
+        // New-path (save component) entities require a known prefab so they can be recreated.
+        var missingPrefab = saveables
+            .Where(e => FindSaveComponent(e) != null && string.IsNullOrWhiteSpace(e.PrefabName))
+            .ToList();
+
+        if (missingPrefab.Any())
+        {
+            var ids = string.Join(", ", missingPrefab.Select(e => e.Id));
+            throw new InvalidOperationException(
+                $"Entities with a save component must be instantiated from a registered prefab to be saved. " +
+                $"Missing prefab on: {ids}");
         }
 
         var document = new XDocument(
@@ -297,13 +337,32 @@ public static class GameStateSerializer
 
     private static XElement CreateEntityElement(Entity entity)
     {
-        var element = ((ISaveableEntity)entity).SaveState();
+        XElement element;
+        var saveComponent = FindSaveComponent(entity);
+        if (saveComponent != null)
+        {
+            // Component path: the component produces the full <Entity> element.
+            element = saveComponent.SaveState();
+        }
+        else
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            element = ((ISaveableEntity)entity).SaveState();
+#pragma warning restore CS0618
+        }
 
-        // Serialize children (entity doesn't know about its children in SaveState)
-        if (entity.Children.Any())
+        // Stamp the authoritative prefab so load can recreate via Instantiate.
+        if (!string.IsNullOrWhiteSpace(entity.PrefabName))
+        {
+            element.SetAttributeValue("Prefab", entity.PrefabName);
+        }
+
+        // Serialize saveable children (the entity doesn't know about its own children in SaveState).
+        var saveableChildren = entity.Children.Where(IsSaveable).ToList();
+        if (saveableChildren.Any())
         {
             var childrenElement = new XElement(ChildrenElement);
-            foreach (var child in entity.Children.Where(c => c is ISaveableEntity))
+            foreach (var child in saveableChildren)
             {
                 childrenElement.Add(CreateEntityElement(child));
             }
@@ -311,5 +370,37 @@ public static class GameStateSerializer
         }
 
         return element;
+    }
+
+    /// <summary>An entity is saveable when it has a save component or implements the legacy interface.</summary>
+    private static bool IsSaveable(Entity entity)
+    {
+#pragma warning disable CS0618 // Type or member is obsolete
+        return FindSaveComponent(entity) != null || entity is ISaveableEntity;
+#pragma warning restore CS0618
+    }
+
+    /// <summary>Finds the first save component attached to an entity, if any.</summary>
+    private static Serialization.ISaveableComponent? FindSaveComponent(Entity entity)
+    {
+        foreach (var component in entity.Components)
+        {
+            if (component is ISaveableComponent saveable)
+                return saveable;
+        }
+        return null;
+    }
+
+    /// <summary>Reads the saved world position from an <c>&lt;Entity&gt;</c> element.</summary>
+    private static Vector2 ReadPosition(XElement element)
+    {
+        var p = element.Element("Position");
+        float x = 0f, y = 0f;
+        if (p != null)
+        {
+            _ = float.TryParse(p.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out x);
+            _ = float.TryParse(p.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out y);
+        }
+        return new Vector2(x, y);
     }
 }

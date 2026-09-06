@@ -187,6 +187,18 @@ public abstract class Entity
     /// </summary>
     public string? Id => _id;
 
+    private string? _prefabName;
+
+    /// <summary>
+    /// Gets the name of the registered prefab this entity was instantiated from, or null when the
+    /// entity was created directly (not via the entity system's Instantiate method). Assigned by the
+    /// entity system at instantiation time; there is no public setter. Saving requires this to be set.
+    /// </summary>
+    public string? PrefabName => _prefabName;
+
+    /// <summary>Records the prefab name on this entity. Called by the entity system's Instantiate method.</summary>
+    internal void SetPrefabName(string prefabName) => _prefabName = prefabName;
+
     /// <summary>
     /// The collection of tags assigned to this entity.
     /// Tags are case-insensitive and provide a simple way to group entities.

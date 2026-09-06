@@ -1096,7 +1096,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             throw new KeyNotFoundException($"Prefab '{prefabName}' is not registered.");
 
         var effective = Serialization.PrefabOverrides.Apply(prefab, overrides, entityOverrides);
-        return Serialization.EntityPrefabLoader.Instantiate(effective, this, position);
+        var entity = Serialization.EntityPrefabLoader.Instantiate(effective, this, position);
+
+        // Record the registered prefab name so saving (which requires a known prefab) can recreate it.
+        // Only the root is stamped: child entities are recreated as part of the root's subtree.
+        entity.SetPrefabName(prefabName);
+
+        return entity;
     }
 
     /// <summary>
