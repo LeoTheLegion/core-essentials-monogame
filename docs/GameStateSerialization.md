@@ -164,8 +164,7 @@ The common case is a component-composed entity whose save component explicitly s
 owner's transform + tags and the public properties of whichever sibling components matter. The
 playground's ball does exactly this in `BallSaveComponent : EntityComponent, ISaveableComponent` —
 it reads each value by name (sprite color/asset, rigidbody mass + velocity, collider settings) with
-no per-component serialization interface. See [Physics Ball & World Border Components](./PhysicsBallAndWorldBorderComponents.md)
-for the full component and its XML declaration.
+no per-component serialization interface; the full implementation follows.
 
 ```csharp
 public class BallSaveComponent : EntityComponent, ISaveableComponent

@@ -327,9 +327,8 @@ Sprite sprite2 = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 ## Example from Playground
 
 The `CharacterScene` demonstrates asset usage. Characters are plain `GameObjectEntity` instances whose
-sprites are loaded and rendered entirely by components (see [Character Components](CharacterComponents.md)) —
-no per-entity C#. The built-in components declare their visuals with a string `SpriteAsset` property,
-resolved through the `AssetManager` on attach:
+sprites are loaded and rendered entirely by components — no per-entity C#. The built-in components
+declare their visuals with a string `SpriteAsset` property, resolved through the `AssetManager` on attach:
 
 ```xml
 <!-- A static, bouncing character: the SpriteComponent loads its own sprite and renders it. -->

@@ -176,7 +176,16 @@ cameraEntity.Position = player.Position;
 
 ### Camera Follow Behavior
 
-> **Tip:** The playground ships a declarative `CameraFollowComponent` (see [GUI Button & Camera Components](./GuiButtonAndCameraComponents.md)) that does this lerp for you from XML, and suspends `CameraInputComponent` panning while following. Use the manual code below only when you need custom follow logic.
+> **Tip:** The playground does this declaratively instead of in C# — a `GameObjectEntity` carrying `CameraComponent`, `CameraInputComponent`, and a follow component that lerps toward its `<Reference>` target each frame (and suspends manual panning while following):
+>
+> ```xml
+> <Component Type="CoreEssentials.Playground.Components.CameraFollowComponent" />
+> <References>
+>     <Reference Name="FollowTarget" TargetId="player" />
+> </References>
+> ```
+>
+> Use the manual code below only when you need custom follow logic.
 
 You can easily implement camera follow behavior by updating the camera's position to match an entity:
 
