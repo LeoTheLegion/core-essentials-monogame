@@ -257,18 +257,6 @@ public class SendMessageTests : IDisposable
         Assert.Null(detachedHost.InstantiatePrefab("host", Vector2.Zero));
     }
 
-    [Fact]
-    public void Obsolete_InstantiateTemplate_ShimStillWorks()
-    {
-#pragma warning disable CS0618 // Intentionally exercising the obsolete shim
-        RegisterHostPrefab("host");
-        var parent = _system.CreateEntity<PlainHostEntity>();
-        var prefab = parent.InstantiateTemplate("host", Vector2.Zero);
-#pragma warning restore CS0618
-
-        Assert.NotNull(prefab);
-    }
-
     // ──────────────────────────── Binds on template instantiation ────────────────────────────
 
     [Fact]

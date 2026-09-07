@@ -176,7 +176,8 @@ detach. If a **second** listener attaches while one is already active, it logs a
 ### Code usage
 
 ```csharp
-var camera = new CameraEntity();
+var camera = new GameObjectEntity();
+camera.AddComponent(new CameraComponent());
 camera.AddComponent(new AudioListenerComponent { MasterVolume = 0.9f });
 
 // Later, from anywhere:
@@ -187,7 +188,8 @@ Vector2 whereAmIListening = AudioListenerComponent.ActiveListener.ListenerPositi
 ### XML usage
 
 ```xml
-<Entity Name="Camera" Type="CameraEntity">
+<Entity Name="Camera" Type="GameObjectEntity">
+  <Component Type="CameraComponent" />
   <Component Type="AudioListenerComponent">
     <Properties>
       <Property Name="MasterVolume" Value="0.9" />

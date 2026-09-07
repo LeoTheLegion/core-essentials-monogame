@@ -220,35 +220,8 @@ public static class EntityPrefabLoader
     /// </summary>
     private static Entity BuildSubtree(Prefab template, EntitySystem system, Vector2 position)
     {
-        // Use the robust type resolution logic from EntitySerializer (if accessible) or mirror it here
-        Type? type = null;
-
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            try
-            {
-                var foundType = assembly.GetType(template.Type);
-                if (foundType != null && typeof(Entity).IsAssignableFrom(foundType))
-                {
-                    type = foundType;
-                    break;
-                }
-
-                if (type == null)
-                {
-                    var candidates = assembly.GetTypes()
-                        .Where(t => t.Name.Equals(template.Type, StringComparison.OrdinalIgnoreCase) && typeof(Entity).IsAssignableFrom(t));
-                    type = candidates.FirstOrDefault();
-                }
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                Console.WriteLine($"[Template] Failed to load types from assembly: {ex.Message}");
-            }
-        }
-
-        if (type == null) 
-            throw new FormatException($"Could not resolve entity type '{template.Type}' in any loaded assembly.");
+        var type = ResolveEntityType(template.Type)
+            ?? throw new FormatException($"Could not resolve entity type '{template.Type}' in any loaded assembly.");
 
         // 1. Create entity WITHOUT calling OnStart() yet — we need to set position first so physics bodies initialize correctly
         var entity = system.CreateEntityUnstarted(type);

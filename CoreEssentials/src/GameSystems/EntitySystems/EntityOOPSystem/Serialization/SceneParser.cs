@@ -31,6 +31,12 @@ public static class SceneParser
         "Type", "Source", "Id", "Rotation", "Sort", "Active"
     };
 
+    /// <summary>The attribute name that carries a property's value in the scene format.</summary>
+    private const string ValueAttribute = "Value";
+
+    /// <summary>The attribute name that carries a named item (tag/property) in the scene format.</summary>
+    private const string NameAttribute = "Name";
+
     /// <summary>Parses a scene definition from an XML string.</summary>
     /// <exception cref="FormatException">Thrown when the document violates the scene schema.</exception>
     public static SceneDefinition Parse(string xmlData)
@@ -159,8 +165,8 @@ public static class SceneParser
             if (systemDef.Prefabs.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))
                 throw new FormatException($"Duplicate prefab registration '{name}' inside <System Type=\"{systemDef.TypeName}\">.");
 
-            var registration = new PrefabRegistration { Name = name!, Asset = asset! };
-            registration.Prefab = EntityPrefabLoader.LoadFromAsset(asset!);
+            var registration = new PrefabRegistration { Name = name, Asset = asset };
+            registration.Prefab = EntityPrefabLoader.LoadFromAsset(asset);
             systemDef.Prefabs.Add(registration);
         }
     }
@@ -216,12 +222,21 @@ public static class SceneParser
             sourcePrefab = registration.Prefab;
         }
 
+        ParseDefinitionChildren(element, systemDef, prefabByName, definition);
+        ApplyFlatAttributeOverrides(element, definition, sourcePrefab);
+
+        siblings.Add(definition);
+    }
+
+    /// <summary>Parses the child elements of an &lt;EntityDefinition&gt; into the definition.</summary>
+    private static void ParseDefinitionChildren(XElement element, SystemDefinition systemDef, Dictionary<string, PrefabRegistration> prefabByName, EntityDefinition definition)
+    {
         foreach (var child in element.Elements())
         {
             switch (child.Name.LocalName)
             {
                 case "Position":
-                    definition.Position = ParseVector2(child, element);
+                    definition.Position = ParseVector2(child);
                     break;
                 case "Tags":
                     ParseTags(child, definition, element);
@@ -245,7 +260,7 @@ public static class SceneParser
                     foreach (var reference in child.Elements())
                     {
                         ExpectElementName(reference, "Reference");
-                        RejectUnknownAttributes(reference, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name", "TargetId" });
+                        RejectUnknownAttributes(reference, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { NameAttribute, "TargetId" });
                         definition.References.Add(reference);
                     }
                     break;
@@ -254,19 +269,17 @@ public static class SceneParser
                         "Allowed: Position, Tags, Components, Overrides, EntityOverrides, Bind, References, Children.");
             }
         }
+    }
 
-        // Flat attributes (anything beyond the known set) are per-component property overrides.
-        foreach (var attr in element.Attributes())
+    /// <summary>Applies flat attributes (anything beyond the known set) as per-component property overrides.</summary>
+    private static void ApplyFlatAttributeOverrides(XElement element, EntityDefinition definition, Prefab? sourcePrefab)
+    {
+        foreach (var attr in element.Attributes().Where(a => !EntityDefinitionAttributes.Contains(a.Name.LocalName)))
         {
             var name = attr.Name.LocalName;
-            if (EntityDefinitionAttributes.Contains(name))
-                continue;
-
             definition.FlatOverrides[name] = attr.Value;
             ResolveFlatOverride(definition, name, attr.Value, sourcePrefab, element);
         }
-
-        siblings.Add(definition);
     }
 
     private static void ParseChildren(XElement element, SystemDefinition systemDef, Dictionary<string, PrefabRegistration> prefabByName, List<EntityDefinition> children)
@@ -294,7 +307,7 @@ public static class SceneParser
             var name = tag.Attribute("Name")?.Value;
             if (string.IsNullOrWhiteSpace(name))
                 throw new FormatException($"<Tag> inside EntityDefinition '{Describe(context)}' is missing its required 'Name' attribute.");
-            definition.Tags.Add(name!);
+            definition.Tags.Add(name);
         }
     }
 
@@ -307,40 +320,40 @@ public static class SceneParser
         foreach (var child in componentsElement.Elements())
         {
             if (child.Name.LocalName == "Component")
-            {
-                var typeName = child.Attribute("Type")?.Value;
-                if (string.IsNullOrWhiteSpace(typeName))
-                    throw new FormatException("<Component> inside <Components> is missing its required 'Type' attribute.");
-
-                RejectUnknownAttributes(child, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type" });
-                var compDef = new Prefab.ComponentDefinition { Type = typeName! };
-
-                var propsElem = child.Element("Properties");
-                if (propsElem != null)
-                {
-                    foreach (var prop in propsElem.Elements())
-                    {
-                        ExpectElementName(prop, "Property");
-                        RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name", "Value" });
-
-                        var name = prop.Attribute("Name")?.Value;
-                        if (string.IsNullOrWhiteSpace(name))
-                            throw new FormatException($"<Property> inside <Component Type=\"{typeName}\"> is missing its required 'Name' attribute.");
-                        compDef.Properties[name!] = prop.Attribute("Value")?.Value ?? string.Empty;
-                    }
-                }
-
-                definition.DeclaredComponents.Add(compDef);
-            }
+                ParseComponentDefinition(child, definition);
             else if (child.Name.LocalName == "Bind")
-            {
                 definition.Binds.Add(child);
-            }
             else
-            {
                 throw new FormatException($"Unknown element <{child.Name.LocalName}> inside <Components>. Expected <Component> or <Bind>.");
+        }
+    }
+
+    /// <summary>Parses a single &lt;Component&gt; child (type + properties) of a &lt;Components&gt; element.</summary>
+    private static void ParseComponentDefinition(XElement componentElement, EntityDefinition definition)
+    {
+        var typeName = componentElement.Attribute("Type")?.Value;
+        if (string.IsNullOrWhiteSpace(typeName))
+            throw new FormatException("<Component> inside <Components> is missing its required 'Type' attribute.");
+
+        RejectUnknownAttributes(componentElement, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type" });
+        var compDef = new Prefab.ComponentDefinition { Type = typeName };
+
+        var propsElem = componentElement.Element("Properties");
+        if (propsElem != null)
+        {
+            foreach (var prop in propsElem.Elements())
+            {
+                ExpectElementName(prop, "Property");
+                RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { NameAttribute, ValueAttribute });
+
+                var name = prop.Attribute(NameAttribute)?.Value;
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new FormatException($"<Property> inside <Component Type=\"{typeName}\"> is missing its required 'Name' attribute.");
+                compDef.Properties[name] = prop.Attribute(ValueAttribute)?.Value ?? string.Empty;
             }
         }
+
+        definition.DeclaredComponents.Add(compDef);
     }
 
     private static void ParsePreciseOverrides(XElement element, EntityDefinition definition, XElement context)
@@ -362,14 +375,14 @@ public static class SceneParser
                 ExpectElementName(prop, "Property");
                 RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name", "Value" });
 
-                var name = prop.Attribute("Name")?.Value;
-                var value = prop.Attribute("Value")?.Value;
+                var name = prop.Attribute(NameAttribute)?.Value;
+                var value = prop.Attribute(ValueAttribute)?.Value;
                 if (string.IsNullOrWhiteSpace(name))
                     throw new FormatException($"<Property> inside <Overrides> on EntityDefinition '{Describe(context)}' is missing its required 'Name' attribute.");
-                properties[name!] = value ?? string.Empty;
+                properties[name] = value ?? string.Empty;
             }
 
-            definition.ResolvedOverrides[typeName!] = properties;
+            definition.ResolvedOverrides[typeName] = properties;
         }
     }
 
@@ -392,7 +405,7 @@ public static class SceneParser
             if (string.IsNullOrWhiteSpace(name))
                 throw new FormatException($"<Property> inside <EntityOverrides> on EntityDefinition '{Describe(context)}' is missing its required 'Name' attribute.");
 
-            definition.EntityOverrides[name!] = prop.Attribute("Value")?.Value ?? string.Empty;
+            definition.EntityOverrides[name] = prop.Attribute(ValueAttribute)?.Value ?? string.Empty;
         }
     }
 
@@ -412,16 +425,11 @@ public static class SceneParser
             ? sourcePrefab.Components.Select(c => c.Type)
             : definition.DeclaredComponents.Select(c => c.Type);
 
-        var matches = new List<Type>();
-        foreach (var typeName in candidateTypeNames)
-        {
-            var componentType = EntityPrefabLoader.ResolveComponentType(typeName);
-            if (componentType == null) continue;
-
-            var property = componentType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
-            if (property != null && property.CanWrite)
-                matches.Add(componentType);
-        }
+        var matches = candidateTypeNames
+            .Select(typeName => EntityPrefabLoader.ResolveComponentType(typeName))
+            .Where(componentType => componentType != null
+                && componentType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)?.CanWrite == true)
+            .ToList();
 
         if (matches.Count == 0)
             throw new FormatException(
@@ -451,15 +459,13 @@ public static class SceneParser
 
     private static void RejectUnknownAttributes(XElement element, HashSet<string> allowed)
     {
-        foreach (var attr in element.Attributes())
-        {
-            if (!allowed.Contains(attr.Name.LocalName))
-                throw new FormatException($"Unknown attribute '{attr.Name.LocalName}' on <{element.Name.LocalName}>. " +
-                    $"Allowed: {(allowed.Count == 0 ? "(none)" : string.Join(", ", allowed.OrderBy(n => n, StringComparer.Ordinal)))}.");
-        }
+        var unknown = element.Attributes().FirstOrDefault(a => !allowed.Contains(a.Name.LocalName));
+        if (unknown != null)
+            throw new FormatException($"Unknown attribute '{unknown.Name.LocalName}' on <{element.Name.LocalName}>. " +
+                $"Allowed: {(allowed.Count == 0 ? "(none)" : string.Join(", ", allowed.OrderBy(n => n, StringComparer.Ordinal)))}.");
     }
 
-    private static Vector2 ParseVector2(XElement element, XElement context)
+    private static Vector2 ParseVector2(XElement element)
     {
         RejectUnknownAttributes(element, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "X", "Y" });
         return new Vector2(
@@ -501,11 +507,8 @@ public static class SceneParser
     {
         foreach (var definition in definitions)
         {
-            if (!string.IsNullOrWhiteSpace(definition.Id))
-            {
-                if (!seen.Add(definition.Id!))
-                    throw new FormatException($"Duplicate entity Id '{definition.Id}' in scene — Ids must be unique.");
-            }
+            if (!string.IsNullOrWhiteSpace(definition.Id) && !seen.Add(definition.Id))
+                throw new FormatException($"Duplicate entity Id '{definition.Id}' in scene — Ids must be unique.");
 
             CollectIds(definition.Children, seen);
         }

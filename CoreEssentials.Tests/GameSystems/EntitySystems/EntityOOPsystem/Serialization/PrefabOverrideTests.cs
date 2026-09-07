@@ -178,14 +178,28 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             Assert.Equal("default", prefab.Components[0].Properties["Base"]);
         }
 
-        public void Dispose() => _system.Dispose();
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+                _system.Dispose();
+            _disposed = true;
+        }
 
         // ──────────────────────────── Test fixtures ────────────────────────────
 
         public class ProbeEntity : Entity
         {
             public override void Update(GameTime gameTime) { }
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
         }
 
         /// <summary>Entity that adds its own component in OnStart — models entities like TextEntity.</summary>
@@ -201,20 +215,10 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         /// <summary>Component that records what it saw in OnAttach.</summary>
         public class ProbeComponent : EntityComponent
         {
-            private string _base = "unset";
-            private int _count;
+            public string Base { get; set; } = "unset";
 
-            public string Base
-            {
-                get => _base;
-                set => _base = value;
-            }
-
-            public int Count
-            {
-                get => _count;
-                set => _count = value; // string→int conversion happens in SerializationUtils.ParseValue before this setter runs
-            }
+            // string→int conversion happens in SerializationUtils.ParseValue before this setter runs.
+            public int Count { get; set; }
 
             public string? SeenBaseAtOnAttach { get; private set; }
 

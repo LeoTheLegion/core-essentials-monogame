@@ -950,23 +950,6 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Registers a prefab from an XML asset.
-    /// </summary>
-    /// <param name="name">The unique name to assign to this template.</param>
-    /// <param name="assetName">The name of the XML asset containing the <c>&lt;Prefab&gt;</c> definition.</param>
-    [Obsolete("Renamed to RegisterPrefab. Will be removed in a future release.")]
-    public void RegisterTemplate(string name, string assetName) => RegisterPrefab(name, assetName);
-
-    /// <summary>
-    /// Registers an already-constructed template under the given name (e.g. one parsed with
-    /// <see cref="Serialization.EntityPrefabLoader.LoadFromXml"/>).
-    /// </summary>
-    /// <param name="name">The name to instantiate the template by.</param>
-    /// <param name="template">The template to register.</param>
-    [Obsolete("Renamed to RegisterPrefab. Will be removed in a future release.")]
-    public void RegisterTemplate(string name, Serialization.EntityTemplate template) => RegisterPrefab(name, template);
-
-    /// <summary>
     /// Returns true if a prefab with the given name is registered.
     /// </summary>
     /// <param name="name">The prefab name to look up (case-insensitive).</param>
@@ -996,7 +979,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// Instantiates a prefab straight from a Content XML asset with zero registration calls.
     /// On first use the asset is loaded and cached under its base name (the file name without
     /// extension), so subsequent instantiations reuse the parsed prefab. An explicit
-    /// <see cref="RegisterPrefab"/> call for the same name always wins over the lazy cache.
+    /// <see cref="RegisterPrefab(string, Prefab)"/> call for the same name always wins over the lazy cache.
     /// </summary>
     /// <param name="assetName">The name of the XML asset containing the prefab definition.</param>
     /// <param name="position">The world position to place the instantiated entity.</param>
@@ -1106,7 +1089,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Saves the state of all <see cref="Serialization.ISaveableEntity"/> instances to an XML file.
+    /// Saves the state of all entities carrying an <see cref="Serialization.ISaveableComponent"/> to an XML file.
     /// </summary>
     /// <param name="filePath">The path to save the game state file.</param>
     public void SaveState(string filePath)

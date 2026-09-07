@@ -15,7 +15,7 @@ The serialization system captures:
 >
 > **Prefab-driven:** saves carry a `Prefab="..."` attribute recording the prefab each entity was instantiated from, and loading recreates entities via `EntitySystem.Instantiate`. Prefab-declared components (sprite, rigidbody, collider) come back automatically; the save component then restores exactly the state it cares about.
 >
-> **Legacy:** the older `ISaveableEntity` interface still works for old saves and unmigrated entities, but is marked `[Obsolete]`. New code should attach an `ISaveableComponent` instead.
+> **Prefab required:** every saved entity must have been instantiated from a registered prefab so it can be recreated on load. Saves whose entity elements are missing the `Prefab` attribute fail to load.
 
 ## Quick Start
 
@@ -73,7 +73,7 @@ Loads game state from an XML file.
 - `filePath`: Path to the save file
 
 **Behavior:**
-- Only entities carrying an `ISaveableComponent` (or legacy `ISaveableEntity`) are affected
+- Only entities carrying an `ISaveableComponent` are affected
 - Entities with matching IDs in the save file are updated in place
 - Saveable entities NOT in the save file are automatically removed after loading
 - Non-saveable entities (UI, cameras, etc.) are unaffected
@@ -299,7 +299,8 @@ To keep entities like UI elements, cameras, or debug overlays across save/load c
 
 ```csharp
 // This entity has no ISaveableComponent, so it won't be saved or affected by LoadState
-var camera = entitySystem.CreateEntity<CameraEntity>();
+var camera = entitySystem.CreateEntity<GameObjectEntity>();
+camera.AddComponent(new CameraComponent());
 // Entity persists across all save/load operations
 ```
 
@@ -328,9 +329,9 @@ entity.AddComponent(new MySaveComponent());
 UI elements, cameras, and debug overlays should NOT carry an `ISaveableComponent`:
 ```csharp
 // This entity persists across all save/load operations
-var camera = entitySystem.CreateEntity<CameraEntity>();
+var camera = entitySystem.CreateEntity<GameObjectEntity>();
+camera.AddComponent(new CameraComponent());
 // No save component - unaffected by serialization
-}
 ```
 
 ### 4. Handle Versioning

@@ -16,7 +16,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
     /// Tests for the component-based, prefab-driven save path (Sprint 1).
     /// An entity is saveable iff it has an <see cref="ISaveableComponent"/>; saves carry a
     /// <c>Prefab</c> attribute and load recreates entities via <c>EntitySystem.Instantiate</c>.
-    /// The legacy <see cref="ISaveableEntity"/> path (no component, no prefab) still works.
+    /// Saves whose entity elements are missing the <c>Prefab</c> attribute fail to load.
     /// </summary>
     public class SaveableComponentSerializationTests : IDisposable
     {
@@ -169,11 +169,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         // ──────────────────────────── Legacy path still works ──────────────────
 
         [Fact]
-        public void Load_LegacyTypeOnlySave_StillLoads()
+        public void Load_SaveMissingPrefabAttribute_Throws()
         {
-            // A save with a Type attribute and no Prefab loads via the legacy reflection path.
+            // A save whose entity element carries no Prefab attribute cannot be recreated.
             var xml = @"<GameState Version=""1.0""><Entities>
-  <Entity Id=""legacy_1"" Type=""" + typeof(LegacyProbeEntity).FullName + @""" Rotation=""0"" Sort=""0"" Active=""true"">
+  <Entity Id=""no_prefab_1"" Type=""Some.Type"" Rotation=""0"" Sort=""0"" Active=""true"">
     <Position X=""5"" Y=""6"" />
   </Entity>
 </Entities></GameState>";
@@ -181,12 +181,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var newSystem = new EntitySystem();
             try
             {
-                GameStateSerializer.LoadStateFromXml(newSystem, xml);
-
-                var loaded = newSystem.GetEntities().Single(e => e.Id == "legacy_1");
-                Assert.IsType<LegacyProbeEntity>(loaded);
-                Assert.Equal(5f, loaded.Position.X, 3);
-                Assert.Equal(6f, loaded.Position.Y, 3);
+                var ex = Assert.Throws<InvalidOperationException>(() => GameStateSerializer.LoadStateFromXml(newSystem, xml));
+                Assert.IsType<FormatException>(ex.InnerException);
+                Assert.Contains("Prefab", ex.Message);
             }
             finally
             {
@@ -209,37 +206,6 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             public override void Update(GameTime gameTime) { }
             public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
         }
-
-        /// <summary>Legacy entity implementing the obsolete interface (no save component, no prefab).</summary>
-#pragma warning disable CS0618 // Type or member is obsolete
-        public class LegacyProbeEntity : Entity, ISaveableEntity
-        {
-            public override void Update(GameTime gameTime) { }
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
-
-            public XElement SaveState()
-            {
-                return new XElement("Entity",
-                    new XAttribute("Id", Id ?? string.Empty),
-                    new XAttribute("Type", GetType().FullName),
-                    new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
-                    new XAttribute("Sort", GetSort()),
-                    new XAttribute("Active", GetActive()),
-                    new XElement("Position",
-                        new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
-                        new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))));
-            }
-
-            public void LoadState(XElement element)
-            {
-                var pos = element.Element("Position");
-                if (pos != null)
-                    Position = new Vector2(
-                        float.Parse(pos.Attribute("X")?.Value ?? "0", CultureInfo.InvariantCulture),
-                        float.Parse(pos.Attribute("Y")?.Value ?? "0", CultureInfo.InvariantCulture));
-            }
-        }
-#pragma warning restore CS0618
 
         /// <summary>
         /// Minimal save component: persists the owner's transform plus a single custom int, and

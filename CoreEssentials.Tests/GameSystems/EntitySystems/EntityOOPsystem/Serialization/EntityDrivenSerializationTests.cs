@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using Xunit;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
@@ -17,91 +18,79 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
     /// </summary>
     public class EntityDrivenSerializationTests
     {
-        // Test entity that implements ISaveableEntity with custom state
-        public class CustomStateEntity : Entity, ISaveableEntity
+        // Test entity carrying a save component with custom state
+        public class CustomStateEntity : Entity
+        {
+        }
+
+        /// <summary>Save component for <see cref="CustomStateEntity"/> — persists transform + Score/Name.</summary>
+        public class CustomStateSaveComponent : EntityComponent, ISaveableComponent
         {
             public int Score { get; set; }
             public string? Name { get; set; }
 
             public XElement SaveState()
             {
-                var element = new XElement("Entity",
-                    new XAttribute("Id", Id ?? string.Empty),
-                    new XAttribute("Type", GetType().FullName ?? string.Empty),
-                    new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
-                    new XAttribute("Sort", GetSort()),
-                    new XAttribute("Active", GetActive()),
+                var o = Owner;
+                return new XElement("Entity",
+                    new XAttribute("Id", o?.Id ?? string.Empty),
+                    new XAttribute("Type", o?.GetType().FullName ?? string.Empty),
+                    new XAttribute("Rotation", (o?.Rotation ?? 0f).ToString(CultureInfo.InvariantCulture)),
+                    new XAttribute("Sort", o?.GetSort() ?? 0),
+                    new XAttribute("Active", o?.GetActive() ?? true),
                     new XElement("Position",
-                        new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
-                        new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))
-                    ),
+                        new XAttribute("X", (o?.Position.X ?? 0f).ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", (o?.Position.Y ?? 0f).ToString(CultureInfo.InvariantCulture))),
                     new XElement("Scale",
-                        new XAttribute("X", Scale.X.ToString(CultureInfo.InvariantCulture)),
-                        new XAttribute("Y", Scale.Y.ToString(CultureInfo.InvariantCulture))
-                    ),
+                        new XAttribute("X", (o?.Scale.X ?? 1f).ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", (o?.Scale.Y ?? 1f).ToString(CultureInfo.InvariantCulture))),
                     new XElement("Tags",
-                        Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
-                    ),
+                        (o?.Tags ?? Enumerable.Empty<string>()).Select(tag => new XElement("Tag", new XAttribute("Name", tag)))),
                     new XElement("CustomState",
                         new XAttribute("Score", Score),
-                        new XAttribute("Name", Name ?? "")
-                    )
-                );
-                return element;
+                        new XAttribute("Name", Name ?? "")));
             }
 
             public void LoadState(XElement element)
             {
-                // Restore position
+                var o = Owner;
+                if (o == null) return;
+
                 var positionElement = element.Element("Position");
-                if (positionElement != null)
+                if (positionElement != null &&
+                    float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
                 {
-                    if (float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-                        float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-                    {
-                        Position = new Vector2(x, y);
-                    }
+                    o.Position = new Vector2(x, y);
                 }
 
                 if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
-                {
-                    Rotation = rotation;
-                }
+                    o.Rotation = rotation;
 
                 var scaleElement = element.Element("Scale");
-                if (scaleElement != null)
+                if (scaleElement != null &&
+                    float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+                    float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
                 {
-                    if (float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
-                        float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
-                    {
-                        Scale = new Vector2(scaleX, scaleY);
-                    }
+                    o.Scale = new Vector2(scaleX, scaleY);
                 }
 
                 if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
-                {
-                    SetSort(sort);
-                }
+                    o.SetSort(sort);
 
                 if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
-                {
-                    SetActive(active);
-                }
+                    o.SetActive(active);
 
                 var tagsElement = element.Element("Tags");
                 if (tagsElement != null)
                 {
-                    foreach (var tag in Tags.ToList())
-                    {
-                        RemoveTag(tag);
-                    }
+                    foreach (var tag in o.Tags.ToList())
+                        o.RemoveTag(tag);
                     foreach (var tagElement in tagsElement.Elements("Tag"))
                     {
                         var tagName = tagElement.Attribute("Name")?.Value;
                         if (!string.IsNullOrWhiteSpace(tagName))
-                        {
-                            SetTag(tagName);
-                        }
+                            o.SetTag(tagName);
                     }
                 }
 
@@ -116,117 +105,95 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             }
         }
 
-        // Test entity that creates components in OnStart and implements ISaveableEntity
-        public class DeferredComponentEntity : Entity, ISaveableEntity
+        // Test entity that creates a component in OnStart; its save component persists the sprite color
+        public class DeferredComponentEntity : Entity
         {
             public SpriteComponent? SpriteComp { get; private set; }
-            public bool OnStartCalled { get; private set; }
 
             public override void OnStart()
             {
                 base.OnStart();
-                OnStartCalled = true;
-
                 // Create component with defaults
                 SpriteComp = new SpriteComponent();
                 AddComponent(SpriteComp);
                 SpriteComp.Color = Color.White; // Default color
             }
+        }
 
+        /// <summary>Save component for <see cref="DeferredComponentEntity"/> — persists transform + sprite color.</summary>
+        public class DeferredSpriteSaveComponent : EntityComponent, ISaveableComponent
+        {
             public XElement SaveState()
             {
-                var element = new XElement("Entity",
-                    new XAttribute("Id", Id ?? string.Empty),
-                    new XAttribute("Type", GetType().FullName ?? string.Empty),
-                    new XAttribute("Rotation", Rotation.ToString(CultureInfo.InvariantCulture)),
-                    new XAttribute("Sort", GetSort()),
-                    new XAttribute("Active", GetActive()),
+                var o = Owner as DeferredComponentEntity;
+                return new XElement("Entity",
+                    new XAttribute("Id", o?.Id ?? string.Empty),
+                    new XAttribute("Type", o?.GetType().FullName ?? string.Empty),
+                    new XAttribute("Rotation", (o?.Rotation ?? 0f).ToString(CultureInfo.InvariantCulture)),
+                    new XAttribute("Sort", o?.GetSort() ?? 0),
+                    new XAttribute("Active", o?.GetActive() ?? true),
                     new XElement("Position",
-                        new XAttribute("X", Position.X.ToString(CultureInfo.InvariantCulture)),
-                        new XAttribute("Y", Position.Y.ToString(CultureInfo.InvariantCulture))
-                    ),
+                        new XAttribute("X", (o?.Position.X ?? 0f).ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", (o?.Position.Y ?? 0f).ToString(CultureInfo.InvariantCulture))),
                     new XElement("Scale",
-                        new XAttribute("X", Scale.X.ToString(CultureInfo.InvariantCulture)),
-                        new XAttribute("Y", Scale.Y.ToString(CultureInfo.InvariantCulture))
-                    ),
+                        new XAttribute("X", (o?.Scale.X ?? 1f).ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", (o?.Scale.Y ?? 1f).ToString(CultureInfo.InvariantCulture))),
                     new XElement("Tags",
-                        Tags.Select(tag => new XElement("Tag", new XAttribute("Name", tag)))
-                    )
-                );
-
-                if (SpriteComp != null)
-                {
-                    element.Add(new XElement("Sprite",
-                        new XAttribute("Color", SpriteComp.Color.PackedValue.ToString())
-                    ));
-                }
-                return element;
+                        (o?.Tags ?? Enumerable.Empty<string>()).Select(tag => new XElement("Tag", new XAttribute("Name", tag)))),
+                    new XElement("Sprite",
+                        new XAttribute("Color", o?.SpriteComp?.Color.PackedValue.ToString() ?? "0")));
             }
 
             public void LoadState(XElement element)
             {
-                // Restore position
+                var o = Owner as DeferredComponentEntity;
+                if (o == null) return;
+
                 var positionElement = element.Element("Position");
-                if (positionElement != null)
+                if (positionElement != null &&
+                    float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
                 {
-                    if (float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-                        float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-                    {
-                        Position = new Vector2(x, y);
-                    }
+                    o.Position = new Vector2(x, y);
                 }
 
                 if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
-                {
-                    Rotation = rotation;
-                }
+                    o.Rotation = rotation;
 
                 var scaleElement = element.Element("Scale");
-                if (scaleElement != null)
+                if (scaleElement != null &&
+                    float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
+                    float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
                 {
-                    if (float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
-                        float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
-                    {
-                        Scale = new Vector2(scaleX, scaleY);
-                    }
+                    o.Scale = new Vector2(scaleX, scaleY);
                 }
 
                 if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
-                {
-                    SetSort(sort);
-                }
+                    o.SetSort(sort);
 
                 if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
-                {
-                    SetActive(active);
-                }
+                    o.SetActive(active);
 
                 var tagsElement = element.Element("Tags");
                 if (tagsElement != null)
                 {
-                    foreach (var tag in Tags.ToList())
-                    {
-                        RemoveTag(tag);
-                    }
+                    foreach (var tag in o.Tags.ToList())
+                        o.RemoveTag(tag);
                     foreach (var tagElement in tagsElement.Elements("Tag"))
                     {
                         var tagName = tagElement.Attribute("Name")?.Value;
                         if (!string.IsNullOrWhiteSpace(tagName))
-                        {
-                            SetTag(tagName);
-                        }
+                            o.SetTag(tagName);
                     }
                 }
 
-                // Restore sprite color — component exists since OnStart ran
+                // Restore sprite color — the component exists since OnStart ran during instantiation.
                 var sprite = element.Element("Sprite");
-                if (sprite != null && SpriteComp != null)
+                if (sprite != null && o.SpriteComp != null)
                 {
                     var colorAttr = sprite.Attribute("Color")?.Value;
                     if (colorAttr != null && uint.TryParse(colorAttr, out uint argb))
-                    {
-                        SpriteComp.Color = new Color(argb);
-                    }
+                        o.SpriteComp.Color = new Color(argb);
                 }
             }
         }
@@ -236,13 +203,14 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
+            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("test_entity");
             entity.Position = new Vector2(100, 200);
             entity.Rotation = 1.57f;
             entity.Scale = new Vector2(2, 3);
             entity.SetSort(5);
 
-            var xml = ((ISaveableEntity)entity).SaveState();
+            var xml = saveComp.SaveState();
 
             Assert.Equal("test_entity", xml.Attribute("Id")?.Value);
             Assert.Equal("100", xml.Element("Position")?.Attribute("X")?.Value);
@@ -257,6 +225,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
+            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("test_entity");
 
             var xml = XElement.Parse(@"
@@ -266,7 +235,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                     <Tags><Tag Name=""player"" /></Tags>
                 </Entity>");
 
-            ((ISaveableEntity)entity).LoadState(xml);
+            saveComp.LoadState(xml);
 
             Assert.Equal(new Vector2(42, 99), entity.Position);
             Assert.Equal(0.785f, entity.Rotation, 0.01f);
@@ -279,23 +248,25 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
+            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("custom_entity");
             entity.Position = new Vector2(10, 20);
-            entity.Score = 42;
-            entity.Name = "Hero";
+            saveComp.Score = 42;
+            saveComp.Name = "Hero";
 
             // Save state
-            var xml = ((ISaveableEntity)entity).SaveState();
+            var xml = saveComp.SaveState();
 
             // Load into a fresh entity
             var system2 = new EntitySystem();
             var restored = system2.CreateEntity<CustomStateEntity>();
+            var restoredSave = (CustomStateSaveComponent)restored.AddComponent(new CustomStateSaveComponent());
             restored.SetId("custom_entity");
-            ((ISaveableEntity)restored).LoadState(xml);
+            restoredSave.LoadState(xml);
 
             Assert.Equal(new Vector2(10, 20), restored.Position);
-            Assert.Equal(42, restored.Score);
-            Assert.Equal("Hero", restored.Name);
+            Assert.Equal(42, restoredSave.Score);
+            Assert.Equal("Hero", restoredSave.Name);
         }
 
         [Fact]
@@ -303,6 +274,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
+            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("test");
             entity.SetTag("runtime");
 
@@ -312,7 +284,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                     <Tags><Tag Name=""saved"" /></Tags>
                 </Entity>");
 
-            ((ISaveableEntity)entity).LoadState(xml);
+            saveComp.LoadState(xml);
 
             // Tags are replaced (not merged) — runtime tag is cleared, saved tag is added
             Assert.False(entity.HasTag("runtime"), "Runtime tag should be cleared");
@@ -323,7 +295,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         public void DeferredComponentEntity_ColorRoundTrip_PreservesColor()
         {
             var system = new EntitySystem();
-            var entity = system.CreateEntity<DeferredComponentEntity>();
+            system.RegisterPrefab("deferred", EntityPrefabLoader.LoadFromXml(
+                "<Prefab Type=\"DeferredComponentEntity\"><Components>" +
+                "<Component Type=\"DeferredSpriteSaveComponent\" /></Components></Prefab>"));
+
+            // Instantiate from the prefab so OnStart runs and PrefabName is stamped (required to save).
+            var entity = (DeferredComponentEntity)system.Instantiate("deferred", Vector2.Zero);
             entity.SetId("colored_entity");
 
             // Set a non-white color after OnStart
@@ -336,8 +313,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             {
                 GameStateSerializer.SaveState(system, tempFile);
 
-                // Load into new system
+                // Load into a system that has the prefab registered so it can be recreated.
                 var newSystem = new EntitySystem();
+                newSystem.RegisterPrefab("deferred", EntityPrefabLoader.LoadFromXml(
+                    "<Prefab Type=\"DeferredComponentEntity\"><Components>" +
+                    "<Component Type=\"DeferredSpriteSaveComponent\" /></Components></Prefab>"));
+
                 GameStateSerializer.LoadState(newSystem, tempFile);
 
                 // Verify the loaded entity has the correct color

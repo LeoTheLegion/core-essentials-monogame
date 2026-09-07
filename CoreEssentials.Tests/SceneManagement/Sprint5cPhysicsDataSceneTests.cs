@@ -70,9 +70,9 @@ namespace CoreEssentials.Tests.SceneManagement
             // The spawner declares every knob explicitly (self-documenting data).
             var spawn = FindById(entitySystem.Entities, "ballSpawner");
             Assert.NotNull(spawn);
-            var spawnComp = spawn!.DeclaredComponents.Find(c => c.Type.Contains("PhysicsSpawnComponent"));
+            var spawnComp = spawn.DeclaredComponents.Find(c => c.Type.Contains("PhysicsSpawnComponent"));
             Assert.NotNull(spawnComp);
-            Assert.Equal("BallPrefab", spawnComp!.Properties["BallPrefabName"]);
+            Assert.Equal("BallPrefab", spawnComp.Properties["BallPrefabName"]);
             Assert.Equal("5", spawnComp.Properties["RegularBallCount"]);
             Assert.Equal("Player", spawnComp.Properties["RegularCategory"]);
             Assert.Equal("vip_ball_blue,vip_ball_green,vip_ball_red", spawnComp.Properties["VipBallIds"]);
@@ -81,19 +81,19 @@ namespace CoreEssentials.Tests.SceneManagement
             // The save/load buttons declare their file path.
             var buttons = FindById(entitySystem.Entities, "saveLoadButtons");
             Assert.NotNull(buttons);
-            var btnComp = buttons!.DeclaredComponents.Find(c => c.Type.Contains("SaveLoadButtonsComponent"));
+            var btnComp = buttons.DeclaredComponents.Find(c => c.Type.Contains("SaveLoadButtonsComponent"));
             Assert.NotNull(btnComp);
-            Assert.Equal("PhysicsScene_Save.xml", btnComp!.Properties["SaveFilePath"]);
+            Assert.Equal("PhysicsScene_Save.xml", btnComp.Properties["SaveFilePath"]);
 
             // The debug overlay declares its toggle key.
             var overlay = FindById(entitySystem.Entities, "debugOverlay");
             Assert.NotNull(overlay);
-            Assert.Contains("F1", overlay!.DeclaredComponents.Find(c => c.Type.Contains("PhysicsDebugOverlayComponent"))!.Properties["ToggleKey"]);
+            Assert.Contains("F1", overlay.DeclaredComponents.Find(c => c.Type.Contains("PhysicsDebugOverlayComponent")).Properties["ToggleKey"]);
 
             // Navigation target is a scene asset-name string (no C# Type reference).
             var nav = FindById(entitySystem.Entities, "navCamera");
             Assert.NotNull(nav);
-            Assert.Equal("Scenes/CameraScene.xml", NavTarget(nav!));
+            Assert.Equal("Scenes/CameraScene.xml", NavTarget(nav));
         }
 
         [Fact]
@@ -119,7 +119,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 // The engine was created from its config asset: gravity + named categories resolve.
                 var engine = scene.GetGameSystem<PhysicsEngine>();
                 Assert.NotNull(engine.Config);
-                Assert.Equal(new Vector2(0, 1000), engine.Config!.Gravity);
+                Assert.Equal(new Vector2(0, 1000), engine.Config.Gravity);
                 Assert.True(engine.Config.Resolve("Player") != 0);
                 Assert.True(engine.Config.Resolve("Vip") != 0);
 
@@ -132,16 +132,16 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.True(entitySystem.HasPrefab("BallPrefab"));
 
                 // The three shells carried their behavior components.
-                Assert.NotNull(entitySystem.FindById("ballSpawner")!.GetComponent<PhysicsSpawnComponent>());
-                Assert.NotNull(entitySystem.FindById("saveLoadButtons")!.GetComponent<SaveLoadButtonsComponent>());
-                Assert.NotNull(entitySystem.FindById("debugOverlay")!.GetComponent<PhysicsDebugOverlayComponent>());
+                Assert.NotNull(entitySystem.FindById("ballSpawner").GetComponent<PhysicsSpawnComponent>());
+                Assert.NotNull(entitySystem.FindById("saveLoadButtons").GetComponent<SaveLoadButtonsComponent>());
+                Assert.NotNull(entitySystem.FindById("debugOverlay").GetComponent<PhysicsDebugOverlayComponent>());
 
                 // The spawner actually spawned: 5 regular + 3 VIP balls, plus a world border. Balls are
                 // plain GameObjectEntity carrying a BallSaveComponent (no entity subclass).
                 var vipBlue = entitySystem.FindById("vip_ball_blue");
                 Assert.NotNull(vipBlue);
                 Assert.IsType<GameObjectEntity>(vipBlue);
-                Assert.NotNull(vipBlue!.GetComponent<BallSaveComponent>());
+                Assert.NotNull(vipBlue.GetComponent<BallSaveComponent>());
                 var totalBalls = AllEntities(entitySystem).Count(e => e.GetComponent<BallSaveComponent>() != null);
                 Assert.Equal(8, totalBalls);
 
@@ -159,11 +159,19 @@ namespace CoreEssentials.Tests.SceneManagement
 
         public void Dispose()
         {
-            if (_disposed) return;
-            _mockGame?.Dispose();
-            EngineResolver.GetEngine()?.Shutdown();
-            _disposed = true;
+            Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+            {
+                _mockGame?.Dispose();
+                EngineResolver.GetEngine()?.Shutdown();
+            }
+            _disposed = true;
         }
 
         // ──────────────────────────── Helpers ────────────────────────────
@@ -185,7 +193,7 @@ namespace CoreEssentials.Tests.SceneManagement
         {
             var comp = def.DeclaredComponents.Find(c => c.Type.Contains("NavigateOnKeyComponent"));
             Assert.NotNull(comp);
-            return comp!.Properties["TargetSceneAsset"];
+            return comp.Properties["TargetSceneAsset"];
         }
 
         /// <summary>Copies a real source-tree Content file into the content dir the AssetManager reads.</summary>
@@ -214,7 +222,7 @@ namespace CoreEssentials.Tests.SceneManagement
         private static void WriteContentAsset(string fileName, string xml)
         {
             var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
             File.WriteAllText(filePath, xml);
         }
 

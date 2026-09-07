@@ -5,13 +5,6 @@ using System.Xml.Linq;
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
 /// <summary>
-/// A type alias kept for one release so existing code referencing the old name keeps compiling.
-/// Prefer <see cref="Prefab"/> in new code.
-/// </summary>
-[Obsolete("Renamed to Prefab. EntityTemplate will be removed in a future release.")]
-public class EntityTemplate : Prefab { }
-
-/// <summary>
 /// Represents a reusable blueprint for an entity — a prefab.
 /// Prefabs can be loaded from XML and instantiated multiple times to create entities.
 /// </summary>

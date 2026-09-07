@@ -11,7 +11,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
 
 public class CanvasComponentTests : IDisposable
 {
-    private readonly Game _mockGame = null!;
+    private readonly Game _mockGame;
     private bool _disposed;
 
     public CanvasComponentTests()
@@ -44,7 +44,7 @@ public class CanvasComponentTests : IDisposable
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     // ===== Construction =====
@@ -80,7 +80,7 @@ public class CanvasComponentTests : IDisposable
         var instance = Activator.CreateInstance(typeof(CanvasComponent));
 
         Assert.NotNull(instance);
-        var component = (CanvasComponent)instance!;
+        var component = (CanvasComponent)instance;
         Assert.True(component.IsScreenSpace);
     }
 

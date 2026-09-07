@@ -24,9 +24,8 @@ public class CharacterComponentTests
 {
     private class TestEntity : Entity
     {
-        // Forward to base so attached components receive their per-frame Update.
-        public override void Update(GameTime gameTime) => base.Update(gameTime);
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        // Base Update already drives attached components' per-frame Update.
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     /// <summary>Pins the frame delta and simulates held keys so movement is deterministic.</summary>
@@ -94,7 +93,7 @@ public class CharacterComponentTests
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
         entity.Position = Vector2.Zero;
-        var probe = (MoveProbe)entity.AddComponent(new MoveProbe());
+        var probe = entity.AddComponent(new MoveProbe());
 
         var dt = new GameTime(TimeSpan.Zero, TimeSpan.FromMilliseconds(16));
 
@@ -125,7 +124,7 @@ public class CharacterComponentTests
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
         entity.Position = new Vector2(10f, 20f);
-        var probe = (MoveProbe)entity.AddComponent(new MoveProbe());
+        var probe = entity.AddComponent(new MoveProbe());
         probe.KeyHeld = false;
 
         entity.Update(new GameTime(TimeSpan.Zero, TimeSpan.FromMilliseconds(16)));
@@ -141,7 +140,7 @@ public class CharacterComponentTests
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
         entity.Scale = Vector2.One;
-        var comp = (PauseScaleComponent)entity.AddComponent(new PauseScaleComponent());
+        var comp = entity.AddComponent(new PauseScaleComponent());
 
         comp.OnApplicationPause(true);
         Assert.Equal(new Vector2(1.5f, 1.5f), entity.Scale);
@@ -155,7 +154,7 @@ public class CharacterComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (PauseScaleComponent)entity.AddComponent(new PauseScaleComponent { PausedScale = 2f });
+        var comp = entity.AddComponent(new PauseScaleComponent { PausedScale = 2f });
 
         comp.OnApplicationPause(true);
         Assert.Equal(new Vector2(2f, 2f), entity.Scale);

@@ -19,7 +19,7 @@ public class TextComponentTests
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     /// <summary>Records that OnAttach ran (and therefore the font load path executed without throwing).</summary>
@@ -47,7 +47,7 @@ public class TextComponentTests
         InitFont();
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (TextProbe)entity.AddComponent(new TextProbe());
+        var comp = entity.AddComponent(new TextProbe());
         try
         {
             Assert.True(comp.Attached);
@@ -72,7 +72,7 @@ public class TextComponentTests
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
         entity.Position = new Vector2(100f, 40f);
-        var comp = (TextProbe)entity.AddComponent(new TextProbe());
+        var comp = entity.AddComponent(new TextProbe());
         try
         {
             comp.Alignment = TextComponent.TextAlignment.Left;
@@ -95,7 +95,7 @@ public class TextComponentTests
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
         entity.Position = new Vector2(100f, 40f);
-        var comp = (TextProbe)entity.AddComponent(new TextProbe());
+        var comp = entity.AddComponent(new TextProbe());
         try
         {
             comp.Alignment = TextComponent.TextAlignment.Center;
@@ -113,7 +113,7 @@ public class TextComponentTests
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
         entity.Position = new Vector2(100f, 40f);
-        var comp = (TextProbe)entity.AddComponent(new TextProbe());
+        var comp = entity.AddComponent(new TextProbe());
         try
         {
             comp.Alignment = TextComponent.TextAlignment.Right;
@@ -129,6 +129,6 @@ public class TextComponentTests
     {
         // A detached component (no owner) must not throw when drawn.
         var comp = new TextComponent();
-        Assert.Null(Record.Exception(() => comp.Draw(null!)));
+        Assert.Null(Record.Exception(() => comp.Draw(null)));
     }
 }

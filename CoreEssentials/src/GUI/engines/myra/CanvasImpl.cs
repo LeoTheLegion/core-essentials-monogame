@@ -13,7 +13,6 @@ public class CanvasImpl : ContainerWidget, ICanvas
 {
     private readonly IGuiManager _manager;
     private Vector2 _position;
-    private bool _isScreenSpace;
 
     /// <summary>
     /// Tracks whether this canvas is currently registered in the global GUI root. Registration is
@@ -23,11 +22,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     private bool _isRegistered;
 
     /// <inheritdoc />
-    public bool IsScreenSpace
-    {
-        get => _isScreenSpace;
-        set => _isScreenSpace = value;
-    }
+    public bool IsScreenSpace { get; set; }
 
     /// <summary>
     /// Gets the underlying Myra Panel instance.
@@ -37,7 +32,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// <inheritdoc />
     public CanvasImpl(bool isScreenSpace = true) : base(new Panel())
     {
-        _isScreenSpace = isScreenSpace;
+        IsScreenSpace = isScreenSpace;
         _position = Vector2.Zero;
         _manager = EngineResolver.GetEngine();
         // Registration into the global GUI is deferred to the first Update() — see EnsureRegistered.
@@ -65,7 +60,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// </summary>
     public override float Width
     {
-        get => _isScreenSpace && AutoWidth ? _manager.Width : base.Width;
+        get => IsScreenSpace && AutoWidth ? _manager.Width : base.Width;
         set => base.Width = value;
     }
 
@@ -76,7 +71,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// </summary>
     public override float Height
     {
-        get => _isScreenSpace && AutoHeight ? _manager.Height : base.Height;
+        get => IsScreenSpace && AutoHeight ? _manager.Height : base.Height;
         set => base.Height = value;
     }
 
@@ -106,7 +101,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
         // First pump = the owning scene is now live, so attach to the global GUI from here on.
         EnsureRegistered();
 
-        if (!_isScreenSpace)
+        if (!IsScreenSpace)
         {
             var camera = CoreEssentials.Camera.Camera.MainCamera;
             if (camera != null)

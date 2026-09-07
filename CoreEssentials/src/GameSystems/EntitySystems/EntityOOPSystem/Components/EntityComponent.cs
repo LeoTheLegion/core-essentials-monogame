@@ -84,17 +84,6 @@ public abstract class EntityComponent
         => Owner?.InstantiatePrefab(prefabName, position);
 
     /// <summary>
-    /// Instantiates a registered template (prefab) at the given position in the owning entity's
-    /// system — Unity-style prefab spawn from component code.
-    /// </summary>
-    /// <param name="templateName">The name of the registered template to instantiate.</param>
-    /// <param name="position">The world position to place the instantiated entity.</param>
-    /// <returns>The newly created entity, or null if the owner is not in a system.</returns>
-    [Obsolete("Renamed to InstantiatePrefab. Will be removed in a future release.")]
-    public Entity? InstantiateTemplate(string templateName, Vector2 position)
-        => InstantiatePrefab(templateName, position);
-
-    /// <summary>
     /// Destroys the owning entity (and its children) — Unity-style one-liner from component code.
     /// </summary>
     public void DestroyOwner() => Owner?.Destroy();

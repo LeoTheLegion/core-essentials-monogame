@@ -166,16 +166,6 @@ public abstract class Entity
         => EntitySystem?.Instantiate(prefabName, position);
 
     /// <summary>
-    /// Instantiates a registered template (prefab) at the given position in this entity's system.
-    /// </summary>
-    /// <param name="templateName">The name of the registered template to instantiate.</param>
-    /// <param name="position">The world position to place the instantiated entity.</param>
-    /// <returns>The newly created entity, or null if this entity is not in a system.</returns>
-    [Obsolete("Renamed to InstantiatePrefab. Will be removed in a future release.")]
-    public Entity? InstantiateTemplate(string templateName, Vector2 position)
-        => InstantiatePrefab(templateName, position);
-
-    /// <summary>
     /// The unique identifier for this entity.
     /// Used for XML-driven scene loading and cross-entity references.
     /// </summary>

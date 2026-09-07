@@ -17,22 +17,21 @@ namespace CoreEssentials.Tests.SceneManagement
     /// (systems → prefabs → entities), a complete transition through a data-driven
     /// loading screen, and the progress component mirroring TransitionProgress.
     /// </summary>
-    public class DataDrivenSceneTests : IDisposable
+    public class DataDrivenSceneTests
     {
         // ──────────────────────────── Fixtures ────────────────────────────
 
         /// <summary>Entity fixture with a settable Entity reference for &lt;Reference&gt; tests.</summary>
-        private class DDSEntity : Entity
+        private class DdsEntity : Entity
         {
-            public Entity? Other { get; set; }
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+            public Entity? Other { get; set; } = new GameObjectEntity(); // NOSONAR — replaced by the scene loader's reflection-based <Reference> wiring.
+            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
         }
 
         /// <summary>Plain component with one writable string property — target for flat overrides.</summary>
-        private class DDSComponent : EntityComponent
+        private class DdsComponent : EntityComponent
         {
-            private string _base = "unset";
-            public string Base { get => _base; set => _base = value; }
+            public string Base { get; set; } = "unset"; // NOSONAR — written by the scene loader's reflection-based flat overrides.
         }
 
         // ──────────────────────────── T5: load order + content ────────────────────────────
@@ -41,9 +40,9 @@ namespace CoreEssentials.Tests.SceneManagement
         public void DataDrivenScene_Loads_SystemsThenPrefabsThenEntities()
         {
             // Arrange — one entity system, one prefab registration, two entities
-            WriteContentAsset("DataDrivenLoadOrderProbe.xml", @"<Prefab Type=""DDSEntity"">
+            WriteContentAsset("DataDrivenLoadOrderProbe.xml", @"<Prefab Type=""DdsEntity"">
                 <Components>
-                    <Component Type=""DDSComponent"" />
+                    <Component Type=""DdsComponent"" />
                 </Components>
             </Prefab>");
 
@@ -55,12 +54,12 @@ namespace CoreEssentials.Tests.SceneManagement
         <EntityDefinition Source=""probe"" Id=""target"" Base=""hi"">
           <Position X=""10"" Y=""20"" />
           <Children>
-            <EntityDefinition Type=""DDSEntity"" Id=""nested"" />
+            <EntityDefinition Type=""DdsEntity"" Id=""nested"" />
           </Children>
         </EntityDefinition>
-        <EntityDefinition Type=""DDSEntity"" Id=""plain"" Base=""flat"">
+        <EntityDefinition Type=""DdsEntity"" Id=""plain"" Base=""flat"">
           <Tags><Tag Name=""actor"" /></Tags>
-          <Components><Component Type=""DDSComponent"" /></Components>
+          <Components><Component Type=""DdsComponent"" /></Components>
           <References><Reference Name=""Other"" TargetId=""target"" /></References>
         </EntityDefinition>
       </Entities>
@@ -94,14 +93,14 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.Equal(new Vector2(10, 20), target.Position);
                 Assert.Single(target.Children);
                 Assert.Equal("nested", target.Children[0].Id);
-                Assert.Equal("hi", target.GetComponent<DDSComponent>()!.Base);
+                Assert.Equal("hi", target.GetComponent<DdsComponent>().Base);
 
                 // Plain-class entity: tags, declared component with flat override, reference resolved
                 var plain = entitySystem.FindById("plain");
                 Assert.NotNull(plain);
                 Assert.Contains("actor", plain.Tags);
-                Assert.Equal("flat", plain.GetComponent<DDSComponent>()!.Base);
-                Assert.Same(target, ((DDSEntity)plain).Other);
+                Assert.Equal("flat", plain.GetComponent<DdsComponent>().Base);
+                Assert.Same(target, ((DdsEntity)plain).Other);
             }
             finally
             {
@@ -142,7 +141,7 @@ namespace CoreEssentials.Tests.SceneManagement
                     helper.Tick();
                     manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.016), TimeSpan.FromSeconds(0.016)));
 
-                    if (loadingScreen!.IsLoaded)
+                    if (loadingScreen.IsLoaded)
                         lastProgress = ProgressOf(loadingScreen);
                 }
 
@@ -197,9 +196,9 @@ namespace CoreEssentials.Tests.SceneManagement
                     helper.Tick();
                     manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.016), TimeSpan.FromSeconds(0.016)));
 
-                    if (!loadingScreen!.IsLoaded) continue;
+                    if (!loadingScreen.IsLoaded) continue;
 
-                    float progress = ProgressOf(loadingScreen!);
+                    float progress = ProgressOf(loadingScreen);
                     if (progress < last - 0.0001f)
                         monotonic = false;
                     last = progress;
@@ -231,7 +230,7 @@ namespace CoreEssentials.Tests.SceneManagement
   <GameSystems>
     <System Type=""EntitySystem"">
       <Entities>
-        <EntityDefinition Type=""DDSEntity"" Id=""booted"" />
+        <EntityDefinition Type=""DdsEntity"" Id=""booted"" />
       </Entities>
     </System>
   </GameSystems>
@@ -271,7 +270,7 @@ namespace CoreEssentials.Tests.SceneManagement
         {
             var entitySystem = scene.GetGameSystem<EntitySystem>();
             var entity = entitySystem.FindById("ui");
-            return entity!.GetComponent<TransitionProgressComponent>()!.Progress;
+            return entity.GetComponent<TransitionProgressComponent>().Progress; // NOSONAR — "ui" is always present in the transition assets.
         }
 
         /// <summary>Writes the data-driven loading screen and target scene assets used by the
@@ -282,7 +281,7 @@ namespace CoreEssentials.Tests.SceneManagement
   <GameSystems>
     <System Type=""EntitySystem"">
       <Entities>
-        <EntityDefinition Type=""DDSEntity"" Id=""ui"">
+        <EntityDefinition Type=""DdsEntity"" Id=""ui"">
           <Components><Component Type=""TransitionProgressComponent"" /></Components>
         </EntityDefinition>
       </Entities>
@@ -294,7 +293,7 @@ namespace CoreEssentials.Tests.SceneManagement
   <GameSystems>
     <System Type=""EntitySystem"">
       <Entities>
-        <EntityDefinition Type=""DDSEntity"" Id=""hero"">
+        <EntityDefinition Type=""DdsEntity"" Id=""hero"">
           <Position X=""5"" Y=""6"" />
         </EntityDefinition>
       </Entities>
@@ -302,8 +301,6 @@ namespace CoreEssentials.Tests.SceneManagement
   </GameSystems>
 </Scene>");
         }
-
-        public void Dispose() { }
 
         private static void WriteContentAsset(string fileName, string xml)
         {
@@ -313,3 +310,4 @@ namespace CoreEssentials.Tests.SceneManagement
         }
     }
 }
+

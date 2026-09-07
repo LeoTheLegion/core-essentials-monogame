@@ -139,7 +139,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             // Act & Assert
             Assert.False(entitySystem.HasPrefab("unknown"));
             Assert.False(entitySystem.HasPrefab(""));
-            Assert.False(entitySystem.HasPrefab(null!));
+            Assert.False(entitySystem.HasPrefab(null));
         }
 
         [Fact]
@@ -274,7 +274,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         private class TemplateTestEntity : Entity
         {
             public override void Update(GameTime gameTime) { }
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
         }
     }
 }
