@@ -160,25 +160,6 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Equal(Vector2.Zero, entity.GetSize());
         }
 
-        // ===== Serialization round-trip =====
-
-        [Fact]
-        public void Serialize_Deserialize_RoundTrips()
-        {
-            var comp = new AnimationComponent();
-            comp.AddAnimation("walk", CreateWalkSprite());
-            comp.Play("walk");
-            comp.SetSpeed("walk", 2f);
-
-            var xml = comp.SerializeToXml();
-            var restored = new AnimationComponent();
-            restored.DeserializeFromXml(xml);
-
-            Assert.Equal("walk", restored.CurrentAnimation);
-            Assert.Contains("walk", restored.Animations);
-            Assert.Equal(2f, restored.GetAnimation("walk")!.Speed);
-        }
-
         // ===== Fakes =====
 
         private class TestEntity : Entity

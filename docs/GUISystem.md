@@ -77,6 +77,15 @@ canvas.Update(gameTime);
 canvas.CleanUp();
 ```
 
+#### Global registration is deferred until first update
+
+A canvas does **not** join the global GUI render list at construction. It registers itself into the global root on its **first `Update`** (i.e., once its owning scene actually starts pumping it) and unregisters on `CleanUp`. This keeps canvases of a still-loading or already-unloaded scene out of the global render list:
+
+- A scene's canvas-bearing components are only pumped while that scene is current, so a target scene's UI cannot show through while it loads.
+- When a scene unloads (e.g. the loading screen after a transition), its canvases detach and stop rendering.
+
+If you create a canvas directly (not via a scene component) — e.g. a debug overlay — call `canvas.Update(gameTime)` at least once per frame to keep it registered; it will register on that first call.
+
 ### GUIManager — Lifecycle Management
 
 `GUIManager` is a static class that manages initialization, rendering, and the root widget hierarchy. It delegates all operations to the active engine backend (default: Myra-based `GuiManagerImpl`).

@@ -44,15 +44,15 @@ Before this change, restoring a save set the **entity** position but left the **
 
 ### Save/load (no extra code needed)
 
-In your `ISaveableEntity.LoadState`, just restore the entity transform. The component picks it up automatically:
+In your save component's `LoadState`, just restore the entity transform. The component picks it up automatically:
 
 ```csharp
 public void LoadState(XElement element)
 {
     // Restore the entity transform from the save file.
     var pos = element.Element("Position");
-    if (pos != null)
-        Position = new Vector2(
+    if (pos != null && Owner != null)
+        Owner.Position = new Vector2(
             float.Parse(pos.Attribute("X")!.Value),
             float.Parse(pos.Attribute("Y")!.Value));
 
@@ -98,28 +98,30 @@ rigidbody.SyncBodyFromEntity();
 A ball that can be teleported and survives save/load with no explicit sync calls:
 
 ```csharp
-public class Ball : Entity, ISaveableEntity
+public class Ball : Entity
 {
-    private RigidbodyComponent? _rigidbody;
-
     public override void OnStart()
     {
-        _rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
-        AddComponent(_rigidbody);
+        AddComponent(new RigidbodyComponent(RigidbodyType.Dynamic));
+        AddComponent(new BallSaveComponent());
     }
 
     public void Teleport(Vector2 to) => Position = to; // adopted automatically
+}
 
+/// <summary>Save component for the ball — persists its transform.</summary>
+public class BallSaveComponent : EntityComponent, ISaveableComponent
+{
     public XElement SaveState() => new XElement("Ball",
         new XElement("Position",
-            new XAttribute("X", Position.X),
-            new XAttribute("Y", Position.Y)));
+            new XAttribute("X", Owner?.Position.X ?? 0f),
+            new XAttribute("Y", Owner?.Position.Y ?? 0f)));
 
     public void LoadState(XElement element)
     {
         var pos = element.Element("Position");
-        if (pos != null)
-            Position = new Vector2(
+        if (pos != null && Owner != null)
+            Owner.Position = new Vector2(
                 float.Parse(pos.Attribute("X")!.Value),
                 float.Parse(pos.Attribute("Y")!.Value));
         // Physics body re-anchors itself on the next Update.

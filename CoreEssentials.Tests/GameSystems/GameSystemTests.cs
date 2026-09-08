@@ -75,7 +75,7 @@ namespace CoreEssentials.Tests.GameSystems
             gameSystem.SetScene(mockScene);
             
             // Assert - check _scene field via reflection since it's private
-            var sceneField = typeof(GameSystem).GetField("_scene", BindingFlags.NonPublic | BindingFlags.Instance);
+            var sceneField = typeof(GameSystem).GetField("_scene", BindingFlags.NonPublic | BindingFlags.Instance)!;
             var scene = sceneField.GetValue(gameSystem);
             
             Assert.Equal(mockScene, scene);
@@ -94,7 +94,7 @@ namespace CoreEssentials.Tests.GameSystems
             gameSystems.Add(typeof(TestGameSystem), testSystem);
             
             // Set the private _gameSystems field in the scene object
-            var gameSystemsField = typeof(Scene).GetField("_gameSystems", BindingFlags.NonPublic | BindingFlags.Instance);
+            var gameSystemsField = typeof(Scene).GetField("_gameSystems", BindingFlags.NonPublic | BindingFlags.Instance)!;
             gameSystemsField.SetValue(mockScene, gameSystems);
             
             // Set the scene on our game system

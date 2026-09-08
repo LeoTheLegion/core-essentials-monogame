@@ -28,13 +28,13 @@ public class CreateEntityOptionalParamsTests
         }
 
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     private class MultiOptionalEntity : Entity
     {
         public string Name { get; }
-        public float Scale { get; }
+        public new float Scale { get; }
         public bool Radiation { get; }
 
         // Mirrors the real-world ShootingGallery.FloatingPopUpText 6-param case.
@@ -46,7 +46,7 @@ public class CreateEntityOptionalParamsTests
         }
 
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     private class NoOptionalEntity : Entity
@@ -59,7 +59,7 @@ public class CreateEntityOptionalParamsTests
         }
 
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     private class ParamlessAndOptionalEntity : Entity
@@ -77,7 +77,7 @@ public class CreateEntityOptionalParamsTests
         }
 
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     // ===== CreateEntity with optional params (#69 repro) =====

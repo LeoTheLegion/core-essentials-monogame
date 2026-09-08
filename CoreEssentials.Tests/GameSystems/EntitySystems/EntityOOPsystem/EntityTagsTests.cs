@@ -9,9 +9,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     public class EntityTagsTests
     {
-        private EntitySystem CreateEntitySystem() => new EntitySystem();
+        private static EntitySystem CreateEntitySystem() => new EntitySystem();
         
-        private TestEntity CreateTaggedEntity(EntitySystem system, params string[] tags)
+        private static TestEntity CreateTaggedEntity(EntitySystem system, params string[] tags)
         {
             var entity = system.CreateEntity<TestEntity>();
             foreach (var tag in tags)
@@ -49,7 +49,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var system = CreateEntitySystem();
             var entity = system.CreateEntity<TestEntity>();
             
-            Assert.Throws<ArgumentNullException>(() => entity.SetTag(null));
+            Assert.Throws<ArgumentNullException>(() => entity.SetTag(null!));
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var system = CreateEntitySystem();
             var entity = system.CreateEntity<TestEntity>();
             
-            var result = entity.RemoveTag(null);
+            var result = entity.RemoveTag(null!);
             
             Assert.False(result);
         }
@@ -132,7 +132,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var system = CreateEntitySystem();
             var entity = system.CreateEntity<TestEntity>();
             
-            Assert.False(entity.HasTag(null));
+            Assert.False(entity.HasTag(null!));
         }
 
         // T2 Tests - EntitySystem tag lookup
@@ -179,7 +179,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         {
             var system = CreateEntitySystem();
             
-            var entities = system.GetEntitiesByTag(null);
+            var entities = system.GetEntitiesByTag(null!);
             
             Assert.Empty(entities);
         }
@@ -189,8 +189,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         {
             var system = CreateEntitySystem();
             var first = CreateTaggedEntity(system, "enemy");
-            var second = CreateTaggedEntity(system, "enemy");
-            
+            _ = CreateTaggedEntity(system, "enemy");
+
             var found = system.FindByTag("enemy");
             
             Assert.Equal(first, found);
@@ -212,7 +212,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         {
             var system = CreateEntitySystem();
             
-            var found = system.FindByTag(null);
+            var found = system.FindByTag(null!);
             
             Assert.Null(found);
         }
@@ -224,7 +224,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity = CreateTaggedEntity(system, "enemy");
             
             entity.Destroy();
-            system.Update(null); // Process destruction
+            system.Update(null!); // Process destruction
             
             var enemies = system.GetEntitiesByTag("enemy");
             
@@ -243,7 +243,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         private class TestEntity : Entity
         {
             public override void Update(GameTime gameTime) { }
-            public override void Render(SpriteBatch spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
     }
 }

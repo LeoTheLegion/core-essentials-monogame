@@ -27,7 +27,7 @@ namespace CoreEssentials.Tests.Asset
             var effectAsset = new EffectAsset(TestEffectName);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>("contentManager", () => effectAsset.Load(null));
+            Assert.Throws<ArgumentNullException>("contentManager", () => effectAsset.Load(null!));
         }
 
         [Fact]
@@ -41,7 +41,7 @@ namespace CoreEssentials.Tests.Asset
             // If Load must be called first, this test needs a mock content manager.
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>("contentManager", () => effectAsset.Unload(null));
+            Assert.Throws<ArgumentNullException>("contentManager", () => effectAsset.Unload(null!));
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace CoreEssentials.Tests.Asset
 
         public T Load<T>(string assetName)
         {
-            _loadedAssets[assetName] = typeof(T) == typeof(Effect) ? FakeEffect.Instance : default(T);
+            _loadedAssets[assetName] = typeof(T) == typeof(Effect) ? FakeEffect.Instance : default!;
             return (T)_loadedAssets[assetName];
         }
 
@@ -105,14 +105,8 @@ namespace CoreEssentials.Tests.Asset
     // This avoids GraphicsDevice requirements completely for unit testing.
     public static class FakeEffect
     {
-        public static readonly Effect Instance;
-
-        static FakeEffect()
-        {
-            // Use RuntimeHelpers.GetUninitializedObject to create an Effect without calling its constructor.
-            // This is a special case for testing only, not for production code.
-            // Requires System.Runtime.CompilerServices.
-            Instance = (Effect)RuntimeHelpers.GetUninitializedObject(typeof(Effect));
-        }
+        // Use RuntimeHelpers.GetUninitializedObject to create an Effect without calling its constructor.
+        // This is a special case for testing only, not for production code.
+        public static readonly Effect Instance = (Effect)RuntimeHelpers.GetUninitializedObject(typeof(Effect));
     }
 }

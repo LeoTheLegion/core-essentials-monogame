@@ -59,12 +59,12 @@ namespace CoreEssentials.Tests.Audio
         {
             // Use reflection to access the private _masterVolume field
             var fieldInfo = typeof(AudioManager).GetField("_masterVolume", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return (float)fieldInfo.GetValue(this);
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            return (float)fieldInfo.GetValue(this)!;
         }
         
         // Override PlayOneShotSound to avoid loading a real file
-        public new string PlayOneShotSound(string soundName)
+        public string PlayOneShotSound(string soundName)
         {
             // Instead of loading a real file, create a mock audio clip
             var mockClip = new MockAudioClip(soundName)
@@ -76,7 +76,7 @@ namespace CoreEssentials.Tests.Audio
         }
         
         // Override PlaySound(string) to use our mocked implementation
-        public new string PlaySound(string name)
+        public string PlaySound(string name)
         {
             // Create a mock audio clip instead of trying to load one
             var mockClip = new MockAudioClip(name)
@@ -92,7 +92,7 @@ namespace CoreEssentials.Tests.Audio
     public class MockAudioClipInstance : AudioClipInstance
     {
         private bool _stopped = false;
-        private bool _disposed = false;
+        private readonly bool _disposed = false;
         
         public MockAudioClipInstance(AudioClip audioClip) : base(audioClip)
         {

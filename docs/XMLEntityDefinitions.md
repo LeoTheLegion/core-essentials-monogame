@@ -20,8 +20,8 @@ string xml = @"
 
 var enemy = EntitySerializer.LoadEntity<MyEnemyEntity>(xml, entitySystem);
 
-// Load a scene from a file
-var scene = EntitySerializer.LoadSceneFromFile("levels/level1.xml", entitySystem);
+// Load a data-driven scene from a file (see Scene-as-Data)
+SceneManager.LoadScene("levels/level1.xml");
 ```
 
 ## Loading Entities
@@ -56,17 +56,9 @@ string xml = EntitySerializer.SaveEntityToString(player);
 
 ## Loading Scenes
 
-Scenes contain multiple entities with hierarchical relationships and cross-references.
+Scenes contain multiple entities with hierarchical relationships and cross-references. Since 0.20, scenes load through the strict **Scene-as-Data** format — `SceneManager.LoadScene("scenes/boss_fight.xml")` parses the file (a `<Scene>` holding exactly one `<GameSystems>`) into a `DataDrivenScene`, which registers prefabs and instantiates entities, linking children via `AddChild()`.
 
-```csharp
-// Load from XML string
-var entities = EntitySerializer.LoadSceneFromXml(sceneXml, entitySystem);
-
-// Load from file
-var entities = EntitySerializer.LoadSceneFromFile("scenes/boss_fight.xml", entitySystem);
-```
-
-Returns a list of root entities. Child entities are automatically linked via `AddChild()`.
+The full scene schema — `Type=` vs `Source=`, overrides, binds, references, and the 0.19 → 0.20 breaking changes — is documented in [Scene-as-Data](./SceneAsData.md).
 
 ## Entity XML Schema
 
@@ -159,17 +151,25 @@ Properties are parsed via reflection. Supported types:
 
 ### Basic Structure
 
+Since 0.20 the scene format is strict: `<Scene>` holds exactly one `<GameSystems>`, and entity definitions live under the `EntitySystem`'s `<Entities>` element. See [Scene-as-Data](./SceneAsData.md) for the complete reference (prefab registration, overrides, binds, references).
+
 ```xml
 <Scene>
-    <EntityDefinition Type="PlayerEntity" Id="hero">
-        <Position X="100" Y="200" />
-        <Tags><Tag Name="Player" /></Tags>
-    </EntityDefinition>
-    
-    <EntityDefinition Type="EnemyEntity" Id="villain">
-        <Position X="400" Y="300" />
-        <Tags><Tag Name="Enemy" /></Tags>
-    </EntityDefinition>
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Entities>
+                <EntityDefinition Type="PlayerEntity" Id="hero">
+                    <Position X="100" Y="200" />
+                    <Tags><Tag Name="Player" /></Tags>
+                </EntityDefinition>
+
+                <EntityDefinition Type="EnemyEntity" Id="villain">
+                    <Position X="400" Y="300" />
+                    <Tags><Tag Name="Enemy" /></Tags>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
 </Scene>
 ```
 
@@ -177,8 +177,11 @@ Properties are parsed via reflection. Supported types:
 
 | Attribute | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `Type` | string | **Yes** | Entity class name (must inherit from `Entity`) |
+| `Type` | string | One of `Type`/`Source` | Ad-hoc entity class name (must inherit from `Entity`) |
+| `Source` | string | One of `Type`/`Source` | Name of a registered `<Prefab>` to instantiate instead |
 | `Id` | string | No | Unique identifier for references |
+
+Any other attribute is a **flat override** applied to the owning entity's components.
 
 ### Parent-Child Hierarchy
 
@@ -330,7 +333,7 @@ public class ScoreKeeperComponent : EntityComponent
 ```
 
 ```csharp
-scene.LoadEntitiesFromXml("GuiAnchorDemo.xml", entitySystem);
+SceneManager.LoadScene("GuiAnchorDemo.xml");
 ```
 
 ## Custom Components
@@ -350,8 +353,8 @@ public class HealthComponent : EntityComponent
     public int MaxHealth { get; set; } = 100;
 }
 
-// 2. Load the scene — HealthComponent is found automatically
-var roots = EntitySerializer.LoadSceneFromFile("scene.xml", entitySystem);
+// 2. Load the entity — HealthComponent is found automatically
+var player = EntitySerializer.LoadEntityFromFile<PlayerEntity>("entities/player.xml", entitySystem);
 ```
 
 Then in XML:
@@ -376,7 +379,7 @@ Registration is only needed when discovery can't do the job:
 ```csharp
 var factory = new DefaultComponentFactory();
 factory.Register("Health", () => new HealthComponent(100)); // ctor args + custom name
-var roots = EntitySerializer.LoadSceneFromFile("scene.xml", entitySystem, factory);
+var player = EntitySerializer.LoadEntityFromFile<PlayerEntity>("entities/player.xml", entitySystem, factory);
 ```
 
 Notes on discovery:
@@ -398,32 +401,37 @@ Notes on discovery:
 // Scene file: levels/dungeon.xml
 string sceneXml = @"
     <Scene>
-        <EntityDefinition Type=""PlayerEntity"" Id=""player"">
-            <Position X=""100"" Y=""200"" />
-            <Tags><Tag Name=""Player"" /></Tags>
-            <Components>
-                <Component Type=""SpriteComponent"">
-                    <Properties>
-                        <Property Name=""Scale"" Value=""2,2"" />
-                    </Properties>
-                </Component>
-            </Components>
-        </EntityDefinition>
+        <GameSystems>
+            <System Type=""EntitySystem"">
+                <Entities>
+                    <EntityDefinition Type=""PlayerEntity"" Id=""player"">
+                        <Position X=""100"" Y=""200"" />
+                        <Tags><Tag Name=""Player"" /></Tags>
+                        <Components>
+                            <Component Type=""SpriteComponent"">
+                                <Properties>
+                                    <Property Name=""Scale"" Value=""2,2"" />
+                                </Properties>
+                            </Component>
+                        </Components>
+                    </EntityDefinition>
 
-        <EntityDefinition Type=""ChestEntity"" Id=""treasure"">
-            <Position X=""500"" Y=""400"" />
-            <Tags><Tag Name=""Collectible"" /></Tags>
-            <Children>
-                <EntityDefinition Type=""KeyItem"" Id=""goldKey"">
-                    <Position X=""0"" Y=""-20"" />
-                </EntityDefinition>
-            </Children>
-        </EntityDefinition>
+                    <EntityDefinition Type=""ChestEntity"" Id=""treasure"">
+                        <Position X=""500"" Y=""400"" />
+                        <Tags><Tag Name=""Collectible"" /></Tags>
+                        <Children>
+                            <EntityDefinition Type=""KeyItem"" Id=""goldKey"">
+                                <Position X=""0"" Y=""-20"" />
+                            </EntityDefinition>
+                        </Children>
+                    </EntityDefinition>
+                </Entities>
+            </System>
+        </GameSystems>
     </Scene>";
 
-var scene = EntitySerializer.LoadSceneFromXml(sceneXml, entitySystem);
-foreach (var entity in scene)
-{
-    Console.WriteLine($"Loaded: {entity.Id} at ({entity.Position.X}, {entity.Position.Y})");
-}
+SceneManager.LoadScene("levels/dungeon.xml");
+
+var player = entitySystem.FindById("player");
+Console.WriteLine($"Loaded: {player.Id} at ({player.Position.X}, {player.Position.Y})");
 ```

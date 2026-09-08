@@ -6,8 +6,7 @@ namespace CoreEssentials.Tests
 {
     public class Game1 : Game
     {
-        private GraphicsDeviceManager _graphics;
-        private SpriteBatch _spriteBatch;
+        private readonly GraphicsDeviceManager _graphics;
 
         public Game1()
         {
@@ -22,14 +21,9 @@ namespace CoreEssentials.Tests
             _graphics.ApplyChanges();
         }
 
-        protected override void Initialize()
-        {            
-            base.Initialize();
-        }
-
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            new SpriteBatch(GraphicsDevice);
         }
 
         protected override void Update(GameTime gameTime)

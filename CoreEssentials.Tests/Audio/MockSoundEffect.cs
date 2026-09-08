@@ -9,11 +9,9 @@ namespace CoreEssentials.Tests.Audio
     /// </summary>
     public class MockSoundEffect : ISoundEffect
     {
-        private float _masterVolume = 1.0f;
-        
         // Track method calls for assertions
         public int CreateInstanceCallCount { get; private set; }
-        public MockSoundEffectInstance LastCreatedInstance { get; set; } // Changed to public setter
+        public MockSoundEffectInstance? LastCreatedInstance { get; set; } // Changed to public setter
         
         public ISoundEffectInstance CreateInstance()
         {
@@ -25,11 +23,7 @@ namespace CoreEssentials.Tests.Audio
         
         public TimeSpan Duration { get; set; } = TimeSpan.FromSeconds(3.0);
         
-        public float MasterVolume 
-        { 
-            get => _masterVolume;
-            set => _masterVolume = value; 
-        }
+        public float MasterVolume { get; set; } = 1.0f;
     }
     
     /// <summary>
@@ -45,10 +39,6 @@ namespace CoreEssentials.Tests.Audio
         
         // Current state properties
         private SoundState _state = SoundState.Stopped;
-        private float _volume = 1.0f;
-        private bool _isLooped = false;
-        private float _pitch = 0.0f;
-        private float _pan = 0.0f;
         
         public void Play() 
         {
@@ -70,29 +60,13 @@ namespace CoreEssentials.Tests.Audio
         
         public SoundState State => _state;
         
-        public float Volume
-        {
-            get => _volume;
-            set => _volume = value;
-        }
+        public float Volume { get; set; } = 1.0f;
         
-        public bool IsLooped
-        {
-            get => _isLooped;
-            set => _isLooped = value;
-        }
+        public bool IsLooped { get; set; }
         
-        public float Pitch
-        {
-            get => _pitch;
-            set => _pitch = value;
-        }
+        public float Pitch { get; set; }
         
-        public float Pan
-        {
-            get => _pan;
-            set => _pan = value;
-        }
+        public float Pan { get; set; }
         
         public void Dispose()
         {

@@ -14,7 +14,7 @@ The Entity System includes several advanced features:
 | **Hierarchy** | [EntityHierarchy.md](./EntityHierarchy.md) | Parent-child relationships with transform inheritance |
 | **Spatial Partitioning** | [SpatialPartitioning.md](./SpatialPartitioning.md) | Grid-based optimization for spatial queries |
 | **Lifecycle** | [EntityLifecycle.md](./EntityLifecycle.md) | Delayed destruction, spawning, and respawning |
-| **Templates** | [EntityTemplates.md](./EntityTemplates.md) | Reusable entity blueprints from XML |
+| **Prefabs** | [Prefabs.md](./Prefabs.md) | Reusable entity blueprints with components |
 | **XML Definitions** | [XMLEntityDefinitions.md](./XMLEntityDefinitions.md) | Load entities from XML files |
 | **SendMessage** | [SendMessage.md](./SendMessage.md) | Scene-wide, Unity-style multi-cast messaging |
 
@@ -186,6 +186,6 @@ public class PhysicsEntity : Entity
 - [Entity Hierarchy](./EntityHierarchy.md) — Parent-child relationships
 - [Spatial Partitioning](./SpatialPartitioning.md) — Grid-based optimization
 - [Entity Lifecycle](./EntityLifecycle.md) — Delayed operations
-- [Entity Templates](./EntityTemplates.md) — Reusable blueprints
+- [Prefabs](./Prefabs.md) — Reusable blueprints
 - [XML Entity Definitions](./XMLEntityDefinitions.md) — XML loading
 - [SendMessage](./SendMessage.md) — Scene-wide messaging

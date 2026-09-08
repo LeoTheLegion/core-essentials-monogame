@@ -13,7 +13,7 @@ namespace CoreEssentials.Tests.Documentation
         {
             // Arrange
             var assembly = typeof(CoreEssentials.Assets.Asset).Assembly;
-            var assemblyPath = Path.GetDirectoryName(assembly.Location);
+            var assemblyPath = Path.GetDirectoryName(assembly.Location)!;
             var xmlFileName = $"{assembly.GetName().Name}.xml";
             var xmlFilePath = Path.Combine(assemblyPath, xmlFileName);
 
@@ -30,7 +30,7 @@ namespace CoreEssentials.Tests.Documentation
             
             // Get XML documentation file
             var assembly = type.Assembly;
-            var assemblyPath = Path.GetDirectoryName(assembly.Location);
+            var assemblyPath = Path.GetDirectoryName(assembly.Location)!;
             var xmlFileName = $"{assembly.GetName().Name}.xml";
             var xmlFilePath = Path.Combine(assemblyPath, xmlFileName);
             

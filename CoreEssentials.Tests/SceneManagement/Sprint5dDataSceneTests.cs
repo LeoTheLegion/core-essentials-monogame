@@ -1,0 +1,506 @@
+using System;
+using System.IO;
+using System.Linq;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Xunit;
+using CoreEssentials.Assets;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+using CoreEssentials.GUI;
+using CoreEssentials.GUI.Internal;
+using CoreEssentials.Playground;
+using CoreEssentials.Playground.Components;
+using CoreEssentials.Scenes;
+using CoreEssentials.Tests.Coroutines;
+
+namespace CoreEssentials.Tests.SceneManagement
+{
+    /// <summary>
+    /// Sprint 5d — proves the three "hard" demo scenes run entirely from data. Each real shipping XML
+    /// parses in the strict format (systems, prefabs, entity knobs, references and navigation targets),
+    /// and loads as a DataDrivenScene with no C# scene subclass:
+    ///   • CharacterScene — characters + templated buttons, key-driven audio/volume/debug/navigation.
+    ///   • CameraScene — camera + player + follow toggle (declarative &lt;Reference&gt; links).
+    ///   • LabelAlignmentDemoScene — screen-space HUD labels + an orbiting world-space panel + overlay.
+    ///
+    /// The CharacterScene load test uses a music-stripped variant of the file: MusicComponent plays on
+    /// attach, and audio playback throws headlessly (the mock content returns a null SoundEffect). The
+    /// parse test still asserts the real file carries the music shell.
+    /// </summary>
+    public class Sprint5dDataSceneTests : IDisposable
+    {
+        private readonly Game _mockGame;
+
+        public Sprint5dDataSceneTests()
+        {
+            // Buttons/labels/canvases create GUI widgets on attach — the GUI engine must be up.
+            _mockGame = new Game1();
+            GUIManager.Init(_mockGame, 1280, 720);
+        }
+
+        // ═══════════════════════ CharacterScene ═══════════════════════
+
+        [Fact]
+        public void CharacterScene_Parses_AsStrictScene_WithPrefabsAndKnobs()
+        {
+            // Parsing a <System> with <Prefab Asset=.../> loads each template through AssetManager,
+            // so the content manager must be up and the templates staged.
+            StageContentFile("Templates/TextTemplate.xml");
+            StageContentFile("Templates/SoundButtonTemplate.xml");
+            StageContentFile("Templates/VolumeButtonTemplate.xml");
+            AssetManager.Init(new MockContentManager());
+
+            var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/CharacterScene.xml"));
+
+            Assert.Single(scene.Systems);
+            Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
+            var sys = scene.Systems[0];
+
+            // Three templates are registered as prefabs.
+            Assert.Equal(3, sys.Prefabs.Count);
+            Assert.Contains(sys.Prefabs, p => p.Name == "TextPrefab" && p.Asset == "Templates/TextTemplate.xml");
+            Assert.Contains(sys.Prefabs, p => p.Name == "SoundButtonPrefab" && p.Asset == "Templates/SoundButtonTemplate.xml");
+            Assert.Contains(sys.Prefabs, p => p.Name == "VolumeButtonPrefab" && p.Asset == "Templates/VolumeButtonTemplate.xml");
+
+            // Characters are plain game objects carrying behavior components (Sprint 2 migration).
+            // Visuals are declared on the built-in SpriteComponent/AnimationComponent via their
+            // SpriteAsset properties — no per-game loader components.
+            var staticChar = FindById(sys.Entities, "staticCharacter");
+            Assert.NotNull(staticChar);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", staticChar.Type);
+            Assert.Contains("Static", staticChar.Tags);
+            Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("SpriteComponent") && c.Properties["SpriteAsset"] == "Sprites/character_sprite.xml");
+            Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("BounceTweenComponent"));
+            var animated = FindById(sys.Entities, "animatedCharacter");
+            Assert.NotNull(animated);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", animated.Type);
+            Assert.Contains("Animated", animated.Tags);
+            Assert.Contains(animated.DeclaredComponents, c => c.Type.EndsWith("AnimationComponent") && c.Properties["SpriteAsset"] == "Sprites/character_anim_walk.xml" && c.Properties["AnimationName"] == "walk");
+
+            // Text instances are prefab-based and configured via component-targeted <Overrides>.
+            var info = FindById(sys.Entities, "infoText");
+            Assert.Equal("TextPrefab", info!.Source);
+            var textCompKey = typeof(CoreEssentials.Playground.Components.TextComponent).FullName!;
+            Assert.True(info.ResolvedOverrides.TryGetValue(textCompKey, out var textProps));
+            Assert.Equal("Center", textProps["Alignment"]);
+            Assert.Contains("Press Q, W, E", textProps["Text"]);
+
+            // Sound buttons are prefab-based and configured via component-targeted <Overrides>:
+            // the text on the built-in ButtonComponent, the asset on the built-in AudioSourceComponent
+            // (the template wires Clicked → PlayOneShotNow declaratively, so no behavior component).
+            var fs1 = FindById(sys.Entities, "footstep1Button");
+            Assert.Equal("SoundButtonPrefab", fs1!.Source);
+            var buttonKey = typeof(ButtonComponent).FullName!;
+            Assert.True(fs1.ResolvedOverrides.TryGetValue(buttonKey, out var fs1ButtonProps));
+            Assert.Equal("Footstep 1", fs1ButtonProps["Text"]);
+            var sourceKey = typeof(AudioSourceComponent).FullName!;
+            Assert.True(fs1.ResolvedOverrides.TryGetValue(sourceKey, out var fs1SoundProps));
+            Assert.Equal("Audio/footstep1_sound.xml", fs1SoundProps["SoundAsset"]);
+
+            // Volume buttons carry a level + text (same component-targeted pattern).
+            var volLow = FindById(sys.Entities, "volumeLowButton");
+            Assert.Equal("VolumeButtonPrefab", volLow!.Source);
+            Assert.True(volLow.ResolvedOverrides.TryGetValue(buttonKey, out var volButtonProps));
+            Assert.Equal("Volume: 10%", volButtonProps["Text"]);
+            var volumeKey = typeof(VolumeButtonComponent).FullName!;
+            Assert.True(volLow.ResolvedOverrides.TryGetValue(volumeKey, out var volProps));
+            Assert.Equal("0.1", volProps["VolumeLevel"]);
+
+            // Music shell (present in the real file; stripped from the load variant below) is a
+            // built-in AudioSourceComponent with looping + the Music channel.
+            var music = FindById(sys.Entities, "music");
+            Assert.NotNull(music);
+            var musicSource = music.DeclaredComponents.First(c => c.Type.Contains("AudioSourceComponent"));
+            Assert.Equal("Audio/song1_sound.xml", musicSource.Properties["SoundAsset"]);
+            Assert.Equal("true", musicSource.Properties["Loop"]);
+            Assert.Equal("Music", musicSource.Properties["Channel"]);
+
+            // Debug toggle starts enabled with its font.
+            var debug = FindById(sys.Entities, "debugToggle");
+            var debugComp = debug!.DeclaredComponents.First(c => c.Type.Contains("DebugToggleComponent"));
+            Assert.Equal("true", debugComp.Properties["StartEnabled"]);
+            Assert.Equal("Fonts/base", debugComp.Properties["DebugFontAsset"]);
+
+            // Key-driven audio: three sound keys + two volume keys.
+            var q = FindById(sys.Entities, "soundKeyQ")!;
+            Assert.Equal("Audio/footstep1_sound.xml", q.DeclaredComponents.First(c => c.Type.Contains("SoundKeyComponent")).Properties["SoundAsset"]);
+            var z = FindById(sys.Entities, "volumeKeyZ")!;
+            Assert.Equal("0.1", z.DeclaredComponents.First(c => c.Type.Contains("VolumeKeyComponent")).Properties["Volume"]);
+
+            // Navigation targets are scene asset-name strings.
+            Assert.Equal("Scenes/PhysicsEntityScene.xml", NavTarget(FindById(sys.Entities, "navPhysics")!));
+            Assert.Equal("Scenes/SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
+        }
+
+        [Fact]
+        public void CharacterScene_Loads_AsDataDrivenScene_WithCharactersAndButtons()
+        {
+            StageContentFile("Scenes/CharacterScene.xml");
+            StageContentFile("Templates/TextTemplate.xml");
+            StageContentFile("Templates/SoundButtonTemplate.xml");
+            StageContentFile("Templates/VolumeButtonTemplate.xml");
+            // Character / player sprites load headlessly (0×0 frames) via this chain.
+            StageContentFile("Sprites/character_sprite.xml");
+            StageContentFile("Sprites/character_anim_walk.xml");
+            StageContentFile("Sprites/character_sheet.xml");
+
+            var helper = new CoroutineTestHelper();
+            try
+            {
+                // Music playback throws headlessly (null SoundEffect), so load a music-stripped copy.
+                var stripped = StripEntity(ReadSourceContentFile("Scenes/CharacterScene.xml"), "music");
+                WriteContentAsset("CharacterScene_LoadVariant.xml", stripped);
+
+                var content = new MockContentManager();
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                AssetManager.Init(content);
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("CharacterScene_LoadVariant.xml"));
+
+                scene.Load();
+                for (int i = 0; i < 60 && !scene.IsLoaded; i++)
+                    helper.Tick();
+
+                Assert.True(scene.IsLoaded);
+                var entitySystem = scene.GetGameSystem<EntitySystem>();
+
+                // Characters are plain game objects with their tags + behavior components.
+                // Visuals come from the built-in SpriteAsset properties: the sprite is loaded on attach.
+                var staticChar = entitySystem.FindById("staticCharacter");
+                Assert.NotNull(staticChar);
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(staticChar);
+                Assert.True(staticChar.HasTag("Static"));
+                Assert.NotNull(staticChar.GetComponent<BounceTweenComponent>());
+                Assert.Equal("Sprites/character_sprite.xml", staticChar.GetComponent<SpriteComponent>()!.Sprite?.Name);
+                var animated = entitySystem.FindById("animatedCharacter");
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(animated);
+                Assert.Equal("Sprites/character_anim_walk.xml", animated.GetComponent<SpriteComponent>()!.Sprite?.Name);
+                var walkAnim = animated.GetComponent<AnimationComponent>()!;
+                Assert.Contains("walk", walkAnim.Animations);
+                Assert.Equal("walk", walkAnim.CurrentAnimation);
+
+                // Text is a plain game object carrying a TextComponent; buttons are plain game
+                // objects carrying the built-in canvas/button components + the behavior components.
+                var infoText = entitySystem.FindById("infoText");
+                Assert.NotNull(infoText);
+                Assert.NotNull(infoText.GetComponent<TextComponent>());
+
+                var footstep1 = entitySystem.FindById("footstep1Button");
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(footstep1);
+                Assert.Equal("Footstep 1", footstep1.GetComponent<ButtonComponent>()!.Text);
+                Assert.Equal("Audio/footstep1_sound.xml", footstep1.GetComponent<AudioSourceComponent>()!.SoundAsset);
+
+                var volumeLow = entitySystem.FindById("volumeLowButton");
+                Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(volumeLow);
+                Assert.Equal("Volume: 10%", volumeLow.GetComponent<ButtonComponent>()!.Text);
+                Assert.Equal(0.1f, volumeLow.GetComponent<VolumeButtonComponent>()!.VolumeLevel, 3);
+
+                // The debug toggle attached to its shell.
+                Assert.NotNull(entitySystem.FindById("debugToggle")!.GetComponent<DebugToggleComponent>());
+            }
+            finally
+            {
+                helper.Cleanup();
+            }
+        }
+
+        // ═══════════════════════ CameraScene ═══════════════════════
+
+        [Fact]
+        public void CameraScene_Parses_AsStrictScene_WithCameraPlayerAndFollowToggle()
+        {
+            var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/CameraScene.xml"));
+
+            Assert.Single(scene.Systems);
+            Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
+            var sys = scene.Systems[0];
+
+            // Camera is a plain game object carrying the camera/input/follow components; the
+            // player is a plain game object with movement components.
+            var camera = FindById(sys.Entities, "camera");
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", camera!.Type);
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraComponent"));
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraInputComponent"));
+            Assert.Contains(camera.DeclaredComponents, c => c.Type.EndsWith("CameraFollowComponent"));
+            var player = FindById(sys.Entities, "player");
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", player!.Type);
+            Assert.Contains(player.DeclaredComponents, c => c.Type.EndsWith("MoveByKeysComponent"));
+
+            // The info text is a plain game object with a TextComponent carrying multi-line text (&#10;).
+            var info = FindById(sys.Entities, "cameraInfoText");
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", info!.Type);
+            var infoTextComp = info.DeclaredComponents.First(c => c.Type.Contains("TextComponent"));
+            Assert.Contains("\n", infoTextComp.Properties["Text"]);
+
+            // The follow toggle declares its three references.
+            var follow = FindById(sys.Entities, "followToggle");
+            Assert.NotNull(follow);
+            Assert.Equal("camera", RefTarget(follow, "Camera"));
+            Assert.Equal("player", RefTarget(follow, "FollowTarget"));
+            Assert.Equal("cameraInfoText", RefTarget(follow, "InfoLabel"));
+
+            // Navigation target.
+            Assert.Equal("Scenes/CharacterScene.xml", NavTarget(FindById(sys.Entities, "navCharacter")!));
+        }
+
+        [Fact]
+        public void CameraScene_Loads_AsDataDrivenScene_WithReferencesResolved()
+        {
+            StageContentFile("Scenes/CameraScene.xml");
+            StageContentFile("Sprites/character_sprite.xml");
+            StageContentFile("Sprites/character_anim_walk.xml");
+            StageContentFile("Sprites/character_sheet.xml");
+
+            var helper = new CoroutineTestHelper();
+            try
+            {
+                var content = new MockContentManager();
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                AssetManager.Init(content);
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/CameraScene.xml"));
+
+                scene.Load();
+                for (int i = 0; i < 60 && !scene.IsLoaded; i++)
+                    helper.Tick();
+
+                Assert.True(scene.IsLoaded);
+                var entitySystem = scene.GetGameSystem<EntitySystem>();
+
+                // The camera is a plain game object whose CameraComponent registered its inner
+                // Camera instance as the main camera on attach.
+                var camera = entitySystem.FindById("camera");
+                Assert.NotNull(camera);
+                var cameraComp = camera.GetComponent<CameraComponent>();
+                Assert.NotNull(cameraComp);
+                Assert.Same(cameraComp.Camera, CoreEssentials.Camera.Camera.MainCamera);
+
+                // The player instantiated at its authored position.
+                var player = entitySystem.FindById("player");
+                Assert.NotNull(player);
+                Assert.Equal(new Vector2(400, 300), player.Position);
+
+                // The follow toggle's <Reference> links resolved to the live entities.
+                var follow = entitySystem.FindById("followToggle")!.GetComponent<CameraFollowToggleComponent>();
+                Assert.NotNull(follow);
+                Assert.Same(camera, follow.Camera);
+                Assert.Same(player, follow.FollowTarget);
+                Assert.Same(entitySystem.FindById("cameraInfoText"), follow.InfoLabel);
+            }
+            finally
+            {
+                helper.Cleanup();
+            }
+        }
+
+        // ═══════════════════════ LabelAlignmentDemoScene ═══════════════════════
+
+        [Fact]
+        public void LabelAlignmentDemo_Parses_AsStrictScene_WithHudPanelAndOverlay()
+        {
+            var scene = SceneParser.Parse(ReadSourceContentFile("Scenes/LabelAlignmentDemoScene.xml"));
+
+            Assert.Single(scene.Systems);
+            Assert.Equal(typeof(EntitySystem), scene.Systems[0].SystemType);
+            var sys = scene.Systems[0];
+
+            // Camera pan speed is raised on its input component (the default 1 unit/s is imperceptible).
+            var camera = FindById(sys.Entities, "camera");
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", camera!.Type);
+            var camInput = camera.DeclaredComponents.First(c => c.Type.Contains("CameraInputComponent"));
+            Assert.Equal("300", camInput.Properties["MoveSpeed"]);
+
+            // The screen-space HUD root has four children (three labels + info).
+            var hud = FindById(sys.Entities, "hudRoot");
+            Assert.NotNull(hud);
+            var hudCanvas = hud.DeclaredComponents.First(c => c.Type.Contains("CanvasComponent"));
+            Assert.Equal("true", hudCanvas.Properties["IsScreenSpace"]);
+            Assert.Equal(4, hud.Children.Count);
+
+            // Each label host carries a LabelComponent + a HudLabelRefreshComponent.
+            var leftHost = hud.Children[0];
+            Assert.Contains(leftHost.DeclaredComponents, c => c.Type.Contains("LabelComponent"));
+            Assert.Contains(leftHost.DeclaredComponents, c => c.Type.Contains("HudLabelRefreshComponent"));
+
+            // The world-space panel has a pinned-size canvas + an orbit component + two label children.
+            var panel = FindById(sys.Entities, "panel");
+            Assert.NotNull(panel);
+            var panelCanvas = panel.DeclaredComponents.First(c => c.Type.Contains("CanvasComponent"));
+            Assert.Equal("false", panelCanvas.Properties["IsScreenSpace"]);
+            Assert.Equal("280", panelCanvas.Properties["Width"]);
+            var orbit = panel.DeclaredComponents.First(c => c.Type.Contains("OrbitPanelComponent"));
+            Assert.Equal("640", orbit.Properties["CenterX"]);
+            Assert.Equal(2, panel.Children.Count);
+
+            // The overlay is a plain component on its shell.
+            var overlay = FindById(sys.Entities, "debugOverlay");
+            Assert.NotNull(overlay);
+            Assert.Contains(overlay.DeclaredComponents, c => c.Type.Contains("LabelAlignmentDebugOverlayComponent"));
+
+            // Navigation target.
+            Assert.Equal("Scenes/SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
+        }
+
+        [Fact]
+        public void LabelAlignmentDemo_Loads_AsDataDrivenScene_WithHudPanelAndOrbit()
+        {
+            StageContentFile("Scenes/LabelAlignmentDemoScene.xml");
+
+            var helper = new CoroutineTestHelper();
+            try
+            {
+                var content = new MockContentManager();
+                content.AddAsset<SpriteFont>("Fonts/base", CoreEssentials.Tests.MockSpriteFont.Instance);
+                AssetManager.Init(content);
+                var scene = new DataDrivenScene(SceneParser.LoadFromAsset("Scenes/LabelAlignmentDemoScene.xml"));
+
+                scene.Load();
+                for (int i = 0; i < 60 && !scene.IsLoaded; i++)
+                    helper.Tick();
+
+                Assert.True(scene.IsLoaded);
+                var entitySystem = scene.GetGameSystem<EntitySystem>();
+
+                // Camera pan speed applied on the input component.
+                var camera = entitySystem.FindById("camera");
+                Assert.NotNull(camera);
+                Assert.NotNull(camera.GetComponent<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent>());
+                Assert.Equal(300f, camera.GetComponent<CameraInputComponent>()!.MoveSpeed);
+
+                // HUD root: screen-space canvas with four child hosts.
+                var hud = entitySystem.FindById("hudRoot");
+                var hudCanvas = hud!.GetComponent<CanvasComponent>();
+                Assert.NotNull(hudCanvas);
+                Assert.True(hudCanvas.IsScreenSpace);
+                Assert.Equal(4, hud.Children.Count);
+
+                // Panel: world-space canvas at its authored position with a pinned size + orbit.
+                var panel = entitySystem.FindById("panel");
+                Assert.NotNull(panel);
+                var panelCanvas = panel.GetComponent<CanvasComponent>()!;
+                Assert.False(panelCanvas.IsScreenSpace);
+                Assert.Equal(280f, panelCanvas.Width);
+                Assert.Equal(new Vector2(640, 360), panel.Position);
+                var orbit = panel.GetComponent<OrbitPanelComponent>();
+                Assert.NotNull(orbit);
+                Assert.Equal(0.6f, orbit.Speed);
+
+                // All six labels attached (three HUD + info + two on the panel) across two canvases.
+                var overlay = entitySystem.FindById("debugOverlay")!.GetComponent<LabelAlignmentDebugOverlayComponent>();
+                Assert.Equal(6, overlay!.DiscoverLabels(entitySystem).Count);
+                Assert.Equal(2, overlay.DiscoverCanvases(entitySystem).Count);
+
+                // The orbit actually moves the panel on update.
+                var before = panel.Position;
+                var frame = new TimeSpan(0, 0, 0, 0, 16); // 16 ms
+                for (int i = 0; i < 30; i++)
+                    entitySystem.Update(new GameTime(frame, frame));
+                Assert.NotEqual(before, panel.Position);
+            }
+            finally
+            {
+                helper.Cleanup();
+            }
+        }
+
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+            {
+                _mockGame?.Dispose();
+                EngineResolver.GetEngine()?.Shutdown();
+            }
+            _disposed = true;
+        }
+
+        // ──────────────────────────── Helpers ────────────────────────────
+
+        /// <summary>Finds an entity by Id in a definition tree (recursing into nested children).</summary>
+        private static EntityDefinition? FindById(System.Collections.Generic.List<EntityDefinition> entities, string id)
+        {
+            foreach (var e in entities)
+            {
+                if (e.Id == id) return e;
+                var nested = FindById(e.Children, id);
+                if (nested != null) return nested;
+            }
+            return null;
+        }
+
+        /// <summary>Reads the TargetSceneAsset property of a NavigateOnKeyComponent on a definition.</summary>
+        private static string NavTarget(EntityDefinition def)
+        {
+            var comp = def.DeclaredComponents.First(c => c.Type.Contains("NavigateOnKeyComponent"));
+            return comp.Properties["TargetSceneAsset"];
+        }
+
+        /// <summary>Reads the TargetId of a &lt;Reference Name=.../&gt; on a definition.</summary>
+        private static string RefTarget(EntityDefinition def, string name)
+        {
+            var reference = def.References.First(r => r.Attribute("Name")?.Value == name);
+            return reference.Attribute("TargetId")!.Value;
+        }
+
+        /// <summary>Removes the &lt;EntityDefinition Id="id"&gt; block (and its comment line) from scene XML.</summary>
+        private static string StripEntity(string xml, string id)
+        {
+            var marker = $"Id=\"{id}\"";
+            var idx = xml.IndexOf(marker, StringComparison.Ordinal);
+            if (idx < 0) return xml;
+
+            // Walk back to the start of the enclosing element line (skipping a preceding comment line).
+            int start = xml.LastIndexOf("<EntityDefinition", idx);
+            var prevNewline = xml.LastIndexOf('\n', start - 1);
+            if (prevNewline >= 0 && xml.Substring(prevNewline + 1, start - prevNewline - 1).TrimStart().StartsWith("<!--"))
+            {
+                var commentLineStart = xml.LastIndexOf('\n', prevNewline - 1);
+                start = commentLineStart < 0 ? 0 : commentLineStart + 1;
+            }
+
+            // Walk forward past the closing </EntityDefinition> and its trailing newline.
+            int end = xml.IndexOf("</EntityDefinition>", idx, StringComparison.Ordinal) + "</EntityDefinition>".Length;
+            if (end < xml.Length && xml[end] == '\n') end++;
+
+            return xml.Substring(0, start) + xml.Substring(end);
+        }
+
+        /// <summary>Copies a real source-tree Content file into the content dir the AssetManager reads.</summary>
+        private static void StageContentFile(string name)
+        {
+            WriteContentAsset(name, ReadSourceContentFile(name));
+        }
+
+        /// <summary>Resolves the real source-tree Content file by walking up from the test output directory.</summary>
+        private static string ReadSourceContentFile(string name)
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            for (int i = 0; i < 12 && dir != null; i++)
+            {
+                var candidate = Path.Combine(dir.FullName, "CoreEssentials.Playground", "Content", name);
+                if (File.Exists(candidate))
+                    return File.ReadAllText(candidate);
+
+                dir = dir.Parent;
+            }
+
+            throw new FileNotFoundException(
+                $"Could not locate source Content file '{name}' under CoreEssentials.Playground/Content.", name);
+        }
+
+        private static void WriteContentAsset(string fileName, string xml)
+        {
+            var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, xml);
+        }
+    }
+}

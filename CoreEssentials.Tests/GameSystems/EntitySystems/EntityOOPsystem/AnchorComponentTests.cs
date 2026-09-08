@@ -10,7 +10,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
 
 public class AnchorComponentTests : IDisposable
 {
-    private readonly Game _mockGame = null!;
+    private readonly Game _mockGame;
     private bool _disposed;
 
     public AnchorComponentTests()
@@ -44,7 +44,7 @@ public class AnchorComponentTests : IDisposable
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     // ===== Construction =====

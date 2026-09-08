@@ -1,0 +1,60 @@
+<Scene>
+    <!--
+        Placeholder home scene (Sprint 5a). Proves the boot-from-files pipeline with a trivial
+        data-driven scene so this sprint does not depend on any of the real scene migrations (5b-5d).
+        Once a real migrated scene lands, Program.cs repoints to it.
+
+        Strict scene format: <Scene> -> <GameSystems> -> <System Type="EntitySystem">.
+        A single root entity owns the screen-space canvas; each label is an anchored child — the same
+        structure as GuiAnchorDemo.xml.
+    -->
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Entities>
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="homeRoot">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CanvasComponent" />
+                    </Components>
+
+                    <Children>
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="homeTitle">
+                            <Components>
+                                <Component Type="AnchorComponent">
+                                    <Properties>
+                                        <Property Name="Preset" Value="MiddleCenter" />
+                                        <Property Name="Offset" Value="0,0" />
+                                    </Properties>
+                                </Component>
+                                <Component Type="LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="Core Essentials — data-driven boot" />
+                                        <Property Name="TextColor" Value="White" />
+                                        <Property Name="Scale" Value="2,2" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+
+                        <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="homeHint">
+                            <Components>
+                                <Component Type="AnchorComponent">
+                                    <Properties>
+                                        <Property Name="Preset" Value="BottomCenter" />
+                                        <Property Name="Offset" Value="0,-32" />
+                                    </Properties>
+                                </Component>
+                                <Component Type="LabelComponent">
+                                    <Properties>
+                                        <Property Name="Text" Value="This screen is 100% XML. Real demo scenes land in the next sprints." />
+                                        <Property Name="TextColor" Value="Gray" />
+                                    </Properties>
+                                </Component>
+                            </Components>
+                        </EntityDefinition>
+                    </Children>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>

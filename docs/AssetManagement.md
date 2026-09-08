@@ -152,43 +152,35 @@ The FontAsset class uses MonoGame's built-in SpriteFont system. Font files shoul
 
 ### Text Alignment Example
 
-The `TextEntity` class in the playground demonstrates how to use FontAsset with different alignment options:
+The `TextComponent` in the playground demonstrates how to use a `FontAsset` with different alignment options. It is a plain `IDrawableComponent`, so it can be attached to any entity (typically a behavior-free `GameObjectEntity`) and declared purely from scene/prefab XML:
 
 ```csharp
-public class TextEntity : Entity
+public class TextComponent : EntityComponent, IDrawableComponent
 {
-    private FontAsset _font;
-    private string _text;
-    private Color _color;
-    private TextAlignment _alignment;
-    
-    public enum TextAlignment
+    private FontAsset? _font;
+
+    public string Text { get; set; } = "";
+    public Color Color { get; set; } = Color.White;
+    public enum TextAlignment { Left, Center, Right }
+    public TextAlignment Alignment { get; set; } = TextAlignment.Left;
+
+    public override void OnAttach()
     {
-        Left,
-        Center,
-        Right
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        
+        base.OnAttach();
         // Load the font asset
-        _font = AssetManager.LoadAsset<FontAsset>("base");
+        _font = AssetManager.LoadAsset<FontAsset>("Fonts/base");
     }
-    
-    public override void Render(SpriteBatch spriteBatch)
+
+    public void Draw(SpriteBatch spriteBatch)
     {
-        base.Render(spriteBatch);
-        
-        if (_font == null || _font.Font == null)
+        if (Owner == null || _font?.Font == null)
             return;
-            
-        Vector2 textSize = _font.MeasureStringVector(_text);
-        Vector2 drawPosition = _position;
-        
+
+        Vector2 textSize = _font.MeasureStringVector(Text);
+        Vector2 drawPosition = Owner.Position;
+
         // Apply alignment
-        switch (_alignment)
+        switch (Alignment)
         {
             case TextAlignment.Center:
                 drawPosition.X -= textSize.X / 2;
@@ -197,10 +189,22 @@ public class TextEntity : Entity
                 drawPosition.X -= textSize.X;
                 break;
         }
-        
-        spriteBatch.DrawString(_font.Font, _text, drawPosition, _color);
+
+        spriteBatch.DrawString(_font.Font, Text, drawPosition, Color);
     }
 }
+```
+
+Declared from XML (see `docs/XMLEntityDefinitions.md`):
+
+```xml
+<Component Type="CoreEssentials.Playground.Components.TextComponent">
+  <Properties>
+    <Property Name="Text" Value="Hello" />
+    <Property Name="Color" Value="White" />
+    <Property Name="Alignment" Value="Center" />
+  </Properties>
+</Component>
 ```
 
 ## XML-Based Asset Definitions
@@ -322,87 +326,31 @@ Sprite sprite2 = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
 
 ## Example from Playground
 
-The `CharacterScene` demonstrates asset usage:
+The `CharacterScene` demonstrates asset usage. Characters are plain `GameObjectEntity` instances whose
+sprites are loaded and rendered entirely by components — no per-entity C#. The built-in components
+declare their visuals with a string `SpriteAsset` property, resolved through the `AssetManager` on attach:
 
-```csharp
-public class CharacterEntity : Entity
-{
-    private Sprite _sprite;
-    
-    public CharacterEntity(Vector2 position)
-    {
-        _position = position;
-        
-        // Load the character sprite that references the sprite sheet
-        _sprite = AssetManager.LoadAsset<Sprite>("character_sprite.xml");
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        Console.WriteLine("Character entity created!");
-    }
-    
-    public override void Render(SpriteBatch spriteBatch)
-    {
-        // Draw the character with the current frame
-        _sprite.Draw(
-            spriteBatch, 
-            _position, 
-            Color.White, 
-            0f, 
-            SpriteEffects.None, 
-            0f
-        );
-    }
-}
+```xml
+<!-- A static, bouncing character: the SpriteComponent loads its own sprite and renders it. -->
+<Component Type="SpriteComponent">
+    <Properties>
+        <Property Name="Origin" Value="0.5,0.5" />
+        <Property Name="SpriteAsset" Value="Sprites/character_sprite.xml" />
+    </Properties>
+</Component>
 
-public class AnimatedCharacterEntity : Entity
-{
-    private Sprite _sprite;
-    private AnimationState _animationState;
-    
-    public AnimatedCharacterEntity(Vector2 position)
-    {
-        _position = position;
-        
-        // Load the animated sprite (unified Sprite type)
-        _sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
-        
-        // Create animation state for this instance
-        _animationState = new AnimationState(_sprite);
-    }
-    
-    public override void OnStart()
-    {
-        base.OnStart();
-        Console.WriteLine("Animated character entity created!");
-    }
-    
-    public override void Update(GameTime gameTime)
-    {
-        base.Update(gameTime);
-        
-        // Update the animation
-        _animationState.Update(gameTime);
-    }
-    
-    public override void Render(SpriteBatch spriteBatch)
-    {
-        SpriteEffects effects = SpriteEffects.None;
-        
-        // Draw the animated character using the current animation state
-        _animationState.Draw(
-            spriteBatch, 
-            _position, 
-            Color.White,
-            0f,
-            effects,
-            0f
-        );
-    }
-}
+<!-- An animated character: the walk animation loads the sprite and drives the AnimationComponent. -->
+<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+        <Property Name="AnimationName" Value="walk" />
+    </Properties>
+</Component>
 ```
+
+Both properties call `AssetManager.LoadAsset<Sprite>(...)` under the hood, so assets are cached and
+reference-counted exactly as before. Because the AssetManager caches by name, a static sprite and an
+animation referencing the same asset share one loaded instance.
 
 ## Best Practices
 

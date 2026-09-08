@@ -184,23 +184,5 @@ public class CollisionFilteringTests : IDisposable
         Assert.Equal(CollisionCategory.Cat3 | CollisionCategory.Cat5, component.Collider.CollidesWith);
     }
 
-    [Fact]
-    public void ColliderComponent_SerializeToXml_IncludesFilter()
-    {
-        var component = new ColliderComponent(1f);
-        component.Categories = CollisionCategory.Cat1 | CollisionCategory.Cat2;
-        component.CollidesWith = CollisionCategory.Cat4;
-
-        var element = component.SerializeToXml();
-
-        Assert.Equal("Cat1, Cat2", element.Attribute("Categories")?.Value);
-        Assert.Equal("Cat4", element.Attribute("CollidesWith")?.Value);
-
-        var restored = new ColliderComponent(1f);
-        restored.DeserializeFromXml(element);
-        Assert.Equal(CollisionCategory.Cat1 | CollisionCategory.Cat2, restored.Categories);
-        Assert.Equal(CollisionCategory.Cat4, restored.CollidesWith);
-    }
-
     #endregion
 }

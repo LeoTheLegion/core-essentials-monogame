@@ -8,23 +8,36 @@ It replaces the old pattern of hand-rolling an `AnimatedSprite` + `AnimationStat
 
 ## Quick Start
 
-```csharp
-public class AnimatedCharacterEntity : Entity
-{
-    public override void OnStart()
-    {
-        base.OnStart();
+An animated entity is a plain `GameObjectEntity` carrying a `SpriteComponent` and an
+`AnimationComponent`. The component's declarative `SpriteAsset` + `AnimationName` properties load the
+sprite through the `AssetManager` on attach, register it under `AnimationName`, and start playing it:
 
-        var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
-        AddComponent(new SpriteComponent(sprite));      // owns rendering + geometry
-        var animation = AddComponent(new AnimationComponent()); // pure controller
-        animation.AddAnimation("walk", sprite);
-        animation.Play("walk");
-    }
-}
+```xml
+<Component Type="SpriteComponent">
+    <Properties>
+        <Property Name="Origin" Value="0.5,0.5" />
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+    </Properties>
+</Component>
+<Component Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.AnimationComponent">
+    <Properties>
+        <Property Name="SpriteAsset" Value="Sprites/character_anim_walk.xml" />
+        <Property Name="AnimationName" Value="walk" />
+    </Properties>
+</Component>
 ```
 
-That's it. No `Render`, `Update`, or `GetSize` overrides. The base `Entity`:
+Or wire it up in code (no `Render`, `Update`, or `GetSize` overrides needed):
+
+```csharp
+var sprite = AssetManager.LoadAsset<Sprite>("character_anim_walk.xml");
+AddComponent(new SpriteComponent(sprite));      // owns rendering + geometry
+var animation = AddComponent(new AnimationComponent()); // pure controller
+animation.AddAnimation("walk", sprite);
+animation.Play("walk");
+```
+
+Either way, the base `Entity`:
 - calls `AnimationComponent.Update` every frame (advances the animation and pushes the frame),
 - renders the current frame via the `SpriteComponent`,
 - resolves `GetSize()` / `GetOrigin()` through the `SpriteComponent`.
@@ -42,6 +55,8 @@ That's it. No `Render`, `Update`, or `GetSize` overrides. The base `Entity`:
 | `CurrentAnimation` | The name of the active animation (get/set). |
 | `CurrentAnimationState` | The `AnimationState` of the current animation, or `null`. |
 | `Sprite` | The `Sprite` backing the current animation, or `null`. |
+| `SpriteAsset` | Declarative asset name loaded on attach and registered/played as `AnimationName`. Skipped when an animation is already registered under that name. |
+| `AnimationName` | Name used to register and play the `SpriteAsset` animation (default `walk`). |
 
 ### Switching Animations
 
@@ -83,12 +98,7 @@ entity.Scale = new Vector2(2, 2);
 
 ## Serialization
 
-`AnimationComponent` implements `ISerializableComponent`. It persists:
-- the animation names and their sprite **asset names**,
-- the current animation name,
-- per-animation speed and loop state.
-
-On restore, sprite assets are reloaded in `OnAttach` (after the component is attached to the entity), so the component works with XML entity/scene loading.
+The component does **not** serialize itself. If a game needs to persist animation state, its save component reads the public surface — `Animations`, `CurrentAnimation`, and per-animation speed via `GetAnimation(name)` — and writes exactly what it needs. On restore, sprite assets are reloaded in `OnAttach` (after the component is attached to the entity), so the component works with XML entity/scene loading.
 
 ```xml
 <Component Type="AnimationComponent">

@@ -11,8 +11,8 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.Bu
 /// WASD handlers, physics, etc.).
 /// </summary>
 /// <remarks>
-/// On attach a new <see cref="Camera"/> is created and registered as
-/// <see cref="Camera.MainCamera"/>; on detach it is disposed and removed from the main-camera
+/// On attach a new <see cref="Cam"/> is created and registered as
+/// <see cref="Cam.MainCamera"/>; on detach it is disposed and removed from the main-camera
 /// slot. The sync happens in <see cref="LateUpdate"/>, i.e. after all regular updates of the
 /// frame, so the camera always sees the entity's final position for that frame.
 /// Scenes can therefore get a camera by attaching this component to any plain entity — including

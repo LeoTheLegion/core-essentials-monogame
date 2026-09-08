@@ -1,0 +1,33 @@
+<Prefab Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="0" Sort="0" Active="true">
+    <Tags>
+        <Tag Name="Ball" />
+        <Tag Name="Physical" />
+    </Tags>
+    <Components>
+        <Component Type="SpriteComponent">
+            <Properties>
+                <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
+                <Property Name="Color" Value="White" />
+                <Property Name="Origin" Value="0.5,0.5" />
+            </Properties>
+        </Component>
+        <Component Type="RigidbodyComponent">
+            <Properties>
+                <Property Name="FixedRotation" Value="false" />
+                <Property Name="Mass" Value="1.0" />
+            </Properties>
+        </Component>
+        <!-- Fully declared in XML (possible after the parameterless ctor + settable ShapeType). -->
+        <Component Type="ColliderComponent">
+            <Properties>
+                <Property Name="ShapeType" Value="Circle" />
+                <Property Name="Restitution" Value="1.0" />
+                <Property Name="Offset" Value="0,1" />
+            </Properties>
+        </Component>
+        <!-- Random kick + spin movement (port of the old hand-written ball's coroutine). -->
+        <Component Type="BallMovementComponent" />
+        <!-- Saves/loads this ball through the framework serializer. -->
+        <Component Type="BallSaveComponent" />
+    </Components>
+</Prefab>

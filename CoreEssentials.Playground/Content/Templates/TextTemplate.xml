@@ -1,0 +1,10 @@
+<Prefab Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="0" Sort="100" Active="true">
+    <Tags>
+        <Tag Name="UI" />
+        <Tag Name="Text" />
+    </Tags>
+    <Components>
+        <!-- World-space aligned text; per-instance Text/Color/Alignment come from <Overrides>. -->
+        <Component Type="CoreEssentials.Playground.Components.TextComponent" />
+    </Components>
+</Prefab>

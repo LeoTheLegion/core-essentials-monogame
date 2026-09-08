@@ -2,8 +2,6 @@ using CoreEssentials.Inputs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input; // Added for KeyboardState
 using Moq;
-using System;
-using System.Reflection;
 using Xunit;
 
 namespace CoreEssentials.Tests.Inputs
@@ -27,12 +25,6 @@ namespace CoreEssentials.Tests.Inputs
             Assert.IsType<CoreEssentials.Inputs.Touch>(Input.Touch); // Fully qualified name (wrapper, not raw TouchListener)
             Assert.IsType<CoreEssentials.Inputs.Keyboard>(Input.Keyboard); // Fully qualified name
             Assert.IsType<CoreEssentials.Inputs.Mouse>(Input.Mouse); // Fully qualified name (wrapper, not raw MouseListener)
-        }
-
-        // Helper method to set static properties via reflection
-        private void SetPropertyValue(PropertyInfo prop, object obj, object value)
-        {
-            prop.SetValue(obj, value);
         }
     }
 }

@@ -163,7 +163,7 @@ The filter is declarable in entity XML, using the same `<Properties>` reflection
 - `Value="Cat1, Cat2"` — a combination of categories (flags).
 - `Value="All"` — accept every category.
 
-`ColliderComponent` also round-trips the filter through its own `SerializeToXml` / `DeserializeFromXml` (the `<ColliderState>` element carries `Categories` and `CollidesWith` attributes).
+A save component can persist the filter too — it reads `Categories` and `CollidesWith` from the `ColliderComponent` and writes them into its own `<ColliderState>` element.
 
 ---
 

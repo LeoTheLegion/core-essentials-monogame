@@ -43,9 +43,42 @@ Control the global volume applied to all active sounds:
 AudioManager.Instance.SetMasterVolume(0.8f);
 ```
 
-> **Note:** Volume is controlled at the master level only. There is no per-sound volume API.
-> To change a sound's loudness, adjust the `<Volume>` value in its XML asset definition, or
-> use `SetMasterVolume` to scale everything globally.
+### Per-Instance Volume, Pitch and Pan
+
+Each playing instance can be tuned independently of its clip, channel and the master volume:
+
+```csharp
+string id = AudioManager.Instance.PlaySound("footstep1_sound.xml");
+
+// Per-instance volume multiplier (0.0–1.0), clamped into the final output.
+AudioManager.Instance.SetInstanceVolume(id, 0.25f);
+
+// Per-instance pitch as a Unity-style ratio (1.0 = normal, 2.0 = one octave up).
+// Converted internally to MonoGame's semitone unit; non-positive ratios are treated as normal.
+AudioManager.Instance.SetInstancePitch(id, 2.0f);   // one octave up
+
+// Per-instance stereo pan (-1 = left, 0 = center, +1 = right).
+AudioManager.Instance.SetInstancePan(id, 0.75f);    // mostly right
+```
+
+### Audio Channels
+
+Every instance plays on an `AudioChannel` (`Master`, `Music` or `Sfx`). Each channel has its own
+volume knob, so you can duck the music under dialogue without touching SFX:
+
+```csharp
+// Play a clip on a specific channel (defaults to AudioChannel.Master).
+string musicId = AudioManager.Instance.PlaySound("background_music.xml", AudioChannel.Music);
+
+AudioManager.Instance.SetChannelVolume(AudioChannel.Music, 0.5f); // duck the music
+float m = AudioManager.Instance.GetChannelVolume(AudioChannel.Music);
+```
+
+Setting a channel volume re-applies it immediately to every active instance on that channel.
+
+> **Effective volume formula.** A single sample's output is clamped to `0.0–1.0` and equals:
+> `clip.Volume × instanceVolume × channelVolume × masterVolume`. Pitch and pan are applied
+> independently of the volume chain.
 
 ### Audio Assets
 
@@ -112,27 +145,12 @@ if (args.Key == Keys.Right)
 }
 ```
 
-## Audio Clip Instance
+## Audio Components (Per-Entity Sources & Listener)
 
-For more advanced audio control, you can work directly with `AudioClipInstance` objects:
-
-```csharp
-// Get an AudioClipInstance
-AudioClipInstance instance = AudioManager.Instance.GetAudioInstance(soundId);
-
-if (instance != null)
-{
-    // Check if the instance is still playing
-    bool isPlaying = instance.IsPlaying;
-    
-    // Get or set the current playback position
-    float position = instance.Position;
-    instance.Position = 5.0f; // Jump to 5 seconds
-    
-    // Get the total duration
-    float duration = instance.Duration;
-}
-```
+For per-entity audio — a looping music shell on a plain entity, or a sound button declared purely
+from XML data — use the built-in `AudioSourceComponent` and `AudioListenerComponent`. These attach
+to entities, own their playback state (stopping themselves on detach so a scene unload leaks no
+instances), and opt into 2D spatialization. See [Audio Components](./AudioComponents.md).
 
 ## Best Practices
 
@@ -141,5 +159,6 @@ if (instance != null)
 - Use XML files to define sound properties for better organization
 - Adjust volume levels for a balanced audio experience
 - Use one-shot sounds for brief effects and PlaySound for longer or looping audio
-- Consider using spatial audio for positional sound in 2D games
-- Implement sound categories (music, sfx, ui, etc.) for group volume control
+- Use `AudioChannel` (`Music`, `Sfx`) for group volume control — e.g. duck the music without touching SFX
+- For per-entity audio (music shells, sound buttons), prefer the built-in components over raw manager calls — see [Audio Components](./AudioComponents.md)
+- Enable `SpatialEnabled` on an `AudioSourceComponent` for opt-in 2D positional audio (pan + attenuation against the active listener)

@@ -27,8 +27,6 @@ public class LabelComponent : EntityComponent
     private Vector2 _scale = Vector2.One;
     private bool _visible = true;
     private float _opacity = 1.0f;
-    private HorizontalAlignment _horizontalAlignment = HorizontalAlignment.Left;
-    private VerticalAlignment _verticalAlignment = VerticalAlignment.Top;
 
     /// <summary>
     /// Gets or sets the display text of the label. Live pass-through: setting it before attaching
@@ -101,11 +99,7 @@ public class LabelComponent : EntityComponent
     /// The entity's position relative to the canvas entity offsets (margin) from that reference.
     /// Applied per frame during position sync; scale-aware.
     /// </summary>
-    public HorizontalAlignment HorizontalAlignment
-    {
-        get => _horizontalAlignment;
-        set => _horizontalAlignment = value;
-    }
+    public HorizontalAlignment HorizontalAlignment { get; set; } = HorizontalAlignment.Left;
 
     /// <summary>
     /// Gets or sets how the label is positioned inside its canvas, vertically.
@@ -115,11 +109,7 @@ public class LabelComponent : EntityComponent
     /// The entity's position relative to the canvas entity offsets (margin) from that reference.
     /// Applied per frame during position sync; scale-aware.
     /// </summary>
-    public VerticalAlignment VerticalAlignment
-    {
-        get => _verticalAlignment;
-        set => _verticalAlignment = value;
-    }
+    public VerticalAlignment VerticalAlignment { get; set; } = VerticalAlignment.Top;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LabelComponent"/> class (template-friendly).
@@ -194,14 +184,14 @@ public class LabelComponent : EntityComponent
             return Vector2.Zero;
 
         var renderedSize = new Vector2(_label.Width * _scale.X, _label.Height * _scale.Y);
-        float x = _horizontalAlignment switch
+        float x = HorizontalAlignment switch
         {
             HorizontalAlignment.Left => 0f,
             HorizontalAlignment.Center => canvas.Width * 0.5f - renderedSize.X * 0.5f,
             HorizontalAlignment.Right => canvas.Width - renderedSize.X,
             _ => 0f
         };
-        float y = _verticalAlignment switch
+        float y = VerticalAlignment switch
         {
             VerticalAlignment.Top => 0f,
             VerticalAlignment.Center => canvas.Height * 0.5f - renderedSize.Y * 0.5f,

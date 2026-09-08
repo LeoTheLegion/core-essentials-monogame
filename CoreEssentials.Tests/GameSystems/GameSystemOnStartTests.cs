@@ -22,12 +22,13 @@ namespace CoreEssentials.Tests.GameSystems
     // Test Scene to load the TestOnStartGameSystem
     public class TestSceneWithOnStartSystem : Scene
     {
-        public TestOnStartGameSystem MyTestSystem { get; private set; }
+        public TestOnStartGameSystem? MyTestSystem { get; private set; }
 
         protected override GameSystem[] LoadGameSystems()
         {
-            MyTestSystem = new TestOnStartGameSystem();
-            return new GameSystem[] { MyTestSystem };
+            var system = new TestOnStartGameSystem();
+            MyTestSystem = system;
+            return new GameSystem[] { system };
         }
 
         protected override IEnumerator OnStartCoroutine()
