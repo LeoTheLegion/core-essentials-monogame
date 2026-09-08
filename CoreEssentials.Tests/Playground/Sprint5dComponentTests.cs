@@ -28,7 +28,7 @@ public class Sprint5dPureComponentTests
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     /// <summary>A GameTime with the given seconds elapsed (the components read ElapsedGameTime).</summary>
@@ -66,8 +66,7 @@ public class Sprint5dPureComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (OrbitProbe)entity.AddComponent(
-            new OrbitProbe { CenterX = 100f, CenterY = 50f, RadiusX = 10f, RadiusY = 5f, Speed = 1f });
+        var comp = entity.AddComponent(new OrbitProbe { CenterX = 100f, CenterY = 50f, RadiusX = 10f, RadiusY = 5f, Speed = 1f });
         try
         {
             comp.Update(Seconds(1f));
@@ -97,7 +96,7 @@ public class Sprint5dPureComponentTests
     public void Follow_TriggerKey_Toggles_WrongKeyDoesNothing()
     {
         var entity = new TestEntity();
-        var comp = (RecordingFollow)entity.AddComponent(new RecordingFollow());
+        var comp = entity.AddComponent(new RecordingFollow());
         try
         {
             comp.HandleKey(Keys.A);
@@ -119,7 +118,7 @@ public class Sprint5dPureComponentTests
 
         var system = new EntitySystem();
         var label = system.CreateEntity<TestEntity>();
-        var text = (TextComponent)label.AddComponent(new TextComponent());
+        var text = label.AddComponent(new TextComponent());
         try
         {
             var comp = new FollowProbe { InfoTemplate = "state={state}", InfoLabel = label };
@@ -157,7 +156,7 @@ public class Sprint5dPureComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (RecordingHud)entity.AddComponent(new RecordingHud { IntervalSeconds = 0.5f });
+        var comp = entity.AddComponent(new RecordingHud { IntervalSeconds = 0.5f });
         try
         {
             // 0.4s < 0.5s → no refresh yet.
@@ -176,7 +175,7 @@ public class Sprint5dPureComponentTests
     private class RecordingDebugStart : DebugToggleComponent
     {
         public string? LoadedFont;
-        protected override CoreEssentials.Assets.FontAsset LoadDebugFont(string assetName)
+        protected override CoreEssentials.Assets.FontAsset? LoadDebugFont(string assetName)
         {
             LoadedFont = assetName;
             return null;
@@ -188,7 +187,7 @@ public class Sprint5dPureComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (RecordingDebugStart)entity.AddComponent(new RecordingDebugStart
+        var comp = entity.AddComponent(new RecordingDebugStart
         {
             StartEnabled = true,
             ShowEntityBounds = true,
@@ -209,7 +208,7 @@ public class Sprint5dPureComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (RecordingDebugStart)entity.AddComponent(new RecordingDebugStart());
+        var comp = entity.AddComponent(new RecordingDebugStart());
         try
         {
             Assert.False(system.DebugMode);
@@ -236,19 +235,23 @@ public class Sprint5dOverlayComponentTests : IDisposable
         GUIManager.Init(_mockGame, 800, 600);
     }
 
-    public void Dispose()
+    public void Dispose() => Dispose(true);
+
+    protected virtual void Dispose(bool disposing)
     {
         if (_disposed) return;
-        _mockGame?.Dispose();
-        EngineResolver.GetEngine()?.Shutdown();
+        if (disposing)
+        {
+            _mockGame?.Dispose();
+            EngineResolver.GetEngine()?.Shutdown();
+        }
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     [Fact]

@@ -38,15 +38,17 @@ public class CameraFollowComponent : EntityComponent
     public override void Update(GameTime gameTime)
     {
         if (!FollowingTarget || Owner == null) return;
+        var target = FollowTarget;
+        if (target == null) return;
 
         // If the target was destroyed mid-follow, stop following instead of lerping to a stale position.
-        if (FollowTarget.Destroyed)
+        if (target.Destroyed)
         {
             FollowTarget = null;
             return;
         }
 
-        Owner.Position = Vector2.Lerp(Owner.Position, FollowTarget.Position, LerpFactor);
+        Owner.Position = Vector2.Lerp(Owner.Position, target.Position, LerpFactor);
     }
 
     /// <summary>

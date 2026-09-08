@@ -41,7 +41,7 @@ namespace CoreEssentials.Tests
             // Special case for testing - return a default mock object if possible
             if (_typeConverters.TryGetValue(typeof(T), out var defaultConverter))
             {
-                return (T)defaultConverter(null);
+                return (T)defaultConverter(null!);
             }
             
             throw new InvalidOperationException($"Asset not found: {assetName}");
@@ -59,7 +59,7 @@ namespace CoreEssentials.Tests
         {
             // Create a minimal mock that won't throw exceptions but will pass null checks
             // We need to use a real mock object because MonoGame's Texture2D can't be easily mocked
-            return null;
+            return null!;
         }
     }
     
@@ -70,7 +70,7 @@ namespace CoreEssentials.Tests
         private static SoundEffect CreateMockSoundEffect()
         {
             // Create a minimal mock that won't throw exceptions but will pass null checks
-            return null;
+            return null!;
         }
     }
 
@@ -87,14 +87,14 @@ namespace CoreEssentials.Tests
         public void Load_ThrowsIfContentManagerNull()
         {
             var asset = new XMLAsset("test.xml");
-            Assert.Throws<ArgumentNullException>(() => asset.Load(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Load(null!));
         }
 
         [Fact]
         public void Unload_ThrowsIfContentManagerNull()
         {
             var asset = new XMLAsset("test.xml");
-            Assert.Throws<ArgumentNullException>(() => asset.Unload(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Unload(null!));
         }
 
         [Fact]

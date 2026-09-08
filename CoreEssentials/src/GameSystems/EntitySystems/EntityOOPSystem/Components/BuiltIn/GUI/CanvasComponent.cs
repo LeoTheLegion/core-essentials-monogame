@@ -15,7 +15,7 @@ namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.Bu
 /// <remarks>
 /// The component drives the canvas lifecycle end to end:
 /// <list type="bullet">
-/// <item><see cref="OnAttach"/> — nothing required; the canvas is created eagerly in the constructor.</item>
+/// <item><c>OnAttach</c> — nothing required; the canvas is created eagerly in the constructor.</item>
 /// <item><see cref="Update"/> — syncs the canvas position from <see cref="EntityComponent.Owner"/> and pumps the canvas.</item>
 /// <item><see cref="OnDetach"/> — calls <see cref="Canvas.CleanUp"/>, releasing all child widgets.</item>
 /// </list>
@@ -73,9 +73,9 @@ public class CanvasComponent : EntityComponent
     /// <summary>
     /// Initializes a new instance of the <see cref="CanvasComponent"/> class.
     /// </summary>
-    /// <param name="isScreenSpace">If true (default) the canvas renders in screen space; if false it renders
+    /// <param name="isScreenSpace">If true the canvas renders in screen space; if false it renders
     /// in world space and follows the owning entity's position relative to the main camera.</param>
-    public CanvasComponent(bool isScreenSpace = true)
+    public CanvasComponent(bool isScreenSpace)
     {
         _canvas = new Canvas(isScreenSpace);
     }

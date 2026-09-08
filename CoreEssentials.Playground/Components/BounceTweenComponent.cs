@@ -32,32 +32,38 @@ public class BounceTweenComponent : EntityComponent
 
     private TweenFloat? _tween;
     private float _originalY;
-    private bool _initialized;
 
     /// <inheritdoc />
     public override void Update(GameTime gameTime)
     {
         if (Owner == null) return;
 
-        // Capture the baseline on the first frame — the XML position is applied after OnStart.
-        if (!_initialized)
-        {
-            _tween = new TweenFloat(0f, -Amplitude, Duration, Easing);
-            _tween.Loop = Loop;
-            _tween.Reverse = Reverse;
-            _originalY = Owner.Position.Y;
-            _initialized = true;
-        }
-
+        // The tween is created on the first frame — the XML position is applied after OnStart, so the
+        // baseline Y cannot be read earlier.
+        var tween = GetOrCreateTween();
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _tween.Advance(dt);
-        if (_tween.IsComplete)
+        tween.Advance(dt);
+        if (tween.IsComplete)
         {
-            if (!Loop) _tween.Reset();
-            else if (Reverse) _tween.ToggleDirection();
-            else _tween.Reset();
+            if (!Loop) tween.Reset();
+            else if (Reverse) tween.ToggleDirection();
+            else tween.Reset();
         }
 
-        Owner.Position = new Vector2(Owner.Position.X, _originalY + _tween.GetValue());
+        Owner.Position = new Vector2(Owner.Position.X, _originalY + tween.GetValue());
+    }
+
+    /// <summary>Returns the active tween, creating it (and capturing the baseline Y) on first use.</summary>
+    private TweenFloat GetOrCreateTween()
+    {
+        if (_tween != null)
+            return _tween;
+
+        var tween = new TweenFloat(0f, -Amplitude, Duration, Easing);
+        tween.Loop = Loop;
+        tween.Reverse = Reverse;
+        _originalY = Owner.Position.Y;
+        _tween = tween;
+        return tween;
     }
 }

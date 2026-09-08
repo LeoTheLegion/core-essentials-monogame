@@ -420,30 +420,44 @@ public class DefaultComponentFactory : IComponentFactory
             if (!_scannedAssemblies.Add(assembly))
                 continue;
 
-            Type[] types;
-            try
+            foreach (var candidate in GetLoadableTypes(assembly))
             {
-                types = assembly.GetTypes();
+                TryIndexCandidate(candidate, assembly.GetName().Name ?? "unknown");
             }
-            catch (ReflectionTypeLoadException ex)
-            {
-                types = ex.Types.Where(t => t != null).ToArray()!;
-            }
+        }
+    }
 
-            foreach (var candidate in types)
-            {
-                if (!candidate.IsPublic || candidate.IsAbstract || candidate.IsNested)
-                    continue;
-                if (!typeof(EntityComponent).IsAssignableFrom(candidate))
-                    continue;
-                if (candidate.GetConstructor(Type.EmptyTypes) == null)
-                    continue;
+    /// <summary>
+    /// Returns the loadable types of an assembly, tolerating partially failed type loads.
+    /// </summary>
+    private static Type[] GetLoadableTypes(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(t => t != null).ToArray()!;
+        }
+    }
 
-                if (!_discoveredTypes.TryAdd(candidate.Name, candidate))
-                {
-                    Console.WriteLine($"[Serialization] Duplicate component name '{candidate.Name}' discovered in {assembly.GetName().Name} — keeping the first match.");
-                }
-            }
+    /// <summary>
+    /// Indexes a candidate type if it is a usable public component type with a parameterless
+    /// constructor. Duplicate names keep the first match and log a warning.
+    /// </summary>
+    private static void TryIndexCandidate(Type candidate, string assemblyName)
+    {
+        if (!candidate.IsPublic || candidate.IsAbstract || candidate.IsNested)
+            return;
+        if (!typeof(EntityComponent).IsAssignableFrom(candidate))
+            return;
+        if (candidate.GetConstructor(Type.EmptyTypes) == null)
+            return;
+
+        if (!_discoveredTypes.TryAdd(candidate.Name, candidate))
+        {
+            Console.WriteLine($"[Serialization] Duplicate component name '{candidate.Name}' discovered in {assemblyName} — keeping the first match.");
         }
     }
 

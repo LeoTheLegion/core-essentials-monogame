@@ -21,8 +21,17 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
     public class EntityOverrideTests : IDisposable
     {
         private readonly EntitySystem _system = new();
+        private bool _disposed;
 
-        public void Dispose() => _system.Dispose();
+        public void Dispose() => Dispose(true);
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+                _system.Dispose();
+            _disposed = true;
+        }
 
         // ──────────────────────────── C# API: Instantiate with entity overrides ────────────────────────────
 
@@ -68,7 +77,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             Assert.True(entity.Enabled);
             Assert.Equal(new Vector2(1, 2), entity.Offset);
             Assert.Equal(Color.Red, entity.Tint);
-            Assert.Equal(SelfStateEntity.ModeEnum.Fast, entity.Mode);
+            Assert.Equal(SelfStateEntity.MoveMode.Fast, entity.Mode);
         }
 
         [Fact]
@@ -251,7 +260,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 // Assert — the entity loaded from data carries its overridden values
                 Assert.True(scene.IsLoaded);
                 var entitySystem = scene.GetGameSystem<EntitySystem>();
-                var hero = (SelfStateEntity)entitySystem.FindById("hero");
+                var hero = (SelfStateEntity?)entitySystem.FindById("hero");
                 Assert.NotNull(hero);
                 Assert.Equal(new Vector2(5, 6), hero.Position);
                 Assert.Equal("spawned", hero.Text);
@@ -300,7 +309,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
 
                 Assert.True(scene.IsLoaded);
                 var entitySystem = scene.GetGameSystem<EntitySystem>();
-                var kid = (SelfStateEntity)entitySystem.FindById("kid");
+                var kid = (SelfStateEntity?)entitySystem.FindById("kid");
                 Assert.NotNull(kid);
                 Assert.Equal("nested", kid.Text);
             }
@@ -318,23 +327,15 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         /// </summary>
         public class SelfStateEntity : Entity
         {
-            public enum ModeEnum { Slow, Fast }
+            public enum MoveMode { Slow, Fast }
 
-            private string _text = "";
-            private float _speed;
-            private int _hits;
-            private bool _enabled = true;
-            private Vector2 _offset;
-            private Color _tint = Color.White;
-            private ModeEnum _mode;
-
-            public string Text { get => _text; set => _text = value; }
-            public float Speed { get => _speed; set => _speed = value; }
-            public int Hits { get => _hits; set => _hits = value; }
-            public bool Enabled { get => _enabled; set => _enabled = value; }
-            public Vector2 Offset { get => _offset; set => _offset = value; }
-            public Color Tint { get => _tint; set => _tint = value; }
-            public ModeEnum Mode { get => _mode; set => _mode = value; }
+            public string Text { get; set; } = "";
+            public float Speed { get; set; }
+            public int Hits { get; set; }
+            public bool Enabled { get; set; } = true;
+            public Vector2 Offset { get; set; }
+            public Color Tint { get; set; } = Color.White;
+            public MoveMode Mode { get; set; }
 
             /// <summary>Snapshot of Text captured in OnStart — proves the override landed before init.</summary>
             public string? SeenTextAtOnStart { get; private set; }
@@ -347,14 +348,13 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 SeenTextAtOnStart = Text;
             }
 
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
         }
 
         /// <summary>Plain component with one writable string property — used to verify component and entity overrides coexist.</summary>
         private class EntityProbeComponent : EntityComponent
         {
-            private string _base = "unset";
-            public string Base { get => _base; set => _base = value; }
+            public string Base { get; set; } = "unset";
         }
     }
 }

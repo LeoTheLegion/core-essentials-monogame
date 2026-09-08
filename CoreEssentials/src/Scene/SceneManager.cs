@@ -122,7 +122,15 @@ public class SceneManager
     /// reports 1.0 for the final frame before the swap. Returns 0 when no transition is
     /// happening (no next scene).
     /// </summary>
-    public float TransitionProgress => _nextScene == null ? 0f : (_nextScene.IsLoading ? _nextScene.LoadingProgress : 1f);
+    public float TransitionProgress
+    {
+        get
+        {
+            if (_nextScene == null)
+                return 0f;
+            return _nextScene.IsLoading ? _nextScene.LoadingProgress : 1f;
+        }
+    }
     
     /// <summary>
     /// Initializes a new instance of the SceneManager class with the specified MainGame instance.
@@ -184,6 +192,38 @@ public class SceneManager
     {
         EnsureManifestConfigured();
         LoadScene(new DataDrivenScene(sceneAssetName));
+    }
+
+    /// <summary>
+    /// Loads the specified scene with a transition.
+    /// The transition process is fully handled by coroutines, not in the Update method.
+    /// </summary>
+    /// <param name="scene">The scene to be loaded.</param>
+    public void LoadScene(Scene scene)
+    {
+        // If a transition is already in progress, don't start another one
+        if (_isTransitioning)
+        {
+            Console.WriteLine($"Cannot load scene {scene.GetType().Name} - another scene is already loading");
+            return;
+        }
+        
+        _nextScene = scene;
+        _nextScene.SetSceneManager(this);
+        
+        // Cancel any existing transition coroutine
+        if (_transitionCoroutineId != Guid.Empty)
+        {
+            _coroutineOwner.StopCoroutine(_transitionCoroutineId);
+        }
+        
+        // A single unified transition coroutine resolves the manifest, enforces membership, and picks the
+        // per-scene loading screen. It is UNFAILABLE: a missing/unparseable manifest or an unregistered
+        // scene must error out (propagate) rather than be silently logged and swallowed.
+        _transitionCoroutineId = _coroutineOwner.StartCoroutine(RunTransition(), "SceneTransition", allowFailure: false);
+        
+        _isTransitioning = true;
+        Console.WriteLine($"Started loading scene: {_nextScene.GetType().Name}");
     }
 
     /// <summary>
@@ -343,38 +383,6 @@ public class SceneManager
         _manifest = SceneManifest.Parse(xml.XMLContent);
         Console.WriteLine($"Scene manifest resolved from '{_manifestAssetName}': {string.Join(", ", _manifest.GameScenes.Select(e => e.Name))}");
         return _manifest;
-    }
-
-    /// <summary>
-    /// Loads the specified scene with a transition.
-    /// The transition process is fully handled by coroutines, not in the Update method.
-    /// </summary>
-    /// <param name="scene">The scene to be loaded.</param>
-    public void LoadScene(Scene scene)
-    {
-        // If a transition is already in progress, don't start another one
-        if (_isTransitioning)
-        {
-            Console.WriteLine($"Cannot load scene {scene.GetType().Name} - another scene is already loading");
-            return;
-        }
-        
-        _nextScene = scene;
-        _nextScene.SetSceneManager(this);
-        
-        // Cancel any existing transition coroutine
-        if (_transitionCoroutineId != Guid.Empty)
-        {
-            _coroutineOwner.StopCoroutine(_transitionCoroutineId);
-        }
-        
-        // A single unified transition coroutine resolves the manifest, enforces membership, and picks the
-        // per-scene loading screen. It is UNFAILABLE: a missing/unparseable manifest or an unregistered
-        // scene must error out (propagate) rather than be silently logged and swallowed.
-        _transitionCoroutineId = _coroutineOwner.StartCoroutine(RunTransition(), "SceneTransition", allowFailure: false);
-        
-        _isTransitioning = true;
-        Console.WriteLine($"Started loading scene: {_nextScene.GetType().Name}");
     }
 
     /// <summary>

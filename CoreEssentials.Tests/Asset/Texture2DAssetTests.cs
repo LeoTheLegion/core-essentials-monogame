@@ -21,14 +21,14 @@ namespace CoreEssentials.Tests
         public void Load_ThrowsIfContentManagerNull()
         {
             var asset = new MockTexture2DAsset("test.png");
-            Assert.Throws<ArgumentNullException>(() => asset.Load(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Load(null!));
         }
 
         [Fact]
         public void Unload_ThrowsIfContentManagerNull()
         {
             var asset = new MockTexture2DAsset("test.png");
-            Assert.Throws<ArgumentNullException>(() => asset.Unload(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Unload(null!));
         }
 
         // Skip the problematic tests that require MonoGame's GraphicsDevice
@@ -59,7 +59,7 @@ namespace CoreEssentials.Tests
         private bool _isLoaded;
         
         // Override the Texture property to return our fake texture for testing
-        public new Texture2D Texture => _isLoaded ? FakeTexture2D.Instance : null;
+        public new Texture2D Texture => _isLoaded ? FakeTexture2D.Instance : null!;
         
         public bool IsLoaded => _isLoaded;
     }
@@ -68,15 +68,9 @@ namespace CoreEssentials.Tests
     // This avoids GraphicsDevice requirements completely
     public static class FakeTexture2D
     {
-        // Using null is dangerous as it might lead to NullReferenceExceptions
-        // Instead, use reflection to instantiate a Texture2D without calling its constructor
-        public static readonly Texture2D Instance;
-        
-        static FakeTexture2D()
-        {
-            // Use FormatterServices.GetUninitializedObject to create a Texture2D without calling constructor
-            // This is a special case for testing only, not for production code
-            Instance = (Texture2D)RuntimeHelpers.GetUninitializedObject(typeof(Texture2D));
-        }
+        // Using null is dangerous as it might lead to NullReferenceExceptions.
+        // Instead, use reflection to instantiate a Texture2D without calling its constructor.
+        // This is a special case for testing only, not for production code.
+        public static readonly Texture2D Instance = (Texture2D)RuntimeHelpers.GetUninitializedObject(typeof(Texture2D));
     }
 }

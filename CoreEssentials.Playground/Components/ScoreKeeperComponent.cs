@@ -14,7 +14,7 @@ namespace CoreEssentials.Playground.Components;
 public class ScoreKeeperComponent : EntityComponent
 {
     /// <summary>Settable from XML via &lt;References&gt;&lt;Reference Name="ScoreLabel" .../&gt;.</summary>
-    public Entity ScoreLabel { get; set; }
+    public Entity? ScoreLabel { get; set; }
 
     private int _score;
 

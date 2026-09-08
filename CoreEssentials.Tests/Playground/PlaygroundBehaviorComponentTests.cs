@@ -30,7 +30,7 @@ public class PlaygroundBehaviorComponentTests
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     // ── Recording subclasses (capture the virtual seams) ─────────────────────────
@@ -56,15 +56,13 @@ public class PlaygroundBehaviorComponentTests
     private class RecordingDebug : DebugToggleComponent
     {
         public bool Applied;
-        public bool Bounds, Ids, Tags, Hierarchy, Position;
+        public bool Bounds, Ids, Tags;
         protected override void ApplyDebugConfig(EntitySystem system)
         {
             Applied = true;
             Bounds = ShowEntityBounds;
             Ids = ShowEntityIds;
             Tags = ShowEntityTags;
-            Hierarchy = ShowEntityHierarchy;
-            Position = ShowEntityPosition;
         }
     }
 
@@ -131,7 +129,7 @@ public class PlaygroundBehaviorComponentTests
     public void Navigate_TriggerKey_LoadsTargetScene()
     {
         var entity = new TestEntity();
-        var comp = (RecordingNavigate)entity.AddComponent(new RecordingNavigate());
+        var comp = entity.AddComponent(new RecordingNavigate());
         try
         {
             comp.TargetSceneAsset = "PhysicsEntityScene.xml";
@@ -146,7 +144,7 @@ public class PlaygroundBehaviorComponentTests
     public void Navigate_WrongKey_DoesNothing()
     {
         var entity = new TestEntity();
-        var comp = (RecordingNavigate)entity.AddComponent(new RecordingNavigate());
+        var comp = entity.AddComponent(new RecordingNavigate());
         try
         {
             comp.TargetSceneAsset = "PhysicsEntityScene.xml";
@@ -161,7 +159,7 @@ public class PlaygroundBehaviorComponentTests
     public void Navigate_SubscribesOnAttach_UnsubscribesOnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingNavigate)entity.AddComponent(new RecordingNavigate());
+        var comp = entity.AddComponent(new RecordingNavigate());
 
         // Attached → a key-release handler is wired up.
         Assert.NotNull(GetHandler(comp));
@@ -177,7 +175,7 @@ public class PlaygroundBehaviorComponentTests
     public void Sound_TriggerKey_PlaysAsset()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSound)entity.AddComponent(new RecordingSound());
+        var comp = entity.AddComponent(new RecordingSound());
         try
         {
             comp.SoundAsset = "footstep1_sound.xml";
@@ -192,7 +190,7 @@ public class PlaygroundBehaviorComponentTests
     public void Sound_WrongKey_DoesNothing()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSound)entity.AddComponent(new RecordingSound());
+        var comp = entity.AddComponent(new RecordingSound());
         try
         {
             comp.SoundAsset = "footstep1_sound.xml";
@@ -209,7 +207,7 @@ public class PlaygroundBehaviorComponentTests
     public void Volume_TriggerKey_SetsVolume()
     {
         var entity = new TestEntity();
-        var comp = (RecordingVolume)entity.AddComponent(new RecordingVolume());
+        var comp = entity.AddComponent(new RecordingVolume());
         try
         {
             comp.Volume = 0.1f;
@@ -224,7 +222,7 @@ public class PlaygroundBehaviorComponentTests
     public void Volume_WrongKey_DoesNothing()
     {
         var entity = new TestEntity();
-        var comp = (RecordingVolume)entity.AddComponent(new RecordingVolume());
+        var comp = entity.AddComponent(new RecordingVolume());
         try
         {
             comp.Volume = 0.1f;
@@ -242,7 +240,7 @@ public class PlaygroundBehaviorComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (RecordingDebug)entity.AddComponent(new RecordingDebug());
+        var comp = entity.AddComponent(new RecordingDebug());
         try
         {
             comp.ShowEntityBounds = true;
@@ -269,7 +267,7 @@ public class PlaygroundBehaviorComponentTests
     {
         var system = new EntitySystem();
         var entity = system.CreateEntity<TestEntity>();
-        var comp = (RecordingDebug)entity.AddComponent(new RecordingDebug());
+        var comp = entity.AddComponent(new RecordingDebug());
         try
         {
             comp.HandleKey(Keys.F1);
@@ -286,7 +284,7 @@ public class PlaygroundBehaviorComponentTests
     public void AudioSource_PlaysOnAttach_StopsOnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSource)entity.AddComponent(new RecordingSource());
+        var comp = entity.AddComponent(new RecordingSource());
         try
         {
             // OnAttach already ran at AddComponent time, but SoundAsset was empty then.
@@ -294,7 +292,7 @@ public class PlaygroundBehaviorComponentTests
 
             // Simulate a configured track: re-drive attach by detaching/re-attaching with asset set.
             entity.RemoveComponent<RecordingSource>();
-            var comp2 = (RecordingSource)entity.AddComponent(new RecordingSource { SoundAsset = "song1_sound.xml" });
+            var comp2 = entity.AddComponent(new RecordingSource { SoundAsset = "song1_sound.xml" });
             try
             {
                 Assert.Equal("song1_sound.xml", comp2.ResolvedAsset);
@@ -312,7 +310,7 @@ public class PlaygroundBehaviorComponentTests
     public void AudioSource_PauseResume_ForwardedFromEntity()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSource)entity.AddComponent(new RecordingSource { SoundAsset = "song1_sound.xml" });
+        var comp = entity.AddComponent(new RecordingSource { SoundAsset = "song1_sound.xml" });
         try
         {
             Assert.Equal("song1_sound.xml", comp.ResolvedAsset);
@@ -331,7 +329,7 @@ public class PlaygroundBehaviorComponentTests
     public void AudioSource_EmptyAsset_DoesNotPlay()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSource)entity.AddComponent(new RecordingSource());
+        var comp = entity.AddComponent(new RecordingSource());
         try
         {
             Assert.Null(comp.ResolvedAsset);
@@ -347,7 +345,7 @@ public class PlaygroundBehaviorComponentTests
     public void Camera_PanKeys_MoveOwnerEntity()
     {
         var entity = new TestEntity();
-        var comp = (RecordingCameraInput)entity.AddComponent(new RecordingCameraInput());
+        var comp = entity.AddComponent(new RecordingCameraInput());
         try
         {
             comp.MoveSpeed = 100f;
@@ -378,7 +376,7 @@ public class PlaygroundBehaviorComponentTests
     public void Camera_ResetKey_ResetsOwnerPosition()
     {
         var entity = new TestEntity();
-        var comp = (RecordingCameraInput)entity.AddComponent(new RecordingCameraInput());
+        var comp = entity.AddComponent(new RecordingCameraInput());
         try
         {
             entity.Position = new Vector2(50f, 60f);
@@ -398,7 +396,7 @@ public class PlaygroundBehaviorComponentTests
     public void Camera_SubscribesOnAttach_UnsubscribesOnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingCameraInput)entity.AddComponent(new RecordingCameraInput());
+        var comp = entity.AddComponent(new RecordingCameraInput());
         Assert.NotNull(GetHandler(comp));
         entity.RemoveComponent<RecordingCameraInput>();
         Assert.Null(GetHandler(comp));
@@ -410,7 +408,7 @@ public class PlaygroundBehaviorComponentTests
     public void Ping_BroadcastKey_SendsConfiguredMessage()
     {
         var entity = new TestEntity();
-        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        var comp = entity.AddComponent(new RecordingPing());
         try
         {
             comp.MessageName = "OnPing";
@@ -426,7 +424,7 @@ public class PlaygroundBehaviorComponentTests
     public void Ping_SpawnPrefabKey_SpawnsAtStaggeredPosition()
     {
         var entity = new TestEntity();
-        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        var comp = entity.AddComponent(new RecordingPing());
         try
         {
             comp.PrefabName = "PingPrefab";
@@ -448,7 +446,7 @@ public class PlaygroundBehaviorComponentTests
     public void Ping_SpawnTypedKey_SpawnsAtStaggeredPosition()
     {
         var entity = new TestEntity();
-        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        var comp = entity.AddComponent(new RecordingPing());
         try
         {
             comp.SpawnPosition = Vector2.Zero;
@@ -464,7 +462,7 @@ public class PlaygroundBehaviorComponentTests
     public void Ping_DestroyKey_TracksAndDestroys()
     {
         var entity = new TestEntity();
-        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        var comp = entity.AddComponent(new RecordingPing());
         try
         {
             // No spawn yet → destroy is a no-op but still routed.
@@ -481,7 +479,7 @@ public class PlaygroundBehaviorComponentTests
     public void Ping_WrongKey_DoesNothing()
     {
         var entity = new TestEntity();
-        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        var comp = entity.AddComponent(new RecordingPing());
         try
         {
             comp.HandleKey(Keys.J);
@@ -498,7 +496,7 @@ public class PlaygroundBehaviorComponentTests
     public void Ping_SubscribesOnAttach_UnsubscribesOnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingPing)entity.AddComponent(new RecordingPing());
+        var comp = entity.AddComponent(new RecordingPing());
         Assert.NotNull(GetHandler(comp));
         entity.RemoveComponent<RecordingPing>();
         Assert.Null(GetHandler(comp));
@@ -568,10 +566,27 @@ public class PlaygroundBehaviorComponentTests
 
     private class FakeDebugRenderer : IPhysicsDebugRenderer
     {
+        private bool _disposed;
+
         public bool IsEnabled { get; set; }
         public int Draws;
         public void Draw(SpriteBatch spriteBatch) => Draws++;
-        public void Dispose() { }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+            {
+                // No managed resources to release.
+            }
+            _disposed = true;
+        }
     }
 
     private class RecordingOverlay : PhysicsDebugOverlayComponent
@@ -666,7 +681,7 @@ public class PlaygroundBehaviorComponentTests
     public void Spawn_SpawnsOnAttach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSpawn)entity.AddComponent(new RecordingSpawn { RegularBallCount = 2, VipBallIds = "" });
+        var comp = entity.AddComponent(new RecordingSpawn { RegularBallCount = 2, VipBallIds = "" });
         try
         {
             // OnAttach ran at AddComponent time → spawn already occurred.
@@ -681,7 +696,7 @@ public class PlaygroundBehaviorComponentTests
     public void SaveLoad_CreatesAndAddsBothButtons_OnAttach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        var comp = entity.AddComponent(new RecordingSaveLoad());
         try
         {
             Assert.NotNull(comp.SaveBtn);
@@ -698,10 +713,10 @@ public class PlaygroundBehaviorComponentTests
     public void SaveLoad_SaveButtonClick_SavesState()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        var comp = entity.AddComponent(new RecordingSaveLoad());
         try
         {
-            comp.SaveBtn.RaiseClick();
+            comp.SaveBtn!.RaiseClick();
             Assert.Equal(1, comp.Saves);
             Assert.Equal(0, comp.Loads);
         }
@@ -712,10 +727,10 @@ public class PlaygroundBehaviorComponentTests
     public void SaveLoad_LoadButtonClick_LoadsState()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        var comp = entity.AddComponent(new RecordingSaveLoad());
         try
         {
-            comp.LoadBtn.RaiseClick();
+            comp.LoadBtn!.RaiseClick();
             Assert.Equal(1, comp.Loads);
             Assert.Equal(0, comp.Saves);
         }
@@ -726,7 +741,7 @@ public class PlaygroundBehaviorComponentTests
     public void SaveLoad_RemovesBothButtons_OnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingSaveLoad)entity.AddComponent(new RecordingSaveLoad());
+        var comp = entity.AddComponent(new RecordingSaveLoad());
 
         // Detach removes both widgets from the GUI root.
         entity.RemoveComponent<RecordingSaveLoad>();
@@ -741,7 +756,7 @@ public class PlaygroundBehaviorComponentTests
     public void Overlay_ToggleKey_FlipsRendererEnabled()
     {
         var entity = new TestEntity();
-        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        var comp = entity.AddComponent(new RecordingOverlay());
         try
         {
             Assert.False(comp.Renderer.IsEnabled);
@@ -759,7 +774,7 @@ public class PlaygroundBehaviorComponentTests
     public void Overlay_WrongKey_DoesNothing()
     {
         var entity = new TestEntity();
-        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        var comp = entity.AddComponent(new RecordingOverlay());
         try
         {
             comp.HandleKey(Keys.F2);
@@ -772,16 +787,16 @@ public class PlaygroundBehaviorComponentTests
     public void Overlay_DrawsOnlyWhenEnabled()
     {
         var entity = new TestEntity();
-        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        var comp = entity.AddComponent(new RecordingOverlay());
         try
         {
             // Disabled → no draw.
-            comp.Draw(null);
+            comp.Draw(null!);
             Assert.Equal(0, comp.Renderer.Draws);
 
             // Enabled → draws through to the renderer.
             comp.Renderer.IsEnabled = true;
-            comp.Draw(null);
+            comp.Draw(null!);
             Assert.Equal(1, comp.Renderer.Draws);
         }
         finally { entity.RemoveComponent<RecordingOverlay>(); }
@@ -791,7 +806,7 @@ public class PlaygroundBehaviorComponentTests
     public void Overlay_SubscribesOnAttach_UnsubscribesOnDetach()
     {
         var entity = new TestEntity();
-        var comp = (RecordingOverlay)entity.AddComponent(new RecordingOverlay());
+        var comp = entity.AddComponent(new RecordingOverlay());
         Assert.NotNull(GetHandler(comp));
         entity.RemoveComponent<RecordingOverlay>();
         Assert.Null(GetHandler(comp));

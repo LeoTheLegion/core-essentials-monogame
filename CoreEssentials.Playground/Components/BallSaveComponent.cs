@@ -119,8 +119,6 @@ public class BallSaveComponent : EntityComponent, ISaveableComponent
     /// </summary>
     public void LoadState(XElement element)
     {
-        var owner = Owner;
-
         RestorePosition(element);
         RestoreRotation(element);
         RestoreScale(element);
@@ -130,120 +128,139 @@ public class BallSaveComponent : EntityComponent, ISaveableComponent
 
         // Explicit per-component deserialization. The rigidbody body is created at the RESTORED position
         // before its velocity is applied, so the physics world re-anchors to the saved state.
-        var spriteEl = element.Element("SpriteState");
-        if (spriteEl != null && owner.TryGetComponent<SpriteComponent>(out var sprite) && sprite != null)
-        {
-            byte r = byte.Parse(spriteEl.Attribute("ColorR")?.Value ?? "255");
-            byte g = byte.Parse(spriteEl.Attribute("ColorG")?.Value ?? "255");
-            byte b = byte.Parse(spriteEl.Attribute("ColorB")?.Value ?? "255");
-            byte a = byte.Parse(spriteEl.Attribute("ColorA")?.Value ?? "255");
-            sprite.Color = new Color(r, g, b, a);
-
-            float ox = float.Parse(spriteEl.Attribute("OriginX")?.Value ?? "0.5");
-            float oy = float.Parse(spriteEl.Attribute("OriginY")?.Value ?? "0.5");
-            sprite.Origin = new Vector2(ox, oy);
-
-            string effectsStr = spriteEl.Attribute("Effects")?.Value ?? "";
-            if (!string.IsNullOrEmpty(effectsStr) && Enum.TryParse<SpriteEffects>(effectsStr, out var fx))
-                sprite.Effects = fx;
-
-            string ldStr = spriteEl.Attribute("LayerDepth")?.Value ?? "0";
-            if (!string.IsNullOrEmpty(ldStr))
-                sprite.LayerDepth = float.Parse(ldStr);
-
-            string soStr = spriteEl.Attribute("SortOrderOverride")?.Value ?? "-1";
-            if (int.TryParse(soStr, out int so) && so >= 0)
-                sprite.SortOrderOverride = so;
-            else
-                sprite.SortOrderOverride = null;
-
-            string afStr = spriteEl.Attribute("AnimationFrame")?.Value ?? "0";
-            if (!string.IsNullOrEmpty(afStr))
-                sprite.AnimationFrame = int.Parse(afStr);
-
-            sprite.SpriteAsset = spriteEl.Attribute("SpriteAsset")?.Value ?? "";
-        }
-
-        var rbEl = element.Element("RigidbodyState");
-        if (rbEl != null && owner.TryGetComponent<RigidbodyComponent>(out var rigidbody) && rigidbody != null)
-        {
-            string massStr = rbEl.Attribute("Mass")?.Value ?? "1.0";
-            if (!string.IsNullOrEmpty(massStr))
-                rigidbody.Mass = float.Parse(massStr);
-
-            string frStr = rbEl.Attribute("FixedRotation")?.Value ?? "false";
-            if (!string.IsNullOrEmpty(frStr))
-                rigidbody.FixedRotation = bool.Parse(frStr);
-
-            string sfStr = rbEl.Attribute("SyncFromPhysics")?.Value ?? "true";
-            if (!string.IsNullOrEmpty(sfStr))
-                rigidbody.SyncFromPhysics = bool.Parse(sfStr);
-
-            // Ensure the body exists at the restored position before velocity is applied.
-            if (!rigidbody.IsBodyCreated)
-                rigidbody.CreateBody();
-
-            string lvx = rbEl.Attribute("LinearVelocityX")?.Value;
-            string lvy = rbEl.Attribute("LinearVelocityY")?.Value;
-            if (!string.IsNullOrEmpty(lvx) && !string.IsNullOrEmpty(lvy))
-                rigidbody.SetLinearVelocity(new Vector2(float.Parse(lvx), float.Parse(lvy)));
-
-            string av = rbEl.Attribute("AngularVelocity")?.Value;
-            if (!string.IsNullOrEmpty(av))
-                rigidbody.AngularVelocity = float.Parse(av);
-        }
-
-        var colEl = element.Element("ColliderState");
-        if (colEl != null && owner.TryGetComponent<ColliderComponent>(out var collider) && collider != null)
-        {
-            string fricStr = colEl.Attribute("Friction")?.Value ?? "0.5";
-            if (!string.IsNullOrEmpty(fricStr))
-                collider.Friction = float.Parse(fricStr);
-
-            string restStr = colEl.Attribute("Restitution")?.Value ?? "0.5";
-            if (!string.IsNullOrEmpty(restStr))
-                collider.Restitution = float.Parse(restStr);
-
-            string catStr = colEl.Attribute("Categories")?.Value;
-            if (!string.IsNullOrWhiteSpace(catStr) && Enum.TryParse<CollisionCategory>(catStr, ignoreCase: true, out var cats))
-                collider.Categories = cats;
-
-            string cwStr = colEl.Attribute("CollidesWith")?.Value;
-            if (!string.IsNullOrWhiteSpace(cwStr) && Enum.TryParse<CollisionCategory>(cwStr, ignoreCase: true, out var cws))
-                collider.CollidesWith = cws;
-
-            float offX = float.Parse(colEl.Attribute("OffsetX")?.Value ?? "0");
-            float offY = float.Parse(colEl.Attribute("OffsetY")?.Value ?? "0");
-            collider.Offset = new Vector2(offX, offY);
-
-            if (collider.ShapeType == ColliderShapeType.Circle)
-            {
-                string radStr = colEl.Attribute("Radius")?.Value ?? "1";
-                if (!string.IsNullOrEmpty(radStr))
-                    collider.Radius = float.Parse(radStr);
-            }
-            else if (collider.ShapeType == ColliderShapeType.Rectangle)
-            {
-                float sx = float.Parse(colEl.Attribute("SizeX")?.Value ?? "1");
-                float sy = float.Parse(colEl.Attribute("SizeY")?.Value ?? "1");
-                collider.Size = new Vector2(sx, sy);
-            }
-        }
+        RestoreSpriteState(element);
+        RestoreRigidbodyState(element);
+        RestoreColliderState(element);
 
         // A deserialized sprite component carries its asset name but not the loaded sprite — load it now
         // so the entity renders (and the collider's per-frame auto-size can measure it).
-        if (owner.TryGetComponent<SpriteComponent>(out var spriteComp) && spriteComp != null
-            && spriteComp.Sprite == null && !string.IsNullOrWhiteSpace(spriteComp.SpriteAsset))
+        ReloadSpriteIfMissing();
+    }
+
+    /// <summary>Restores the owner's <see cref="SpriteComponent"/> color, origin, effects and layout from XML.</summary>
+    private void RestoreSpriteState(XElement element)
+    {
+        var spriteEl = element.Element("SpriteState");
+        if (spriteEl == null || !Owner.TryGetComponent<SpriteComponent>(out var sprite) || sprite == null)
+            return;
+
+        byte r = byte.Parse(spriteEl.Attribute("ColorR")?.Value ?? "255");
+        byte g = byte.Parse(spriteEl.Attribute("ColorG")?.Value ?? "255");
+        byte b = byte.Parse(spriteEl.Attribute("ColorB")?.Value ?? "255");
+        byte a = byte.Parse(spriteEl.Attribute("ColorA")?.Value ?? "255");
+        sprite.Color = new Color(r, g, b, a);
+
+        float ox = float.Parse(spriteEl.Attribute("OriginX")?.Value ?? "0.5");
+        float oy = float.Parse(spriteEl.Attribute("OriginY")?.Value ?? "0.5");
+        sprite.Origin = new Vector2(ox, oy);
+
+        string effectsStr = spriteEl.Attribute("Effects")?.Value ?? "";
+        if (!string.IsNullOrEmpty(effectsStr) && Enum.TryParse<SpriteEffects>(effectsStr, out var fx))
+            sprite.Effects = fx;
+
+        string ldStr = spriteEl.Attribute("LayerDepth")?.Value ?? "0";
+        if (!string.IsNullOrEmpty(ldStr))
+            sprite.LayerDepth = float.Parse(ldStr);
+
+        string soStr = spriteEl.Attribute("SortOrderOverride")?.Value ?? "-1";
+        sprite.SortOrderOverride = int.TryParse(soStr, out int so) && so >= 0 ? so : null;
+
+        string afStr = spriteEl.Attribute("AnimationFrame")?.Value ?? "0";
+        if (!string.IsNullOrEmpty(afStr))
+            sprite.AnimationFrame = int.Parse(afStr);
+
+        sprite.SpriteAsset = spriteEl.Attribute("SpriteAsset")?.Value ?? "";
+    }
+
+    /// <summary>Restores the owner's <see cref="RigidbodyComponent"/> mass, flags and velocity from XML.</summary>
+    private void RestoreRigidbodyState(XElement element)
+    {
+        var rbEl = element.Element("RigidbodyState");
+        if (rbEl == null || !Owner.TryGetComponent<RigidbodyComponent>(out var rigidbody) || rigidbody == null)
+            return;
+
+        string massStr = rbEl.Attribute("Mass")?.Value ?? "1.0";
+        if (!string.IsNullOrEmpty(massStr))
+            rigidbody.Mass = float.Parse(massStr);
+
+        string frStr = rbEl.Attribute("FixedRotation")?.Value ?? "false";
+        if (!string.IsNullOrEmpty(frStr))
+            rigidbody.FixedRotation = bool.Parse(frStr);
+
+        string sfStr = rbEl.Attribute("SyncFromPhysics")?.Value ?? "true";
+        if (!string.IsNullOrEmpty(sfStr))
+            rigidbody.SyncFromPhysics = bool.Parse(sfStr);
+
+        // Ensure the body exists at the restored position before velocity is applied.
+        if (!rigidbody.IsBodyCreated)
+            rigidbody.CreateBody();
+
+        string? lvx = rbEl.Attribute("LinearVelocityX")?.Value;
+        string? lvy = rbEl.Attribute("LinearVelocityY")?.Value;
+        if (!string.IsNullOrEmpty(lvx) && !string.IsNullOrEmpty(lvy))
+            rigidbody.SetLinearVelocity(new Vector2(float.Parse(lvx), float.Parse(lvy)));
+
+        string? av = rbEl.Attribute("AngularVelocity")?.Value;
+        if (!string.IsNullOrEmpty(av))
+            rigidbody.AngularVelocity = float.Parse(av);
+    }
+
+    /// <summary>Restores the owner's <see cref="ColliderComponent"/> material, categories and shape from XML.</summary>
+    private void RestoreColliderState(XElement element)
+    {
+        var colEl = element.Element("ColliderState");
+        if (colEl == null || !Owner.TryGetComponent<ColliderComponent>(out var collider) || collider == null)
+            return;
+
+        string fricStr = colEl.Attribute("Friction")?.Value ?? "0.5";
+        if (!string.IsNullOrEmpty(fricStr))
+            collider.Friction = float.Parse(fricStr);
+
+        string restStr = colEl.Attribute("Restitution")?.Value ?? "0.5";
+        if (!string.IsNullOrEmpty(restStr))
+            collider.Restitution = float.Parse(restStr);
+
+        string? catStr = colEl.Attribute("Categories")?.Value;
+        if (!string.IsNullOrWhiteSpace(catStr) && Enum.TryParse<CollisionCategory>(catStr, ignoreCase: true, out var cats))
+            collider.Categories = cats;
+
+        string? cwStr = colEl.Attribute("CollidesWith")?.Value;
+        if (!string.IsNullOrWhiteSpace(cwStr) && Enum.TryParse<CollisionCategory>(cwStr, ignoreCase: true, out var cws))
+            collider.CollidesWith = cws;
+
+        float offX = float.Parse(colEl.Attribute("OffsetX")?.Value ?? "0");
+        float offY = float.Parse(colEl.Attribute("OffsetY")?.Value ?? "0");
+        collider.Offset = new Vector2(offX, offY);
+
+        if (collider.ShapeType == ColliderShapeType.Circle)
         {
-            try
-            {
-                spriteComp.Sprite = AssetManager.LoadAsset<Sprite>(spriteComp.SpriteAsset);
-                owner.RegisterForInstancedRendering(spriteComp.Sprite);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[BallSaveComponent] Could not load sprite asset '{spriteComp.SpriteAsset}': {ex.Message}");
-            }
+            string radStr = colEl.Attribute("Radius")?.Value ?? "1";
+            if (!string.IsNullOrEmpty(radStr))
+                collider.Radius = float.Parse(radStr);
+        }
+        else if (collider.ShapeType == ColliderShapeType.Rectangle)
+        {
+            float sx = float.Parse(colEl.Attribute("SizeX")?.Value ?? "1");
+            float sy = float.Parse(colEl.Attribute("SizeY")?.Value ?? "1");
+            collider.Size = new Vector2(sx, sy);
+        }
+    }
+
+    /// <summary>Loads the sprite asset for a deserialized sprite component that has an asset but no loaded sprite.</summary>
+    private void ReloadSpriteIfMissing()
+    {
+        if (!Owner.TryGetComponent<SpriteComponent>(out var spriteComp) || spriteComp == null
+            || spriteComp.Sprite != null || string.IsNullOrWhiteSpace(spriteComp.SpriteAsset))
+            return;
+
+        try
+        {
+            spriteComp.Sprite = AssetManager.LoadAsset<Sprite>(spriteComp.SpriteAsset);
+            Owner.RegisterForInstancedRendering(spriteComp.Sprite);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BallSaveComponent] Could not load sprite asset '{spriteComp.SpriteAsset}': {ex.Message}");
         }
     }
 

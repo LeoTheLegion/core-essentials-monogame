@@ -103,7 +103,7 @@ public class DebugToggleComponent : EntityComponent
     /// Loads the debug font asset by name. Virtual so unit tests can observe the requested asset
     /// without driving real content loading.
     /// </summary>
-    protected virtual Assets.FontAsset LoadDebugFont(string assetName)
+    protected virtual Assets.FontAsset? LoadDebugFont(string assetName)
         => Assets.AssetManager.LoadAsset<Assets.FontAsset>(assetName);
 
     /// <summary>

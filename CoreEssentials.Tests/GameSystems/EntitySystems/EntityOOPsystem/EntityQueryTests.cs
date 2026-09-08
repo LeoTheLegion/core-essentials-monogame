@@ -9,9 +9,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
 
 public class EntityQueryTests
 {
-    private EntitySystem CreateEntitySystem() => new EntitySystem();
+    private static EntitySystem CreateEntitySystem() => new EntitySystem();
 
-    private TestEntity CreateEntity(EntitySystem system, Vector2? position = null)
+    private static TestEntity CreateEntity(EntitySystem system, Vector2? position = null)
     {
         var entity = system.CreateEntity<TestEntity>();
         if (position.HasValue)
@@ -19,7 +19,7 @@ public class EntityQueryTests
         return entity;
     }
 
-    private SpecialEntity CreateSpecialEntity(EntitySystem system, Vector2? position = null)
+    private static SpecialEntity CreateSpecialEntity(EntitySystem system, Vector2? position = null)
     {
         var entity = system.CreateEntity<SpecialEntity>();
         if (position.HasValue)
@@ -230,7 +230,7 @@ public class EntityQueryTests
     {
         var system = CreateEntitySystem();
 
-        var found = system.FindByTag(null);
+        var found = system.FindByTag(null!);
 
         Assert.Null(found);
     }
@@ -240,12 +240,12 @@ public class EntityQueryTests
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 
     private class SpecialEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(SpriteBatch spriteBatch) { }
+        public override void Render(SpriteBatch _spriteBatch) { }
     }
 }

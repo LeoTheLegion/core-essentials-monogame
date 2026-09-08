@@ -46,7 +46,7 @@ namespace CoreEssentials.Tests.Debugging
             // Get stopwatch using reflection
             var updateStopwatchField = typeof(BaseGameDiagnostics).GetField("_updateStopwatch", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var updateStopwatch = (Stopwatch)updateStopwatchField.GetValue(diagnostics);
+            var updateStopwatch = (Stopwatch)updateStopwatchField!.GetValue(diagnostics)!;
             
             // Assert initial state
             Assert.False(updateStopwatch.IsRunning);
@@ -78,7 +78,7 @@ namespace CoreEssentials.Tests.Debugging
             // Get stopwatch using reflection
             var drawStopwatchField = typeof(BaseGameDiagnostics).GetField("_drawStopwatch", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var drawStopwatch = (Stopwatch)drawStopwatchField.GetValue(diagnostics);
+            var drawStopwatch = (Stopwatch)drawStopwatchField!.GetValue(diagnostics)!;
             
             // Assert initial state
             Assert.False(drawStopwatch.IsRunning);
@@ -110,7 +110,7 @@ namespace CoreEssentials.Tests.Debugging
             // Get stopwatch using reflection
             var fixedUpdateStopwatchField = typeof(BaseGameDiagnostics).GetField("_fixedUpdateStopwatch", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var fixedUpdateStopwatch = (Stopwatch)fixedUpdateStopwatchField.GetValue(diagnostics);
+            var fixedUpdateStopwatch = (Stopwatch)fixedUpdateStopwatchField!.GetValue(diagnostics)!;
             
             // Assert initial state
             Assert.False(fixedUpdateStopwatch.IsRunning);

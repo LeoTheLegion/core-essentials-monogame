@@ -88,7 +88,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // The debug overlay declares its toggle key.
             var overlay = FindById(entitySystem.Entities, "debugOverlay");
             Assert.NotNull(overlay);
-            Assert.Contains("F1", overlay.DeclaredComponents.Find(c => c.Type.Contains("PhysicsDebugOverlayComponent")).Properties["ToggleKey"]);
+            Assert.Contains("F1", overlay.DeclaredComponents.Find(c => c.Type.Contains("PhysicsDebugOverlayComponent"))!.Properties["ToggleKey"]);
 
             // Navigation target is a scene asset-name string (no C# Type reference).
             var nav = FindById(entitySystem.Entities, "navCamera");
@@ -132,9 +132,9 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.True(entitySystem.HasPrefab("BallPrefab"));
 
                 // The three shells carried their behavior components.
-                Assert.NotNull(entitySystem.FindById("ballSpawner").GetComponent<PhysicsSpawnComponent>());
-                Assert.NotNull(entitySystem.FindById("saveLoadButtons").GetComponent<SaveLoadButtonsComponent>());
-                Assert.NotNull(entitySystem.FindById("debugOverlay").GetComponent<PhysicsDebugOverlayComponent>());
+                Assert.NotNull(entitySystem.FindById("ballSpawner")!.GetComponent<PhysicsSpawnComponent>());
+                Assert.NotNull(entitySystem.FindById("saveLoadButtons")!.GetComponent<SaveLoadButtonsComponent>());
+                Assert.NotNull(entitySystem.FindById("debugOverlay")!.GetComponent<PhysicsDebugOverlayComponent>());
 
                 // The spawner actually spawned: 5 regular + 3 VIP balls, plus a world border. Balls are
                 // plain GameObjectEntity carrying a BallSaveComponent (no entity subclass).
@@ -222,7 +222,7 @@ namespace CoreEssentials.Tests.SceneManagement
         private static void WriteContentAsset(string fileName, string xml)
         {
             var filePath = Path.Combine(AppContext.BaseDirectory, "Content", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             File.WriteAllText(filePath, xml);
         }
 

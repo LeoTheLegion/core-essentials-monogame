@@ -61,14 +61,15 @@ public static class PrefabOverrides
 
         foreach (var (componentKey, properties) in overrides)
         {
-            Type? resolvedType = EntityPrefabLoader.ResolveComponentType(componentKey);
-            if (resolvedType == null)
-                throw new FormatException($"Prefab override references unresolvable component type '{componentKey}'.");
+            var resolvedType = EntityPrefabLoader.ResolveComponentType(componentKey)
+                ?? throw new FormatException($"Prefab override references unresolvable component type '{componentKey}'.");
+            var typeName = resolvedType.FullName
+                ?? throw new InvalidOperationException($"Resolved component type for '{componentKey}' has no full name.");
 
-            var target = clone.Components.FirstOrDefault(c => string.Equals(c.Type, resolvedType.FullName, StringComparison.Ordinal));
+            var target = clone.Components.FirstOrDefault(c => string.Equals(c.Type, typeName, StringComparison.Ordinal));
             if (target == null)
             {
-                target = new Prefab.ComponentDefinition { Type = resolvedType.FullName };
+                target = new Prefab.ComponentDefinition { Type = typeName };
                 clone.Components.Add(target);
             }
 

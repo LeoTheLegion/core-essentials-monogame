@@ -19,8 +19,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
     {
         private class TestEntity : Entity
         {
-            public override void Update(GameTime gameTime) => base.Update(gameTime);
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
         }
 
         /// <summary>
@@ -58,18 +57,17 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             StageSprites("Sprites/hero.xml", "Sprites/spriteasset_tex.xml");
             var entity = new TestEntity();
 
-            var comp = (SpriteComponent)entity.AddComponent(
-                new SpriteComponent { SpriteAsset = "Sprites/hero.xml" });
+            var comp = entity.AddComponent(new SpriteComponent { SpriteAsset = "Sprites/hero.xml" });
 
             Assert.NotNull(comp.Sprite);
-            Assert.Equal("Sprites/hero.xml", comp.Sprite!.Name);
+            Assert.Equal("Sprites/hero.xml", comp.Sprite.Name);
         }
 
         [Fact]
         public void SpriteComponent_OnAttach_WithoutSpriteAsset_LeavesSpriteNull()
         {
             var entity = new TestEntity();
-            var comp = (SpriteComponent)entity.AddComponent(new SpriteComponent());
+            var comp = entity.AddComponent(new SpriteComponent());
 
             Assert.Null(comp.Sprite);
         }
@@ -82,8 +80,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var entity = new TestEntity();
 
             // A sprite assigned in code must not be replaced by the declarative asset.
-            var comp = (SpriteComponent)entity.AddComponent(
-                new SpriteComponent { Sprite = explicitSprite, SpriteAsset = "Sprites/hero.xml" });
+            var comp = entity.AddComponent(new SpriteComponent { Sprite = explicitSprite, SpriteAsset = "Sprites/hero.xml" });
 
             Assert.Same(explicitSprite, comp.Sprite);
         }
@@ -95,8 +92,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             AssetManager.Init(new MockContentManager());
             var entity = new TestEntity();
 
-            var comp = (SpriteComponent)entity.AddComponent(
-                new SpriteComponent { SpriteAsset = "Sprites/does_not_exist.xml" });
+            var comp = entity.AddComponent(new SpriteComponent { SpriteAsset = "Sprites/does_not_exist.xml" });
 
             Assert.Null(comp.Sprite);
         }
@@ -109,8 +105,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             StageSprites("Sprites/walk.xml", "Sprites/spriteasset_tex.xml");
             var entity = new TestEntity();
 
-            var comp = (AnimationComponent)entity.AddComponent(
-                new AnimationComponent { SpriteAsset = "Sprites/walk.xml", AnimationName = "walk" });
+            var comp = entity.AddComponent(new AnimationComponent { SpriteAsset = "Sprites/walk.xml", AnimationName = "walk" });
 
             Assert.Contains("walk", comp.Animations);
             Assert.Equal("walk", comp.CurrentAnimation);
@@ -120,7 +115,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         public void AnimationComponent_OnAttach_WithoutSpriteAsset_HasNoAnimations()
         {
             var entity = new TestEntity();
-            var comp = (AnimationComponent)entity.AddComponent(new AnimationComponent());
+            var comp = entity.AddComponent(new AnimationComponent());
 
             Assert.Empty(comp.Animations);
             Assert.Null(comp.CurrentAnimation);
@@ -149,8 +144,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             AssetManager.Init(new MockContentManager());
             var entity = new TestEntity();
 
-            var comp = (AnimationComponent)entity.AddComponent(
-                new AnimationComponent { SpriteAsset = "Sprites/does_not_exist.xml" });
+            var comp = entity.AddComponent(new AnimationComponent { SpriteAsset = "Sprites/does_not_exist.xml" });
 
             Assert.Empty(comp.Animations);
             Assert.Null(comp.CurrentAnimation);

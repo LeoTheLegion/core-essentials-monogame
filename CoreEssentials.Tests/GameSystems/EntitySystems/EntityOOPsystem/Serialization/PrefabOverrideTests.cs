@@ -131,7 +131,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 {
                     new Prefab.ComponentDefinition
                     {
-                        Type = typeof(ProbeComponent).FullName,
+                        Type = typeof(ProbeComponent).FullName!,
                         Properties = { ["Base"] = "default" }
                     }
                 }

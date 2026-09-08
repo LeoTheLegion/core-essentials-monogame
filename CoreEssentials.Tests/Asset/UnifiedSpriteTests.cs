@@ -135,7 +135,7 @@ namespace CoreEssentials.Tests.Asset
             sprite.TestFrames = new[] { 0 };
 
             Assert.Throws<IndexOutOfRangeException>(
-                () => sprite.DrawFrame(null, Vector2.Zero, 1, Color.White));
+                () => sprite.DrawFrame(null!, Vector2.Zero, 1, Color.White));
         }
 
         // ===== Fake helpers =====

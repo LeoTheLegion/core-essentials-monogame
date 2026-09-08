@@ -23,7 +23,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPSystem
                 // Uses default position
             }
             
-            public override void Render(SpriteBatch spriteBatch)
+            public override void Render(SpriteBatch _spriteBatch)
             {
                 // Test implementation
             }
@@ -65,7 +65,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPSystem
             var expectedRotation = 1.5f;
             
             // Use reflection to set the protected field
-            typeof(Entity).GetField("_rotation", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            typeof(Entity).GetField("_rotation", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .SetValue(entity, expectedRotation);
             
             // Act

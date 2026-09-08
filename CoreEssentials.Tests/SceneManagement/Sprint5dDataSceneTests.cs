@@ -69,13 +69,13 @@ namespace CoreEssentials.Tests.SceneManagement
             // SpriteAsset properties — no per-game loader components.
             var staticChar = FindById(sys.Entities, "staticCharacter");
             Assert.NotNull(staticChar);
-            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", staticChar!.Type);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", staticChar.Type);
             Assert.Contains("Static", staticChar.Tags);
             Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("SpriteComponent") && c.Properties["SpriteAsset"] == "Sprites/character_sprite.xml");
             Assert.Contains(staticChar.DeclaredComponents, c => c.Type.EndsWith("BounceTweenComponent"));
             var animated = FindById(sys.Entities, "animatedCharacter");
             Assert.NotNull(animated);
-            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", animated!.Type);
+            Assert.Equal("CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity", animated.Type);
             Assert.Contains("Animated", animated.Tags);
             Assert.Contains(animated.DeclaredComponents, c => c.Type.EndsWith("AnimationComponent") && c.Properties["SpriteAsset"] == "Sprites/character_anim_walk.xml" && c.Properties["AnimationName"] == "walk");
 
@@ -112,7 +112,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // built-in AudioSourceComponent with looping + the Music channel.
             var music = FindById(sys.Entities, "music");
             Assert.NotNull(music);
-            var musicSource = music!.DeclaredComponents.First(c => c.Type.Contains("AudioSourceComponent"));
+            var musicSource = music.DeclaredComponents.First(c => c.Type.Contains("AudioSourceComponent"));
             Assert.Equal("Audio/song1_sound.xml", musicSource.Properties["SoundAsset"]);
             Assert.Equal("true", musicSource.Properties["Loop"]);
             Assert.Equal("Music", musicSource.Properties["Channel"]);
@@ -170,12 +170,12 @@ namespace CoreEssentials.Tests.SceneManagement
                 var staticChar = entitySystem.FindById("staticCharacter");
                 Assert.NotNull(staticChar);
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(staticChar);
-                Assert.True(staticChar!.HasTag("Static"));
+                Assert.True(staticChar.HasTag("Static"));
                 Assert.NotNull(staticChar.GetComponent<BounceTweenComponent>());
                 Assert.Equal("Sprites/character_sprite.xml", staticChar.GetComponent<SpriteComponent>()!.Sprite?.Name);
                 var animated = entitySystem.FindById("animatedCharacter");
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(animated);
-                Assert.Equal("Sprites/character_anim_walk.xml", animated!.GetComponent<SpriteComponent>()!.Sprite?.Name);
+                Assert.Equal("Sprites/character_anim_walk.xml", animated.GetComponent<SpriteComponent>()!.Sprite?.Name);
                 var walkAnim = animated.GetComponent<AnimationComponent>()!;
                 Assert.Contains("walk", walkAnim.Animations);
                 Assert.Equal("walk", walkAnim.CurrentAnimation);
@@ -184,16 +184,16 @@ namespace CoreEssentials.Tests.SceneManagement
                 // objects carrying the built-in canvas/button components + the behavior components.
                 var infoText = entitySystem.FindById("infoText");
                 Assert.NotNull(infoText);
-                Assert.NotNull(infoText!.GetComponent<TextComponent>());
+                Assert.NotNull(infoText.GetComponent<TextComponent>());
 
                 var footstep1 = entitySystem.FindById("footstep1Button");
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(footstep1);
-                Assert.Equal("Footstep 1", footstep1!.GetComponent<ButtonComponent>()!.Text);
+                Assert.Equal("Footstep 1", footstep1.GetComponent<ButtonComponent>()!.Text);
                 Assert.Equal("Audio/footstep1_sound.xml", footstep1.GetComponent<AudioSourceComponent>()!.SoundAsset);
 
                 var volumeLow = entitySystem.FindById("volumeLowButton");
                 Assert.IsType<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity>(volumeLow);
-                Assert.Equal("Volume: 10%", volumeLow!.GetComponent<ButtonComponent>()!.Text);
+                Assert.Equal("Volume: 10%", volumeLow.GetComponent<ButtonComponent>()!.Text);
                 Assert.Equal(0.1f, volumeLow.GetComponent<VolumeButtonComponent>()!.VolumeLevel, 3);
 
                 // The debug toggle attached to its shell.
@@ -236,7 +236,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // The follow toggle declares its three references.
             var follow = FindById(sys.Entities, "followToggle");
             Assert.NotNull(follow);
-            Assert.Equal("camera", RefTarget(follow!, "Camera"));
+            Assert.Equal("camera", RefTarget(follow, "Camera"));
             Assert.Equal("player", RefTarget(follow, "FollowTarget"));
             Assert.Equal("cameraInfoText", RefTarget(follow, "InfoLabel"));
 
@@ -271,19 +271,19 @@ namespace CoreEssentials.Tests.SceneManagement
                 // Camera instance as the main camera on attach.
                 var camera = entitySystem.FindById("camera");
                 Assert.NotNull(camera);
-                var cameraComp = camera!.GetComponent<CameraComponent>();
+                var cameraComp = camera.GetComponent<CameraComponent>();
                 Assert.NotNull(cameraComp);
-                Assert.Same(cameraComp!.Camera, CoreEssentials.Camera.Camera.MainCamera);
+                Assert.Same(cameraComp.Camera, CoreEssentials.Camera.Camera.MainCamera);
 
                 // The player instantiated at its authored position.
                 var player = entitySystem.FindById("player");
                 Assert.NotNull(player);
-                Assert.Equal(new Vector2(400, 300), player!.Position);
+                Assert.Equal(new Vector2(400, 300), player.Position);
 
                 // The follow toggle's <Reference> links resolved to the live entities.
                 var follow = entitySystem.FindById("followToggle")!.GetComponent<CameraFollowToggleComponent>();
                 Assert.NotNull(follow);
-                Assert.Same(camera, follow!.Camera);
+                Assert.Same(camera, follow.Camera);
                 Assert.Same(player, follow.FollowTarget);
                 Assert.Same(entitySystem.FindById("cameraInfoText"), follow.InfoLabel);
             }
@@ -313,7 +313,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // The screen-space HUD root has four children (three labels + info).
             var hud = FindById(sys.Entities, "hudRoot");
             Assert.NotNull(hud);
-            var hudCanvas = hud!.DeclaredComponents.First(c => c.Type.Contains("CanvasComponent"));
+            var hudCanvas = hud.DeclaredComponents.First(c => c.Type.Contains("CanvasComponent"));
             Assert.Equal("true", hudCanvas.Properties["IsScreenSpace"]);
             Assert.Equal(4, hud.Children.Count);
 
@@ -325,7 +325,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // The world-space panel has a pinned-size canvas + an orbit component + two label children.
             var panel = FindById(sys.Entities, "panel");
             Assert.NotNull(panel);
-            var panelCanvas = panel!.DeclaredComponents.First(c => c.Type.Contains("CanvasComponent"));
+            var panelCanvas = panel.DeclaredComponents.First(c => c.Type.Contains("CanvasComponent"));
             Assert.Equal("false", panelCanvas.Properties["IsScreenSpace"]);
             Assert.Equal("280", panelCanvas.Properties["Width"]);
             var orbit = panel.DeclaredComponents.First(c => c.Type.Contains("OrbitPanelComponent"));
@@ -335,7 +335,7 @@ namespace CoreEssentials.Tests.SceneManagement
             // The overlay is a plain component on its shell.
             var overlay = FindById(sys.Entities, "debugOverlay");
             Assert.NotNull(overlay);
-            Assert.Contains(overlay!.DeclaredComponents, c => c.Type.Contains("LabelAlignmentDebugOverlayComponent"));
+            Assert.Contains(overlay.DeclaredComponents, c => c.Type.Contains("LabelAlignmentDebugOverlayComponent"));
 
             // Navigation target.
             Assert.Equal("Scenes/SendMessageDemoScene.xml", NavTarget(FindById(sys.Entities, "navSendMessage")!));
@@ -364,7 +364,7 @@ namespace CoreEssentials.Tests.SceneManagement
                 // Camera pan speed applied on the input component.
                 var camera = entitySystem.FindById("camera");
                 Assert.NotNull(camera);
-                Assert.NotNull(camera!.GetComponent<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent>());
+                Assert.NotNull(camera.GetComponent<CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn.CameraComponent>());
                 Assert.Equal(300f, camera.GetComponent<CameraInputComponent>()!.MoveSpeed);
 
                 // HUD root: screen-space canvas with four child hosts.
@@ -377,13 +377,13 @@ namespace CoreEssentials.Tests.SceneManagement
                 // Panel: world-space canvas at its authored position with a pinned size + orbit.
                 var panel = entitySystem.FindById("panel");
                 Assert.NotNull(panel);
-                var panelCanvas = panel!.GetComponent<CanvasComponent>();
+                var panelCanvas = panel.GetComponent<CanvasComponent>()!;
                 Assert.False(panelCanvas.IsScreenSpace);
                 Assert.Equal(280f, panelCanvas.Width);
                 Assert.Equal(new Vector2(640, 360), panel.Position);
                 var orbit = panel.GetComponent<OrbitPanelComponent>();
                 Assert.NotNull(orbit);
-                Assert.Equal(0.6f, orbit!.Speed);
+                Assert.Equal(0.6f, orbit.Speed);
 
                 // All six labels attached (three HUD + info + two on the panel) across two canvases.
                 var overlay = entitySystem.FindById("debugOverlay")!.GetComponent<LabelAlignmentDebugOverlayComponent>();
@@ -407,11 +407,19 @@ namespace CoreEssentials.Tests.SceneManagement
 
         public void Dispose()
         {
-            if (_disposed) return;
-            _mockGame?.Dispose();
-            EngineResolver.GetEngine()?.Shutdown();
-            _disposed = true;
+            Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+            {
+                _mockGame?.Dispose();
+                EngineResolver.GetEngine()?.Shutdown();
+            }
+            _disposed = true;
         }
 
         // ──────────────────────────── Helpers ────────────────────────────

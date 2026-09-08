@@ -979,7 +979,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// Instantiates a prefab straight from a Content XML asset with zero registration calls.
     /// On first use the asset is loaded and cached under its base name (the file name without
     /// extension), so subsequent instantiations reuse the parsed prefab. An explicit
-    /// <see cref="RegisterPrefab(string, Prefab)"/> call for the same name always wins over the lazy cache.
+    /// <see cref="RegisterPrefab(string, CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization.Prefab)"/> call for the same name always wins over the lazy cache.
     /// </summary>
     /// <param name="assetName">The name of the XML asset containing the prefab definition.</param>
     /// <param name="position">The world position to place the instantiated entity.</param>

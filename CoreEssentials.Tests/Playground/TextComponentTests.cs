@@ -129,6 +129,6 @@ public class TextComponentTests
     {
         // A detached component (no owner) must not throw when drawn.
         var comp = new TextComponent();
-        Assert.Null(Record.Exception(() => comp.Draw(null)));
+        Assert.Null(Record.Exception(() => comp.Draw(null!)));
     }
 }

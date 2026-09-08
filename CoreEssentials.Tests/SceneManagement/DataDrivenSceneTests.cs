@@ -93,13 +93,13 @@ namespace CoreEssentials.Tests.SceneManagement
                 Assert.Equal(new Vector2(10, 20), target.Position);
                 Assert.Single(target.Children);
                 Assert.Equal("nested", target.Children[0].Id);
-                Assert.Equal("hi", target.GetComponent<DdsComponent>().Base);
+                Assert.Equal("hi", target.GetComponent<DdsComponent>()!.Base);
 
                 // Plain-class entity: tags, declared component with flat override, reference resolved
                 var plain = entitySystem.FindById("plain");
                 Assert.NotNull(plain);
                 Assert.Contains("actor", plain.Tags);
-                Assert.Equal("flat", plain.GetComponent<DdsComponent>().Base);
+                Assert.Equal("flat", plain.GetComponent<DdsComponent>()!.Base);
                 Assert.Same(target, ((DdsEntity)plain).Other);
             }
             finally
@@ -260,7 +260,7 @@ namespace CoreEssentials.Tests.SceneManagement
         public void DataDrivenScene_FromAssetName_NullOrEmpty_Throws()
         {
             string? nullName = null;
-            Assert.Throws<ArgumentNullException>(() => new DataDrivenScene(nullName));
+            Assert.Throws<ArgumentNullException>(() => new DataDrivenScene(nullName!));
             Assert.Throws<ArgumentNullException>(() => new DataDrivenScene("   "));
         }
 
@@ -269,8 +269,8 @@ namespace CoreEssentials.Tests.SceneManagement
         private static float ProgressOf(DataDrivenScene scene)
         {
             var entitySystem = scene.GetGameSystem<EntitySystem>();
-            var entity = entitySystem.FindById("ui");
-            return entity.GetComponent<TransitionProgressComponent>().Progress; // NOSONAR — "ui" is always present in the transition assets.
+            var entity = entitySystem.FindById("ui")!;
+            return entity.GetComponent<TransitionProgressComponent>()!.Progress; // NOSONAR — "ui" is always present in the transition assets.
         }
 
         /// <summary>Writes the data-driven loading screen and target scene assets used by the

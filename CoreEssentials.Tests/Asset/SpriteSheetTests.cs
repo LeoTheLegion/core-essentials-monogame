@@ -71,10 +71,10 @@ namespace CoreEssentials.Tests
             asset.Unload(mockManager);
             
             // Assert
-            Assert.Null(asset.GetTexture());
+            Assert.Null(MockSpriteSheet.GetTexture());
             
             // Instead of calling GetFrameCount(), check the internal field directly
-            var frames = (Rectangle[])typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(asset);
+            var frames = (Rectangle[]?)typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(asset);
             Assert.Null(frames);
         }
     }
@@ -107,14 +107,14 @@ namespace CoreEssentials.Tests
         // Add implementation for GetFrameCount to use in tests
         public new int GetFrameCount()
         {
-            var frames = (Rectangle[])typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(this);
+            var frames = (Rectangle[]?)typeof(SpriteSheet).GetField("_frames", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(this);
             return frames?.Length ?? 0;
         }
 
-        public Texture2DAsset GetTexture()
+        public static Texture2DAsset GetTexture()
         {
             // Just return null for testing - we're not actually testing the texture
-            return null;
+            return null!;
         }
     }
 }

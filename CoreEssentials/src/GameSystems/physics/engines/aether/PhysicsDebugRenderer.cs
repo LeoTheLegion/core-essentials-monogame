@@ -153,6 +153,6 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
         var projection = Matrix.CreateOrthographicOffCenter(
             0f, viewport.Width, viewport.Height, 0f, 0f, 1f);
 
-        _debugView.RenderDebugData(projection, Matrix.Identity, Matrix.Identity);
+        _debugView!.RenderDebugData(projection, Matrix.Identity, Matrix.Identity);
     }
 }

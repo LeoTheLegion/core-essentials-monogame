@@ -18,6 +18,36 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
     /// </summary>
     public class EntityDrivenSerializationTests
     {
+        /// <summary>Restores the shared transform (position/rotation/scale/sort/active) from XML onto an entity.</summary>
+        private static void RestoreTransform(Entity o, XElement element)
+        {
+            if (TryParseVector2(element.Element("Position"), out var position))
+                o.Position = position;
+
+            if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
+                o.Rotation = rotation;
+
+            if (TryParseVector2(element.Element("Scale"), out var scale))
+                o.Scale = scale;
+
+            if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
+                o.SetSort(sort);
+
+            if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
+                o.SetActive(active);
+        }
+
+        /// <summary>Parses an element's X/Y attributes into a vector; returns false when either is missing or invalid.</summary>
+        private static bool TryParseVector2(XElement? element, out Vector2 value)
+        {
+            value = Vector2.Zero;
+            if (element == null) return false;
+            if (!float.TryParse(element.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x)) return false;
+            if (!float.TryParse(element.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y)) return false;
+            value = new Vector2(x, y);
+            return true;
+        }
+
         // Test entity carrying a save component with custom state
         public class CustomStateEntity : Entity
         {
@@ -56,43 +86,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var o = Owner;
                 if (o == null) return;
 
-                var positionElement = element.Element("Position");
-                if (positionElement != null &&
-                    float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-                    float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-                {
-                    o.Position = new Vector2(x, y);
-                }
-
-                if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
-                    o.Rotation = rotation;
-
-                var scaleElement = element.Element("Scale");
-                if (scaleElement != null &&
-                    float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
-                    float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
-                {
-                    o.Scale = new Vector2(scaleX, scaleY);
-                }
-
-                if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
-                    o.SetSort(sort);
-
-                if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
-                    o.SetActive(active);
-
-                var tagsElement = element.Element("Tags");
-                if (tagsElement != null)
-                {
-                    foreach (var tag in o.Tags.ToList())
-                        o.RemoveTag(tag);
-                    foreach (var tagElement in tagsElement.Elements("Tag"))
-                    {
-                        var tagName = tagElement.Attribute("Name")?.Value;
-                        if (!string.IsNullOrWhiteSpace(tagName))
-                            o.SetTag(tagName);
-                    }
-                }
+                EntityDrivenSerializationTests.RestoreTransform(o, element);
+                RestoreTags(o, element);
 
                 // Custom state
                 var custom = element.Element("CustomState");
@@ -101,6 +96,22 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                     if (int.TryParse(custom.Attribute("Score")?.Value, out int score))
                         Score = score;
                     Name = custom.Attribute("Name")?.Value;
+                }
+            }
+
+            /// <summary>Replaces the entity's tags with those declared in the XML.</summary>
+            private static void RestoreTags(Entity o, XElement element)
+            {
+                var tagsElement = element.Element("Tags");
+                if (tagsElement == null) return;
+
+                foreach (var tag in o.Tags.ToList())
+                    o.RemoveTag(tag);
+                foreach (var tagElement in tagsElement.Elements("Tag"))
+                {
+                    var tagName = tagElement.Attribute("Name")?.Value;
+                    if (!string.IsNullOrWhiteSpace(tagName))
+                        o.SetTag(tagName);
                 }
             }
         }
@@ -149,43 +160,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var o = Owner as DeferredComponentEntity;
                 if (o == null) return;
 
-                var positionElement = element.Element("Position");
-                if (positionElement != null &&
-                    float.TryParse(positionElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
-                    float.TryParse(positionElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float y))
-                {
-                    o.Position = new Vector2(x, y);
-                }
-
-                if (float.TryParse(element.Attribute("Rotation")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float rotation))
-                    o.Rotation = rotation;
-
-                var scaleElement = element.Element("Scale");
-                if (scaleElement != null &&
-                    float.TryParse(scaleElement.Attribute("X")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleX) &&
-                    float.TryParse(scaleElement.Attribute("Y")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out float scaleY))
-                {
-                    o.Scale = new Vector2(scaleX, scaleY);
-                }
-
-                if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
-                    o.SetSort(sort);
-
-                if (bool.TryParse(element.Attribute("Active")?.Value, out bool active))
-                    o.SetActive(active);
-
-                var tagsElement = element.Element("Tags");
-                if (tagsElement != null)
-                {
-                    foreach (var tag in o.Tags.ToList())
-                        o.RemoveTag(tag);
-                    foreach (var tagElement in tagsElement.Elements("Tag"))
-                    {
-                        var tagName = tagElement.Attribute("Name")?.Value;
-                        if (!string.IsNullOrWhiteSpace(tagName))
-                            o.SetTag(tagName);
-                    }
-                }
+                EntityDrivenSerializationTests.RestoreTransform(o, element);
+                RestoreTags(o, element);
 
                 // Restore sprite color — the component exists since OnStart ran during instantiation.
                 var sprite = element.Element("Sprite");
@@ -196,6 +172,22 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                         o.SpriteComp.Color = new Color(argb);
                 }
             }
+
+            /// <summary>Replaces the entity's tags with those declared in the XML.</summary>
+            private static void RestoreTags(Entity o, XElement element)
+            {
+                var tagsElement = element.Element("Tags");
+                if (tagsElement == null) return;
+
+                foreach (var tag in o.Tags.ToList())
+                    o.RemoveTag(tag);
+                foreach (var tagElement in tagsElement.Elements("Tag"))
+                {
+                    var tagName = tagElement.Attribute("Name")?.Value;
+                    if (!string.IsNullOrWhiteSpace(tagName))
+                        o.SetTag(tagName);
+                }
+            }
         }
 
         [Fact]
@@ -203,7 +195,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
-            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
+            var saveComp = entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("test_entity");
             entity.Position = new Vector2(100, 200);
             entity.Rotation = 1.57f;
@@ -225,7 +217,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
-            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
+            var saveComp = entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("test_entity");
 
             var xml = XElement.Parse(@"
@@ -248,7 +240,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
-            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
+            var saveComp = entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("custom_entity");
             entity.Position = new Vector2(10, 20);
             saveComp.Score = 42;
@@ -260,7 +252,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             // Load into a fresh entity
             var system2 = new EntitySystem();
             var restored = system2.CreateEntity<CustomStateEntity>();
-            var restoredSave = (CustomStateSaveComponent)restored.AddComponent(new CustomStateSaveComponent());
+            var restoredSave = restored.AddComponent(new CustomStateSaveComponent());
             restored.SetId("custom_entity");
             restoredSave.LoadState(xml);
 
@@ -274,7 +266,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         {
             var system = new EntitySystem();
             var entity = system.CreateEntity<CustomStateEntity>();
-            var saveComp = (CustomStateSaveComponent)entity.AddComponent(new CustomStateSaveComponent());
+            var saveComp = entity.AddComponent(new CustomStateSaveComponent());
             entity.SetId("test");
             entity.SetTag("runtime");
 

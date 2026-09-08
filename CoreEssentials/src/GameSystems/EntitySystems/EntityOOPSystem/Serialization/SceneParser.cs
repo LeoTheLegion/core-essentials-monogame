@@ -429,6 +429,7 @@ public static class SceneParser
             .Select(typeName => EntityPrefabLoader.ResolveComponentType(typeName))
             .Where(componentType => componentType != null
                 && componentType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)?.CanWrite == true)
+            .Cast<Type>()
             .ToList();
 
         if (matches.Count == 0)
@@ -442,8 +443,10 @@ public static class SceneParser
                 $"writable property on {string.Join(" and ", matches.Select(m => m.Name))}. Use <Overrides> to target a specific component.");
 
         var resolvedType = matches[0];
-        if (!definition.ResolvedOverrides.TryGetValue(resolvedType.FullName!, out var properties))
-            definition.ResolvedOverrides[resolvedType.FullName!] = properties = new Dictionary<string, string>(StringComparer.Ordinal);
+        var typeName = resolvedType.FullName
+            ?? throw new InvalidOperationException($"Resolved component type has no full name for flat attribute '{propertyName}'.");
+        if (!definition.ResolvedOverrides.TryGetValue(typeName, out var properties))
+            definition.ResolvedOverrides[typeName] = properties = new Dictionary<string, string>(StringComparer.Ordinal);
         properties[propertyName] = value;
     }
 

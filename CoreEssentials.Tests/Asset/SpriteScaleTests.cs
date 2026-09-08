@@ -29,23 +29,24 @@ namespace CoreEssentials.Tests.Assets
             public bool DrawWithVectorScaleCalled { get; private set; }
             public Vector2 LastVectorScale { get; private set; }
             
-            public void TestDraw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, 
-                              Vector2 scale, SpriteEffects effects, float layerDepth)
+            // Expose the Draw method with float scale for testing
+            public bool DrawWithFloatScaleCalled { get; private set; }
+            public float LastFloatScale { get; private set; }
+
+            // The unused parameters mirror the real Sprite.Draw signature.
+            public void TestDraw(SpriteBatch _spriteBatch, Vector2 _position, Color _color, float _rotation, 
+                              Vector2 scale, SpriteEffects _effects, float _layerDepth)
             {
                 DrawWithVectorScaleCalled = true;
                 LastVectorScale = scale;
             }
             
-            // Expose the Draw method with float scale for testing
-            public bool DrawWithFloatScaleCalled { get; private set; }
-            public float LastFloatScale { get; private set; }
-            
-            public void TestDraw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, 
-                              float scale, SpriteEffects effects, float layerDepth)
+            public void TestDraw(SpriteBatch _spriteBatch, Vector2 _position, Color _color, float _rotation, 
+                              float scale, SpriteEffects _effects, float _layerDepth)
             {
                 DrawWithFloatScaleCalled = true;
                 LastFloatScale = scale;
-                TestDraw(spriteBatch, position, color, rotation, new Vector2(scale, scale), effects, layerDepth);
+                TestDraw(_spriteBatch, _position, _color, _rotation, new Vector2(scale, scale), _effects, _layerDepth);
             }
         }
         
@@ -58,7 +59,7 @@ namespace CoreEssentials.Tests.Assets
             
             // Act
             mockSprite.TestDraw(
-                null, // SpriteBatch not needed for this test
+                null!, // SpriteBatch not needed for this test
                 Vector2.Zero,
                 Color.White,
                 0f,
@@ -81,7 +82,7 @@ namespace CoreEssentials.Tests.Assets
             
             // Act
             mockSprite.TestDraw(
-                null, // SpriteBatch not needed for this test
+                null!, // SpriteBatch not needed for this test
                 Vector2.Zero,
                 Color.White,
                 0f,

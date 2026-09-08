@@ -21,7 +21,7 @@ namespace CoreEssentials.Tests
         {
             var asset = new Sprite("sprite.xml");
             // Simulate loaded metadata
-            var metaType = asset.GetType().GetNestedType("SpriteMeta", BindingFlags.NonPublic);
+            var metaType = asset.GetType().GetNestedType("SpriteMeta", BindingFlags.NonPublic)!;
             var meta = Activator.CreateInstance(metaType);
             metaType.GetProperty("SourceType")!.SetValue(meta, "texture2d");
             var sizeType = metaType.GetProperty("Size")!.PropertyType;
@@ -91,7 +91,7 @@ namespace CoreEssentials.Tests
         public Texture2DAsset GetTexture()
         {
             // For testing purposes only - we're just checking if it's null
-            return _isLoaded ? new MockSimpleTexture2DAsset("dummy_texture") : null;
+            return _isLoaded ? new MockSimpleTexture2DAsset("dummy_texture") : null!;
         }
     }
     

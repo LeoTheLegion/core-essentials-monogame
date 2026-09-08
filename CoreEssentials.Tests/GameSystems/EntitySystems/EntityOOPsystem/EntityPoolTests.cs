@@ -117,7 +117,7 @@ public class EntityPoolTests
     {
         var pool = new EntityPool<TestPooledEntity>(initialCapacity: 1, maxSize: 10);
 
-        Assert.Throws<ArgumentNullException>(() => pool.Release(null));
+        Assert.Throws<ArgumentNullException>(() => pool.Release(null!));
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class EntityPoolTests
         var system = CreateEntitySystem();
 
         // Should not throw on null
-        system.ReleasePooled<TestPooledEntity>(null);
+        system.ReleasePooled<TestPooledEntity>(null!);
         Assert.True(true); // No exception thrown
     }
 

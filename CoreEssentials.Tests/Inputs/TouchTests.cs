@@ -16,7 +16,7 @@ namespace CoreEssentials.Tests.Inputs
         {
             private readonly List<TouchLocation> _state;
 
-            public MockTouchStateProvider(List<TouchLocation> state = null)
+            public MockTouchStateProvider(List<TouchLocation>? state = null)
             {
                 _state = state ?? new List<TouchLocation>();
             }

@@ -16,7 +16,7 @@ namespace CoreEssentials.Tests.Assets
         [Fact]
         public void Constructor_ThrowsIfNameNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new TestAsset(null));
+            Assert.Throws<ArgumentNullException>(() => new TestAsset(null!));
         }
 
         [Fact]
