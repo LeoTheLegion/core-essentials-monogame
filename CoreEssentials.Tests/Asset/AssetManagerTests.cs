@@ -11,7 +11,7 @@ namespace CoreEssentials.Tests.Assets
         public void LoadAsset_ThrowsIfAssetNameNullOrEmpty()
         {
             AssetManager.Init(new MockContentManager());
-            Assert.Throws<ArgumentNullException>(() => AssetManager.LoadAsset<AssetManagerTests.FakeAsset>(null));
+            Assert.Throws<ArgumentNullException>(() => AssetManager.LoadAsset<AssetManagerTests.FakeAsset>(null!));
             Assert.Throws<ArgumentNullException>(() => AssetManager.LoadAsset<AssetManagerTests.FakeAsset>(""));
         }
 

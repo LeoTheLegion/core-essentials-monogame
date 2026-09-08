@@ -26,6 +26,12 @@ public abstract class Scene
     /// Gets the <see cref="SceneManager"/> responsible for managing this scene.
     /// </summary>
     public SceneManager SceneManager => _sceneManager ?? throw new InvalidOperationException("SceneManager has not been assigned.");
+
+    /// <summary>
+    /// Gets the <see cref="SceneManager"/> responsible for managing this scene, or null when none
+    /// has been assigned yet. Use from components that must tolerate running before assignment.
+    /// </summary>
+    public SceneManager? SceneManagerOrNull => _sceneManager;
     
     /// <summary>
     /// Collection of all registered game systems mapped by their type.
@@ -238,33 +244,6 @@ public abstract class Scene
         if (_gameSystems.TryGetValue(typeof(T), out var system))
             return (T)system;
         throw new KeyNotFoundException("Game system not found: " + typeof(T).Name);
-    }
-
-    /// <summary>
-    /// Loads entities from an XML scene definition file by asset name.
-    /// Uses <see cref="EntitySerializer.LoadSceneFromXml"/> for two-pass loading with reference resolution.
-    /// </summary>
-    /// <param name="xmlAssetName">The name/key of the XML asset in the AssetManager (e.g., "MyScene.xml").</param>
-    /// <param name="entitySystem">The EntitySystem to create entities in.</param>
-    /// <param name="componentFactory">Optional factory for creating components. Uses built-in types if null.</param>
-    /// <returns>A list of all root entities loaded from the scene.</returns>
-    protected List<Entity> LoadEntitiesFromXml(string xmlAssetName, EntitySystem entitySystem, IComponentFactory? componentFactory = null)
-    {
-        var sceneAsset = AssetManager.LoadAsset<XMLAsset>(xmlAssetName);
-        return LoadEntitiesFromXml(sceneAsset, entitySystem, componentFactory);
-    }
-
-    /// <summary>
-    /// Loads entities from an already-loaded <see cref="XMLAsset"/>.
-    /// Uses <see cref="EntitySerializer.LoadSceneFromXml"/> for two-pass loading with reference resolution.
-    /// </summary>
-    /// <param name="xmlAsset">The XML asset containing the scene definition.</param>
-    /// <param name="entitySystem">The EntitySystem to create entities in.</param>
-    /// <param name="componentFactory">Optional factory for creating components. Uses built-in types if null.</param>
-    /// <returns>A list of all root entities loaded from the scene.</returns>
-    protected List<Entity> LoadEntitiesFromXml(XMLAsset xmlAsset, EntitySystem entitySystem, IComponentFactory? componentFactory = null)
-    {
-        return EntitySerializer.LoadSceneFromXml(xmlAsset.XMLContent!, entitySystem, componentFactory);
     }
 
     /// <summary>

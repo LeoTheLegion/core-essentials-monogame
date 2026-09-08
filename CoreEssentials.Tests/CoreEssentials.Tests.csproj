@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
     <RollForward>Major</RollForward>
     <PublishReadyToRun>false</PublishReadyToRun>
     <TieredCompilation>false</TieredCompilation>
@@ -28,6 +29,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CoreEssentials\CoreEssentials.csproj" />
+    <ProjectReference Include="..\CoreEssentials.Playground\CoreEssentials.Playground.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="xunit.runner.json">

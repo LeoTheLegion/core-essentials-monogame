@@ -25,12 +25,12 @@ namespace CoreEssentials.Tests
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void Constructor_ThrowsOnInvalidName(string invalidName)
+        public void Constructor_ThrowsOnInvalidName(string? invalidName)
         {
             // Act & Assert
             if (invalidName == null)
             {
-                Assert.Throws<ArgumentNullException>(() => new FontAsset(invalidName));
+                Assert.Throws<ArgumentNullException>(() => new FontAsset(invalidName!));
             }
             else
             {
@@ -45,7 +45,7 @@ namespace CoreEssentials.Tests
             var asset = new MockFontAsset("testfont");
             
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => asset.Load(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Load(null!));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace CoreEssentials.Tests
             var asset = new MockFontAsset("testfont");
             
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => asset.Unload(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Unload(null!));
         }
         
         [Fact]
@@ -150,7 +150,7 @@ namespace CoreEssentials.Tests
     // Mock classes for testing
     public class MockFontAsset : FontAsset
     {
-        private SpriteFont _mockFont;
+        private SpriteFont? _mockFont;
         
         public MockFontAsset(string name) : base(name)
         {
@@ -200,7 +200,7 @@ namespace CoreEssentials.Tests
             return new Vector2(10, 20);
         }
         
-        public new SpriteFont Font => _mockFont;
+        public new SpriteFont Font => _mockFont!;
     }
     
     // Static holder for a mock SpriteFont instance

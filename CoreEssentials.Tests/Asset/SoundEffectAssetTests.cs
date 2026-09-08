@@ -20,14 +20,14 @@ namespace CoreEssentials.Tests
         public void Load_ThrowsIfContentManagerNull()
         {
             var asset = new SoundEffectAsset("test.wav");
-            Assert.Throws<ArgumentNullException>(() => asset.Load(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Load(null!));
         }
 
         [Fact]
         public void Unload_ThrowsIfContentManagerNull()
         {
             var asset = new SoundEffectAsset("test.wav");
-            Assert.Throws<ArgumentNullException>(() => asset.Unload(null));
+            Assert.Throws<ArgumentNullException>(() => asset.Unload(null!));
         }
 
         // Skip the problematic tests that require MonoGame's SoundEffect
@@ -85,9 +85,9 @@ namespace CoreEssentials.Tests
             _fakeSoundEffect = null;
         }
 
-        private FakeSoundEffect _fakeSoundEffect;
+        private FakeSoundEffect? _fakeSoundEffect;
         
-        public ISoundEffect GetSoundEffect()
+        public ISoundEffect? GetSoundEffect()
         {
             // Return our fake sound effect
             return _fakeSoundEffect;

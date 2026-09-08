@@ -84,7 +84,7 @@ namespace CoreEssentials.Tests.Audio
             // Get the instances field to verify proper cleanup
             var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            var instances = (Dictionary<string, AudioClipInstance>)instancesField!.GetValue(mockManager)!;
             
             // Act
             mockManager.StopSound(id);
@@ -132,13 +132,13 @@ namespace CoreEssentials.Tests.Audio
             // Get the audio clip instance
             var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            var instances = (Dictionary<string, AudioClipInstance>)instancesField!.GetValue(mockManager)!;
             var instance = instances[id];
             
             // Use reflection to replace the sound effect instance with our mock
             var soundEffectInstanceField = typeof(AudioClipInstance).GetField("soundEffectInstance",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            soundEffectInstanceField.SetValue(instance, mockSoundEffectInstance);
+            soundEffectInstanceField!.SetValue(instance, mockSoundEffectInstance);
             
             // Act
             mockManager.SetTestMasterVolume(0.7f);
@@ -164,7 +164,7 @@ namespace CoreEssentials.Tests.Audio
             // Get instances dictionary to check state
             var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            var instances = (Dictionary<string, AudioClipInstance>)instancesField!.GetValue(mockManager)!;
             
             // Verify initial state
             Assert.True(instances.ContainsKey(id));
@@ -198,7 +198,7 @@ namespace CoreEssentials.Tests.Audio
             // Get instances dictionary to check state
             var instancesField = typeof(AudioManager).GetField("_audioClipInstances", 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var instances = instancesField.GetValue(mockManager) as Dictionary<string, AudioClipInstance>;
+            var instances = (Dictionary<string, AudioClipInstance>)instancesField!.GetValue(mockManager)!;
             
             // Get the instance that was created
             var instance = instances[id];
@@ -206,7 +206,7 @@ namespace CoreEssentials.Tests.Audio
             // Replace with our mock instance that we can control
             var soundEffectInstanceField = typeof(AudioClipInstance).GetField("soundEffectInstance",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            soundEffectInstanceField.SetValue(instance, mockSoundEffectInstance);
+            soundEffectInstanceField!.SetValue(instance, mockSoundEffectInstance);
             
             // Use reflection to make the instance report it's done playing
             ForceSoundEffectInstanceToReport(instance, isDonePlaying: true);
@@ -235,7 +235,7 @@ namespace CoreEssentials.Tests.Audio
             var instance = instances[id];
             var field = typeof(AudioClipInstance).GetField("soundEffectInstance",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(instance, mockSoundEffectInstance);
+            field!.SetValue(instance, mockSoundEffectInstance);
 
             // Act
             mockManager.PauseSound(id);
@@ -271,7 +271,7 @@ namespace CoreEssentials.Tests.Audio
             var instance = instances[id];
             var field = typeof(AudioClipInstance).GetField("soundEffectInstance",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(instance, mockSoundEffectInstance);
+            field!.SetValue(instance, mockSoundEffectInstance);
             mockSoundEffectInstance.SetState(SoundState.Paused);
 
             // Act
@@ -298,7 +298,7 @@ namespace CoreEssentials.Tests.Audio
         {
             var instancesField = typeof(AudioManager).GetField("_audioClipInstances",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            return (Dictionary<string, AudioClipInstance>)instancesField.GetValue(manager)!;
+            return (Dictionary<string, AudioClipInstance>)instancesField!.GetValue(manager)!;
         }
 
         private void SetupAssetManagerToReturnMock(MockAudioClip audioClip)

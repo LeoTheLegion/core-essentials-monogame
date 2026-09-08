@@ -13,14 +13,16 @@ public class CanvasImpl : ContainerWidget, ICanvas
 {
     private readonly IGuiManager _manager;
     private Vector2 _position;
-    private bool _isScreenSpace;
+
+    /// <summary>
+    /// Tracks whether this canvas is currently registered in the global GUI root. Registration is
+    /// deferred until the first pump (<see cref="Update"/>), so a canvas only renders once its owning
+    /// scene actually starts updating — not while it is still loading or after it has been unloaded.
+    /// </summary>
+    private bool _isRegistered;
 
     /// <inheritdoc />
-    public bool IsScreenSpace
-    {
-        get => _isScreenSpace;
-        set => _isScreenSpace = value;
-    }
+    public bool IsScreenSpace { get; set; }
 
     /// <summary>
     /// Gets the underlying Myra Panel instance.
@@ -30,10 +32,25 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// <inheritdoc />
     public CanvasImpl(bool isScreenSpace = true) : base(new Panel())
     {
-        _isScreenSpace = isScreenSpace;
+        IsScreenSpace = isScreenSpace;
         _position = Vector2.Zero;
         _manager = EngineResolver.GetEngine();
+        // Registration into the global GUI is deferred to the first Update() — see EnsureRegistered.
+    }
+
+    /// <summary>
+    /// Registers this canvas in the global GUI root on first use. A canvas belongs to a scene and is
+    /// pumped only while that scene is current, so its first pump is the moment it should start
+    /// rendering. Deferring registration (rather than doing it in the constructor) keeps canvases of
+    /// a still-loading or already-unloaded scene out of the global render list. Safe to call repeatedly.
+    /// </summary>
+    private void EnsureRegistered()
+    {
+        if (_isRegistered)
+            return;
+
         _manager.AddWidget(this);
+        _isRegistered = true;
     }
 
     /// <summary>
@@ -43,7 +60,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// </summary>
     public override float Width
     {
-        get => _isScreenSpace && AutoWidth ? _manager.Width : base.Width;
+        get => IsScreenSpace && AutoWidth ? _manager.Width : base.Width;
         set => base.Width = value;
     }
 
@@ -54,7 +71,7 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// </summary>
     public override float Height
     {
-        get => _isScreenSpace && AutoHeight ? _manager.Height : base.Height;
+        get => IsScreenSpace && AutoHeight ? _manager.Height : base.Height;
         set => base.Height = value;
     }
 
@@ -81,7 +98,10 @@ public class CanvasImpl : ContainerWidget, ICanvas
     /// <inheritdoc />
     public void Update(GameTime gameTime)
     {
-        if (!_isScreenSpace)
+        // First pump = the owning scene is now live, so attach to the global GUI from here on.
+        EnsureRegistered();
+
+        if (!IsScreenSpace)
         {
             var camera = CoreEssentials.Camera.Camera.MainCamera;
             if (camera != null)
@@ -101,6 +121,10 @@ public class CanvasImpl : ContainerWidget, ICanvas
     public void CleanUp()
     {
         ClearChildren();
-        _manager.RemoveWidget(this);
+        if (_isRegistered)
+        {
+            _manager.RemoveWidget(this);
+            _isRegistered = false;
+        }
     }
 }

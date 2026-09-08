@@ -11,7 +11,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
 
 public class CanvasComponentTests : IDisposable
 {
-    private readonly Game _mockGame = null!;
+    private readonly Game _mockGame;
     private bool _disposed;
 
     public CanvasComponentTests()
@@ -44,7 +44,7 @@ public class CanvasComponentTests : IDisposable
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     // ===== Construction =====
@@ -65,6 +65,23 @@ public class CanvasComponentTests : IDisposable
 
         Assert.NotNull(component.Canvas);
         Assert.False(component.IsScreenSpace);
+    }
+
+    /// <summary>
+    /// Regression test for the prefab/scene instantiation path. The loader creates components via
+    /// Activator.CreateInstance(type) — a TRUE parameterless constructor is required; an
+    /// optional-parameter-only constructor (e.g. "CanvasComponent(bool isScreenSpace = true)") does
+    /// NOT count and made the loader silently skip creating every canvas, so nested labels failed
+    /// with "No CanvasComponent found". This mirrors that exact reflection call.
+    /// </summary>
+    [Fact]
+    public void Constructor_ViaReflection_UsesTrueParameterlessCtor()
+    {
+        var instance = Activator.CreateInstance(typeof(CanvasComponent));
+
+        Assert.NotNull(instance);
+        var component = (CanvasComponent)instance;
+        Assert.True(component.IsScreenSpace);
     }
 
     // ===== Widget management =====

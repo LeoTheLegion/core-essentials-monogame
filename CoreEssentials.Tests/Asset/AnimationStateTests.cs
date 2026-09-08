@@ -20,7 +20,7 @@ namespace CoreEssentials.Tests
         [Fact]
         public void Constructor_ThrowsIfNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new AnimationState(null));
+            Assert.Throws<ArgumentNullException>(() => new AnimationState(null!));
         }
 
         [Fact]

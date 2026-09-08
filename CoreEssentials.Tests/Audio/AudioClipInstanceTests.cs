@@ -69,7 +69,7 @@ namespace CoreEssentials.Tests.Audio
             
             // Use reflection to access soundEffectInstance field
             var fieldInfo = typeof(AudioClipInstance).GetField("soundEffectInstance", 
-                BindingFlags.NonPublic | BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance)!;
             fieldInfo.SetValue(instance, mockInstance);
             
             // Act
@@ -94,7 +94,7 @@ namespace CoreEssentials.Tests.Audio
             
             // Use reflection to access and set soundEffectInstance field
             var fieldInfo = typeof(AudioClipInstance).GetField("soundEffectInstance", 
-                BindingFlags.NonPublic | BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance)!;
             fieldInfo.SetValue(instance, mockInstance);
             
             // Act
@@ -122,7 +122,7 @@ namespace CoreEssentials.Tests.Audio
             
             // Use reflection to access and set soundEffectInstance field
             var fieldInfo = typeof(AudioClipInstance).GetField("soundEffectInstance", 
-                BindingFlags.NonPublic | BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance)!;
             fieldInfo.SetValue(instance, mockInstance);
             
             // Act 
@@ -147,7 +147,7 @@ namespace CoreEssentials.Tests.Audio
             
             // Use reflection to set the mock instance
             var fieldInfo = typeof(AudioClipInstance).GetField("soundEffectInstance", 
-                BindingFlags.NonPublic | BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance)!;
             fieldInfo.SetValue(instance, mockInstance);
             
             // Act & Assert
@@ -169,7 +169,7 @@ namespace CoreEssentials.Tests.Audio
             
             // Use reflection to set the mock instance
             var fieldInfo = typeof(AudioClipInstance).GetField("soundEffectInstance", 
-                BindingFlags.NonPublic | BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance)!;
             fieldInfo.SetValue(instance, mockInstance);
             
             // Act & Assert

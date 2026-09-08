@@ -123,8 +123,8 @@ namespace CoreEssentials.Tests.SceneManagement
             // Act
             manager.LoadScene(scene);
             
-            // Assert - Scene should be set as the next scene
-            Assert.Equal(scene, manager.NextScene);
+            // Assert - Scene should be set as the pending scene
+            Assert.Equal(scene, manager.PendingScene);
             
             // Clean up
             helper.Cleanup();
@@ -145,7 +145,7 @@ namespace CoreEssentials.Tests.SceneManagement
             
             // Assert - Transition should be in progress
             Assert.True(manager.IsTransitioning);
-            Assert.Equal(newScene, manager.NextScene);
+            Assert.Equal(newScene, manager.PendingScene);
             
             // Process multiple updates to ensure transition completes
             for (int i = 0; i < 20; i++) // Increased number of updates to ensure completion
@@ -163,7 +163,7 @@ namespace CoreEssentials.Tests.SceneManagement
             
             // After sufficient updates, transition should be complete
             Assert.False(manager.IsTransitioning);
-            Assert.Null(manager.NextScene);
+            Assert.Null(manager.PendingScene);
             
             // The current scene should be set and fully loaded
             Assert.NotNull(manager.CurrentScene);
@@ -210,7 +210,7 @@ namespace CoreEssentials.Tests.SceneManagement
             
             // After sufficient updates, verify the transition completed
             Assert.False(manager.IsTransitioning);
-            Assert.Null(manager.NextScene);
+            Assert.Null(manager.PendingScene);
             
             // The current scene should now be the target scene
             Assert.NotNull(manager.CurrentScene);
@@ -219,6 +219,42 @@ namespace CoreEssentials.Tests.SceneManagement
             Assert.Equal("Loading complete", manager.CurrentScene.LoadingStatus);
             
             // Clean up
+            helper.Cleanup();
+        }
+
+        [Fact]
+        public void TransitionWithLoadingScreen_UnloadsLoadingScreen_AfterSwap()
+        {
+            // Regression: the loading screen was deliberately kept loaded "for reuse", but its canvas
+            // stays registered in the global GUI, so its label kept rendering on top of the new scene.
+            // After the swap the loading screen must be unloaded so it stops rendering and can be
+            // cleanly reloaded on the next transition.
+            var helper = new CoroutineTestHelper();
+
+            var manager = new SceneManager();
+            var targetScene = new SlowLoadScene();
+            var loadingScreen = new LoadingScreenScene(targetScene);
+
+            manager.SetLoadingScene(loadingScreen);
+
+            // Act — start the transition and drive it to completion.
+            manager.LoadScene(targetScene);
+            for (int i = 0; i < 30 && manager.IsTransitioning; i++)
+            {
+                helper.AdvanceTime(0.1f);
+                manager.Update(new GameTime(TimeSpan.FromSeconds(i * 0.1), TimeSpan.FromSeconds(0.1)));
+            }
+
+            // Assert — the target is now current and fully loaded...
+            Assert.False(manager.IsTransitioning);
+            Assert.NotNull(manager.CurrentScene);
+            Assert.IsType<SlowLoadScene>(manager.CurrentScene);
+
+            // ...and the loading screen has been unloaded (no longer "loaded"), so its canvas can no
+            // longer keep rendering. It is retained as the loading scene for reuse on the next call.
+            Assert.Same(loadingScreen, manager.LoadingScene);
+            Assert.False(loadingScreen.IsLoaded, "Loading screen should be unloaded after the swap.");
+
             helper.Cleanup();
         }
     }

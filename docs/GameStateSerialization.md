@@ -9,11 +9,24 @@ The serialization system captures:
 - Entity tags and sort order
 - Entity hierarchies (parent-child relationships)
 - Active/inactive state
-- **Custom entity state** via `ISaveableEntity` interface
+- **Custom entity state** via an `ISaveableComponent` attached to the entity
 
-> **Opt-in approach**: Only entities implementing `ISaveableEntity` are saved and loaded. This gives you full control over what persists and makes serialization explicit and testable.
+> **Opt-in approach**: An entity is saveable iff it has a component implementing `ISaveableComponent`. This gives you full control over what persists and makes serialization explicit and testable — no entity subclassing required.
+>
+> **Prefab-driven:** saves carry a `Prefab="..."` attribute recording the prefab each entity was instantiated from, and loading recreates entities via `EntitySystem.Instantiate`. Prefab-declared components (sprite, rigidbody, collider) come back automatically; the save component then restores exactly the state it cares about.
+>
+> **Prefab required:** every saved entity must have been instantiated from a registered prefab so it can be recreated on load. Saves whose entity elements are missing the `Prefab` attribute fail to load.
 
 ## Quick Start
+
+### Attaching a Save Component
+
+```csharp
+// Make any entity saveable by attaching a component that implements ISaveableComponent.
+// The component decides exactly what to save (typically transform + tags + the public
+// properties of whichever sibling components matter).
+entity.AddComponent(new MySaveComponent());
+```
 
 ### Saving Game State
 
@@ -28,12 +41,13 @@ GameStateSerializer.SaveState(entitySystem, "saves/game_save.xml");
 ### Loading Game State
 
 ```csharp
-// Load state - replaces all ISaveableEntity instances with what's in the save file
-// Entities not implementing ISaveableEntity are unaffected
+// Load state - recreates saveable entities from their saved Prefab and restores their state.
+// Entities with no save component are unaffected.
 entitySystem.LoadState("saves/game_save.xml");
 
-// After loading, any ISaveableEntity instances NOT in the save file will be automatically removed
-// This ensures the game state exactly matches what was saved
+// After loading, any saveable entity NOT in the save file will be automatically removed
+// This ensures the game state exactly matches what was saved.
+// NOTE: the prefabs referenced by the save must be registered (e.g. their scene loaded) first.
 ```
 
 ## API Reference
@@ -59,9 +73,9 @@ Loads game state from an XML file.
 - `filePath`: Path to the save file
 
 **Behavior:**
-- Only entities implementing `ISaveableEntity` are affected
+- Only entities carrying an `ISaveableComponent` are affected
 - Entities with matching IDs in the save file are updated in place
-- ISaveableEntity instances NOT in the save file are automatically removed after loading
+- Saveable entities NOT in the save file are automatically removed after loading
 - Non-saveable entities (UI, cameras, etc.) are unaffected
 
 ### GameStateSerializer Methods
@@ -84,43 +98,49 @@ public static void LoadStateFromXml(EntitySystem system, string xmlData)
 ```
 Loads entity system state from XML string.
 
-## ISaveableEntity Interface
+## ISaveableComponent Interface
 
-Serialization is **opt-in** — only entities implementing `ISaveableEntity` are saved and loaded. This gives you full control over what persists and makes serialization explicit.
+Serialization is **opt-in** — an entity is saveable iff it has a component implementing `ISaveableComponent`. This gives you full control over what persists and makes serialization explicit. The component decides exactly what to save (typically the owner's transform + tags + the public properties of whichever sibling components matter).
 
-### The ISaveableEntity Interface
+### The ISaveableComponent Interface
 
 ```csharp
-public interface ISaveableEntity
+public interface ISaveableComponent
 {
     XElement SaveState();
     void LoadState(XElement element);
 }
 ```
 
+- `SaveState()` returns the full `<Entity>` element for the owner. The framework serializer stamps the authoritative `Prefab="..."` attribute on it and appends `<Children>`.
+- `LoadState(element)` is called by the serializer **after** the entity has been recreated from its prefab (so sibling components exist), letting you restore exactly what you saved.
+
 ### How Loading Works
 
-When loading state, the serializer follows an ID-based replace flow:
+When loading state, the serializer follows a prefab-driven flow:
 
-1. **Collect IDs** — gather all entity IDs from the save file (including nested children)
+1. **Collect IDs** — gather all saveable entity IDs from the save file (including nested children)
 2. **Load entities** — for each saved entity:
-   - If an entity with that ID exists → update it in place via `LoadState()`
-   - Otherwise → create new entity and call `LoadState()`
-3. **Cleanup** — remove any ISaveableEntity instances whose ID wasn't in the save file
+   - If it carries an `ISaveableComponent` and has a `Prefab` attribute → recreate via `EntitySystem.Instantiate(prefab, position)`, set the saved Id, then call the component's `LoadState(element)`
+   - Otherwise (legacy save without a `Prefab`) → fall back to creating the entity by its `Type` and call `LoadState()`
+3. **Cleanup** — remove any saveable entity whose ID wasn't in the save file
 
 This ensures the game state **exactly matches** what was saved.
 
-### Example: Entity with Custom State
+> **Prefab registration is required at load time.** The prefabs referenced by a save must be registered before loading (true for scenes, which register their prefabs before spawning entities). Loading a save that references an unregistered prefab throws an actionable `KeyNotFoundException` (surfaced as the inner exception of an `InvalidOperationException`).
+
+### Example: A Save Component with Custom State
 
 ```csharp
-public class Player : Entity, ISaveableEntity
+public class PlayerSaveComponent : EntityComponent, ISaveableComponent
 {
     public int Score { get; set; }
     public float Health { get; set; }
 
     public XElement SaveState()
     {
-        return new XElement("PlayerState",
+        return new XElement("Entity",
+            new XAttribute("Id", Owner.Id ?? string.Empty),
             new XAttribute("Score", Score),
             new XAttribute("Health", Health)
         );
@@ -128,83 +148,61 @@ public class Player : Entity, ISaveableEntity
 
     public void LoadState(XElement element)
     {
-        var playerState = element.Element("PlayerState");
-        if (playerState != null)
-        {
-            if (int.TryParse(playerState.Attribute("Score")?.Value, out int score))
-                Score = score;
-            if (float.TryParse(playerState.Attribute("Health")?.Value,
-                    NumberStyles.Any, CultureInfo.InvariantCulture,
-                    out float health))
-                Health = health;
-        }
+        if (int.TryParse(element.Attribute("Score")?.Value, out int score))
+            Score = score;
+        if (float.TryParse(element.Attribute("Health")?.Value,
+                NumberStyles.Any, CultureInfo.InvariantCulture,
+                out float health))
+            Health = health;
     }
 }
 ```
 
-### Example: Physics Entity (Ball)
+### Example: A Save Component for a Physics Ball
+
+The common case is a component-composed entity whose save component explicitly serializes the
+owner's transform + tags and the public properties of whichever sibling components matter. The
+playground's ball does exactly this in `BallSaveComponent : EntityComponent, ISaveableComponent` —
+it reads each value by name (sprite color/asset, rigidbody mass + velocity, collider settings) with
+no per-component serialization interface; the full implementation follows.
 
 ```csharp
-public class Ball : Entity, ISaveableEntity
+public class BallSaveComponent : EntityComponent, ISaveableComponent
 {
-    private RigidbodyComponent? _rigidbody;
-    private SpriteComponent? _sprite;
-
-    public override void OnStart()
-    {
-        base.OnStart();
-        _sprite = new SpriteComponent(AssetManager.LoadAsset<Sprite>("ball.png"));
-        AddComponent(_sprite);
-        _rigidbody = new RigidbodyComponent(RigidbodyType.Dynamic);
-        AddComponent(_rigidbody);
-    }
-
     public XElement SaveState()
     {
-        var state = new XElement("BallState",
-            new XAttribute("Color", _sprite?.Color.ToArgb() ?? 0)
-        );
+        var element = new XElement("Entity",
+            new XAttribute("Id", Owner.Id ?? string.Empty),
+            new XElement("Position",
+                new XAttribute("X", Owner.Position.X.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("Y", Owner.Position.Y.ToString(CultureInfo.InvariantCulture))));
 
-        // The RigidbodyComponent exposes velocity directly (no need to reach into the body).
-        if (_rigidbody != null && _rigidbody.IsBodyCreated)
-        {
-            state.Add(new XElement("Physics",
-                new XAttribute("LinearVelocityX", _rigidbody.LinearVelocity.X),
-                new XAttribute("LinearVelocityY", _rigidbody.LinearVelocity.Y),
-                new XAttribute("AngularVelocity", _rigidbody.AngularVelocity)
-            ));
-        }
+        // Explicit per-component serialization, read by name from each sibling's public properties.
+        if (Owner.TryGetComponent<SpriteComponent>(out var sprite) && sprite != null)
+            element.Add(new XElement("SpriteState", new XAttribute("ColorR", sprite.Color.R)));
 
-        return state;
+        if (Owner.TryGetComponent<RigidbodyComponent>(out var rb) && rb != null)
+            element.Add(new XElement("RigidbodyState",
+                new XAttribute("LinearVelocityX", rb.LinearVelocity.X),
+                new XAttribute("LinearVelocityY", rb.LinearVelocity.Y)));
+
+        return element; // the serializer stamps Prefab="..." and appends <Children>
     }
 
     public void LoadState(XElement element)
     {
-        var ballState = element.Element("BallState");
-        if (ballState != null && _sprite != null)
-        {
-            var colorAttr = ballState.Attribute("Color")?.Value;
-            if (colorAttr != null && int.TryParse(colorAttr, out int argb))
-                _sprite.Color = new Color(argb);
-        }
+        var spriteEl = element.Element("SpriteState");
+        if (spriteEl != null && Owner.TryGetComponent<SpriteComponent>(out var sprite) && sprite != null)
+            sprite.Color = new Color(byte.Parse(spriteEl.Attribute("ColorR")?.Value ?? "255"), 0, 0);
 
-        var physics = element.Element("Physics");
-        if (physics != null && _rigidbody != null && _rigidbody.IsBodyCreated)
+        var rbEl = element.Element("RigidbodyState");
+        if (rbEl != null && Owner.TryGetComponent<RigidbodyComponent>(out var rb) && rb != null)
         {
-            if (float.TryParse(physics.Attribute("LinearVelocityX")?.Value,
-                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velX) &&
-                float.TryParse(physics.Attribute("LinearVelocityY")?.Value,
-                    NumberStyles.Any, CultureInfo.InvariantCulture, out float velY))
-            {
-                // Setting LinearVelocity directly restores the saved velocity.
-                _rigidbody.LinearVelocity = new Vector2(velX, velY);
-            }
-
-            if (float.TryParse(physics.Attribute("AngularVelocity")?.Value,
-                    NumberStyles.Any, CultureInfo.InvariantCulture, out float angVel))
-            {
-                _rigidbody.AngularVelocity = angVel;
-            }
+            // Ensure the body exists at the restored position before velocity is applied.
+            if (!rb.IsBodyCreated) rb.CreateBody();
+            rb.SetLinearVelocity(new Vector2(
+                float.Parse(rbEl.Attribute("LinearVelocityX")?.Value ?? "0"),
+                float.Parse(rbEl.Attribute("LinearVelocityY")?.Value ?? "0")));
         }
     }
 }
@@ -238,46 +236,56 @@ public class Ball : Entity, ISaveableEntity
 </Entity>
 ```
 
-### Physics Entity Example (Ball)
+### Physics Entity Example (Ball — component-based serialization)
+
+The playground's physics ball is a plain `GameObjectEntity` carrying a `BallSaveComponent`. Its save
+shape is **explicit**: transform + tags, plus one element for each component the ball needs to
+restore (`<SpriteState/>`, `<RigidbodyState/>`, `<ColliderState/>`). Each value is read by name from
+the component's public properties — adding a new saved field means adding it to `BallSaveComponent`'s
+save/load code. The authoritative `Prefab="..."` attribute records which prefab recreated the entity
+on load (the `Type` attribute is kept for legacy readability only).
+
 ```xml
-<Entity Id="vip_ball_blue" Type="CoreEssentials.Playground.Ball" Rotation="-2.4139123" Sort="0" Active="true">
+<Entity Id="vip_ball_blue" Prefab="BallPrefab" Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Rotation="-2.4139123" Sort="0" Active="true">
   <Position X="583.62" Y="250.98" />
   <Scale X="2" Y="2" />
   <Tags>
     <Tag Name="Ball" />
     <Tag Name="Physical" />
   </Tags>
-  <Physics LinearVelocityX="-51.93" LinearVelocityY="-108.18" AngularVelocity="-2.34" />
-  <Sprite Color="4294901760" />
+  <SpriteState ColorR="255" ColorG="174" ColorB="201" ColorA="255" OriginX="0.5" OriginY="0.5" Effects="" LayerDepth="0" SortOrderOverride="-1" AnimationFrame="0" SpriteAsset="Sprites/ball_sprite.xml" />
+  <RigidbodyState Type="Dynamic" Mass="4" FixedRotation="False" SyncFromPhysics="True" LinearVelocityX="-51.93" LinearVelocityY="-108.18" AngularVelocity="-2.34" />
+  <ColliderState ShapeType="Circle" Friction="0.2" Restitution="1" Categories="Cat2" CollidesWith="Cat2" OffsetX="0" OffsetY="1" Radius="96" />
 </Entity>
 ```
 
 ## Entity Cleanup on Load
 
-When loading state, any ISaveableEntity instances **not present in the save file** will be automatically removed. This ensures the loaded game state exactly matches what was saved.
+When loading state, any saveable entities (those carrying an `ISaveableComponent`) **not present in the save file** will be automatically removed. This ensures the loaded game state exactly matches what was saved.
 
 ### How It Works
 
 ```csharp
-// Create some entities
-var ball1 = entitySystem.CreateEntity<Ball>();
+// Create some entities and make them saveable by attaching a save component
+var ball1 = entitySystem.CreateEntity<GameObjectEntity>();
 ball1.SetId("ball_1");
-ball1.Implements(ISaveableEntity);
+ball1.AddComponent(new BallSaveComponent());
 
-var ball2 = entitySystem.CreateEntity<Ball>();
+var ball2 = entitySystem.CreateEntity<GameObjectEntity>();
 ball2.SetId("ball_2");
-ball2.Implements(ISaveableEntity);
+ball2.AddComponent(new BallSaveComponent());
 
-// UI elements don't implement ISaveableEntity, so they're unaffected
+// UI elements have no save component, so they're unaffected
 var hud = entitySystem.CreateEntity<HUDElement>();
 hud.SetId("hud");
 
 // Save state (both balls are saved)
 entitySystem.SaveState("saves/game.xml");
 
-// Create another ball at runtime
-var ball3 = entitySystem.CreateEntity<Ball>();
+// Create another ball at runtime (also saveable)
+var ball3 = entitySystem.CreateEntity<GameObjectEntity>();
 ball3.SetId("ball_3");
+ball3.AddComponent(new BallSaveComponent());
 
 // Load state - ball3 will be removed since it's not in the save file
 entitySystem.LoadState("saves/game.xml");
@@ -287,23 +295,21 @@ entitySystem.LoadState("saves/game.xml");
 
 ### Preserving Runtime Entities
 
-To keep entities like UI elements, cameras, or debug overlays across save/load cycles, simply **don't implement ISaveableEntity**:
+To keep entities like UI elements, cameras, or debug overlays across save/load cycles, simply **don't attach a save component**:
 
 ```csharp
-// This entity won't be saved or affected by LoadState
-public class CameraEntity : Entity
-{
-    // No ISaveableEntity implementation
-    // Entity persists across all save/load operations
-}
+// This entity has no ISaveableComponent, so it won't be saved or affected by LoadState
+var camera = entitySystem.CreateEntity<GameObjectEntity>();
+camera.AddComponent(new CameraComponent());
+// Entity persists across all save/load operations
 ```
 
 ### Controlling What Gets Saved
 
-| Interface Implemented | Saved? | Removed on Load if not in file? |
-|-----------------------|--------|----------------------------------|
-| `ISaveableEntity`     | Yes    | Yes                              |
-| None                  | No     | No                               |
+| Save Component Attached | Saved? | Removed on Load if not in file? |
+|-------------------------|--------|----------------------------------|
+| `ISaveableComponent`    | Yes    | Yes                              |
+| None                    | No     | No                               |
 
 ## Best Practices
 
@@ -313,24 +319,19 @@ Entities must have unique IDs to be saved and loaded properly:
 entity.SetId("player_character");
 ```
 
-### 2. Implement ISaveableEntity for Serializable Entities
-Only entities that need to persist should implement the interface:
+### 2. Attach a Save Component for Serializable Entities
+Only entities that need to persist should carry an `ISaveableComponent`:
 ```csharp
-public class Player : Entity, ISaveableEntity
-{
-    public XElement SaveState() { /* ... */ }
-    public void LoadState(XElement element) { /* ... */ }
-}
+entity.AddComponent(new MySaveComponent());
 ```
 
-### 3. Don't Implement ISaveableEntity for Runtime-Only Entities
-UI elements, cameras, and debug overlays should NOT implement `ISaveableEntity`:
+### 3. Don't Attach a Save Component to Runtime-Only Entities
+UI elements, cameras, and debug overlays should NOT carry an `ISaveableComponent`:
 ```csharp
 // This entity persists across all save/load operations
-public class CameraEntity : Entity
-{
-    // No ISaveableEntity - unaffected by serialization
-}
+var camera = entitySystem.CreateEntity<GameObjectEntity>();
+camera.AddComponent(new CameraComponent());
+// No save component - unaffected by serialization
 ```
 
 ### 4. Handle Versioning
@@ -410,14 +411,14 @@ public class SaveGameManager
 - Check that entities are added to the EntitySystem before saving
 
 ### Components Not Restoring
-- Make sure your entity implements `ISaveableEntity`
-- Check that components are created in `OnStart()` before `LoadState()` is called
+- Make sure your entity carries an `ISaveableComponent`
+- Sibling components come back from the prefab on load; the save component restores their saved state in `LoadState()`
 - Verify component type names are preserved in XML (use `GetType().FullName` not `GetType().Name`)
 
 ### Physics State Not Persisting
-- Make sure RigidbodyComponent and ColliderComponent are added before saving
+- Make sure RigidbodyComponent and ColliderComponent are declared before saving
 - Velocity is only saved if the physics body has been created (check `IsBodyCreated`)
-- On load, velocity is restored after the body is recreated in `OnStart()`
+- On load, velocity is restored after the body is recreated (the save component calls `CreateBody()` first)
 
 ### Scale Issues After Loading
 - Entity.Scale is now the single source of truth for scale
@@ -425,16 +426,17 @@ public class SaveGameManager
 - Check that old save files with Scale in SpriteComponent are migrated
 
 ### Entities Disappearing After Load
-- Only ISaveableEntity instances are affected by loading
-- If an entity implements ISaveableEntity but isn't in the save file, it will be removed
-- To preserve runtime entities (UI, cameras), don't implement ISaveableEntity
+- Only saveable entities (those carrying an `ISaveableComponent`) are affected by loading
+- If a saveable entity isn't in the save file, it will be removed
+- To preserve runtime entities (UI, cameras), don't attach a save component
 
-## Built-In Serializable Components
+## Component State Elements
 
-The following components implement `ISerializableComponent` and are automatically saved/loaded:
+A save component (e.g. the playground's `BallSaveComponent`) writes these elements by reading each built-in
+component's public properties. The element shapes below are what a save component emits and restores:
 
 ### SpriteComponent
-Saves visual properties of the sprite.
+Visual properties of the sprite.
 ```xml
 <SpriteState 
   ColorR="255" ColorG="0" ColorB="0" ColorA="255"
@@ -445,7 +447,7 @@ Saves visual properties of the sprite.
 **Note:** Scale is now stored on the `Entity` base class, not in SpriteComponent.
 
 ### RigidbodyComponent
-Saves physics body properties and velocity.
+Physics body properties and velocity.
 ```xml
 <RigidbodyState 
   Type="Dynamic"
@@ -456,7 +458,7 @@ Saves physics body properties and velocity.
 ```
 
 ### ColliderComponent
-Saves collider shape and material properties.
+Collider shape and material properties.
 ```xml
 <ColliderState 
   ShapeType="Circle"
@@ -488,5 +490,5 @@ This eliminates redundancy - previously each entity stored its own scale, now it
 ## See Also
 
 - [Entity System Documentation](EntitySystem.md)
-- [Entity Templates](EntityTemplates.md)
+- [Prefabs](Prefabs.md)
 - [Physics System](PhysicsSystem.md)
