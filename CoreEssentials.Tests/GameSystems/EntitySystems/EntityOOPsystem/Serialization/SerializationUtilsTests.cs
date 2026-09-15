@@ -108,5 +108,44 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             Assert.Equal(Color.White, SerializationUtils.ParseColor("not-a-color"));
             Assert.Equal(Color.White, SerializationUtils.ParseColor(string.Empty));
         }
+
+        // ─────────────────────────────── ParseValue (nullable) ───────────────────────────────
+
+        [Fact]
+        public void ParseValue_NullableColor_UnwrapsAndParses()
+        {
+            var value = SerializationUtils.ParseValue(typeof(Color?), "Coral");
+            Assert.IsType<Color>(value);
+            Assert.Equal(Color.Coral, (Color)value);
+        }
+
+        [Fact]
+        public void ParseValue_NullableInt_UnwrapsAndParses()
+        {
+            var value = SerializationUtils.ParseValue(typeof(int?), "42");
+            Assert.Equal(42, (int?)value);
+        }
+
+        [Fact]
+        public void ParseValue_NonNullableColor_StillParses()
+        {
+            // Regression: non-nullable behavior is unchanged by nullable support.
+            var value = SerializationUtils.ParseValue(typeof(Color), "Red");
+            Assert.Equal(Color.Red, (Color)value);
+        }
+
+        [Fact]
+        public void ParseValue_NullableUnsupportedType_Throws()
+        {
+            // Unwrapping exposes the underlying type, which is itself unsupported.
+            Assert.Throws<NotSupportedException>(() => SerializationUtils.ParseValue(typeof(DateTime?), "2026-01-01"));
+        }
+
+        [Fact]
+        public void ParseValue_NullableVector2_UnwrapsAndParses()
+        {
+            var value = SerializationUtils.ParseValue(typeof(Vector2?), "1,2");
+            Assert.Equal(new Vector2(1f, 2f), (Vector2?)value);
+        }
     }
 }

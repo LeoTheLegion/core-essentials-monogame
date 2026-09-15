@@ -220,6 +220,8 @@ All properties can be set **before** attaching (applied on attach) **or after** 
 | `Opacity` | `float` | `1.0f` | Opacity (0 = fully transparent, 1 = opaque). |
 | `HorizontalAlignment` | `HorizontalAlignment` | `Left` | How the label is positioned **inside its canvas**: `Left` (default) puts its left edge on the canvas's left edge, `Center` centers it in the canvas, `Right` puts its right edge on the canvas's right edge. The entity's position relative to the canvas entity acts as a margin from that reference point. Applied per frame during position sync; scale-aware. |
 | `VerticalAlignment` | `VerticalAlignment` | `Top` | Same as above for the vertical axis (`Top`, `Center`, `Bottom`). |
+| `FontAsset` | `string?` | `null` | TTF/OTF font file name (relative to the game's `Content` folder) used to render the label's text. When `null` or empty, the engine default font is used. See [Fonts](#fonts-label-and-button). |
+| `FontSize` | `int` | `20` | Size in pixels used when loading `FontAsset`. Ignored while `FontAsset` is null/empty. |
 
 ### Example
 
@@ -274,6 +276,9 @@ public ButtonComponent(string text)
 | `Enabled` | `bool` | `true` | Whether the button receives input. |
 | `HorizontalAlignment` | `HorizontalAlignment` | `Left` | How the button is positioned inside its canvas (container semantics, see `LabelComponent`). |
 | `VerticalAlignment` | `VerticalAlignment` | `Top` | Same as above for the vertical axis. |
+| `BackgroundTint` | `Color?` | `null` | Optional background box color. When `null` (default) the button renders with **no opaque background**, so a game-supplied back-plate shows through. When set, a solid box of that color is drawn behind the text in every state. Live: setting it after attach updates the rendered widget immediately. See [Button background](#button-background). |
+| `FontAsset` | `string?` | `null` | TTF/OTF font file name (relative to the game's `Content` folder) used to render the button's text. When `null` or empty, the engine default font is used. See [Fonts](#fonts-label-and-button). |
+| `FontSize` | `int` | `20` | Size in pixels used when loading `FontAsset`. Ignored while `FontAsset` is null/empty. |
 
 ### Events
 
@@ -294,6 +299,40 @@ comp.Clicked += () => SceneManager.LoadScene(new MainMenuScene());
 
 hudRoot.AddChild(menuButton);
 ```
+
+## Fonts (Label and Button)
+
+Both `LabelComponent` and `ButtonComponent` can render their text in a custom typeface by pointing at a **TrueType/OpenType font file**.
+
+- Set `FontAsset` to the font file name, relative to the game's `Content` folder (e.g. `"Fonts/display.ttf"`).
+- Set `FontSize` to the size in pixels (default `20`).
+- Leave `FontAsset` null or empty to keep the engine default font.
+
+```csharp
+var title = new TitleEntity();
+var label = title.AddComponent<LabelComponent>("My Game");
+label.FontAsset = "Fonts/display.ttf";   // resolved relative to <game>/Content/
+label.FontSize = 48;
+```
+
+### How it works
+
+The GUI backend (Myra) renders text through **FontStashSharp**, not MonoGame's `SpriteFont`. CE therefore loads the raw `.ttf`/`.otf` bytes from `Content/{FontAsset}` and builds a Myra `SpriteFontBase` via `GuiFontLoader.Load(assetName, size)`, which caches results per (asset, size) pair. Because fonts are read as raw files (the same convention as other file-based assets), the font must be present under the game's `Content` folder at runtime — it is **not** run through the MonoGame content pipeline.
+
+A missing or empty asset name surfaces as an exception from `GuiFontLoader.Load`; while `FontAsset` is null/empty no font is loaded and the default remains in effect.
+
+## Button background
+
+By default a button has **no opaque background box** — `BackgroundTint` is `null`, so only the text is drawn and whatever sits behind the button (a sprite, panel, or other back-plate) shows through. This matches the common case where art supplies the button's visual.
+
+To draw a solid CE-managed background instead, set `BackgroundTint`:
+
+```csharp
+var comp = menuButton.AddComponent<ButtonComponent>("Menu");
+comp.BackgroundTint = Color.CornflowerBlue;   // solid box behind the text in every state
+```
+
+The tint is applied to all of Myra's button states (normal, hover, pressed, disabled, focused) as a single solid brush. Setting `BackgroundTint` back to `null` restores the transparent default. The property is live — setting it after attach updates the rendered widget immediately.
 
 ## Widget Sizing: AutoWidth / AutoHeight
 
@@ -361,4 +400,5 @@ set, so an explicit size is always applied.
 - **Widget creation goes through `WidgetFactory`**, so the components stay decoupled from the Myra backend (see [GUI System](./GUISystem.md)).
 - **World-space canvases** are useful for in-world UI (e.g., a floating panel attached to an NPC); screen-space is the default for HUDs and menus. World-space canvases require a main camera (`Camera.MainCamera`) to project their world position.
 - **`AnchorComponent` drives position every frame**, so don't also drive the same entity's position from game code — the anchor wins on the next update.
-- **Font handling** is intentionally out of scope for v1 — widgets use the GUI engine's default font. Custom fonts can be applied later via the underlying `ILabel.Font` property if needed.
+- **Fonts** are supplied as raw TTF/OTF files under the game's `Content` folder and loaded through FontStashSharp (see [Fonts](#fonts-label-and-button)); they are not MonoGame `SpriteFont`s and do not go through the content pipeline.
+- **Button background** is transparent by default; set `BackgroundTint` to draw a solid box (see [Button background](#button-background)).

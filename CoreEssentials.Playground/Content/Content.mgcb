@@ -38,6 +38,9 @@
 /processorParam:TextureFormat=Compressed
 /build:Fonts/base.spritefont
 
+#begin Fonts/ComicMono.ttf
+/copy:Fonts/ComicMono.ttf
+
 #begin DiagnosticsFont.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor

@@ -1,4 +1,5 @@
 using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Fonts;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
 
@@ -27,6 +28,8 @@ public class LabelComponent : EntityComponent
     private Vector2 _scale = Vector2.One;
     private bool _visible = true;
     private float _opacity = 1.0f;
+    private string? _fontAsset;
+    private int _fontSize = 20;
 
     /// <summary>
     /// Gets or sets the display text of the label. Live pass-through: setting it before attaching
@@ -77,6 +80,32 @@ public class LabelComponent : EntityComponent
         get => _opacity;
         set { _opacity = value; if (_label != null) _label.Opacity = value; }
     }
+
+    /// <summary>
+    /// Gets or sets the TTF/OTF font asset name used to render the label's text (relative to the
+    /// game's Content folder). When null or empty, the engine default font is used. Can be set before
+    /// attaching; applied on attach.
+    /// </summary>
+    public string? FontAsset
+    {
+        get => _fontAsset;
+        set { _fontAsset = value; ApplyFont(); }
+    }
+
+    /// <summary>
+    /// Gets or sets the size (in pixels) used when loading <see cref="FontAsset"/>. Defaults to 20.
+    /// </summary>
+    public int FontSize
+    {
+        get => _fontSize;
+        set { _fontSize = value; ApplyFont(); }
+    }
+
+    /// <summary>
+    /// Resolves a font asset name to the Myra font used by the label. Overridable for tests so no
+    /// real TTF file or graphics device is required.
+    /// </summary>
+    protected virtual object? ResolveFont(string assetName, int size) => GuiFontLoader.Load(assetName, size);
 
     /// <summary>
     /// Gets the label's current width in layout units. While auto-sized (the default), this is the
@@ -143,7 +172,23 @@ public class LabelComponent : EntityComponent
         _label.Visible = _visible;
         _label.Opacity = _opacity;
 
+        ApplyFont();
+
         _canvasComponent.Canvas.AddWidget(_label);
+    }
+
+    /// <summary>
+    /// Resolves the configured font asset and applies it to the label widget, when attached and a
+    /// non-empty asset name is set. No-op otherwise, preserving the engine default font.
+    /// </summary>
+    private void ApplyFont()
+    {
+        if (_label == null || string.IsNullOrEmpty(_fontAsset))
+            return;
+
+        var font = ResolveFont(_fontAsset, _fontSize);
+        if (font != null)
+            _label.Font = font;
     }
 
     /// <inheritdoc />

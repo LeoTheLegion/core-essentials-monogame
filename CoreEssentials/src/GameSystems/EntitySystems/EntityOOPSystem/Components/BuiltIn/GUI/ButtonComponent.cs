@@ -1,5 +1,6 @@
 using System;
 using CoreEssentials.GUI.Factory;
+using CoreEssentials.GUI.Fonts;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
 
@@ -23,6 +24,10 @@ public class ButtonComponent : EntityComponent
 {
     private IButton? _button;
     private CanvasComponent? _canvasComponent;
+
+    private Color? _backgroundTint;
+    private string? _fontAsset;
+    private int _fontSize = 20;
 
     /// <summary>
     /// Occurs when the button is clicked by the user.
@@ -71,6 +76,43 @@ public class ButtonComponent : EntityComponent
     public VerticalAlignment VerticalAlignment { get; set; } = VerticalAlignment.Top;
 
     /// <summary>
+    /// Gets or sets an optional background tint for the button. When null (the default), the button
+    /// renders with no opaque background box so a game-supplied back-plate shows through. When set,
+    /// a solid background of that color is drawn. Can be set before attaching; applied on attach.
+    /// </summary>
+    public Color? BackgroundTint
+    {
+        get => _backgroundTint;
+        set { _backgroundTint = value; if (_button != null) _button.BackgroundTint = value; }
+    }
+
+    /// <summary>
+    /// Gets or sets the TTF/OTF font asset name used to render the button's text (relative to the
+    /// game's Content folder). When null or empty, the engine default font is used. Can be set before
+    /// attaching; applied on attach.
+    /// </summary>
+    public string? FontAsset
+    {
+        get => _fontAsset;
+        set { _fontAsset = value; ApplyFont(); }
+    }
+
+    /// <summary>
+    /// Gets or sets the size (in pixels) used when loading <see cref="FontAsset"/>. Defaults to 20.
+    /// </summary>
+    public int FontSize
+    {
+        get => _fontSize;
+        set { _fontSize = value; ApplyFont(); }
+    }
+
+    /// <summary>
+    /// Resolves a font asset name to the Myra font used by the button. Overridable for tests so no
+    /// real TTF file or graphics device is required.
+    /// </summary>
+    protected virtual object? ResolveFont(string assetName, int size) => GuiFontLoader.Load(assetName, size);
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ButtonComponent"/> class (template-friendly).
     /// </summary>
     public ButtonComponent()
@@ -99,9 +141,26 @@ public class ButtonComponent : EntityComponent
         _button.Scale = Scale;
         _button.Visible = Visible;
         _button.Enabled = Enabled;
+        _button.BackgroundTint = _backgroundTint;
         _button.Clicked += OnWidgetClicked;
 
+        ApplyFont();
+
         _canvasComponent.Canvas.AddWidget(_button);
+    }
+
+    /// <summary>
+    /// Resolves the configured font asset and applies it to the button widget, when attached and a
+    /// non-empty asset name is set. No-op otherwise, preserving the engine default font.
+    /// </summary>
+    private void ApplyFont()
+    {
+        if (_button == null || string.IsNullOrEmpty(_fontAsset))
+            return;
+
+        var font = ResolveFont(_fontAsset, _fontSize);
+        if (font != null)
+            _button.Font = font;
     }
 
     /// <inheritdoc />

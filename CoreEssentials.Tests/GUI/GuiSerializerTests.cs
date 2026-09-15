@@ -56,6 +56,8 @@ public class FakeButton : IButton
     public Vector2 TransformOrigin { get; set; } = new(0.5f, 0.5f);
     public float Opacity { get; set; } = 1.0f;
     public string? Text { get; set; }
+    public object? Font { get; set; }
+    public Color? BackgroundTint { get; set; }
 #pragma warning disable CS0067 // The event is never used (required by IButton interface)
     public event Action<IButton>? Clicked;
 #pragma warning restore CS0067
