@@ -11,7 +11,7 @@ game.Graphics.PreferredBackBufferHeight = 720;
 game.Graphics.ApplyChanges();
 
 // Command-line harness for smoke-running a scene unattended:
-//   --scene <file>       which scene XML to launch (default: HomeScene.xml)
+//   --scene <file>       which scene XML to launch (default: the manifest's first <GameScenes> entry)
 //   --run-for <seconds>  close the game after N seconds of runtime (default: run indefinitely)
 //   --no-focus-pause     keep audio playing even when the window is unfocused (for unattended runs)
 var options = SceneLaunchOptionsParser.Parse(args);
