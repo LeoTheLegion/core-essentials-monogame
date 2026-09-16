@@ -38,9 +38,7 @@ if (options.NoFocusPause)
 // manifest's ordered <GameScenes> list.
 game.SceneManager.SetManifestAsset("scenes.xml");
 game.SceneManager.SetLoadingScene("Scenes/loading.xml");
-if (options.Scene is { } scene)
-    game.SceneManager.LoadScene(scene);
-else
-    game.SceneManager.LoadStartupScene();
+// A null/absent scene name boots the manifest's first <GameScenes> entry — that default is owned by the core.
+game.SceneManager.LoadScene(options.Scene);
 
 game.Run();

@@ -195,10 +195,20 @@ public class SceneManager
     /// before the <see cref="CoreEssentials.Assets.AssetManager"/> is initialized (e.g. right after game
     /// construction, ahead of <c>Run()</c>).
     /// </summary>
-    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "HomeScene.xml").</param>
-    public void LoadScene(string sceneAssetName)
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "HomeScene.xml").
+    /// When null or empty, the manifest's startup scene — the first &lt;GameScenes&gt; entry — is loaded instead. This is the
+    /// library-owned default: callers pass the requested scene (or nothing) and the core decides what launches.</param>
+    public void LoadScene(string? sceneAssetName)
     {
         EnsureManifestConfigured();
+
+        // The "no scene supplied" case boots the manifest's first entry — a core rule, not a caller concern.
+        if (string.IsNullOrWhiteSpace(sceneAssetName))
+        {
+            LoadStartupScene();
+            return;
+        }
+
         LoadScene(new DataDrivenScene(sceneAssetName));
     }
 
