@@ -11,7 +11,8 @@ namespace CoreEssentials.Tests.Playground
         {
             var options = SceneLaunchOptionsParser.Parse(Array.Empty<string>());
 
-            Assert.Equal(SceneLaunchOptionsParser.DefaultScene, options.Scene);
+            // No --scene → null scene; the game boots the manifest's startup scene.
+            Assert.Null(options.Scene);
             Assert.Null(options.RunForSeconds);
             Assert.False(options.NoFocusPause);
         }
@@ -21,7 +22,7 @@ namespace CoreEssentials.Tests.Playground
         {
             var options = SceneLaunchOptionsParser.Parse(null);
 
-            Assert.Equal(SceneLaunchOptionsParser.DefaultScene, options.Scene);
+            Assert.Null(options.Scene);
             Assert.Null(options.RunForSeconds);
         }
 
@@ -39,7 +40,7 @@ namespace CoreEssentials.Tests.Playground
         {
             var options = SceneLaunchOptionsParser.Parse(new[] { "--run-for", "5" });
 
-            Assert.Equal(SceneLaunchOptionsParser.DefaultScene, options.Scene);
+            Assert.Null(options.Scene);
             Assert.Equal(5.0, options.RunForSeconds);
         }
 
@@ -66,7 +67,7 @@ namespace CoreEssentials.Tests.Playground
             var options = SceneLaunchOptionsParser.Parse(new[] { "--no-focus-pause" });
 
             Assert.True(options.NoFocusPause);
-            Assert.Equal(SceneLaunchOptionsParser.DefaultScene, options.Scene);
+            Assert.Null(options.Scene);
             Assert.Null(options.RunForSeconds);
         }
 

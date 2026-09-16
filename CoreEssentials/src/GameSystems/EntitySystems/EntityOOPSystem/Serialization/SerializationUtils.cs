@@ -20,6 +20,10 @@ public static class SerializationUtils
     /// <exception cref="NotSupportedException">Thrown if the type is not supported for parsing.</exception>
     public static object ParseValue(Type targetType, string valueString)
     {
+        // Unwrap Nullable<T> so nullable properties (e.g. Color?) parse like their underlying type.
+        if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            targetType = Nullable.GetUnderlyingType(targetType)!;
+
         if (targetType == typeof(int))
             return int.Parse(valueString);
         if (targetType == typeof(float))

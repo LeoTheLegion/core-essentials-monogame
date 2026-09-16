@@ -411,5 +411,53 @@ public class LabelComponentTests : IDisposable
         Assert.Equal(20f, widget.Position.Y);
     }
 
+    // ===== Font (TTF asset name via resolve seam) =====
+
+    private class RecordingLabelFont : LabelComponent
+    {
+        public string? LastAsset;
+        public int LastSize;
+        // Returns null so no real SpriteFontBase (and graphics device) is needed; the test asserts
+        // on the recorded resolution arguments rather than the widget's font.
+        protected override object? ResolveFont(string assetName, int size)
+        {
+            LastAsset = assetName;
+            LastSize = size;
+            return null;
+        }
+    }
+
+    [Fact]
+    public void FontAsset_OnAttach_ResolvesWithConfiguredNameAndSize()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingLabelFont
+        {
+            FontAsset = "Fonts/display.ttf",
+            FontSize = 28
+        });
+
+        Assert.Equal("Fonts/display.ttf", component.LastAsset);
+        Assert.Equal(28, component.LastSize);
+    }
+
+    [Fact]
+    public void FontAsset_Empty_DoesNotResolve()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingLabelFont());
+
+        Assert.Null(component.LastAsset);
+    }
+
+    [Fact]
+    public void FontSize_Default_Is20()
+    {
+        var component = new LabelComponent();
+        Assert.Equal(20, component.FontSize);
+    }
+
     private static IWidget GetWidget(CanvasComponent canvas) => canvas.Canvas.Children[0];
 }

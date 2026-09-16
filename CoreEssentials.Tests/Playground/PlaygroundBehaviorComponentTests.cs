@@ -522,6 +522,8 @@ public class PlaygroundBehaviorComponentTests
         public Vector2 TransformOrigin { get; set; }
         public float Opacity { get; set; } = 1f;
         public string? Text { get; set; }
+        public object? Font { get; set; }
+        public Color? BackgroundTint { get; set; }
         public event Action<IButton>? Clicked;
 
         public void RaiseClick() => Clicked?.Invoke(this);

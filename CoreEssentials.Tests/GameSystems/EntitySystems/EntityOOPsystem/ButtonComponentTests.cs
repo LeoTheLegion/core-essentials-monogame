@@ -4,9 +4,11 @@ using System.Reflection;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GUI;
+using CoreEssentials.GUI.Engines.Myra.Widgets;
 using CoreEssentials.GUI.Internal;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
+using MyraButton = Myra.Graphics2D.UI.Button;
 using Xunit;
 
 namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem;
@@ -281,6 +283,113 @@ public class ButtonComponentTests : IDisposable
         Assert.Equal((float)MathF.Truncate(canvas.Canvas.Width - widget.Width * 3f), widget.Position.X);
         Assert.Equal(0f, widget.Position.Y);
     }
+
+    // ===== Background tint (transparent by default) =====
+
+    [Fact]
+    public void OnAttach_NoTint_ClearsAllMyraBackgroundBrushes()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new ButtonComponent("T"));
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        // Default is transparent: no opaque box in any visual state.
+        Assert.Null(myra.Background);
+        Assert.Null(myra.OverBackground);
+        Assert.Null(myra.PressedBackground);
+        Assert.Null(myra.DisabledBackground);
+        Assert.Null(myra.FocusedBackground);
+    }
+
+    [Fact]
+    public void OnAttach_WithTint_AppliesSolidBrushToAllStates()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new ButtonComponent("T") { BackgroundTint = Color.CornflowerBlue });
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        Assert.NotNull(myra.Background);
+        Assert.Same(myra.Background, myra.OverBackground);
+        Assert.Same(myra.Background, myra.PressedBackground);
+        Assert.Equal(Color.CornflowerBlue, ((Myra.Graphics2D.Brushes.SolidBrush)myra.Background!).Color);
+    }
+
+    [Fact]
+    public void BackgroundTint_LiveUpdate_RewritesBrushes()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new ButtonComponent("T"));
+
+        // Start transparent, then set a tint live.
+        component.BackgroundTint = Color.Tomato;
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        Assert.NotNull(myra.Background);
+
+        // Clearing the tint restores the transparent default.
+        component.BackgroundTint = null;
+        Assert.Null(myra.Background);
+    }
+
+    [Fact]
+    public void BackgroundTint_Default_IsNull()
+    {
+        var component = new ButtonComponent();
+        Assert.Null(component.BackgroundTint);
+    }
+
+    // ===== Font (TTF asset name via resolve seam) =====
+
+    private class RecordingButtonFont : ButtonComponent
+    {
+        public string? LastAsset;
+        public int LastSize;
+        // Returns null so no real SpriteFontBase (and graphics device) is needed; the test asserts
+        // on the recorded resolution arguments rather than the widget's font.
+        protected override object? ResolveFont(string assetName, int size)
+        {
+            LastAsset = assetName;
+            LastSize = size;
+            return null;
+        }
+    }
+
+    [Fact]
+    public void FontAsset_OnAttach_ResolvesWithConfiguredNameAndSize()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingButtonFont
+        {
+            FontAsset = "Fonts/display.ttf",
+            FontSize = 32
+        });
+
+        Assert.Equal("Fonts/display.ttf", component.LastAsset);
+        Assert.Equal(32, component.LastSize);
+    }
+
+    [Fact]
+    public void FontAsset_Empty_DoesNotResolve()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingButtonFont());
+
+        Assert.Null(component.LastAsset);
+    }
+
+    [Fact]
+    public void FontSize_Default_Is20()
+    {
+        var component = new ButtonComponent();
+        Assert.Equal(20, component.FontSize);
+    }
+
+    /// <summary>Unwraps a CE widget to its underlying Myra button for direct brush inspection.</summary>
+    private static MyraButton GetMyraButton(IWidget widget) => (MyraButton)WidgetWrapper.Unwrap(widget);
 
     /// <summary>
     /// Raises the widget's own Clicked event via its backing field, simulating a user click
