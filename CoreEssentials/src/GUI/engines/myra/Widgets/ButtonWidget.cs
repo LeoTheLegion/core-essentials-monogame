@@ -1,4 +1,5 @@
 using CoreEssentials.GUI.Types;
+using Microsoft.Xna.Framework;
 using MyraButton = Myra.Graphics2D.UI.Button;
 using MyraLabel = Myra.Graphics2D.UI.Label;
 
@@ -34,9 +35,61 @@ public class ButtonWidget : WidgetBase, IButton
     }
 
     /// <inheritdoc />
+    public object? Font
+    {
+        get => _font;
+        set
+        {
+            _font = value;
+            // The button's text lives in its content label; apply the font there.
+            if (Button.Content is MyraLabel contentLabel)
+                contentLabel.Font = (FontStashSharp.SpriteFontBase?)value;
+        }
+    }
+
+    /// <inheritdoc />
+    public Color? BackgroundTint
+    {
+        get => _backgroundTint;
+        set
+        {
+            _backgroundTint = value;
+            ApplyBackground(value);
+        }
+    }
+
+    /// <inheritdoc />
     public event System.Action<IButton>? Clicked;
 
     private string? _textContent;
+    private object? _font;
+    private Color? _backgroundTint;
+
+    /// <summary>
+    /// Applies the background tint to all of Myra's button visual states. A null tint clears every
+    /// state brush so no opaque box is drawn (transparent by default); a non-null tint paints a
+    /// solid background of that color in each state.
+    /// </summary>
+    private void ApplyBackground(Color? tint)
+    {
+        if (tint == null)
+        {
+            Button.Background = null;
+            Button.OverBackground = null;
+            Button.PressedBackground = null;
+            Button.DisabledBackground = null;
+            Button.FocusedBackground = null;
+            return;
+        }
+
+        var brush = new Brushes.SolidColorBrush(tint.Value);
+        var myraBrush = brush.MyraBrush;
+        Button.Background = myraBrush;
+        Button.OverBackground = myraBrush;
+        Button.PressedBackground = myraBrush;
+        Button.DisabledBackground = myraBrush;
+        Button.FocusedBackground = myraBrush;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ButtonWidget"/> class.

@@ -43,6 +43,14 @@ public class SceneManager
     private bool _isTransitioning;
 
     /// <summary>
+    /// When true, the next transition loads the manifest's startup scene (the first &lt;GameScenes&gt; entry)
+    /// instead of a pre-named scene. The name is resolved inside the transition coroutine, once the manifest
+    /// has been read (it may have been registered by asset name and only just parsed). Set by
+    /// <see cref="LoadStartupScene"/>.
+    /// </summary>
+    private bool _pendingStartup;
+
+    /// <summary>
     /// The scene manifest that names the scenes this game may load by name, or null when none is set.
     /// When provided synchronously via <see cref="SetManifest"/>, it is validated immediately.
     /// </summary>
@@ -187,10 +195,20 @@ public class SceneManager
     /// before the <see cref="CoreEssentials.Assets.AssetManager"/> is initialized (e.g. right after game
     /// construction, ahead of <c>Run()</c>).
     /// </summary>
-    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "HomeScene.xml").</param>
-    public void LoadScene(string sceneAssetName)
+    /// <param name="sceneAssetName">The name/key of the scene XML asset in the AssetManager (e.g., "HomeScene.xml").
+    /// When null or empty, the manifest's startup scene — the first &lt;GameScenes&gt; entry — is loaded instead. This is the
+    /// library-owned default: callers pass the requested scene (or nothing) and the core decides what launches.</param>
+    public void LoadScene(string? sceneAssetName)
     {
         EnsureManifestConfigured();
+
+        // The "no scene supplied" case boots the manifest's first entry — a core rule, not a caller concern.
+        if (string.IsNullOrWhiteSpace(sceneAssetName))
+        {
+            LoadStartupScene();
+            return;
+        }
+
         LoadScene(new DataDrivenScene(sceneAssetName));
     }
 
@@ -201,29 +219,63 @@ public class SceneManager
     /// <param name="scene">The scene to be loaded.</param>
     public void LoadScene(Scene scene)
     {
+        if (BeginTransition(scene))
+            Console.WriteLine($"Started loading scene: {scene.GetType().Name}");
+    }
+
+    /// <summary>
+    /// Loads the manifest's startup scene — the first entry in the manifest's ordered &lt;GameScenes&gt; list.
+    /// The scene name is resolved inside the transition coroutine, once the manifest has been read (it may
+    /// have been registered by asset name via <see cref="SetManifestAsset"/> and only just parsed). Requires a
+    /// manifest to be configured; throws when none is set or it declares no game scenes. This is the data-driven
+    /// boot path: call this (rather than naming a scene) so the first &lt;GameScenes&gt; entry alone decides what
+    /// launches.
+    /// </summary>
+    public void LoadStartupScene()
+    {
+        EnsureManifestConfigured();
+
+        if (!BeginTransition(null, startup: true))
+            return;
+
+        Console.WriteLine("Started loading the manifest's startup scene (first <GameScenes> entry)");
+    }
+
+    /// <summary>
+    /// Begins a transition to <paramref name="scene"/> (or, when <paramref name="startup"/>, to the manifest's
+    /// first game scene resolved during the transition). Returns false — without starting anything — when a
+    /// transition is already in progress. Shared by the public load entry points so they all cancel any prior
+    /// transition coroutine and run the same unfailable transition.
+    /// </summary>
+    private bool BeginTransition(Scene? scene, bool startup = false)
+    {
         // If a transition is already in progress, don't start another one
         if (_isTransitioning)
         {
-            Console.WriteLine($"Cannot load scene {scene.GetType().Name} - another scene is already loading");
-            return;
+            Console.WriteLine(scene != null
+                ? $"Cannot load scene {scene.GetType().Name} - another scene is already loading"
+                : "Cannot load startup scene - another scene is already loading");
+            return false;
         }
-        
+
         _nextScene = scene;
-        _nextScene.SetSceneManager(this);
-        
+        if (_nextScene != null)
+            _nextScene.SetSceneManager(this);
+        _pendingStartup = startup;
+
         // Cancel any existing transition coroutine
         if (_transitionCoroutineId != Guid.Empty)
         {
             _coroutineOwner.StopCoroutine(_transitionCoroutineId);
         }
-        
+
         // A single unified transition coroutine resolves the manifest, enforces membership, and picks the
         // per-scene loading screen. It is UNFAILABLE: a missing/unparseable manifest or an unregistered
         // scene must error out (propagate) rather than be silently logged and swallowed.
         _transitionCoroutineId = _coroutineOwner.StartCoroutine(RunTransition(), "SceneTransition", allowFailure: false);
-        
+
         _isTransitioning = true;
-        Console.WriteLine($"Started loading scene: {_nextScene.GetType().Name}");
+        return true;
     }
 
     /// <summary>
@@ -392,10 +444,26 @@ public class SceneManager
     /// </summary>
     private IEnumerator RunTransition()
     {
+        // Step 0a — when booting the startup scene, resolve its name from the manifest now that it is read.
+        if (_pendingStartup)
+        {
+            _pendingStartup = false;
+
+            var startupManifest = ResolveManifest();
+            if (startupManifest == null || startupManifest.GameScenes.Count == 0)
+                throw new InvalidOperationException(
+                    "Cannot load the startup scene: no game scenes are registered in the scene manifest.");
+
+            var startupName = startupManifest.StartupScene;
+            Console.WriteLine($"Resolving startup scene from manifest: '{startupName}'");
+            _nextScene = new DataDrivenScene(startupName);
+            _nextScene.SetSceneManager(this);
+        }
+
         if (_nextScene == null)
             throw new InvalidOperationException("Next scene is null during transition");
 
-        // Step 0 — resolve + enforce (deferred so a manifest registered by asset name can be read after init).
+        // Step 0b — resolve + enforce (deferred so a manifest registered by asset name can be read after init).
         var manifest = ResolveManifest();
         EnforceMembership(manifest);
 

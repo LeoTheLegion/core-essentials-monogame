@@ -13,10 +13,10 @@
 -->
 <Scenes>
     <GameScenes>
+        <Scene Name="Scenes/GuiAnchorDemo.xml" />
         <Scene Name="Scenes/HomeScene.xml" />
         <Scene Name="Scenes/CharacterScene.xml" />
         <Scene Name="Scenes/CameraScene.xml" />
-        <Scene Name="Scenes/GuiAnchorDemo.xml" />
         <Scene Name="Scenes/LabelAlignmentDemoScene.xml" />
         <Scene Name="Scenes/PhysicsEntityScene.xml" />
         <Scene Name="Scenes/SendMessageDemoScene.xml" />

@@ -9,6 +9,13 @@
         are all declarative (<Bind> elements and NavigateOnKeyComponent in this file).
 
         Anchors are normalized screen points: (0,0) = top-left, (1,1) = bottom-right.
+
+        The title and both buttons render in the custom ComicMono.ttf typeface via each widget's
+        FontAsset/FontSize — loaded as raw bytes from Content/Fonts by GuiFontLoader (not through the
+        content pipeline). Labels without a FontAsset keep the engine default font.
+
+        Button backgrounds: "Add 10" sets BackgroundTint to draw a solid box; "Reset" leaves it null
+        (the transparent default) so only its text is drawn — a side-by-side of both modes.
     -->
     <GameSystems>
         <System Type="EntitySystem">
@@ -53,6 +60,8 @@
                                             Value="CORE ESSENTIALS — ANCHORED GUI DEMO" />
                                         <Property Name="TextColor" Value="White" />
                                         <Property Name="Scale" Value="2,2" />
+                                        <Property Name="FontAsset" Value="Fonts/ComicMono.ttf" />
+                                        <Property Name="FontSize" Value="24" />
                                     </Properties>
                                 </Component>
                             </Components>
@@ -113,6 +122,9 @@
                                 <Component Type="ButtonComponent">
                                     <Properties>
                                         <Property Name="Text" Value="Add 10" />
+                                        <Property Name="FontAsset" Value="Fonts/ComicMono.ttf" />
+                                        <Property Name="FontSize" Value="18" />
+                                        <Property Name="BackgroundTint" Value="CornflowerBlue" />
                                     </Properties>
                                 </Component>
                                 <!-- Declarative wiring: no FindById + subscribe code in the scene. -->
@@ -133,6 +145,8 @@
                                 <Component Type="ButtonComponent">
                                     <Properties>
                                         <Property Name="Text" Value="Reset" />
+                                        <Property Name="FontAsset" Value="Fonts/ComicMono.ttf" />
+                                        <Property Name="FontSize" Value="18" />
                                     </Properties>
                                 </Component>
                                 <Bind Event="Clicked" Command="Reset" />
