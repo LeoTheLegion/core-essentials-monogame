@@ -43,7 +43,7 @@ working with no RT; this sprint adds the sampling path.
   (Graphics-dependent paths validated via the smoke-run harness / playground, not unit tests.)
 
 ## Definition of done
-- [ ] Library + test project build clean.
-- [ ] New tests pass; existing suite green.
-- [ ] XML doc comments added.
-- [ ] Committed on the feature branch.
+- [x] Library + test project build clean.
+- [x] New tests pass; existing suite green (full suite 1278 passed, 0 failed).
+- [x] XML doc comments added.
+- [x] Committed on the feature branch.
