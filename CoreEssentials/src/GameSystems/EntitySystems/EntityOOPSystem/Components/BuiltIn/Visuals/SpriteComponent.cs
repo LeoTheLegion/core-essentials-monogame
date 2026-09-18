@@ -63,6 +63,34 @@ public class SpriteComponent : EntityComponent, IDrawableComponent
     public int AnimationFrame { get; set; } = 0;
 
     /// <summary>
+    /// Gets or sets an explicit MonoGame <see cref="Effect"/> to render this sprite with.
+    /// When set, it takes precedence over <see cref="EffectAsset"/> (same precedence as an explicit
+    /// <see cref="Sprite"/> over <see cref="SpriteAsset"/>). In MonoGame an effect is applied at
+    /// <c>SpriteBatch.Begin</c>, so the render pipeline groups entities by effect and opens a
+    /// dedicated Begin/End for each distinct effect — leaving the no-effect case unchanged.
+    /// </summary>
+    public Effect? Effect { get; set; }
+
+    /// <summary>
+    /// Gets or sets the asset name of an <see cref="Effect"/> to load via the <see cref="AssetManager"/>
+    /// (e.g. "Effects/glow.xml"). Resolved once in <see cref="OnAttach"/> and assigned to
+    /// <see cref="Effect"/> — but only when no explicit <see cref="Effect"/> was set already, so an
+    /// effect assigned in code always wins. This lets data-driven (XML) entities declare a shader with
+    /// a plain string property instead of needing a per-game loader component to bridge the gap.
+    /// </summary>
+    public string EffectAsset { get; set; } = "";
+
+    /// <summary>
+    /// Gets the effective <see cref="Effect"/> for this sprite: the explicit <see cref="Effect"/> when
+    /// set, otherwise the effect resolved from <see cref="EffectAsset"/>. Returns null when neither is
+    /// set, in which case the sprite renders with the SpriteBatch's default (no shader) — preserving
+    /// current behavior and batching exactly.
+    /// </summary>
+    public Effect? EffectiveEffect => Effect ?? _resolvedEffect;
+
+    private Effect? _resolvedEffect;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SpriteComponent"/> class.
     /// </summary>
     public SpriteComponent()
@@ -88,17 +116,41 @@ public class SpriteComponent : EntityComponent, IDrawableComponent
     {
         base.OnAttach();
 
-        if (string.IsNullOrWhiteSpace(SpriteAsset) || Sprite != null)
-            return;
+        // Resolve the declarative sprite, unless one was already assigned in code.
+        if (!string.IsNullOrWhiteSpace(SpriteAsset) && Sprite == null)
+        {
+            try
+            {
+                Sprite = AssetManager.LoadAsset<Sprite>(SpriteAsset);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SpriteComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
+            }
+        }
 
-        try
+        // Resolve the declarative effect, unless an explicit Effect was already assigned in code.
+        if (!string.IsNullOrWhiteSpace(EffectAsset) && Effect == null)
         {
-            Sprite = AssetManager.LoadAsset<Sprite>(SpriteAsset);
+            try
+            {
+                _resolvedEffect = AssetManager.LoadAsset<EffectAsset>(EffectAsset).Effect;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SpriteComponent] Could not load effect asset '{EffectAsset}': {ex.Message}");
+            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[SpriteComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
-        }
+    }
+
+    /// <summary>
+    /// Clears the resolved <see cref="EffectAsset"/> so a re-attached component can resolve it again.
+    /// An explicitly assigned <see cref="Effect"/> is left untouched (it is code-owned).
+    /// </summary>
+    public override void OnDetach()
+    {
+        base.OnDetach();
+        _resolvedEffect = null;
     }
 
     /// <summary>

@@ -41,7 +41,7 @@ applied on **both** render paths (`RenderNoTextureEntities` and `RenderZLayers`)
   preserves order, coalesces adjacent same-effect entities, handles interleaved effects.
 
 ## Definition of done
-- [ ] Library + test project build clean.
-- [ ] New tests pass; existing z-order/batching tests still green (no regression).
-- [ ] XML doc comments added for all new public members.
-- [ ] Committed on the feature branch.
+- [x] Library + test project build clean.
+- [x] New tests pass; existing z-order/batching tests still green (no regression). Full suite: 1256 passed / 0 failed / 3 skipped.
+- [x] XML doc comments added for all new public members.
+- [x] Committed on the feature branch.

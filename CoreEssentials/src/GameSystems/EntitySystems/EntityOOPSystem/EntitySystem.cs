@@ -287,7 +287,9 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Renders entities that don't have an associated texture.
+    /// Renders entities that don't have an associated texture. Entities are partitioned by their
+    /// effective <see cref="Effect"/> so each distinct shader gets its own SpriteBatch Begin/End; when
+    /// no entity has an effect this is a single Begin(null)/End, identical to the previous behavior.
     /// </summary>
     private static void RenderNoTextureEntities(List<Entity> noTextureEntities, SpriteBatch spriteBatch)
     {
@@ -295,16 +297,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             return;
 
         var cameraView = GetCameraViewMatrix();
-        spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
-            SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
-            null, cameraView);
-
-        foreach (var entity in noTextureEntities)
-        {
-            entity.Render(spriteBatch);
-        }
-
-        spriteBatch.End();
+        RenderEffectRuns(PartitionByEffect(noTextureEntities), spriteBatch, cameraView);
     }
 
     /// <summary>
@@ -323,17 +316,57 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         {
             foreach (var textureGroup in layer.Value)
             {
-                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
-                    SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
-                    null, cameraView);
-
-                foreach (var entity in textureGroup.Value)
-                {
-                    entity.Render(spriteBatch);
-                }
-
-                spriteBatch.End();
+                RenderEffectRuns(PartitionByEffect(textureGroup.Value), spriteBatch, cameraView);
             }
+        }
+    }
+
+    /// <summary>
+    /// Partitions a render-order-preserving list of entities into contiguous runs that share the same
+    /// effective <see cref="Effect"/>. MonoGame applies an effect at <c>SpriteBatch.Begin</c> (not per
+    /// draw), so each run must be drawn in its own Begin/End with that effect. Entities with no effect
+    /// form a null-effect run and keep the default batch — when every entity is null-effect this yields
+    /// exactly one run, i.e. a single Begin(null)/End, which is byte-for-byte the previous behavior.
+    /// </summary>
+    private static List<(Effect? Effect, List<Entity> Entities)> PartitionByEffect(List<Entity> entities)
+    {
+        var runs = new List<(Effect? Effect, List<Entity> Entities)>();
+
+        for (int i = 0; i < entities.Count; i++)
+        {
+            var effect = entities[i].GetRenderEffect();
+
+            if (runs.Count > 0 && ReferenceEquals(runs[runs.Count - 1].Effect, effect))
+            {
+                runs[runs.Count - 1].Entities.Add(entities[i]);
+            }
+            else
+            {
+                runs.Add((effect, new List<Entity> { entities[i] }));
+            }
+        }
+
+        return runs;
+    }
+
+    /// <summary>
+    /// Draws each effect run in its own SpriteBatch Begin/End, applying the run's effect (null = the
+    /// SpriteBatch default). Entity order within and across runs is preserved.
+    /// </summary>
+    private static void RenderEffectRuns(List<(Effect? Effect, List<Entity> Entities)> runs, SpriteBatch spriteBatch, Matrix? cameraView)
+    {
+        foreach (var run in runs)
+        {
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+                SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
+                run.Effect, cameraView);
+
+            foreach (var entity in run.Entities)
+            {
+                entity.Render(spriteBatch);
+            }
+
+            spriteBatch.End();
         }
     }
 
