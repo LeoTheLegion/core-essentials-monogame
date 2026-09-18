@@ -33,7 +33,7 @@ the backbuffer / producing output; CE only sets up the Begin with the effect and
   (Verified headlessly with the `FakeEffect` from `EffectAssetTests` — no real device needed.)
 
 ## Definition of done
-- [ ] Library + test project build clean.
-- [ ] New tests pass; existing suite green.
-- [ ] XML doc comments added.
-- [ ] Committed on the feature branch.
+- [x] Library + test project build clean.
+- [x] New tests pass; existing suite green. Full suite: 1264 passed / 0 failed / 3 skipped.
+- [x] XML doc comments added.
+- [x] Committed on the feature branch.

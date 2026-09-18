@@ -13,6 +13,7 @@ using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
 using CoreEssentials.Timing;
+using CoreEssentials.Rendering;
 
 namespace CoreEssentials
 {
@@ -231,6 +232,10 @@ namespace CoreEssentials
             SceneManager.Draw(gameTime, _spriteBatch);
 
             GUIManager.Draw(gameTime);
+
+            // Post pass: full-screen shader passes registered via the render pipeline. No-op when
+            // none are registered, so the default game loop is untouched.
+            RenderPipeline.DrawPostPasses(gameTime, _spriteBatch);
 
             base.Draw(gameTime);
 
