@@ -19,12 +19,12 @@ branch builds, tests green, and runs (smoke-run harness) with no regressions.
     additional grouping key.
 
 ## Verification
-- [ ] `dotnet build` clean (library, playground, tests).
-- [ ] Full test suite green: run via `scripts/test.sh`.
-- [ ] Smoke-run harness (`scripts/run-all-scenes.ps1`) passes for all scenes including the new demo.
-- [ ] No perf/rendering regression for games that don't opt in (default path unchanged).
+- [x] `dotnet build` clean (library, playground, tests).
+- [x] Full test suite green: run via `scripts/test.sh`.
+- [x] Smoke-run harness (`scripts/run-all-scenes.ps1`) passes for all scenes including the new demo.
+- [x] No perf/rendering regression for games that don't opt in (default path unchanged).
 
 ## Definition of done
-- [ ] All acceptance criteria from the feature request met and demonstrated.
-- [ ] Docs added/updated and linked.
-- [ ] Branch ready to open a PR against `development`.
+- [x] All acceptance criteria from the feature request met and demonstrated.
+- [x] Docs added/updated and linked.
+- [x] Branch ready to open a PR against `development`.

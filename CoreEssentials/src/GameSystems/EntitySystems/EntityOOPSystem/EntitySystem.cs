@@ -357,6 +357,12 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     {
         foreach (var run in runs)
         {
+            // Convention: when a per-sprite effect exposes a `Projection` matrix, keep it in sync with
+            // the current screen-space projection so shader sprites land at the correct positions. A
+            // no-op for the default (null) effect and for effects without that parameter.
+            if (run.Effect != null)
+                CoreEssentials.Rendering.RenderPipeline.SyncEffectProjection(run.Effect, spriteBatch.GraphicsDevice);
+
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
                 SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
                 run.Effect, cameraView);

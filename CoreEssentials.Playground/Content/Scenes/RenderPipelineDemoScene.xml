@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Render-pipeline demo, fully data-driven (strict scene format).
+
+    Shows the two first-class Effect features side by side:
+      1. Per-sprite shader — the "glow" ball declares SpriteComponent.EffectAsset = "Effects/Glow".
+         It is resolved through the AssetManager on attach and applied at SpriteBatch.Begin; the entity
+         system groups entities by effect so this one gets its own Begin/End while the plain ball keeps
+         the default batch. No C# loader component needed — a plain string property in XML.
+      2. Full-screen post pass — RenderPipelineDemoComponent registers an additive vignette with the
+         static RenderPipeline; it draws over the composited frame after the scene + GUI.
+
+    The vignette darkens the frame edges, making the two balls (plain vs. glowing) easy to compare.
+-->
+<Scene>
+    <GameSystems>
+        <System Type="EntitySystem">
+            <Entities>
+                <!-- Title / info line. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="title">
+                    <Position X="640" Y="120" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Properties>
+                                <Property Name="Text" Value="Render Pipeline: per-sprite Effect + post passes" />
+                                <Property Name="Color" Value="White" />
+                                <Property Name="Alignment" Value="Center" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Plain ball: no effect, renders through the default SpriteBatch path (baseline). -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="plainBall">
+                    <Position X="480" Y="360" />
+                    <Components>
+                        <Component Type="SpriteComponent">
+                            <Properties>
+                                <Property Name="Origin" Value="0.5,0.5" />
+                                <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Radiating halo behind the glowing ball: a per-sprite Effect (GlowHalo) on an enlarged
+                     carrier quad. A per-sprite shader only runs over its own quad, so this larger quad
+                     (Scale 2.6) is what lets the radial falloff spill past the ball's edges. It ignores
+                     the bound texture and paints a soft warm glow from center out. ZLayer -1 puts it
+                     behind the ball (ZLayer 0), so the ball draws on top of its own halo. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="glowHalo">
+                    <Position X="800" Y="360" />
+                    <!-- Entity-level properties (Scale, ZLayer) are set via <EntityOverrides>, which are
+                         applied to the created entity before OnStart/OnAttach. Scale "2.6" expands to a
+                         uniform (2.6, 2.6); ZLayer -1 draws the halo behind the ball (ZLayer 0). -->
+                    <EntityOverrides>
+                        <Property Name="Scale" Value="2.6" />
+                        <Property Name="ZLayer" Value="-1" />
+                    </EntityOverrides>
+                    <Components>
+                        <Component Type="SpriteComponent">
+                            <Properties>
+                                <Property Name="Origin" Value="0.5,0.5" />
+                                <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
+                                <!-- The radiating-glow shader: resolved on attach, applied at Begin. -->
+                                <Property Name="EffectAsset" Value="Effects/GlowHalo" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Glowing ball: identical sprite, but declares a per-sprite shader via EffectAsset. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="glowBall">
+                    <Position X="800" Y="360" />
+                    <Components>
+                        <Component Type="SpriteComponent">
+                            <Properties>
+                                <Property Name="Origin" Value="0.5,0.5" />
+                                <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
+                                <!-- The data-driven per-sprite shader: resolved on attach, applied at Begin. -->
+                                <Property Name="EffectAsset" Value="Effects/Glow" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Labels under each ball. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="plainLabel">
+                    <Position X="480" Y="440" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Properties>
+                                <Property Name="Text" Value="no effect (default batch)" />
+                                <Property Name="Color" Value="LightGray" />
+                                <Property Name="Alignment" Value="Center" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="glowLabel">
+                    <Position X="800" Y="440" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.TextComponent">
+                            <Properties>
+                                <Property Name="Text" Value="EffectAsset = Effects/Glow" />
+                                <Property Name="Color" Value="Orange" />
+                                <Property Name="Alignment" Value="Center" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Registers the additive vignette post pass (removed on scene unload). -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="pipelineDemo">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.RenderPipelineDemoComponent">
+                            <Properties>
+                                <Property Name="EffectAsset" Value="Effects/Vignette" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+
+                <!-- Navigation back to the home scene. -->
+                <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="navHome">
+                    <Position X="0" Y="0" />
+                    <Components>
+                        <Component Type="CoreEssentials.Playground.Components.NavigateOnKeyComponent">
+                            <Properties>
+                                <Property Name="TriggerKey" Value="Escape" />
+                                <Property Name="TargetSceneAsset" Value="Scenes/HomeScene.xml" />
+                            </Properties>
+                        </Component>
+                    </Components>
+                </EntityDefinition>
+            </Entities>
+        </System>
+    </GameSystems>
+</Scene>

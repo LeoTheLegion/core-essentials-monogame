@@ -80,6 +80,40 @@ public static class RenderPipeline
     private static RenderTarget2D? _sceneTarget;
     private static GraphicsDevice? _device;
 
+    /// <summary>The name of the optional matrix parameter an effect may expose to receive its projection.</summary>
+    private const string ProjectionParameterName = "Projection";
+
+    // Cached screen-space projection, rebuilt only when the viewport size changes. Matches the exact
+    // orthographic convention MonoGame's own SpriteEffect uses so custom effects line up with the rest
+    // of the SpriteBatch frame.
+    private static Matrix _projection;
+    private static int _projectionWidth = -1;
+    private static int _projectionHeight = -1;
+
+    /// <summary>
+    /// If the effect exposes a <c>Projection</c> matrix parameter, keeps it in sync with the current
+    /// screen-space orthographic projection (rebuilt only on viewport size change). This is what lets
+    /// per-sprite and post-pass shaders render at the correct clip positions without game code setting
+    /// the matrix itself. A no-op for effects that don't declare the parameter, so it never changes
+    /// existing behavior.
+    /// </summary>
+    internal static void SyncEffectProjection(Effect effect, GraphicsDevice device)
+    {
+        if (effect.Parameters[ProjectionParameterName] == null)
+            return;
+
+        var viewport = device.Viewport;
+        if (_projectionWidth != viewport.Width || _projectionHeight != viewport.Height)
+        {
+            // Same convention as SpriteEffect.OnApply: near 0, far -1 so sprite layer depth maps correctly.
+            _projection = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, 0, -1);
+            _projectionWidth = viewport.Width;
+            _projectionHeight = viewport.Height;
+        }
+
+        effect.Parameters[ProjectionParameterName].SetValue(_projection);
+    }
+
     /// <summary>Gets the number of registered post passes.</summary>
     public static int PostPassCount => _postPasses.Count;
 
@@ -237,6 +271,9 @@ public static class RenderPipeline
 
         foreach (var pass in _postPasses)
         {
+            // Convention: keep the effect's screen-space projection current (no-op if it has none).
+            SyncEffectProjection(pass.Effect, device);
+
             if (pass.SamplesSceneTarget)
             {
                 if (!_renderToTargetEnabled || _sceneTarget == null)
