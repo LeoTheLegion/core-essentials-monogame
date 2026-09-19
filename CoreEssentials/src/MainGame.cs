@@ -13,6 +13,7 @@ using CoreEssentials.Scenes;
 using CoreEssentials.Coroutines;
 using CoreEssentials.Audio;
 using CoreEssentials.Timing;
+using CoreEssentials.Rendering;
 
 namespace CoreEssentials
 {
@@ -228,9 +229,27 @@ namespace CoreEssentials
             Debug.baseGameDiagnostics.DrawBegin();
             GraphicsDevice.Clear(Color.Black);
 
+            // Pre pass: ordered setup actions (e.g. camera setup) run before the scene. No-op when none
+            // are registered, so the default game loop is untouched.
+            RenderPipeline.DrawPrePasses(gameTime);
+
+            // Process pass: render the scene + GUI. When render-to-target is enabled, this draws into a
+            // full-screen render target (so sampling post passes can read the clean frame); otherwise it
+            // draws straight to the backbuffer exactly as before.
+            var renderToTarget = RenderPipeline.RenderToTargetEnabled;
+            if (renderToTarget)
+                RenderPipeline.BeginProcessPass(GraphicsDevice);
+
             SceneManager.Draw(gameTime, _spriteBatch);
 
             GUIManager.Draw(gameTime);
+
+            if (renderToTarget)
+                RenderPipeline.EndProcessPass(_spriteBatch);
+
+            // Post pass: full-screen shader passes registered via the render pipeline. No-op when
+            // none are registered, so the default game loop is untouched.
+            RenderPipeline.DrawPostPasses(gameTime, _spriteBatch);
 
             base.Draw(gameTime);
 

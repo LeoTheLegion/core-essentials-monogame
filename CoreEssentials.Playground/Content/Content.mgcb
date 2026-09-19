@@ -87,6 +87,9 @@
 #begin Scenes/SendMessageDemoScene.xml
 /copy:Scenes/SendMessageDemoScene.xml
 
+#begin Scenes/RenderPipelineDemoScene.xml
+/copy:Scenes/RenderPipelineDemoScene.xml
+
 #begin Config/PhysicsConfig.xml
 /copy:Config/PhysicsConfig.xml
 
@@ -152,4 +155,19 @@
 
 #begin Audio/song1_sound.xml
 /copy:Audio/song1_sound.xml
+
+#begin Effects/Glow.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:Effects/Glow.fx
+
+#begin Effects/GlowHalo.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:Effects/GlowHalo.fx
+
+#begin Effects/Vignette.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:Effects/Vignette.fx
 

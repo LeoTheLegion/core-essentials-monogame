@@ -34,6 +34,10 @@ public static class SerializationUtils
             return valueString;
         if (targetType == typeof(Vector2))
             return ParseVector2FromString(valueString);
+        if (targetType == typeof(Vector3))
+            return ParseVector3FromString(valueString);
+        if (targetType == typeof(Vector4))
+            return ParseVector4FromString(valueString);
         if (targetType == typeof(Color))
             return ParseColor(valueString);
         if (targetType.IsEnum)
@@ -64,6 +68,57 @@ public static class SerializationUtils
 
         Console.WriteLine($"[Serialization] Could not parse Vector2 from '{value}' — using (0, 0).");
         return Vector2.Zero;
+    }
+
+    /// <summary>
+    /// Parses a string into a Vector3.
+    /// Accepts "X,Y,Z" format or a bare scalar, which is expanded to (v, v, v) for uniform values.
+    /// </summary>
+    public static Vector3 ParseVector3FromString(string value)
+    {
+        var parts = value.Split(',');
+        if (parts.Length == 1 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float scalar))
+        {
+            return new Vector3(scalar, scalar, scalar);
+        }
+
+        if (parts.Length >= 3 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+            float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float y) &&
+            float.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out float z))
+        {
+            return new Vector3(x, y, z);
+        }
+
+        Console.WriteLine($"[Serialization] Could not parse Vector3 from '{value}' — using (0, 0, 0).");
+        return Vector3.Zero;
+    }
+
+    /// <summary>
+    /// Parses a string into a Vector4.
+    /// Accepts "X,Y,Z,W" format or a bare scalar, which is expanded to (v, v, v, v) for uniform values.
+    /// </summary>
+    public static Vector4 ParseVector4FromString(string value)
+    {
+        var parts = value.Split(',');
+        if (parts.Length == 1 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float scalar))
+        {
+            return new Vector4(scalar, scalar, scalar, scalar);
+        }
+
+        if (parts.Length >= 4 &&
+            float.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out float x) &&
+            float.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out float y) &&
+            float.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out float z) &&
+            float.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out float w))
+        {
+            return new Vector4(x, y, z, w);
+        }
+
+        Console.WriteLine($"[Serialization] Could not parse Vector4 from '{value}' — using (0, 0, 0, 0).");
+        return Vector4.Zero;
     }
 
     /// <summary>

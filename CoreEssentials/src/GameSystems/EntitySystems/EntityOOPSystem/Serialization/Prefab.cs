@@ -80,7 +80,8 @@ public class Prefab
             Components = Components.Select(c => new ComponentDefinition
             {
                 Type = c.Type,
-                Properties = new Dictionary<string, string>(c.Properties)
+                Properties = new Dictionary<string, string>(c.Properties),
+                EffectParameters = new Dictionary<string, string>(c.EffectParameters)
             }).ToList(),
             EntityOverrides = new Dictionary<string, string>(EntityOverrides, StringComparer.Ordinal),
             Children = Children.Select(c => c.Clone()).ToList(),
@@ -104,5 +105,13 @@ public class Prefab
         /// Property names and their corresponding values as strings, to be parsed during instantiation.
         /// </summary>
         public Dictionary<string, string> Properties { get; set; } = new();
+
+        /// <summary>
+        /// Shader-uniform name → raw value string, sourced from &lt;EffectParameter&gt; elements. Applied
+        /// to a <c>ShaderComponent</c> on instantiation via its
+        /// <c>InitializeFromStrings</c>; the target type is resolved against the effect parameter at apply
+        /// time, so no type hints are needed here.
+        /// </summary>
+        public Dictionary<string, string> EffectParameters { get; set; } = new();
     }
 }

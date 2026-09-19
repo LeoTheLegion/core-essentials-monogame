@@ -292,6 +292,11 @@ public static class EntityPrefabLoader
         // prefab-created components) now that all properties are final.
         entity.AttachPendingComponents();
 
+        // Guarantee any sprite has a companion shader now that all XML-declared siblings are present and we
+        // are outside the deferred-attach enumeration. On the data-driven path a missing ShaderComponent is
+        // almost always an authoring gap, so auto-create a basic one (no effect) and warn to declare it in XML.
+        EnsureShaderForSprites(entity);
+
         for (int i = 0; i < template.Children.Count && i < entity.Children.Count; i++)
         {
             AttachPreOrder(entity.Children[i], template.Children[i]);
@@ -311,6 +316,7 @@ public static class EntityPrefabLoader
         if (component == null) return; // Component doesn't exist yet — skip
 
         ApplyProperties(component, type, def.Properties);
+        ApplyEffectParameters(component, def);
     }
 
 
@@ -344,6 +350,34 @@ public static class EntityPrefabLoader
         }
 
         ApplyProperties(component, type, def.Properties);
+        ApplyEffectParameters(component, def);
+    }
+
+    /// <summary>
+    /// Seeds a <see cref="Components.BuiltIn.ShaderComponent"/> with the shader-uniform values parsed from
+    /// its &lt;EffectParameter&gt; elements. A no-op for any other component type or when no uniforms were
+    /// declared.
+    /// </summary>
+    private static void ApplyEffectParameters(EntityComponent component, Prefab.ComponentDefinition def)
+    {
+        if (component is Components.BuiltIn.ShaderComponent shader && def.EffectParameters.Count > 0)
+            shader.InitializeFromStrings(def.EffectParameters);
+    }
+
+    /// <summary>
+    /// Guarantees that every sprite on the entity has a companion <see cref="Components.BuiltIn.ShaderComponent"/>.
+    /// Runs in the prefab/scene finish pass — after <c>AttachPendingComponents()</c> — so all XML-declared
+    /// siblings are present and we are outside the deferred-attach enumeration. Delegates to
+    /// <see cref="Components.BuiltIn.SpriteComponent.EnsureShaderComponent"/>, which is a no-op when a shader
+    /// already exists and otherwise auto-creates a basic one (no effect = the SpriteBatch default batch) while
+    /// logging a warning telling the author to declare <c>&lt;Component Type="ShaderComponent"&gt;</c>.
+    /// </summary>
+    private static void EnsureShaderForSprites(Entity entity)
+    {
+        if (!entity.TryGetComponent<Components.BuiltIn.SpriteComponent>(out var sprite) || sprite == null)
+            return;
+
+        Components.BuiltIn.SpriteComponent.EnsureShaderComponent(entity);
     }
 
 
