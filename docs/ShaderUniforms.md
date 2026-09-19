@@ -1,8 +1,8 @@
-# Shader Uniforms: Controlling Effect "Vars" from XML and Components
+# Shader Uniforms: Controlling a Shader's "Vars" from XML and Components
 
-A per-sprite [Effect](RenderPipeline.md) is only half the story — you usually want to **tune its shader uniforms** ("vars"): make a glow weaker or stronger, shift a tint, animate an intensity over time. CoreEssentials gives shader vars first-class support through the `EffectParametersComponent`, which **owns and controls** the uniforms for its entity's effect.
+A per-sprite [Effect](RenderPipeline.md) is only half the story — you usually want to **tune its shader uniforms** ("vars"): make a glow weaker or stronger, shift a tint, animate an intensity over time. In CoreEssentials the shader and its vars live together on the **`ShaderComponent`**, which **owns and controls** both for its entity.
 
-The component holds named uniform values and the render pipeline pushes them onto the effect immediately before each sprite batch's `SpriteBatch.Begin`. Values can come from two sources:
+The `ShaderComponent` holds named uniform values and the render pipeline pushes them onto the effect immediately before each sprite batch's `SpriteBatch.Begin`. Values can come from two sources:
 
 - **Data-driven XML** — a base value declared in the scene with `<EffectParameter Name="X" Value="Y"/>`. No type hints needed; the target type is read from the effect's own parameter declaration at apply time.
 - **Code** — typed setters (`SetFloat`, `SetColor`, …) that store a ready-typed value, typically driven each frame (e.g. by a [tween](Coroutines.md)).
@@ -10,7 +10,7 @@ The component holds named uniform values and the render pipeline pushes them ont
 A code-set value for a name always wins over an XML-set value for the same name (last write wins by call order).
 
 ```
-EffectParametersComponent (owns the uniforms)
+ShaderComponent (owns the effect AND its uniforms)
    │  SetFloat / SetColor / …   and/or   <EffectParameter> from XML
    ▼
 render pipeline (per effect run, before SpriteBatch.Begin)
@@ -19,9 +19,17 @@ render pipeline (per effect run, before SpriteBatch.Begin)
 
 ---
 
-## The `EffectParametersComponent`
+## The `ShaderComponent`
 
-Attach it **alongside** a `SpriteComponent` that declares an effect. It does not render anything itself — it just holds the values and hands them to the pipeline.
+A sprite's shader lives on a companion `ShaderComponent`, **not** on the `SpriteComponent`. A `SpriteComponent` guarantees such a sibling exists — at attach it looks for one and, if missing, auto-creates a basic one (no effect = the SpriteBatch default batch) while logging a warning. To set an effect or tune its vars you get the entity's `ShaderComponent`:
+
+```csharp
+var shader = entity.GetComponent<ShaderComponent>();
+shader.EffectAsset = "Effects/Glow";      // or shader.Effect = ...; in code
+shader.SetFloat("GlowStrength", 1.0f);
+```
+
+The component owns two things: the **effect** (see [Render Pipeline](RenderPipeline.md#per-sprite-effect) for `Effect` / `EffectAsset` / `EffectiveEffect`) and the **uniforms** documented below. It does not render anything itself — it just holds the values and hands them to the pipeline.
 
 ### Supported uniform types
 
@@ -52,19 +60,22 @@ A 4-component vector also accepts an `R,G,B` (or `R,G,B,A`) **color** in 0–255
 ### Usage (code)
 
 ```csharp
-var params = entity.AddComponent<EffectParametersComponent>();
-params.SetFloat("GlowStrength", 1.0f);   // base value, updated every frame below
-params.SetColor("Tint", Color.OrangeRed);
+var shader = entity.GetComponent<ShaderComponent>();   // auto-created by the SpriteComponent if absent
+shader.SetFloat("GlowStrength", 1.0f);                 // base value, updated every frame below
+shader.SetColor("Tint", Color.OrangeRed);
 ```
 
 ---
 
 ## Data-Driven XML
 
-Declare a base value inside the `<Component>` element that owns the uniforms — a sibling of `<Properties>`:
+Declare a base value inside the `<Component Type="ShaderComponent">` element — a sibling of `<Properties>`:
 
 ```xml
-<Component Type="EffectParametersComponent">
+<Component Type="ShaderComponent">
+    <Properties>
+        <Property Name="EffectAsset" Value="Effects/Glow" />
+    </Properties>
     <EffectParameter Name="GlowStrength" Value="1.0" />
     <EffectParameter Name="Tint"         Value="255,140,30" />
 </Component>
@@ -72,9 +83,9 @@ Declare a base value inside the `<Component>` element that owns the uniforms —
 
 - `Name` is required and must match a parameter on the effect; `Value` is optional (defaults to empty).
 - No type hints in XML — the value is parsed against the effect parameter's own declared shape at apply time.
-- The loader resolves the component by short name (`EffectParametersComponent`) exactly like any other built-in component.
+- The loader resolves the component by short name (`ShaderComponent`) exactly like any other built-in component.
 
-A scene that declares only this component renders a **fixed** glow (the base value). Add a controller component to animate it (below).
+A scene that declares only this component renders a **fixed** glow (the base value). Add a controller component to animate it (below). A sprite with **no** `ShaderComponent` at all gets an auto-created basic one (no effect) — the pipeline then logs a warning reminding you to declare one in XML.
 
 ---
 
@@ -84,9 +95,9 @@ The entity system partitions render order into contiguous runs that share the sa
 
 - **Same effect + same values** → coalesce into one run (one `Begin`/`End`).
 - **Same effect + different values** → split into separate runs so each gets its own `Begin` with its own uniforms.
-- **No effect / no params component** → a single `(null, "")` run, i.e. exactly the previous single `Begin(null)`/`End` behavior (no regression).
+- **No effect / no vars** → a single `(null, "")` run, i.e. exactly the previous single `Begin(null)`/`End` behavior (no regression).
 
-Before each run's `SpriteBatch.Begin`, the pipeline applies that run's uniforms from its first entity's component (`ApplyTo`). Because a shared/cached `Effect` instance is written immediately before its own `Begin`, the last-written-before-`Begin` wins per run — so many entities can safely share one effect object while each run carries different values.
+Before each run's `SpriteBatch.Begin`, the pipeline applies that run's uniforms from its first entity's `ShaderComponent` (`ApplyTo`). Because a shared/cached `Effect` instance is written immediately before its own `Begin`, the last-written-before-`Begin` wins per run — so many entities can safely share one effect object while each run carries different values.
 
 This is also why two sprites using the same shader but with different glow strengths render correctly: they land in different runs, each with its own `GlowStrength`.
 
@@ -98,7 +109,7 @@ The playground's [Render Pipeline demo](./RenderPipeline.md#worked-example-playg
 
 ```hlsl
 float4x4 Projection;   // auto-synced by the pipeline
-float GlowStrength;    // owned + controlled by an EffectParametersComponent
+float GlowStrength;    // owned + controlled by the ShaderComponent
 sampler GlowTex;
 // ...
 float3 base = tex.rgb * input.Color.rgb;
@@ -107,21 +118,24 @@ float3 c   = base + (glow - base) * GlowStrength;   // 0 → plain, 1 → full, 
 return float4(c * a, a);
 ```
 
-The scene wires three components onto the glowing ball:
+The scene pairs the glowing ball's `SpriteComponent` with a `ShaderComponent` (which owns both the effect and the uniform) and a controller:
 
 ```xml
 <EntityDefinition Type="...GameObjectEntity" Id="glowBall">
     <Components>
         <Component Type="SpriteComponent">
             <Properties>
-                <Property Name="EffectAsset" Value="Effects/Glow" />
-                <!-- ... Origin, SpriteAsset ... -->
+                <Property Name="Origin" Value="0.5,0.5" />
+                <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
             </Properties>
         </Component>
 
-        <!-- Owns GlowStrength. The XML value is the base (fixed glow with no controller). -->
-        <Component Type="EffectParametersComponent">
-            <EffectParameter Name="GlowStrength" Value="1.0" />
+        <!-- Owns the shader: the effect (EffectAsset) AND the GlowStrength uniform. -->
+        <Component Type="ShaderComponent">
+            <Properties>
+                <Property Name="EffectAsset" Value="Effects/Glow" />
+            </Properties>
+            <EffectParameter Name="GlowStrength" Value="1.0" />   <!-- base (fixed glow with no controller) -->
         </Component>
 
         <!-- Controls GlowStrength over time: a smooth ping-pong tween between min and max. -->
@@ -136,7 +150,7 @@ The scene wires three components onto the glowing ball:
 </EntityDefinition>
 ```
 
-The controller does **not** own the uniform — it writes into the sibling `EffectParametersComponent` every frame. This is the "a component that owns the shader vars controls the vars" split: ownership and control are separate, so you can swap controllers (tween, input, AI) without touching the uniform plumbing.
+The controller does **not** own the uniform — it writes into the sibling `ShaderComponent` every frame. This is the "a component that owns the shader vars controls the vars" split: ownership and control are separate, so you can swap controllers (tween, input, AI) without touching the uniform plumbing.
 
 ```csharp
 public class PulsingGlowComponent : EntityComponent
@@ -147,26 +161,26 @@ public class PulsingGlowComponent : EntityComponent
     public float Duration { get; set; } = 1.4f;
 
     private TweenFloat? _tween;
-    private EffectParametersComponent? _params;
+    private ShaderComponent? _shader;
 
     public override void OnAttach()
     {
-        _params = Owner.GetRenderEffectParameters();      // the owning component
-        if (_params == null) return;
+        _shader = Owner.GetComponent<ShaderComponent>();   // the owning component
+        if (_shader == null) return;
 
         _tween = new TweenFloat(MinStrength, MaxStrength, Duration, t => 0.5f - (float)Math.Cos(t * Math.PI));
         _tween.Loop = true;
-        _tween.Reverse = true;                            // ping-pong: min → max → min → ...
+        _tween.Reverse = true;                             // ping-pong: min → max → min → ...
     }
 
     public override void Update(GameTime gameTime)
     {
-        if (_params == null || _tween == null) return;
+        if (_shader == null || _tween == null) return;
 
         _tween.Advance((float)gameTime.ElapsedGameTime.TotalSeconds);
-        if (_tween.IsComplete) _tween.ToggleDirection();  // flip at each end of the sweep
+        if (_tween.IsComplete) _tween.ToggleDirection();   // flip at each end of the sweep
 
-        _params.SetFloat(ParameterName, _tween.GetValue());
+        _shader.SetFloat(ParameterName, _tween.GetValue());
     }
 }
 ```
@@ -182,6 +196,6 @@ Run it with the smoke-run harness:
 ## Related
 
 - [Render Pipeline](RenderPipeline.md) — per-sprite `Effect` support, the projection convention, and post passes.
-- [Sprite System](SpriteSystem.md) — the unified sprite type and its batching model (effect + uniforms are additional grouping keys).
+- [Sprite System](SpriteSystem.md) — the unified sprite type and its batching model (the shader is an additional grouping key).
 - [Coroutines](Coroutines.md) / [Entity Tweening](EntityTweening.md) — tween primitives you can drive a uniform with.
 - [Scene Management](SceneManagement.md) — data-driven scenes, which is how the demo declares its uniforms.

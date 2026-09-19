@@ -334,9 +334,11 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
         for (int i = 0; i < entities.Count; i++)
         {
-            var effect = entities[i].GetRenderEffect();
+            // The shader lives entirely on the entity's ShaderComponent (effect + uniforms).
+            var shader = entities[i].GetComponent<Components.BuiltIn.ShaderComponent>();
+            var effect = shader?.EffectiveEffect;
             // Same effect AND same uniform values coalesce into one run; a different signature splits it.
-            var signature = entities[i].GetRenderEffectParameters()?.Signature ?? string.Empty;
+            var signature = shader?.Signature ?? string.Empty;
 
             if (runs.Count > 0 && ReferenceEquals(runs[runs.Count - 1].Item1, effect) && runs[runs.Count - 1].Item2 == signature)
             {
@@ -368,7 +370,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
                 // Apply this run's uniforms immediately before Begin so each run (even one sharing a cached
                 // effect instance) writes its own values in sequence — the last-written-before-Begin wins.
-                var source = run.Entities[0].GetRenderEffectParameters();
+                var source = run.Entities[0].GetComponent<Components.BuiltIn.ShaderComponent>();
                 source?.ApplyTo(run.Effect);
             }
 

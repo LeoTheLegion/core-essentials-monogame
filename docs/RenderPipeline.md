@@ -3,7 +3,7 @@
 CoreEssentials renders a frame in three ordered stages, all orchestrated by `MainGame.Draw`:
 
 1. **Pre pass** — optional setup actions that run after the backbuffer is cleared and before the scene draws (e.g. camera setup).
-2. **Process pass** — the scene + GUI render. Each entity's `SpriteComponent` can carry a per-sprite shader (`Effect`), applied at `SpriteBatch.Begin`. Optionally the whole frame renders into a `RenderTarget2D` instead of straight to the backbuffer.
+2. **Process pass** — the scene + GUI render. Each sprite entity has a companion `ShaderComponent` that owns its per-sprite shader (`Effect`), applied at `SpriteBatch.Begin`. Optionally the whole frame renders into a `RenderTarget2D` instead of straight to the backbuffer.
 3. **Post pass** — one or more full-screen shader quads drawn after the scene + GUI (vignette, color grade, bloom, blur, …).
 
 Everything is **opt-in**. When nothing is configured — no pre passes, no per-sprite effects, render-to-target off, no post passes — the frame renders exactly as it always has (straight to the backbuffer, one default batch), so there is no perf or rendering regression for games that don't use the feature.
@@ -23,36 +23,43 @@ The pipeline state lives in the static `CoreEssentials.Rendering.RenderPipeline`
 
 ## Per-Sprite `Effect`
 
-A `SpriteComponent` can render its sprite through a MonoGame shader. In MonoGame an effect is applied at `SpriteBatch.Begin`, not per draw, so the entity system **groups entities by their effective effect** and opens a dedicated `Begin`/`End` for each distinct effect. Entities with no effect stay in the default batch — when *every* entity has no effect this is exactly one `Begin(null)`/`End`, i.e. byte-for-byte the previous behavior.
+A sprite entity's shader lives on its companion **`ShaderComponent`** (the Unity-style "material" role: it owns the effect *and* its uniforms). In MonoGame an effect is applied at `SpriteBatch.Begin`, not per draw, so the entity system **groups entities by their effective effect** and opens a dedicated `Begin`/`End` for each distinct effect. Entities whose shader has no effect stay in the default batch — when *every* entity has no effect this is exactly one `Begin(null)`/`End`, i.e. byte-for-byte the previous behavior.
 
-There are two ways to assign an effect:
+A `SpriteComponent` **requires** a sibling `ShaderComponent`. It looks for one at attach and, if missing, auto-creates a basic one (no effect = the SpriteBatch default batch) — logging a warning telling you to declare it explicitly. So a sprite with only a `SpriteComponent` renders through the default batch, while one paired with a `ShaderComponent` that has an effect gets its own `Begin`/`End`. The render pipeline resolves the shader via `entity.GetComponent<ShaderComponent>()`; there is no render accessors on `Entity` itself.
+
+There are two ways to assign an effect on the `ShaderComponent`:
 
 | Property | Type | How it's set | Precedence |
 |----------|------|-------------|------------|
 | `Effect` | `Effect?` | Directly in code (e.g. a loader component). | Wins when non-null. |
 | `EffectAsset` | `string` | A declarative XML property naming an effect asset, e.g. `"Effects/Glow"`. Resolved once in `OnAttach` via the `AssetManager`. | Used only when `Effect` is null. |
 
-The effective shader is `SpriteComponent.EffectiveEffect`, which is what the render pipeline uses as its grouping key (exposed per-entity through `Entity.GetRenderEffect()`).
+The effective shader is `ShaderComponent.EffectiveEffect`, which is what the render pipeline uses as its grouping key.
 
-> **Tuning a shader's uniforms** — to control an effect's "vars" (e.g. make a glow weaker/stronger, animate an intensity), use the [`EffectParametersComponent`](ShaderUniforms.md). It owns and controls the uniforms from XML (`<EffectParameter>`) and code, and the pipeline pushes them onto the effect before each batch's `Begin`.
+> **Tuning a shader's uniforms** — to control an effect's "vars" (e.g. make a glow weaker/stronger, animate an intensity), set them on the same [`ShaderComponent`](ShaderUniforms.md). It owns and controls the uniforms from XML (`<EffectParameter>`) and code, and the pipeline pushes them onto the effect before each batch's `Begin`.
 
 ### Usage (code)
 
 ```csharp
 // Assign a shader directly — e.g. in a component's OnAttach:
-spriteComponent.Effect = AssetManager.LoadAsset<EffectAsset>("Effects/Glow").Effect;
+var shader = entity.GetComponent<ShaderComponent>();
+shader.Effect = AssetManager.LoadAsset<EffectAsset>("Effects/Glow").Effect;
 ```
 
 ### Usage (declarative XML)
 
-This is the data-driven path — a plain string property, no loader component needed:
+This is the data-driven path — a plain string property, no loader component needed. The effect lives on a sibling `ShaderComponent`, not on the `SpriteComponent`:
 
 ```xml
 <Component Type="SpriteComponent">
     <Properties>
         <Property Name="Origin" Value="0.5,0.5" />
         <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
-        <!-- The per-sprite shader, resolved on attach and applied at Begin. -->
+    </Properties>
+</Component>
+<!-- The per-sprite shader: resolved on attach and applied at Begin. -->
+<Component Type="ShaderComponent">
+    <Properties>
         <Property Name="EffectAsset" Value="Effects/Glow" />
     </Properties>
 </Component>
@@ -179,8 +186,8 @@ No-op when none are registered.
 
 `CoreEssentials.Playground/Content/Scenes/RenderPipelineDemoScene.xml` demonstrates both features, fully data-driven:
 
-- A **plain ball** (`SpriteComponent` with no effect) and an identical **glowing ball** whose `EffectAsset = "Effects/Glow"` — the only difference is that one string property. The vignette darkens the frame edges so the two are easy to compare.
-- The glowing ball's glow **pulses weaker/stronger** over time: an [`EffectParametersComponent`](ShaderUniforms.md) owns the `GlowStrength` uniform (seeded from XML) and a `PulsingGlowComponent` drives it each frame with a ping-pong tween.
+- A **plain ball** (`SpriteComponent` only — the renderer auto-creates a basic, no-effect shader for it) and an identical **glowing ball** paired with a `ShaderComponent` whose `EffectAsset = "Effects/Glow"`. The vignette darkens the frame edges so the two are easy to compare.
+- The glowing ball's glow **pulses weaker/stronger** over time: its [`ShaderComponent`](ShaderUniforms.md) owns both the effect and the `GlowStrength` uniform (seeded from XML), and a `PulsingGlowComponent` drives it each frame with a ping-pong tween.
 - A `RenderPipelineDemoComponent` shell registers an additive **vignette** post pass (`Effects/Vignette`) on attach and removes it on detach, so unloading the scene restores the pipeline's default state.
 
 Run it with the smoke-run harness:

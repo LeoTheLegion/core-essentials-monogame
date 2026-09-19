@@ -1,34 +1,105 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Xunit;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     /// <summary>
-    /// Tests for the built-in <see cref="EffectParametersComponent"/>: its typed setters, the
-    /// order-stable <see cref="EffectParametersComponent.Signature"/>, on-demand typed getters over XML
-    /// (raw-string) values, and the XML seeding path. Real MonoGame <see cref="Microsoft.Xna.Framework.Graphics.Effect"/>
-    /// parameters cannot be created without a live GraphicsDevice, so the actual write-onto-parameter
-    /// dispatch in <c>ApplyTo</c> is exercised by the playground smoke-run; here we verify the pure-C#
-    /// value-storage contract that feeds it.
+    /// Tests for the built-in <see cref="ShaderComponent"/>: the effect reference (explicit vs. asset,
+    /// resolution on attach, clearing on detach) and the shader uniforms it owns — typed setters, the
+    /// order-stable <see cref="ShaderComponent.Signature"/>, on-demand typed getters over XML (raw-string)
+    /// values, and the XML seeding path. Real MonoGame <see cref="Effect"/> parameters cannot be created
+    /// without a live GraphicsDevice, so the actual write-onto-parameter dispatch in <c>ApplyTo</c> is
+    /// exercised by the playground smoke-run; here we verify the pure-C# value-storage contract that feeds it.
     /// </summary>
-    public class EffectParametersComponentTests
+    public class ShaderComponentTests
     {
         private sealed class TestEntity : Entity
         {
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
 
-        // ===== Typed setters store values =====
+        // ===== Effect: EffectiveEffect precedence =====
+
+        [Fact]
+        public void EffectiveEffect_NothingSet_ReturnsNull()
+        {
+            var comp = new ShaderComponent();
+
+            Assert.Null(comp.EffectiveEffect);
+        }
+
+        [Fact]
+        public void EffectiveEffect_ExplicitEffect_WinsOverAsset()
+        {
+            var explicitEffect = CreateFakeEffect();
+            var comp = new ShaderComponent { Effect = explicitEffect, EffectAsset = "Effects/explicit_wins.xml" };
+
+            Assert.Same(explicitEffect, comp.EffectiveEffect);
+        }
+
+        [Fact]
+        public void EffectiveEffect_OnlyExplicit_ReturnsIt()
+        {
+            var explicitEffect = CreateFakeEffect();
+            var comp = new ShaderComponent { Effect = explicitEffect };
+
+            Assert.Same(explicitEffect, comp.EffectiveEffect);
+        }
+
+        // ===== Effect: OnAttach resolution of EffectAsset =====
+
+        [Fact]
+        public void OnAttach_WithEffectAsset_ResolvesAndExposesEffective()
+        {
+            AssetManager.Init(new EffectMockContentManager());
+            var entity = new TestEntity();
+
+            var comp = entity.AddComponent(new ShaderComponent { EffectAsset = "Effects/glow_attach.xml" });
+
+            Assert.Null(comp.Effect); // resolved, not explicit
+            Assert.NotNull(comp.EffectiveEffect);
+        }
+
+        [Fact]
+        public void OnAttach_MissingEffectAsset_LogsAndLeavesNull()
+        {
+            AssetManager.Init(new ThrowingContentManager());
+            var entity = new TestEntity();
+
+            var comp = entity.AddComponent(new ShaderComponent { EffectAsset = "Effects/does_not_exist.xml" });
+
+            Assert.Null(comp.EffectiveEffect);
+        }
+
+        [Fact]
+        public void OnDetach_ClearsResolvedEffect()
+        {
+            AssetManager.Init(new EffectMockContentManager());
+            var entity = new TestEntity();
+
+            var comp = entity.AddComponent(new ShaderComponent { EffectAsset = "Effects/glow_detach.xml" });
+            Assert.NotNull(comp.EffectiveEffect);
+
+            entity.RemoveComponent<ShaderComponent>();
+
+            // After detach the resolved (asset-derived) effect is cleared; an explicit one would remain.
+            Assert.Null(comp.EffectiveEffect);
+        }
+
+        // ===== Vars: typed setters store values =====
 
         [Fact]
         public void SetFloat_StoresValue()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetFloat("GlowStrength", 1.5f);
 
             Assert.Equal(1.5f, comp.Get<float>("GlowStrength"));
@@ -38,7 +109,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void SetInt_StoresValue()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetInt("Steps", 42);
 
             Assert.Equal(42, comp.Get<int>("Steps"));
@@ -47,7 +118,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void SetBool_StoresValue()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetBool("Enabled", true);
 
             Assert.True(comp.Get<bool>("Enabled"));
@@ -56,7 +127,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void SetColor_StoresValue()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetColor("Tint", Color.Coral);
 
             Assert.Equal(Color.Coral, comp.Get<Color>("Tint"));
@@ -65,7 +136,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void SetVector2_3_4_StoreValues()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetVector2("Offset", new Vector2(1f, 2f));
             comp.SetVector3("Normal", new Vector3(0f, 1f, 0f));
             comp.SetVector4("Raw", new Vector4(1f, 2f, 3f, 4f));
@@ -78,18 +149,18 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void SetValue_BoxedObject_StoresValue()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetValue("Strength", 0.75f);
 
             Assert.Equal(0.75f, comp.Get<float>("Strength"));
         }
 
-        // ===== Get<T> over raw (XML) strings =====
+        // ===== Vars: Get<T> over raw (XML) strings =====
 
         [Fact]
         public void Get_TypedFromRawString_ParsesOnDemand()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.InitializeFromStrings(new Dictionary<string, string> { ["Strength"] = "0.75" });
 
             // Stored as a raw string, but readable as a float on demand.
@@ -99,7 +170,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Get_VectorFromRawString_ParsesOnDemand()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.InitializeFromStrings(new Dictionary<string, string> { ["Offset"] = "1.5,2.5" });
 
             Assert.Equal(new Vector2(1.5f, 2.5f), comp.Get<Vector2>("Offset"));
@@ -108,7 +179,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Get_MissingName_ReturnsDefault()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
 
             Assert.Equal(0f, comp.Get<float>("Absent"));
             Assert.Equal(default(Vector2), comp.Get<Vector2>("Absent"));
@@ -117,7 +188,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void CodeSetterOverridesXmlSeededValueForSameName()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.InitializeFromStrings(new Dictionary<string, string> { ["Strength"] = "0.25" });
             comp.SetFloat("Strength", 0.9f);
 
@@ -125,23 +196,23 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Equal(0.9f, comp.Get<float>("Strength"));
         }
 
-        // ===== Signature =====
+        // ===== Vars: Signature =====
 
         [Fact]
         public void Signature_Empty_ReturnsEmptyString()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             Assert.Equal(string.Empty, comp.Signature);
         }
 
         [Fact]
         public void Signature_IsOrderStable()
         {
-            var a = new EffectParametersComponent();
+            var a = new ShaderComponent();
             a.SetFloat("Alpha", 1f);
             a.SetFloat("Beta", 2f);
 
-            var b = new EffectParametersComponent();
+            var b = new ShaderComponent();
             b.SetFloat("Beta", 2f);
             b.SetFloat("Alpha", 1f);
 
@@ -152,7 +223,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Signature_ChangesWhenAValueChanges()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetFloat("Strength", 1f);
             var before = comp.Signature;
 
@@ -164,10 +235,10 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Signature_DiffersWhenANamedValueDiffers()
         {
-            var a = new EffectParametersComponent();
+            var a = new ShaderComponent();
             a.SetFloat("Strength", 1f);
 
-            var b = new EffectParametersComponent();
+            var b = new ShaderComponent();
             b.SetFloat("Strength", 2f);
 
             Assert.NotEqual(a.Signature, b.Signature);
@@ -176,22 +247,22 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void Signature_DiffersWhenANameIsAdded()
         {
-            var a = new EffectParametersComponent();
+            var a = new ShaderComponent();
             a.SetFloat("Strength", 1f);
 
-            var b = new EffectParametersComponent();
+            var b = new ShaderComponent();
             b.SetFloat("Strength", 1f);
             b.SetBool("Enabled", true);
 
             Assert.NotEqual(a.Signature, b.Signature);
         }
 
-        // ===== Clear =====
+        // ===== Vars: Clear =====
 
         [Fact]
         public void Clear_RemovesAllValues()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.SetFloat("Strength", 1f);
             comp.SetBool("Enabled", true);
 
@@ -201,12 +272,12 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Equal(string.Empty, comp.Signature);
         }
 
-        // ===== InitializeFromStrings (XML path) =====
+        // ===== Vars: InitializeFromStrings (XML path) =====
 
         [Fact]
         public void InitializeFromNull_IsNoOp()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.InitializeFromStrings(null);
             Assert.Empty(comp.Values);
         }
@@ -214,7 +285,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         [Fact]
         public void InitializeFromStrings_StoresRawValues()
         {
-            var comp = new EffectParametersComponent();
+            var comp = new ShaderComponent();
             comp.InitializeFromStrings(new Dictionary<string, string>
             {
                 ["Strength"] = "0.5",
@@ -227,23 +298,29 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Equal("255,140,30", comp.Values["Tint"]);
         }
 
-        // ===== Entity.GetRenderEffectParameters =====
+        // ===== Helpers =====
 
-        [Fact]
-        public void GetRenderEffectParameters_WithComponent_ReturnsIt()
+        private static Effect CreateFakeEffect() =>
+            (Effect)RuntimeHelpers.GetUninitializedObject(typeof(Effect));
+
+        // A content manager that returns a fresh, distinct Effect for every Load<Effect> call.
+        private sealed class EffectMockContentManager : IContentManager
         {
-            var entity = new TestEntity();
-            var comp = new EffectParametersComponent();
-            entity.AddComponent(comp);
+            public T Load<T>(string assetName)
+            {
+                if (typeof(T) == typeof(Effect))
+                    return (T)(object)CreateFakeEffect();
+                throw new InvalidOperationException($"Unexpected load type {typeof(T)} for '{assetName}'");
+            }
 
-            Assert.Same(comp, entity.GetRenderEffectParameters());
+            public void Unload(string assetName) { }
         }
 
-        [Fact]
-        public void GetRenderEffectParameters_WithoutComponent_ReturnsNull()
+        // A content manager that always fails, to exercise the swallowed-resolution path.
+        private sealed class ThrowingContentManager : IContentManager
         {
-            var entity = new TestEntity();
-            Assert.Null(entity.GetRenderEffectParameters());
+            public T Load<T>(string assetName) => throw new InvalidOperationException($"Asset not found: {assetName}");
+            public void Unload(string assetName) { }
         }
     }
 }

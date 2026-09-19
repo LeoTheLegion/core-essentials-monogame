@@ -153,7 +153,7 @@ RegisterForInstancedRendering(sprite); // uses sprite.Texture
 
 ### Effect as an additional grouping key
 
-In addition to the z-layer → texture grouping above, each entity can carry a per-sprite shader (`SpriteComponent.Effect` / `EffectAsset`). MonoGame applies an effect at `SpriteBatch.Begin`, so within each texture group the render pipeline **partitions entities by their effective effect** and opens a dedicated `Begin`/`End` for each distinct effect. Entities with no effect stay in the default batch — when every entity has no effect this is exactly one `Begin(null)`/`End`, i.e. unchanged behavior. See [Render Pipeline](RenderPipeline.md) for the full model, the projection convention, and a worked example.
+In addition to the z-layer → texture grouping above, each sprite entity has a companion `ShaderComponent` that owns its per-sprite shader (effect + uniforms). MonoGame applies an effect at `SpriteBatch.Begin`, so within each texture group the render pipeline **partitions entities by their effective effect** and opens a dedicated `Begin`/`End` for each distinct effect. A sprite with no effect (the auto-created basic shader) stays in the default batch — when every entity has no effect this is exactly one `Begin(null)`/`End`, i.e. unchanged behavior. See [Render Pipeline](RenderPipeline.md) for the full model, the projection convention, and a worked example.
 
 ## Related
 

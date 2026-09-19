@@ -287,35 +287,6 @@ public abstract class Entity
     }
 
     /// <summary>
-    /// Gets the effective MonoGame <see cref="Effect"/> this entity should render with, or null when it
-    /// has none. Resolved from the entity's <see cref="SpriteComponent"/> (explicit <c>Effect</c> wins
-    /// over a declarative <c>EffectAsset</c>). The render pipeline uses this as an additional batching
-    /// key: entities sharing the same effect are drawn in one SpriteBatch Begin/End, while a distinct
-    /// effect opens its own Begin/End with that effect applied. Entities returning null keep the
-    /// default-effect batch (no perf or rendering regression).
-    /// </summary>
-    public virtual Effect? GetRenderEffect()
-    {
-        if (TryGetComponent<Components.BuiltIn.SpriteComponent>(out var spriteComponent) && spriteComponent != null)
-            return spriteComponent.EffectiveEffect;
-
-        return null;
-    }
-
-    /// <summary>
-    /// Gets the <see cref="Components.BuiltIn.EffectParametersComponent"/> that owns this entity's shader
-    /// uniforms, or null when it has none. The render pipeline uses its <c>Signature</c> as part of the
-    /// per-var batching key and applies its values onto the run's effect before each batch's Begin.
-    /// </summary>
-    public virtual Components.BuiltIn.EffectParametersComponent? GetRenderEffectParameters()
-    {
-        if (TryGetComponent<Components.BuiltIn.EffectParametersComponent>(out var paramComponent) && paramComponent != null)
-            return paramComponent;
-
-        return null;
-    }
-
-    /// <summary>
     /// Sets the unique identifier for this entity.
     /// </summary>
     /// <param name="id">The unique identifier to assign.</param>

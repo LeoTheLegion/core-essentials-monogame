@@ -12,7 +12,7 @@
 float4x4 Projection;
 
 // How strong the glow is. 0 = plain sprite (no glow), ~1 = the strong warm look, higher = hotter.
-// Owned and controlled by an EffectParametersComponent (see RenderPipelineDemoScene.xml); the render
+// Owned and controlled by a ShaderComponent (see RenderPipelineDemoScene.xml); the render
 // pipeline pushes its value onto this parameter before each batch's SpriteBatch.Begin. Driven over
 // time by a tween in PulsingGlowComponent so the glow visibly pulses weaker/stronger.
 float GlowStrength;
@@ -62,7 +62,7 @@ float4 MainPS(VSOutput input) : COLOR
 
     // GlowStrength scales the effect: 0 → the plain sprite, 1 → the full warm look above, and >1
     // keeps pushing past it so a tweened value reads as "hotter". This is the uniform that the
-    // owning EffectParametersComponent (driven by a tween) controls.
+    // owning ShaderComponent (driven by a tween) controls.
     float3 c = base + (glow - base) * GlowStrength;
 
     return float4(c * a, a);

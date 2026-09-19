@@ -343,7 +343,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
       <Entities>
         <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
           <Components>
-            <Component Type=""EffectParametersComponent"">
+            <Component Type=""ShaderComponent"">
               <EffectParameter Name=""GlowStrength"" Value=""1.5"" />
               <EffectParameter Name=""Tint"" Value=""255,140,30"" />
             </Component>
@@ -358,7 +358,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var definition = Assert.Single(system.Entities);
 
             var compDef = Assert.Single(definition.DeclaredComponents);
-            Assert.Equal("EffectParametersComponent", compDef.Type);
+            Assert.Equal("ShaderComponent", compDef.Type);
             Assert.Equal("1.5", compDef.EffectParameters["GlowStrength"]);
             Assert.Equal("255,140,30", compDef.EffectParameters["Tint"]);
         }
@@ -371,7 +371,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
       <Entities>
         <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
           <Components>
-            <Component Type=""EffectParametersComponent"">
+            <Component Type=""ShaderComponent"">
               <EffectParameter Value=""1.5"" />
             </Component>
           </Components>
@@ -391,7 +391,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
       <Entities>
         <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
           <Components>
-            <Component Type=""EffectParametersComponent"">
+            <Component Type=""ShaderComponent"">
               <EffectParameter Name=""GlowStrength"" />
             </Component>
           </Components>
@@ -417,7 +417,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
       <Entities>
         <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
           <Components>
-            <Component Type=""EffectParametersComponent"">
+            <Component Type=""ShaderComponent"">
               <Bogus Name=""X"" Value=""Y"" />
             </Component>
           </Components>

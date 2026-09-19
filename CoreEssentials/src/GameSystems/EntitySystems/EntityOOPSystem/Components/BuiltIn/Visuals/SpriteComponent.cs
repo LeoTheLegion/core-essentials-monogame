@@ -4,14 +4,15 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 /// <summary>
-/// Component that provides sprite-based rendering for an entity.
-/// In the hybrid rendering model, this component provides an additional draw path
-/// alongside the existing Entity.Render() method.
+/// Component that provides sprite-based rendering for an entity. It owns only the *sprite* (texture,
+/// origin, tint, flip, depth); all shader state — the effect and its uniforms — lives on a companion
+/// <see cref="ShaderComponent"/>. This component guarantees that such a sibling exists: at attach it looks
+/// for one and, when missing, auto-creates a basic one (no effect = the SpriteBatch default batch). The
+/// render pipeline then resolves the shader via the entity's <see cref="ShaderComponent"/>.
 /// </summary>
 public class SpriteComponent : EntityComponent, IDrawableComponent
 {
@@ -63,34 +64,6 @@ public class SpriteComponent : EntityComponent, IDrawableComponent
     public int AnimationFrame { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets an explicit MonoGame <see cref="Effect"/> to render this sprite with.
-    /// When set, it takes precedence over <see cref="EffectAsset"/> (same precedence as an explicit
-    /// <see cref="Sprite"/> over <see cref="SpriteAsset"/>). In MonoGame an effect is applied at
-    /// <c>SpriteBatch.Begin</c>, so the render pipeline groups entities by effect and opens a
-    /// dedicated Begin/End for each distinct effect — leaving the no-effect case unchanged.
-    /// </summary>
-    public Effect? Effect { get; set; }
-
-    /// <summary>
-    /// Gets or sets the asset name of an <see cref="Effect"/> to load via the <see cref="AssetManager"/>
-    /// (e.g. "Effects/glow.xml"). Resolved once in <see cref="OnAttach"/> and assigned to
-    /// <see cref="Effect"/> — but only when no explicit <see cref="Effect"/> was set already, so an
-    /// effect assigned in code always wins. This lets data-driven (XML) entities declare a shader with
-    /// a plain string property instead of needing a per-game loader component to bridge the gap.
-    /// </summary>
-    public string EffectAsset { get; set; } = "";
-
-    /// <summary>
-    /// Gets the effective <see cref="Effect"/> for this sprite: the explicit <see cref="Effect"/> when
-    /// set, otherwise the effect resolved from <see cref="EffectAsset"/>. Returns null when neither is
-    /// set, in which case the sprite renders with the SpriteBatch's default (no shader) — preserving
-    /// current behavior and batching exactly.
-    /// </summary>
-    public Effect? EffectiveEffect => Effect ?? _resolvedEffect;
-
-    private Effect? _resolvedEffect;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="SpriteComponent"/> class.
     /// </summary>
     public SpriteComponent()
@@ -129,28 +102,31 @@ public class SpriteComponent : EntityComponent, IDrawableComponent
             }
         }
 
-        // Resolve the declarative effect, unless an explicit Effect was already assigned in code.
-        if (!string.IsNullOrWhiteSpace(EffectAsset) && Effect == null)
-        {
-            try
-            {
-                _resolvedEffect = AssetManager.LoadAsset<EffectAsset>(EffectAsset).Effect;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SpriteComponent] Could not load effect asset '{EffectAsset}': {ex.Message}");
-            }
-        }
+        // Guarantee a companion shader. On the code path (no deferred-attach window) this creates it inline;
+        // on the prefab/scene path creation is deferred to the loader's finish pass — see EnsureShaderComponent.
+        if (Owner != null && !Owner.DeferringComponentAttach)
+            EnsureShaderComponent(Owner);
     }
 
     /// <summary>
-    /// Clears the resolved <see cref="EffectAsset"/> so a re-attached component can resolve it again.
-    /// An explicitly assigned <see cref="Effect"/> is left untouched (it is code-owned).
+    /// Idempotently guarantees this entity has a companion <see cref="ShaderComponent"/>. If one is already
+    /// present it is returned untouched; otherwise a basic one (no effect = the SpriteBatch default batch) is
+    /// created and attached. Safe to call from both the code path and the prefab/scene finish pass — the
+    /// guard makes it a no-op when the shader already exists, so a user-declared <see cref="ShaderComponent"/>
+    /// is never duplicated.
     /// </summary>
-    public override void OnDetach()
+    internal static ShaderComponent EnsureShaderComponent(Entity owner)
     {
-        base.OnDetach();
-        _resolvedEffect = null;
+        if (owner.TryGetComponent<ShaderComponent>(out var existing) && existing != null)
+            return existing;
+
+        Console.WriteLine($"[SpriteComponent] Entity '{owner.Id}' has a SpriteComponent but no ShaderComponent — " +
+            $"auto-created a basic one (no effect = the default batch). Declare <Component Type=\"ShaderComponent\"> " +
+            $"(in XML or code) to set an effect or uniforms.");
+
+        var created = new ShaderComponent();
+        owner.AddComponent(created);
+        return created;
     }
 
     /// <summary>

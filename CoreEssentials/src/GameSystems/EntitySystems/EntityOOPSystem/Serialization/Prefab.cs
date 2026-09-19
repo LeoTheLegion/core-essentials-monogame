@@ -108,7 +108,7 @@ public class Prefab
 
         /// <summary>
         /// Shader-uniform name → raw value string, sourced from &lt;EffectParameter&gt; elements. Applied
-        /// to an <c>EffectParametersComponent</c> on instantiation via its
+        /// to a <c>ShaderComponent</c> on instantiation via its
         /// <c>InitializeFromStrings</c>; the target type is resolved against the effect parameter at apply
         /// time, so no type hints are needed here.
         /// </summary>

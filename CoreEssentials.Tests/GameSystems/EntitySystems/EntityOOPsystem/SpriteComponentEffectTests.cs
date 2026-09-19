@@ -3,133 +3,136 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Xunit;
 
 namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     /// <summary>
-    /// Tests for per-sprite <see cref="Effect"/> support on the built-in
-    /// <see cref="SpriteComponent"/> and the effect-based render partitioning in
-    /// <see cref="EntitySystem"/>. Real MonoGame <see cref="Effect"/> objects cannot be created
-    /// without a live GraphicsDevice, so these use uninitialized-effect fakes — which is enough to
-    /// assert identity/precedence/resolution behavior headlessly.
+    /// Tests for the sprite renderer's companion-shader guarantee and the effect-based render partitioning in
+    /// <see cref="EntitySystem"/>. The shader (effect + uniforms) now lives entirely on a
+    /// <see cref="ShaderComponent"/>; a <see cref="SpriteComponent"/> guarantees such a sibling exists,
+    /// auto-creating a basic one (no effect = the SpriteBatch default batch) when missing. Real MonoGame
+    /// <see cref="Effect"/> objects cannot be created without a live GraphicsDevice, so these use
+    /// uninitialized-effect fakes — enough to assert identity/precedence/partition behavior headlessly.
     /// </summary>
     public class SpriteComponentEffectTests
     {
         private sealed class TestEntity : Entity
         {
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
 
-        // ===== EffectiveEffect precedence =====
+        // ===== Sprite renderer guarantees a companion ShaderComponent (code path) =====
 
         [Fact]
-        public void EffectiveEffect_NothingSet_ReturnsNull()
+        public void AddSpriteComponent_AutoCreatesBasicShader()
         {
-            var comp = new SpriteComponent();
-
-            Assert.Null(comp.EffectiveEffect);
-        }
-
-        [Fact]
-        public void EffectiveEffect_ExplicitEffect_WinsOverAsset()
-        {
-            var explicitEffect = CreateFakeEffect();
-            var comp = new SpriteComponent { Effect = explicitEffect, EffectAsset = "Effects/explicit_wins.xml" };
-
-            Assert.Same(explicitEffect, comp.EffectiveEffect);
-        }
-
-        [Fact]
-        public void EffectiveEffect_OnlyExplicit_ReturnsIt()
-        {
-            var explicitEffect = CreateFakeEffect();
-            var comp = new SpriteComponent { Effect = explicitEffect };
-
-            Assert.Same(explicitEffect, comp.EffectiveEffect);
-        }
-
-        // ===== OnAttach resolution of EffectAsset =====
-
-        [Fact]
-        public void OnAttach_WithEffectAsset_ResolvesAndExposesEffective()
-        {
-            AssetManager.Init(new EffectMockContentManager());
             var entity = new TestEntity();
 
-            var comp = entity.AddComponent(new SpriteComponent { EffectAsset = "Effects/glow_attach.xml" });
+            entity.AddComponent(new SpriteComponent());
 
-            Assert.Null(comp.Effect); // resolved, not explicit
-            Assert.NotNull(comp.EffectiveEffect);
+            // A sibling shader now exists, with no effect (the default batch).
+            var shader = entity.GetComponent<ShaderComponent>();
+            Assert.NotNull(shader);
+            Assert.Null(shader!.EffectiveEffect);
         }
 
         [Fact]
-        public void OnAttach_MissingEffectAsset_LogsAndLeavesNull()
+        public void AddSpriteComponent_WithExistingShader_DoesNotDuplicate()
         {
-            AssetManager.Init(new ThrowingContentManager());
             var entity = new TestEntity();
+            var userShader = new ShaderComponent { Effect = CreateFakeEffect() };
+            entity.AddComponent(userShader);
 
-            var comp = entity.AddComponent(new SpriteComponent { EffectAsset = "Effects/does_not_exist.xml" });
+            entity.AddComponent(new SpriteComponent());
 
-            Assert.Null(comp.EffectiveEffect);
+            // The user-declared shader is kept, not replaced or duplicated.
+            Assert.Same(userShader, entity.GetComponent<ShaderComponent>());
         }
 
         [Fact]
-        public void OnDetach_ClearsResolvedEffect()
-        {
-            AssetManager.Init(new EffectMockContentManager());
-            var entity = new TestEntity();
-
-            var comp = entity.AddComponent(new SpriteComponent { EffectAsset = "Effects/glow_detach.xml" });
-            Assert.NotNull(comp.EffectiveEffect);
-
-            entity.RemoveComponent<SpriteComponent>();
-
-            // After detach the resolved (asset-derived) effect is cleared; an explicit one would remain.
-            Assert.Null(comp.EffectiveEffect);
-        }
-
-        // ===== Entity.GetRenderEffect =====
-
-        [Fact]
-        public void GetRenderEffect_WithExplicitEffect_ReturnsIt()
+        public void AddSpriteComponent_WithExistingShaderKeepsItsEffect()
         {
             var entity = new TestEntity();
             var effect = CreateFakeEffect();
-            entity.AddComponent(new SpriteComponent { Effect = effect });
+            entity.AddComponent(new ShaderComponent { Effect = effect });
 
-            Assert.Same(effect, entity.GetRenderEffect());
-        }
-
-        [Fact]
-        public void GetRenderEffect_WithoutSpriteComponent_ReturnsNull()
-        {
-            var entity = new TestEntity();
-
-            Assert.Null(entity.GetRenderEffect());
-        }
-
-        [Fact]
-        public void GetRenderEffect_SpriteComponentWithoutEffect_ReturnsNull()
-        {
-            var entity = new TestEntity();
             entity.AddComponent(new SpriteComponent());
 
-            Assert.Null(entity.GetRenderEffect());
+            Assert.Same(effect, entity.GetComponent<ShaderComponent>()!.EffectiveEffect);
+        }
+
+        [Fact]
+        public void EnsureShaderComponent_IsIdempotent()
+        {
+            var entity = new TestEntity();
+            var first = SpriteComponent.EnsureShaderComponent(entity);
+            var second = SpriteComponent.EnsureShaderComponent(entity);
+
+            Assert.Same(first, second);
+            // Only one shader component exists on the entity.
+            Assert.Single(entity.Components);
+        }
+
+        // ===== Prefab/scene finish pass guarantees a companion ShaderComponent =====
+
+        [Fact]
+        public void Prefab_SpriteWithoutShader_AutoCreatesBasicShader()
+        {
+            var system = new EntitySystem();
+            var prefab = new Prefab
+            {
+                Type = nameof(TestEntity),
+                Components =
+                {
+                    new Prefab.ComponentDefinition { Type = nameof(SpriteComponent) }
+                }
+            };
+            system.RegisterPrefab("sprite_only", prefab);
+
+            var entity = system.Instantiate("sprite_only", Vector2.Zero);
+
+            // The finish pass created a basic (no-effect) companion shader.
+            var shader = entity.GetComponent<ShaderComponent>();
+            Assert.NotNull(shader);
+            Assert.Null(shader!.EffectiveEffect);
+        }
+
+        [Fact]
+        public void Prefab_SpriteWithDeclaredShader_DoesNotDuplicateAndSeedsVars()
+        {
+            var system = new EntitySystem();
+            var prefab = new Prefab
+            {
+                Type = nameof(TestEntity),
+                Components =
+                {
+                    new Prefab.ComponentDefinition { Type = nameof(SpriteComponent) },
+                    new Prefab.ComponentDefinition
+                    {
+                        Type = nameof(ShaderComponent),
+                        EffectParameters = { ["GlowStrength"] = "1.0" }
+                    }
+                }
+            };
+            system.RegisterPrefab("sprite_with_shader", prefab);
+
+            var entity = system.Instantiate("sprite_with_shader", Vector2.Zero);
+
+            // Exactly one shader (the declared one, not a duplicate) and its vars were seeded.
+            var shaders = new List<ShaderComponent>();
+            foreach (var c in entity.Components)
+                if (c is ShaderComponent s) shaders.Add(s);
+            Assert.Single(shaders);
+            Assert.Equal(1.0f, shaders[0].Get<float>("GlowStrength"));
         }
 
         // ===== PartitionByEffect (batcher effect grouping key) =====
-
-        private sealed class EffectEntity : Entity
-        {
-            public Effect? TestEffect { get; set; }
-            public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
-            public override Effect? GetRenderEffect() => TestEffect;
-        }
 
         [Fact]
         public void Partition_AllNullEffects_SingleRun_NoRegression()
@@ -210,16 +213,16 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Empty(runs);
         }
 
-        // ===== Partition with shader-uniform signatures (Sprint 5) =====
+        // ===== Partition with shader-uniform signatures =====
 
         [Fact]
         public void Partition_SameEffectDifferentVars_SplitIntoRuns()
         {
             var a = CreateFakeEffect();
-            var e1 = NewEffectEntity(a, new EffectParametersComponent { });
-            e1.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
-            var e2 = NewEffectEntity(a, new EffectParametersComponent { });
-            e2.GetRenderEffectParameters()!.SetFloat("Strength", 2f);
+            var e1 = NewEffectEntity(a);
+            e1.GetComponent<ShaderComponent>()!.SetFloat("Strength", 1f);
+            var e2 = NewEffectEntity(a);
+            e2.GetComponent<ShaderComponent>()!.SetFloat("Strength", 2f);
 
             var runs = InvokePartitionByEffect(new List<Entity> { e1, e2 });
 
@@ -235,10 +238,10 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         public void Partition_SameEffectSameVars_Coalesce()
         {
             var a = CreateFakeEffect();
-            var e1 = NewEffectEntity(a, new EffectParametersComponent { });
-            e1.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
-            var e2 = NewEffectEntity(a, new EffectParametersComponent { });
-            e2.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
+            var e1 = NewEffectEntity(a);
+            e1.GetComponent<ShaderComponent>()!.SetFloat("Strength", 1f);
+            var e2 = NewEffectEntity(a);
+            e2.GetComponent<ShaderComponent>()!.SetFloat("Strength", 1f);
 
             var runs = InvokePartitionByEffect(new List<Entity> { e1, e2 });
 
@@ -252,7 +255,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         public void Partition_EffectWithoutParams_SignatureIsEmpty()
         {
             var a = CreateFakeEffect();
-            var e1 = NewEffectEntity(a); // no EffectParametersComponent
+            var e1 = NewEffectEntity(a); // no uniforms set
 
             var runs = InvokePartitionByEffect(new List<Entity> { e1 });
 
@@ -264,8 +267,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         public void Partition_MixedWithAndWithoutParams_Split()
         {
             var a = CreateFakeEffect();
-            var withParams = NewEffectEntity(a, new EffectParametersComponent { });
-            withParams.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
+            var withParams = NewEffectEntity(a);
+            withParams.GetComponent<ShaderComponent>()!.SetFloat("Strength", 1f);
             var withoutParams = NewEffectEntity(a);
 
             var runs = InvokePartitionByEffect(new List<Entity> { withParams, withoutParams });
@@ -278,12 +281,10 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 
         // ===== Helpers =====
 
-        private static EffectEntity NewEffectEntity(Effect? effect) => new EffectEntity { TestEffect = effect };
-
-        private static EffectEntity NewEffectEntity(Effect? effect, EffectParametersComponent parameters)
+        private static Entity NewEffectEntity(Effect? effect)
         {
-            var entity = new EffectEntity { TestEffect = effect };
-            entity.AddComponent(parameters);
+            var entity = new TestEntity();
+            entity.AddComponent(new ShaderComponent { Effect = effect });
             return entity;
         }
 
@@ -297,26 +298,6 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
                 BindingFlags.NonPublic | BindingFlags.Static);
 
             return (List<(Effect? Effect, string Signature, List<Entity> Entities)>)method!.Invoke(null, new object[] { entities })!;
-        }
-
-        // A content manager that returns a fresh, distinct Effect for every Load<Effect> call.
-        private sealed class EffectMockContentManager : IContentManager
-        {
-            public T Load<T>(string assetName)
-            {
-                if (typeof(T) == typeof(Effect))
-                    return (T)(object)CreateFakeEffect();
-                throw new InvalidOperationException($"Unexpected load type {typeof(T)} for '{assetName}'");
-            }
-
-            public void Unload(string assetName) { }
-        }
-
-        // A content manager that always fails, to exercise the swallowed-resolution path.
-        private sealed class ThrowingContentManager : IContentManager
-        {
-            public T Load<T>(string assetName) => throw new InvalidOperationException($"Asset not found: {assetName}");
-            public void Unload(string assetName) { }
         }
     }
 }

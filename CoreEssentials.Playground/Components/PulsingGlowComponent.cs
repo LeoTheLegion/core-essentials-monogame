@@ -9,15 +9,16 @@ namespace CoreEssentials.Playground.Components;
 /// <summary>
 /// A controller that makes a sprite's glow pulse by driving the <c>GlowStrength</c> shader uniform
 /// over time with a ping-pong tween. It does NOT own the uniform — the sibling
-/// <see cref="EffectParametersComponent"/> on the same entity owns and controls it (the render pipeline
+/// <see cref="ShaderComponent"/> on the same entity owns and controls it (the render pipeline
 /// pushes that component's values onto the effect each frame). This component simply writes a new value
 /// into that owning component every update, demonstrating code-driven control of shader vars:
 /// <code>
 /// &lt;EntityDefinition Type="...GameObjectEntity" Id="glowBall"&gt;
 ///   &lt;Components&gt;
-///     &lt;Component Type="SpriteComponent"&gt; ... EffectAsset = Effects/Glow ... &lt;/Component&gt;
-///     &lt;Component Type="EffectParametersComponent"&gt;
-///       &lt;EffectParameter Name="GlowStrength" Value="1.0" /&gt;   &lt;!-- data-driven base value --&gt;
+///     &lt;Component Type="SpriteComponent"&gt; ... &lt;/Component&gt;
+///     &lt;Component Type="ShaderComponent"&gt;
+///       &lt;Property Name="EffectAsset" Value="Effects/Glow" /&gt;   &lt;!-- the shader --&gt;
+///       &lt;EffectParameter Name="GlowStrength" Value="1.0" /&gt;    &lt;!-- data-driven base value --&gt;
 ///     &lt;/Component&gt;
 ///     &lt;Component Type="CoreEssentials.Playground.Components.PulsingGlowComponent"&gt;
 ///       &lt;Properties&gt;
@@ -47,17 +48,17 @@ public class PulsingGlowComponent : EntityComponent
     public float Duration { get; set; } = 1.4f;
 
     private TweenFloat? _tween;
-    private EffectParametersComponent? _params;
+    private ShaderComponent? _shader;
 
     /// <inheritdoc />
     public override void OnAttach()
     {
         // The owning component holds the uniform; this controller just writes into it each frame.
-        _params = Owner.GetRenderEffectParameters();
+        _shader = Owner.GetComponent<ShaderComponent>();
 
-        if (_params == null)
+        if (_shader == null)
         {
-            Console.WriteLine("[PulsingGlowComponent] No EffectParametersComponent on this entity — nothing to drive.");
+            Console.WriteLine("[PulsingGlowComponent] No ShaderComponent on this entity — nothing to drive.");
             return;
         }
 
@@ -70,7 +71,7 @@ public class PulsingGlowComponent : EntityComponent
     /// <inheritdoc />
     public override void Update(GameTime gameTime)
     {
-        if (_params == null || _tween == null) return;
+        if (_shader == null || _tween == null) return;
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         _tween.Advance(dt);
@@ -79,13 +80,13 @@ public class PulsingGlowComponent : EntityComponent
         if (_tween.IsComplete)
             _tween.ToggleDirection();
 
-        _params.SetFloat(ParameterName, _tween.GetValue());
+        _shader.SetFloat(ParameterName, _tween.GetValue());
     }
 
     /// <inheritdoc />
     public override void OnDetach()
     {
         _tween = null;
-        _params = null;
+        _shader = null;
     }
 }

@@ -3,33 +3,66 @@ using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 /// <summary>
-/// Owns and controls the shader uniforms ("vars") for the effect on its entity's sprite.
-/// Attach this alongside a <see cref="SpriteComponent"/> that declares an effect: it holds the
-/// named uniform values and the render pipeline pushes them onto the effect immediately before each
-/// sprite batch's <c>SpriteBatch.Begin</c>.
+/// The single Unity-style owner of an entity's shader: the <see cref="Effect"/> (and its asset) *and*
+/// the effect's uniforms ("vars"). Attach this alongside a <see cref="SpriteComponent"/> — the sprite
+/// renderer draws the quad and leans on this component for the shader; to change a var you get this
+/// component and set it.
 /// </summary>
 /// <remarks>
-/// Values can come from two sources:
-/// <list type="bullet">
-/// <item><b>Code</b> — the typed setters (<see cref="SetFloat"/>, <see cref="SetColor"/>, …) store a
-/// ready-typed value that is written straight onto the matching effect parameter.</item>
-/// <item><b>Data-driven XML</b> — <c>&lt;EffectParameter Name="X" Value="Y"/&gt;</c> arrives as raw
-/// strings via <see cref="InitializeFromStrings"/>. The target type is resolved from the effect's own
-/// parameter list at apply time, so XML needs no type hints.</item>
-/// </list>
-/// A code-set value for a name always wins over an XML-set value for the same name (last write wins by
-/// call order). <see cref="Signature"/> is a canonical, order-stable representation of the current
-/// values; the render pipeline uses it as part of its batching key so sprites sharing an effect and the
-/// same var values batch together while differing values split into separate runs.
+/// <para><b>Effect.</b> An explicit <see cref="Effect"/> always wins over a declarative
+/// <see cref="EffectAsset"/> (which is resolved through the <see cref="AssetManager"/> once in
+/// <see cref="OnAttach"/>). When neither is set, <see cref="EffectiveEffect"/> is null and the entity
+/// renders in the SpriteBatch's default batch — so a "basic" shader is simply one with no effect.</para>
+/// <para><b>Vars.</b> Values can come from two sources: code (the typed setters store a ready-typed value
+/// written straight onto the matching parameter) and data-driven XML (<c>&lt;EffectParameter Name="X"
+/// Value="Y"/&gt;</c> arrives as raw strings via <see cref="InitializeFromStrings"/> and is resolved against
+/// the effect's own parameter type at apply time, so XML needs no type hints). A code-set value for a name
+/// always wins over an XML-set value by call order.</para>
+/// <para><see cref="Signature"/> is a canonical, order-stable representation of the current values; the render
+/// pipeline uses it as part of its batching key so sprites sharing an effect and the same var values batch
+/// together while differing values split into separate runs. Values are pushed onto the effect immediately
+/// before each sprite batch's <c>SpriteBatch.Begin</c>.</para>
 /// </remarks>
-public class EffectParametersComponent : EntityComponent
+public class ShaderComponent : EntityComponent
 {
+    // ──────────────────────────── Effect (shader reference) ────────────────────────────
+
+    /// <summary>
+    /// Gets or sets an explicit MonoGame <see cref="Effect"/> to render the sprite with. When set, it takes
+    /// precedence over <see cref="EffectAsset"/> (same precedence as an explicit <c>Sprite</c> over a
+    /// declarative asset). In MonoGame an effect is applied at <c>SpriteBatch.Begin</c>, so the render
+    /// pipeline groups entities by effect and opens a dedicated Begin/End for each distinct effect.
+    /// </summary>
+    public Effect? Effect { get; set; }
+
+    /// <summary>
+    /// Gets or sets the asset name of an <see cref="Effect"/> to load via the <see cref="AssetManager"/>
+    /// (e.g. "Effects/glow.xml"). Resolved once in <see cref="OnAttach"/> and assigned to
+    /// <see cref="Effect"/> — but only when no explicit <see cref="Effect"/> was set already, so an effect
+    /// assigned in code always wins. This lets data-driven (XML) entities declare a shader with a plain
+    /// string property instead of needing a per-game loader component to bridge the gap.
+    /// </summary>
+    public string EffectAsset { get; set; } = "";
+
+    /// <summary>
+    /// Gets the effective <see cref="Effect"/> for this shader: the explicit <see cref="Effect"/> when set,
+    /// otherwise the effect resolved from <see cref="EffectAsset"/>. Returns null when neither is set, in
+    /// which case the sprite renders with the SpriteBatch's default (no shader) — preserving current behavior
+    /// and batching exactly.
+    /// </summary>
+    public Effect? EffectiveEffect => Effect ?? _resolvedEffect;
+
+    private Effect? _resolvedEffect;
+
+    // ──────────────────────────── Vars (uniforms) ────────────────────────────
+
     private readonly Dictionary<string, object?> _values = new(StringComparer.Ordinal);
     private readonly HashSet<string> _warnedUnknown = new(StringComparer.Ordinal);
 
@@ -181,10 +214,47 @@ public class EffectParametersComponent : EntityComponent
     /// <summary>Removes all stored uniforms.</summary>
     public void Clear() => _values.Clear();
 
+    // ──────────────────────────── Lifecycle ────────────────────────────
+
+    /// <summary>
+    /// Resolves <see cref="EffectAsset"/> (if set) through the <see cref="AssetManager"/> and exposes it via
+    /// <see cref="EffectiveEffect"/> — unless an explicit <see cref="Effect"/> was already assigned in code.
+    /// Runs once on attach, which is the earliest point at which XML-declared properties are final. Failures
+    /// are logged and swallowed so a missing asset never breaks entity attachment.
+    /// </summary>
+    public override void OnAttach()
+    {
+        base.OnAttach();
+
+        if (!string.IsNullOrWhiteSpace(EffectAsset) && Effect == null)
+        {
+            try
+            {
+                _resolvedEffect = AssetManager.LoadAsset<EffectAsset>(EffectAsset).Effect;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ShaderComponent] Could not load effect asset '{EffectAsset}': {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears the resolved <see cref="EffectAsset"/> so a re-attached component can resolve it again. An
+    /// explicitly assigned <see cref="Effect"/> is left untouched (it is code-owned).
+    /// </summary>
+    public override void OnDetach()
+    {
+        base.OnDetach();
+        _resolvedEffect = null;
+    }
+
+    // ──────────────────────────── Private helpers ────────────────────────────
+
     private void WarnOnce(string key, Func<string> message)
     {
         if (_warnedUnknown.Add(key))
-            Console.WriteLine($"[EffectParameters] " + message());
+            Console.WriteLine($"[ShaderComponent] " + message());
     }
 
     /// <summary>

@@ -3,10 +3,11 @@
     Render-pipeline demo, fully data-driven (strict scene format).
 
     Shows the two first-class Effect features side by side:
-      1. Per-sprite shader — the "glow" ball declares SpriteComponent.EffectAsset = "Effects/Glow".
-         It is resolved through the AssetManager on attach and applied at SpriteBatch.Begin; the entity
-         system groups entities by effect so this one gets its own Begin/End while the plain ball keeps
-         the default batch. No C# loader component needed — a plain string property in XML.
+      1. Per-sprite shader — the "glow" ball declares a ShaderComponent with EffectAsset = "Effects/Glow",
+         which owns both the effect and its uniforms (GlowStrength). It is resolved through the
+         AssetManager on attach and applied at SpriteBatch.Begin; the entity system groups entities by
+         effect so this one gets its own Begin/End while the plain ball keeps the default batch. The plain
+         ball declares only a SpriteComponent, so the renderer auto-creates a basic (no-effect) shader for it.
       2. Full-screen post pass — RenderPipelineDemoComponent registers an additive vignette with the
          static RenderPipeline; it draws over the composited frame after the scene + GUI.
 
@@ -62,17 +63,21 @@
                             <Properties>
                                 <Property Name="Origin" Value="0.5,0.5" />
                                 <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
-                                <!-- The radiating-glow shader: resolved on attach, applied at Begin. -->
+                            </Properties>
+                        </Component>
+                        <!-- The radiating-glow shader: resolved on attach, applied at Begin. -->
+                        <Component Type="ShaderComponent">
+                            <Properties>
                                 <Property Name="EffectAsset" Value="Effects/GlowHalo" />
                             </Properties>
                         </Component>
                     </Components>
                 </EntityDefinition>
 
-                <!-- Glowing ball: identical sprite, but declares a per-sprite shader via EffectAsset.
-                     The glow's strength is a shader uniform (GlowStrength) OWNED by an
-                     EffectParametersComponent and CONTROLLED by a PulsingGlowComponent that drives it
-                     with a ping-pong tween — so the glow visibly pulses weaker/stronger over time. -->
+                <!-- Glowing ball: identical sprite, but declares a per-sprite shader via a ShaderComponent
+                     that owns both the effect (EffectAsset) and its uniforms. The glow's strength is a
+                     shader uniform (GlowStrength) CONTROLLED by a PulsingGlowComponent that drives it with a
+                     ping-pong tween — so the glow visibly pulses weaker/stronger over time. -->
                 <EntityDefinition Type="CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.GameObjectEntity" Id="glowBall">
                     <Position X="800" Y="360" />
                     <Components>
@@ -80,13 +85,15 @@
                             <Properties>
                                 <Property Name="Origin" Value="0.5,0.5" />
                                 <Property Name="SpriteAsset" Value="Sprites/ball_sprite.xml" />
-                                <!-- The data-driven per-sprite shader: resolved on attach, applied at Begin. -->
-                                <Property Name="EffectAsset" Value="Effects/Glow" />
                             </Properties>
                         </Component>
-                        <!-- Owns the GlowStrength uniform. The XML value is the base (a fixed glow with
-                             no controller); while PulsingGlowComponent is attached it overrides this each frame. -->
-                        <Component Type="EffectParametersComponent">
+                        <!-- Owns the shader (effect + uniforms). The data-driven EffectAsset is resolved on
+                             attach and applied at Begin; GlowStrength is the base value (a fixed glow with no
+                             controller) that PulsingGlowComponent overrides each frame while attached. -->
+                        <Component Type="ShaderComponent">
+                            <Properties>
+                                <Property Name="EffectAsset" Value="Effects/Glow" />
+                            </Properties>
                             <EffectParameter Name="GlowStrength" Value="1.0" />
                         </Component>
                         <!-- Controls GlowStrength over time: a smooth ping-pong tween between min and max. -->
@@ -119,7 +126,7 @@
                     <Components>
                         <Component Type="CoreEssentials.Playground.Components.TextComponent">
                             <Properties>
-                                <Property Name="Text" Value="Effect + EffectParameters (pulsing GlowStrength)" />
+                                <Property Name="Text" Value="ShaderComponent (pulsing GlowStrength)" />
                                 <Property Name="Color" Value="Orange" />
                                 <Property Name="Alignment" Value="Center" />
                             </Properties>
