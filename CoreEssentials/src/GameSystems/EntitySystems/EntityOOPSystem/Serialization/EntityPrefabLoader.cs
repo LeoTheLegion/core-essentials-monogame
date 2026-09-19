@@ -311,6 +311,7 @@ public static class EntityPrefabLoader
         if (component == null) return; // Component doesn't exist yet — skip
 
         ApplyProperties(component, type, def.Properties);
+        ApplyEffectParameters(component, def);
     }
 
 
@@ -344,6 +345,18 @@ public static class EntityPrefabLoader
         }
 
         ApplyProperties(component, type, def.Properties);
+        ApplyEffectParameters(component, def);
+    }
+
+    /// <summary>
+    /// Seeds an <see cref="Components.BuiltIn.EffectParametersComponent"/> with the shader-uniform values
+    /// parsed from its &lt;EffectParameter&gt; elements. A no-op for any other component type or when no
+    /// uniforms were declared.
+    /// </summary>
+    private static void ApplyEffectParameters(EntityComponent component, Prefab.ComponentDefinition def)
+    {
+        if (component is Components.BuiltIn.EffectParametersComponent effectParams && def.EffectParameters.Count > 0)
+            effectParams.InitializeFromStrings(def.EffectParameters);
     }
 
 

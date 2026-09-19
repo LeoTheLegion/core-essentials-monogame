@@ -34,6 +34,8 @@ There are two ways to assign an effect:
 
 The effective shader is `SpriteComponent.EffectiveEffect`, which is what the render pipeline uses as its grouping key (exposed per-entity through `Entity.GetRenderEffect()`).
 
+> **Tuning a shader's uniforms** — to control an effect's "vars" (e.g. make a glow weaker/stronger, animate an intensity), use the [`EffectParametersComponent`](ShaderUniforms.md). It owns and controls the uniforms from XML (`<EffectParameter>`) and code, and the pipeline pushes them onto the effect before each batch's `Begin`.
+
 ### Usage (code)
 
 ```csharp
@@ -178,6 +180,7 @@ No-op when none are registered.
 `CoreEssentials.Playground/Content/Scenes/RenderPipelineDemoScene.xml` demonstrates both features, fully data-driven:
 
 - A **plain ball** (`SpriteComponent` with no effect) and an identical **glowing ball** whose `EffectAsset = "Effects/Glow"` — the only difference is that one string property. The vignette darkens the frame edges so the two are easy to compare.
+- The glowing ball's glow **pulses weaker/stronger** over time: an [`EffectParametersComponent`](ShaderUniforms.md) owns the `GlowStrength` uniform (seeded from XML) and a `PulsingGlowComponent` drives it each frame with a ping-pong tween.
 - A `RenderPipelineDemoComponent` shell registers an additive **vignette** post pass (`Effects/Vignette`) on attach and removes it on detach, so unloading the scene restores the pipeline's default state.
 
 Run it with the smoke-run harness:

@@ -303,6 +303,19 @@ public abstract class Entity
     }
 
     /// <summary>
+    /// Gets the <see cref="Components.BuiltIn.EffectParametersComponent"/> that owns this entity's shader
+    /// uniforms, or null when it has none. The render pipeline uses its <c>Signature</c> as part of the
+    /// per-var batching key and applies its values onto the run's effect before each batch's Begin.
+    /// </summary>
+    public virtual Components.BuiltIn.EffectParametersComponent? GetRenderEffectParameters()
+    {
+        if (TryGetComponent<Components.BuiltIn.EffectParametersComponent>(out var paramComponent) && paramComponent != null)
+            return paramComponent;
+
+        return null;
+    }
+
+    /// <summary>
     /// Sets the unique identifier for this entity.
     /// </summary>
     /// <param name="id">The unique identifier to assign.</param>

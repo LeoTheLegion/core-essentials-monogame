@@ -328,21 +328,23 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// form a null-effect run and keep the default batch — when every entity is null-effect this yields
     /// exactly one run, i.e. a single Begin(null)/End, which is byte-for-byte the previous behavior.
     /// </summary>
-    private static List<(Effect? Effect, List<Entity> Entities)> PartitionByEffect(List<Entity> entities)
+    private static List<(Effect? Effect, string Signature, List<Entity> Entities)> PartitionByEffect(List<Entity> entities)
     {
-        var runs = new List<(Effect? Effect, List<Entity> Entities)>();
+        var runs = new List<(Effect?, string, List<Entity>)>();
 
         for (int i = 0; i < entities.Count; i++)
         {
             var effect = entities[i].GetRenderEffect();
+            // Same effect AND same uniform values coalesce into one run; a different signature splits it.
+            var signature = entities[i].GetRenderEffectParameters()?.Signature ?? string.Empty;
 
-            if (runs.Count > 0 && ReferenceEquals(runs[runs.Count - 1].Effect, effect))
+            if (runs.Count > 0 && ReferenceEquals(runs[runs.Count - 1].Item1, effect) && runs[runs.Count - 1].Item2 == signature)
             {
-                runs[runs.Count - 1].Entities.Add(entities[i]);
+                runs[runs.Count - 1].Item3.Add(entities[i]);
             }
             else
             {
-                runs.Add((effect, new List<Entity> { entities[i] }));
+                runs.Add((effect, signature, new List<Entity> { entities[i] }));
             }
         }
 
@@ -351,17 +353,24 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
     /// <summary>
     /// Draws each effect run in its own SpriteBatch Begin/End, applying the run's effect (null = the
-    /// SpriteBatch default). Entity order within and across runs is preserved.
+    /// SpriteBatch default) and its shader uniforms. Entity order within and across runs is preserved.
     /// </summary>
-    private static void RenderEffectRuns(List<(Effect? Effect, List<Entity> Entities)> runs, SpriteBatch spriteBatch, Matrix? cameraView)
+    private static void RenderEffectRuns(List<(Effect? Effect, string Signature, List<Entity> Entities)> runs, SpriteBatch spriteBatch, Matrix? cameraView)
     {
         foreach (var run in runs)
         {
-            // Convention: when a per-sprite effect exposes a `Projection` matrix, keep it in sync with
-            // the current screen-space projection so shader sprites land at the correct positions. A
-            // no-op for the default (null) effect and for effects without that parameter.
             if (run.Effect != null)
+            {
+                // Convention: when a per-sprite effect exposes a `Projection` matrix, keep it in sync with
+                // the current screen-space projection so shader sprites land at the correct positions. A
+                // no-op for effects without that parameter.
                 CoreEssentials.Rendering.RenderPipeline.SyncEffectProjection(run.Effect, spriteBatch.GraphicsDevice);
+
+                // Apply this run's uniforms immediately before Begin so each run (even one sharing a cached
+                // effect instance) writes its own values in sequence — the last-written-before-Begin wins.
+                var source = run.Entities[0].GetRenderEffectParameters();
+                source?.ApplyTo(run.Effect);
+            }
 
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
                 SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,

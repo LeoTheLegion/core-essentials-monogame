@@ -11,6 +11,12 @@
 // it explicitly from register(s0).
 float4x4 Projection;
 
+// How strong the glow is. 0 = plain sprite (no glow), ~1 = the strong warm look, higher = hotter.
+// Owned and controlled by an EffectParametersComponent (see RenderPipelineDemoScene.xml); the render
+// pipeline pushes its value onto this parameter before each batch's SpriteBatch.Begin. Driven over
+// time by a tween in PulsingGlowComponent so the glow visibly pulses weaker/stronger.
+float GlowStrength;
+
 sampler GlowTex;
 
 struct VSInput
@@ -52,7 +58,12 @@ float4 MainPS(VSOutput input) : COLOR
     // reads as clearly "on fire" compared with its un-effected neighbors. Driven by `presence` so it
     // only affects real sprite content, never the transparent background.
     float3 tint = float3(1.0, 0.45, 0.08);
-    float3 c = base * 0.3 + tint * (0.55 + 0.45 * presence);
+    float3 glow = base * 0.3 + tint * (0.55 + 0.45 * presence);
+
+    // GlowStrength scales the effect: 0 → the plain sprite, 1 → the full warm look above, and >1
+    // keeps pushing past it so a tweened value reads as "hotter". This is the uniform that the
+    // owning EffectParametersComponent (driven by a tween) controls.
+    float3 c = base + (glow - base) * GlowStrength;
 
     return float4(c * a, a);
 }

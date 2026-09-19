@@ -78,6 +78,7 @@ namespace YourGame
 - [Sprite System](./SpriteSystem.md)
   - [Sprite Scaling](./SpriteScaling.md)
 - [Render Pipeline (Pre / Process / Post Passes & Effects)](./RenderPipeline.md)
+  - [Shader Uniforms (Effect "Vars" from XML & Components)](./ShaderUniforms.md)
 - [Physics System](./PhysicsSystem.md)
   - [Collision Groups & Filtering](./CollisionGroups.md)
   - [Physics Transform Sync](./PhysicsTransformSync.md)

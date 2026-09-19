@@ -29,10 +29,11 @@ or rendering regression** for games that don't opt in.
 | Sprint | Scope | Status |
 | ------ | ----- | ------ |
 | [Sprint 0](./Sprint_0_Plan.md) | Plan, version bump, branch | ✅ Done |
-| [Sprint 1](./Sprint_1_PerSpriteEffects.md) | Process pass: per-sprite `Effect` + effect as a batching key | ⬜ |
-| [Sprint 2](./Sprint_2_PostPasses.md) | Post pass: static `RenderPipeline` registry + full-screen quad passes after scene+GUI | ⬜ |
-| [Sprint 3](./Sprint_3_PrePassAndRT.md) | Pre pass + render-to-`RenderTarget2D` opt-in + sampling-based post passes | ⬜ |
-| [Sprint 4](./Sprint_4_DemoDocs.md) | Playground demo + documentation + final verification | ⬜ |
+| [Sprint 1](./Sprint_1_PerSpriteEffects.md) | Process pass: per-sprite `Effect` + effect as a batching key | ✅ Done |
+| [Sprint 2](./Sprint_2_PostPasses.md) | Post pass: static `RenderPipeline` registry + full-screen quad passes after scene+GUI | ✅ Done |
+| [Sprint 3](./Sprint_3_PrePassAndRT.md) | Pre pass + render-to-`RenderTarget2D` opt-in + sampling-based post passes | ✅ Done |
+| [Sprint 4](./Sprint_4_DemoDocs.md) | Playground demo + documentation + final verification | ✅ Done |
+| [Sprint 5](./Sprint_5_ShaderUniforms.md) | Shader uniforms from XML & code via an owning component + tween showcase | ✅ Done |
 
 Each sprint is an independent, buildable, testable increment. A commit lands after each sprint so
 the branch stays in a releasable state.

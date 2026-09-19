@@ -333,6 +333,130 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             Assert.Throws<FormatException>(() => SceneParser.Parse(xml));
         }
 
+        // ─────────────────────── <EffectParameter> (Sprint 5) ───────────────────────
+
+        [Fact]
+        public void Parse_EffectParameter_PopulatesComponentBag()
+        {
+            var xml = @"<Scene><GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
+          <Components>
+            <Component Type=""EffectParametersComponent"">
+              <EffectParameter Name=""GlowStrength"" Value=""1.5"" />
+              <EffectParameter Name=""Tint"" Value=""255,140,30"" />
+            </Component>
+          </Components>
+        </EntityDefinition>
+      </Entities>
+    </System>
+  </GameSystems></Scene>";
+
+            var scene = SceneParser.Parse(xml);
+            var system = Assert.Single(scene.Systems);
+            var definition = Assert.Single(system.Entities);
+
+            var compDef = Assert.Single(definition.DeclaredComponents);
+            Assert.Equal("EffectParametersComponent", compDef.Type);
+            Assert.Equal("1.5", compDef.EffectParameters["GlowStrength"]);
+            Assert.Equal("255,140,30", compDef.EffectParameters["Tint"]);
+        }
+
+        [Fact]
+        public void Parse_EffectParameter_MissingName_Throws()
+        {
+            var xml = @"<Scene><GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
+          <Components>
+            <Component Type=""EffectParametersComponent"">
+              <EffectParameter Value=""1.5"" />
+            </Component>
+          </Components>
+        </EntityDefinition>
+      </Entities>
+    </System>
+  </GameSystems></Scene>";
+
+            Assert.Throws<FormatException>(() => SceneParser.Parse(xml));
+        }
+
+        [Fact]
+        public void Parse_EffectParameter_MissingValue_DefaultsToEmpty()
+        {
+            var xml = @"<Scene><GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
+          <Components>
+            <Component Type=""EffectParametersComponent"">
+              <EffectParameter Name=""GlowStrength"" />
+            </Component>
+          </Components>
+        </EntityDefinition>
+      </Entities>
+    </System>
+  </GameSystems></Scene>";
+
+            var scene = SceneParser.Parse(xml);
+            var system = Assert.Single(scene.Systems);
+            var definition = Assert.Single(system.Entities);
+            var compDef = Assert.Single(definition.DeclaredComponents);
+
+            Assert.Equal(string.Empty, compDef.EffectParameters["GlowStrength"]);
+        }
+
+        [Fact]
+        public void Parse_ComponentUnknownChildElement_Throws()
+        {
+            // <Bogus> is neither <Properties> nor <EffectParameter>.
+            var xml = @"<Scene><GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
+          <Components>
+            <Component Type=""EffectParametersComponent"">
+              <Bogus Name=""X"" Value=""Y"" />
+            </Component>
+          </Components>
+        </EntityDefinition>
+      </Entities>
+    </System>
+  </GameSystems></Scene>";
+
+            Assert.Throws<FormatException>(() => SceneParser.Parse(xml));
+        }
+
+        [Fact]
+        public void Parse_PropertiesAndEffectParameter_Coexist()
+        {
+            var xml = @"<Scene><GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""ProbeEntity"" Id=""glow"">
+          <Components>
+            <Component Type=""SingleMatchComponent"">
+              <Properties><Property Name=""Base"" Value=""flat"" /></Properties>
+              <EffectParameter Name=""GlowStrength"" Value=""2"" />
+            </Component>
+          </Components>
+        </EntityDefinition>
+      </Entities>
+    </System>
+  </GameSystems></Scene>";
+
+            var scene = SceneParser.Parse(xml);
+            var system = Assert.Single(scene.Systems);
+            var definition = Assert.Single(system.Entities);
+            var compDef = Assert.Single(definition.DeclaredComponents);
+
+            // Both child elements are captured into their respective bags.
+            Assert.Equal("flat", compDef.Properties["Base"]);
+            Assert.Equal("2", compDef.EffectParameters["GlowStrength"]);
+        }
+
         public void Dispose() { }
 
         private static void WriteContentAsset(string fileName, string xml)

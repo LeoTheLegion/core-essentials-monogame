@@ -210,20 +210,93 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Empty(runs);
         }
 
+        // ===== Partition with shader-uniform signatures (Sprint 5) =====
+
+        [Fact]
+        public void Partition_SameEffectDifferentVars_SplitIntoRuns()
+        {
+            var a = CreateFakeEffect();
+            var e1 = NewEffectEntity(a, new EffectParametersComponent { });
+            e1.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
+            var e2 = NewEffectEntity(a, new EffectParametersComponent { });
+            e2.GetRenderEffectParameters()!.SetFloat("Strength", 2f);
+
+            var runs = InvokePartitionByEffect(new List<Entity> { e1, e2 });
+
+            // Same effect but different uniform values must split into separate runs.
+            Assert.Equal(2, runs.Count);
+            Assert.Same(a, runs[0].Effect);
+            Assert.Same(a, runs[1].Effect);
+            Assert.NotEqual(runs[0].Signature, runs[1].Signature);
+            Assert.All(runs, r => Assert.Single(r.Entities));
+        }
+
+        [Fact]
+        public void Partition_SameEffectSameVars_Coalesce()
+        {
+            var a = CreateFakeEffect();
+            var e1 = NewEffectEntity(a, new EffectParametersComponent { });
+            e1.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
+            var e2 = NewEffectEntity(a, new EffectParametersComponent { });
+            e2.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
+
+            var runs = InvokePartitionByEffect(new List<Entity> { e1, e2 });
+
+            // Same effect AND same uniform values coalesce into one run.
+            Assert.Single(runs);
+            Assert.Same(a, runs[0].Effect);
+            Assert.Equal(2, runs[0].Entities.Count);
+        }
+
+        [Fact]
+        public void Partition_EffectWithoutParams_SignatureIsEmpty()
+        {
+            var a = CreateFakeEffect();
+            var e1 = NewEffectEntity(a); // no EffectParametersComponent
+
+            var runs = InvokePartitionByEffect(new List<Entity> { e1 });
+
+            Assert.Single(runs);
+            Assert.Equal(string.Empty, runs[0].Signature);
+        }
+
+        [Fact]
+        public void Partition_MixedWithAndWithoutParams_Split()
+        {
+            var a = CreateFakeEffect();
+            var withParams = NewEffectEntity(a, new EffectParametersComponent { });
+            withParams.GetRenderEffectParameters()!.SetFloat("Strength", 1f);
+            var withoutParams = NewEffectEntity(a);
+
+            var runs = InvokePartitionByEffect(new List<Entity> { withParams, withoutParams });
+
+            // A parameterized entity and a bare entity on the same effect split ("" != "Strength=1").
+            Assert.Equal(2, runs.Count);
+            Assert.Same(withParams, runs[0].Entities[0]);
+            Assert.Same(withoutParams, runs[1].Entities[0]);
+        }
+
         // ===== Helpers =====
 
         private static EffectEntity NewEffectEntity(Effect? effect) => new EffectEntity { TestEffect = effect };
 
+        private static EffectEntity NewEffectEntity(Effect? effect, EffectParametersComponent parameters)
+        {
+            var entity = new EffectEntity { TestEffect = effect };
+            entity.AddComponent(parameters);
+            return entity;
+        }
+
         private static Effect CreateFakeEffect() =>
             (Effect)RuntimeHelpers.GetUninitializedObject(typeof(Effect));
 
-        private static List<(Effect? Effect, List<Entity> Entities)> InvokePartitionByEffect(List<Entity> entities)
+        private static List<(Effect? Effect, string Signature, List<Entity> Entities)> InvokePartitionByEffect(List<Entity> entities)
         {
             var method = typeof(EntitySystem).GetMethod(
                 "PartitionByEffect",
                 BindingFlags.NonPublic | BindingFlags.Static);
 
-            return (List<(Effect? Effect, List<Entity> Entities)>)method!.Invoke(null, new object[] { entities })!;
+            return (List<(Effect? Effect, string Signature, List<Entity> Entities)>)method!.Invoke(null, new object[] { entities })!;
         }
 
         // A content manager that returns a fresh, distinct Effect for every Load<Effect> call.
