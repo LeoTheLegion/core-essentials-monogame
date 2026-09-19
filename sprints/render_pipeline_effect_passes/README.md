@@ -34,6 +34,7 @@ or rendering regression** for games that don't opt in.
 | [Sprint 3](./Sprint_3_PrePassAndRT.md) | Pre pass + render-to-`RenderTarget2D` opt-in + sampling-based post passes | ✅ Done |
 | [Sprint 4](./Sprint_4_DemoDocs.md) | Playground demo + documentation + final verification | ✅ Done |
 | [Sprint 5](./Sprint_5_ShaderUniforms.md) | Shader uniforms from XML & code via an owning component + tween showcase | ✅ Done |
+| [Sprint 6](./Sprint_6_ShaderComponent.md) | Consolidate shader ownership into a single `ShaderComponent` (effect + vars); remove render methods from `Entity`; component-driven rendering with auto-create | ✅ Done |
 
 Each sprint is an independent, buildable, testable increment. A commit lands after each sprint so
 the branch stays in a releasable state.

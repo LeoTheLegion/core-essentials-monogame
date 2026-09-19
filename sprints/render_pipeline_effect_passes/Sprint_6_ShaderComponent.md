@@ -157,15 +157,15 @@ the data. The code path does not warn (auto-create there is an expected convenie
 
 ## Definition of done
 
-- [ ] Library + test project build clean.
-- [ ] `ShaderComponent` owns effect + vars; `SpriteComponent` no longer references any effect.
-- [ ] `Entity` has no `GetRenderEffect*` methods; pipeline resolves via `GetComponent<ShaderComponent>()`.
-- [ ] Sprite renderer guarantees a sibling `ShaderComponent`, auto-creating a basic (null-effect) one when missing — safe across the deferred-attach window; on the XML/prefab path this logs a warning to declare it in XML.
-- [ ] New + migrated tests pass; full suite green (no regression).
-- [ ] Playground demo restructured and still renders the pulsing glow; plain ball uses the auto-created basic shader.
-- [ ] Docs updated to the `ShaderComponent` model; linked consistently.
-- [ ] Smoke-run harness passes for all scenes including the updated demo.
-- [ ] Committed on the feature branch (`feature/render-pipeline-effect-passes`).
+- [x] Library + test project build clean.
+- [x] `ShaderComponent` owns effect + vars; `SpriteComponent` no longer references any effect.
+- [x] `Entity` has no `GetRenderEffect*` methods; pipeline resolves via `GetComponent<ShaderComponent>()`.
+- [x] Sprite renderer guarantees a sibling `ShaderComponent`, auto-creating a basic (null-effect) one when missing — safe across the deferred-attach window; on the XML/prefab path this logs a warning to declare it in XML.
+- [x] New + migrated tests pass; full suite green (no regression).
+- [x] Playground demo restructured and still renders the pulsing glow; plain ball uses the auto-created basic shader.
+- [x] Docs updated to the `ShaderComponent` model; linked consistently.
+- [x] Smoke-run harness passes for all scenes including the updated demo.
+- [x] Committed on the feature branch (`feature/render-pipeline-effect-passes`).
 
 ## Confirmed decisions
 
