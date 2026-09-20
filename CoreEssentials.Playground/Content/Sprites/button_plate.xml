@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SpriteData xmlns="http://schemas.coreessentials.monogame/2025/sprite">
+  <SourceType>texture2d</SourceType>
+  <Source>Sprites/ButtonPlate</Source>
+  <Size>
+    <Width>160</Width>
+    <Height>56</Height>
+  </Size>
+  <Origin>
+    <X>80</X>
+    <Y>28</Y>
+  </Origin>
+</SpriteData>

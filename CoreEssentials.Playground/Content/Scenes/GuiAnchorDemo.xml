@@ -147,6 +147,10 @@
                                         <Property Name="Text" Value="Reset" />
                                         <Property Name="FontAsset" Value="Fonts/ComicMono.ttf" />
                                         <Property Name="FontSize" Value="18" />
+                                        <!-- Themed background: a sprite plate stretched to fill the button,
+                         tinted by BackgroundColor. The sprite wins over any BackgroundTint. -->
+                                        <Property Name="BackgroundAsset" Value="Sprites/button_plate.xml" />
+                                        <Property Name="BackgroundColor" Value="Tomato" />
                                     </Properties>
                                 </Component>
                                 <Bind Event="Clicked" Command="Reset" />
