@@ -4,10 +4,12 @@ using System.Reflection;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GUI;
+using CoreEssentials.GUI.Engines.Myra.Brushes;
 using CoreEssentials.GUI.Engines.Myra.Widgets;
 using CoreEssentials.GUI.Internal;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using MyraButton = Myra.Graphics2D.UI.Button;
 using Xunit;
 
@@ -338,6 +340,174 @@ public class ButtonComponentTests : IDisposable
     {
         var component = new ButtonComponent();
         Assert.Null(component.BackgroundTint);
+    }
+
+    // ===== Background sprite (asset name via resolve seam) =====
+
+    /// <summary>
+    /// A <see cref="ButtonComponent"/> whose background texture resolution is short-circuited so no
+    /// real content pipeline or graphics device is needed. It records the requested asset name and
+    /// returns a fixed fake texture for every request.
+    /// </summary>
+    private class RecordingBackgroundSprite : ButtonComponent
+    {
+        public string? LastResolvedAsset;
+        public bool ResolveInvoked;
+
+        public RecordingBackgroundSprite() { }
+        public RecordingBackgroundSprite(string text) : base(text) { }
+
+        protected override Texture2D? ResolveBackgroundTexture(string assetName)
+        {
+            LastResolvedAsset = assetName;
+            ResolveInvoked = true;
+            return FakeTexture2D.Instance;
+        }
+    }
+
+    [Fact]
+    public void BackgroundColor_Default_IsWhite()
+    {
+        var component = new ButtonComponent();
+        Assert.Equal(Color.White, component.BackgroundColor);
+    }
+
+    [Fact]
+    public void OnAttach_WithBackgroundAsset_AppliesTextureBrushToAllStates()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingBackgroundSprite("T")
+        {
+            BackgroundAsset = "Sprites/button_plate"
+        });
+
+        Assert.True(component.ResolveInvoked);
+        Assert.Equal("Sprites/button_plate", component.LastResolvedAsset);
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        var brush = Assert.IsType<TextureBrush>(myra.Background);
+        // Every visual state shares the same textured brush.
+        Assert.Same(myra.Background, myra.OverBackground);
+        Assert.Same(myra.Background, myra.PressedBackground);
+        Assert.Same(myra.Background, myra.DisabledBackground);
+        Assert.Same(myra.Background, myra.FocusedBackground);
+
+        // The brush carries the resolved texture and defaults to a white tint.
+        Assert.Same(FakeTexture2D.Instance, brush.Texture);
+        Assert.Equal(Color.White, brush.Tint);
+    }
+
+    [Fact]
+    public void OnAttach_WithBackgroundAssetAndColor_AppliesTint()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingBackgroundSprite("T")
+        {
+            BackgroundAsset = "Sprites/button_plate",
+            BackgroundColor = Color.CornflowerBlue
+        });
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        var brush = Assert.IsType<TextureBrush>(myra.Background);
+        Assert.Equal(Color.CornflowerBlue, brush.Tint);
+    }
+
+    [Fact]
+    public void BackgroundAsset_TakesPrecedenceOverTint()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingBackgroundSprite("T")
+        {
+            BackgroundAsset = "Sprites/button_plate",
+            BackgroundTint = Color.Tomato
+        });
+
+        // The sprite wins: the textured brush is used, not a solid tint.
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        Assert.IsType<TextureBrush>(myra.Background);
+    }
+
+    [Fact]
+    public void BackgroundAsset_LiveUpdate_RewritesTextureBrush()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingBackgroundSprite("T"));
+
+        // Start transparent, then assign a sprite live.
+        Assert.Null(GetMyraButton(canvas.Canvas.Children[0]).Background);
+        component.BackgroundAsset = "Sprites/button_plate";
+        Assert.IsType<TextureBrush>(GetMyraButton(canvas.Canvas.Children[0]).Background);
+
+        // Clearing the asset restores the transparent default (no background).
+        component.BackgroundAsset = null;
+        Assert.Null(GetMyraButton(canvas.Canvas.Children[0]).Background);
+    }
+
+    [Fact]
+    public void BackgroundColor_LiveUpdate_RewritesBrushTint()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingBackgroundSprite("T")
+        {
+            BackgroundAsset = "Sprites/button_plate"
+        });
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        Assert.Equal(Color.White, ((TextureBrush)myra.Background!).Tint);
+
+        component.BackgroundColor = Color.Tomato;
+        Assert.Equal(Color.Tomato, ((TextureBrush)myra.Background!).Tint);
+    }
+
+    [Fact]
+    public void BackgroundAsset_Null_DoesNotResolve()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        var component = entity.AddComponent(new RecordingBackgroundSprite("T"));
+
+        Assert.False(component.ResolveInvoked);
+        Assert.Null(component.LastResolvedAsset);
+    }
+
+    // ===== Hit-test independence from background (regression) =====
+
+    [Fact]
+    public void Button_WithoutBackground_StillReceivesInput()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new ButtonComponent("T"));
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        // A background-less button must still be hit-testable: Myra's input pipeline only advances
+        // to a widget when !InputFallsThrough(localPos). The base Widget implementation returns
+        // false unconditionally (buttons do not override it), so the presence of a background brush
+        // is irrelevant to whether clicks register. This guards against regressing to a model that
+        // requires an (opaque or transparent) brush for input.
+        Assert.Null(myra.Background);
+        Assert.False(myra.InputFallsThrough(Point.Zero));
+    }
+
+    [Fact]
+    public void Button_WithBackgroundSprite_StillReceivesInput()
+    {
+        var entity = new TestEntity();
+        var canvas = entity.AddComponent(new CanvasComponent());
+        entity.AddComponent(new RecordingBackgroundSprite("T")
+        {
+            BackgroundAsset = "Sprites/button_plate"
+        });
+
+        var myra = GetMyraButton(canvas.Canvas.Children[0]);
+        Assert.IsType<TextureBrush>(myra.Background);
+        // With a background sprite the button is likewise hit-testable.
+        Assert.False(myra.InputFallsThrough(Point.Zero));
     }
 
     // ===== Font (TTF asset name via resolve seam) =====

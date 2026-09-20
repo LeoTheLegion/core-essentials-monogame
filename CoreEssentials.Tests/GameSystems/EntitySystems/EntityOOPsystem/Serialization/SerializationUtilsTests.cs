@@ -147,5 +147,91 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             var value = SerializationUtils.ParseValue(typeof(Vector2?), "1,2");
             Assert.Equal(new Vector2(1f, 2f), (Vector2?)value);
         }
+
+        // ─────────────────────────── ParseVector3FromString ───────────────────────────
+
+        [Fact]
+        public void ParseVector3_XYZFormat_ReturnsAllComponents()
+        {
+            Assert.Equal(new Vector3(1.5f, 2.5f, 3.5f), SerializationUtils.ParseVector3FromString("1.5,2.5,3.5"));
+        }
+
+        [Fact]
+        public void ParseVector3_NegativeValues_ParsesCorrectly()
+        {
+            Assert.Equal(new Vector3(-3f, -4.5f, 6f), SerializationUtils.ParseVector3FromString("-3,-4.5,6"));
+        }
+
+        [Fact]
+        public void ParseVector3_ScalarExpandsToUniformVector()
+        {
+            // A bare scalar like "2" should become (2, 2, 2)
+            Assert.Equal(new Vector3(2f, 2f, 2f), SerializationUtils.ParseVector3FromString("2"));
+        }
+
+        [Fact]
+        public void ParseVector3_WhitespaceAroundValues_IsTolerated()
+        {
+            Assert.Equal(new Vector3(1f, 2f, 3f), SerializationUtils.ParseVector3FromString(" 1 , 2 , 3 "));
+        }
+
+        [Fact]
+        public void ParseVector3_MalformedInput_FallsBackToZero()
+        {
+            Assert.Equal(Vector3.Zero, SerializationUtils.ParseVector3FromString("abc"));
+            Assert.Equal(Vector3.Zero, SerializationUtils.ParseVector3FromString("1.5,2.5")); // too few components
+            Assert.Equal(Vector3.Zero, SerializationUtils.ParseVector3FromString(string.Empty));
+        }
+
+        // ─────────────────────────── ParseVector4FromString ───────────────────────────
+
+        [Fact]
+        public void ParseVector4_XYZWFormat_ReturnsAllComponents()
+        {
+            Assert.Equal(new Vector4(1f, 2f, 3f, 4f), SerializationUtils.ParseVector4FromString("1,2,3,4"));
+        }
+
+        [Fact]
+        public void ParseVector4_NegativeValues_ParsesCorrectly()
+        {
+            Assert.Equal(new Vector4(-1f, -2f, -3f, -4f), SerializationUtils.ParseVector4FromString("-1,-2,-3,-4"));
+        }
+
+        [Fact]
+        public void ParseVector4_ScalarExpandsToUniformVector()
+        {
+            Assert.Equal(new Vector4(0.5f, 0.5f, 0.5f, 0.5f), SerializationUtils.ParseVector4FromString("0.5"));
+        }
+
+        [Fact]
+        public void ParseVector4_MalformedInput_FallsBackToZero()
+        {
+            Assert.Equal(Vector4.Zero, SerializationUtils.ParseVector4FromString("abc"));
+            Assert.Equal(Vector4.Zero, SerializationUtils.ParseVector4FromString("1,2,3")); // too few components
+            Assert.Equal(Vector4.Zero, SerializationUtils.ParseVector4FromString(string.Empty));
+        }
+
+        // ─────────────────────── ParseValue (Vector3 / Vector4) ───────────────────────
+
+        [Fact]
+        public void ParseValue_Vector3_Parses()
+        {
+            var value = SerializationUtils.ParseValue(typeof(Vector3), "1,2,3");
+            Assert.Equal(new Vector3(1f, 2f, 3f), (Vector3)value);
+        }
+
+        [Fact]
+        public void ParseValue_Vector4_Parses()
+        {
+            var value = SerializationUtils.ParseValue(typeof(Vector4), "1,2,3,4");
+            Assert.Equal(new Vector4(1f, 2f, 3f, 4f), (Vector4)value);
+        }
+
+        [Fact]
+        public void ParseValue_NullableVector3_UnwrapsAndParses()
+        {
+            var value = SerializationUtils.ParseValue(typeof(Vector3?), "1,2,3");
+            Assert.Equal(new Vector3(1f, 2f, 3f), (Vector3?)value);
+        }
     }
 }

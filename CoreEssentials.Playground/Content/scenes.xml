@@ -13,6 +13,7 @@
 -->
 <Scenes>
     <GameScenes>
+        <Scene Name="Scenes/RenderPipelineDemoScene.xml" />
         <Scene Name="Scenes/GuiAnchorDemo.xml" />
         <Scene Name="Scenes/HomeScene.xml" />
         <Scene Name="Scenes/CharacterScene.xml" />

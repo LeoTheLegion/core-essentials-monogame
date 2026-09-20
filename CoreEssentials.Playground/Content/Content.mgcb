@@ -16,6 +16,21 @@
 #begin Sprites/ball_sprite.xml
 /copy:Sprites/ball_sprite.xml
 
+#begin Sprites/button_plate.xml
+/copy:Sprites/button_plate.xml
+
+#begin Sprites/ButtonPlate.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Sprites/ButtonPlate.png
+
 #begin Sprites/Ball.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -87,6 +102,9 @@
 #begin Scenes/SendMessageDemoScene.xml
 /copy:Scenes/SendMessageDemoScene.xml
 
+#begin Scenes/RenderPipelineDemoScene.xml
+/copy:Scenes/RenderPipelineDemoScene.xml
+
 #begin Config/PhysicsConfig.xml
 /copy:Config/PhysicsConfig.xml
 
@@ -152,4 +170,19 @@
 
 #begin Audio/song1_sound.xml
 /copy:Audio/song1_sound.xml
+
+#begin Effects/Glow.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:Effects/Glow.fx
+
+#begin Effects/GlowHalo.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:Effects/GlowHalo.fx
+
+#begin Effects/Vignette.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:Effects/Vignette.fx
 

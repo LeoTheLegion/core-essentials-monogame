@@ -276,7 +276,9 @@ public ButtonComponent(string text)
 | `Enabled` | `bool` | `true` | Whether the button receives input. |
 | `HorizontalAlignment` | `HorizontalAlignment` | `Left` | How the button is positioned inside its canvas (container semantics, see `LabelComponent`). |
 | `VerticalAlignment` | `VerticalAlignment` | `Top` | Same as above for the vertical axis. |
-| `BackgroundTint` | `Color?` | `null` | Optional background box color. When `null` (default) the button renders with **no opaque background**, so a game-supplied back-plate shows through. When set, a solid box of that color is drawn behind the text in every state. Live: setting it after attach updates the rendered widget immediately. See [Button background](#button-background). |
+| `BackgroundTint` | `Color?` | `null` | Optional background box color. When `null` (default) the button renders with **no opaque background**, so a game-supplied back-plate shows through. When set, a solid box of that color is drawn behind the text in every state. Ignored while `BackgroundAsset` is set (the sprite wins). Live: setting it after attach updates the rendered widget immediately. See [Button background](#button-background). |
+| `BackgroundAsset` | `string?` | `null` | Sprite asset name drawn as the button's background, stretched to fill the widget in every state. When set it takes **precedence** over `BackgroundTint` and is tinted by `BackgroundColor`. When null/empty (default) the button falls back to its `BackgroundTint` behavior. See [Button background](#button-background). |
+| `BackgroundColor` | `Color` | `White` | Tint applied to `BackgroundAsset`. Only has an effect while a background sprite is assigned. |
 | `FontAsset` | `string?` | `null` | TTF/OTF font file name (relative to the game's `Content` folder) used to render the button's text. When `null` or empty, the engine default font is used. See [Fonts](#fonts-label-and-button). |
 | `FontSize` | `int` | `20` | Size in pixels used when loading `FontAsset`. Ignored while `FontAsset` is null/empty. |
 
@@ -333,6 +335,26 @@ comp.BackgroundTint = Color.CornflowerBlue;   // solid box behind the text in ev
 ```
 
 The tint is applied to all of Myra's button states (normal, hover, pressed, disabled, focused) as a single solid brush. Setting `BackgroundTint` back to `null` restores the transparent default. The property is live — setting it after attach updates the rendered widget immediately.
+
+### Themed background from a sprite asset
+
+Instead of a flat solid box, a button can render a **sprite** as its background: point `BackgroundAsset` at a sprite asset name (the same `"Sprites/foo.xml"` form used by `SpriteComponent`). The texture is stretched to fill the widget's background area in every visual state, and tinted by `BackgroundColor` (default white).
+
+```csharp
+var comp = menuButton.AddComponent<ButtonComponent>("Menu");
+comp.BackgroundAsset = "Sprites/button_plate.xml";  // a sprite asset under Content/
+comp.BackgroundColor = Color.Tomato;                // tints the plate
+```
+
+**Precedence:** while `BackgroundAsset` is non-empty, the sprite wins and `BackgroundTint` is ignored. Clearing `BackgroundAsset` (back to null/empty) restores the solid/transparent `BackgroundTint` behavior. Both properties are live — changing either after attach re-applies the background immediately.
+
+Under the hood the sprite is drawn through a small `TextureBrush` (a Myra `IBrush` over a `Texture2D`), because Myra ships no textured brush of its own; it is assigned to all five state brushes just like the solid tint case.
+
+### Background and hit-testing
+
+A button's ability to receive clicks is **independent** of whether it has a background. In Myra, input only advances to a widget when `!InputFallsThrough(localPos)`, and the base `Widget` implementation returns `false` unconditionally (buttons do not override it). The background brush is consulted only during rendering — never during hit-testing.
+
+Concretely: a button with `BackgroundTint == null` **and** no `BackgroundAsset` still registers clicks over its full bounds, so the transparent default is safe to use for text-only buttons that sit on top of game-supplied art. No invisible/transparent brush needs to be added to make such buttons clickable.
 
 ## Widget Sizing: AutoWidth / AutoHeight
 

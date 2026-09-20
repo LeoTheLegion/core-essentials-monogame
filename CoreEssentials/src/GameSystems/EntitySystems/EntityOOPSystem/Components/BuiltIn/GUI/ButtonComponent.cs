@@ -1,8 +1,10 @@
 using System;
+using CoreEssentials.Assets;
 using CoreEssentials.GUI.Factory;
 using CoreEssentials.GUI.Fonts;
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
@@ -26,6 +28,9 @@ public class ButtonComponent : EntityComponent
     private CanvasComponent? _canvasComponent;
 
     private Color? _backgroundTint;
+    private string? _backgroundAsset;
+    private Color _backgroundColor = Color.White;
+    private Texture2D? _resolvedBackgroundSprite;
     private string? _fontAsset;
     private int _fontSize = 20;
 
@@ -78,12 +83,37 @@ public class ButtonComponent : EntityComponent
     /// <summary>
     /// Gets or sets an optional background tint for the button. When null (the default), the button
     /// renders with no opaque background box so a game-supplied back-plate shows through. When set,
-    /// a solid background of that color is drawn. Can be set before attaching; applied on attach.
+    /// a solid background of that color is drawn. Ignored while <see cref="BackgroundAsset"/> is set
+    /// (the sprite wins). Can be set before attaching; applied on attach and live thereafter.
     /// </summary>
     public Color? BackgroundTint
     {
         get => _backgroundTint;
-        set { _backgroundTint = value; if (_button != null) _button.BackgroundTint = value; }
+        set { _backgroundTint = value; ApplyBackground(); }
+    }
+
+    /// <summary>
+    /// Gets or sets the sprite asset name drawn as the button's background, stretched to fill the
+    /// widget's background area in every visual state. When set, it takes precedence over
+    /// <see cref="BackgroundTint"/> and is tinted by <see cref="BackgroundColor"/>. When null or
+    /// empty (the default), the button falls back to its <see cref="BackgroundTint"/> behavior.
+    /// Can be set before attaching; applied on attach and live thereafter.
+    /// </summary>
+    public string? BackgroundAsset
+    {
+        get => _backgroundAsset;
+        set { _backgroundAsset = value; ApplyBackground(); }
+    }
+
+    /// <summary>
+    /// Gets or sets the tint applied to <see cref="BackgroundAsset"/> (default white). Only has an
+    /// effect while a background sprite is assigned. Can be set before attaching; applied on attach
+    /// and live thereafter.
+    /// </summary>
+    public Color BackgroundColor
+    {
+        get => _backgroundColor;
+        set { _backgroundColor = value; ApplyBackground(); }
     }
 
     /// <summary>
@@ -111,6 +141,43 @@ public class ButtonComponent : EntityComponent
     /// real TTF file or graphics device is required.
     /// </summary>
     protected virtual object? ResolveFont(string assetName, int size) => GuiFontLoader.Load(assetName, size);
+
+    /// <summary>
+    /// Resolves a background sprite asset name to the texture drawn as the button's background. Loads
+    /// the <see cref="Sprite"/> through the <see cref="AssetManager"/> and returns its underlying
+    /// texture (null when the asset has none). Overridable for tests so no real content pipeline or
+    /// graphics device is required.
+    /// </summary>
+    protected virtual Texture2D? ResolveBackgroundTexture(string assetName)
+    {
+        var sprite = AssetManager.LoadAsset<Sprite>(assetName);
+        return sprite?.Texture?.Texture;
+    }
+
+    /// <summary>
+    /// Applies the button's background to its widget. When a non-empty <see cref="BackgroundAsset"/>
+    /// is set, the resolved texture (tinted by <see cref="BackgroundColor"/>) is drawn as the
+    /// background in every visual state; otherwise the solid/transparent <see cref="BackgroundTint"/>
+    /// behavior is used. No-op when not yet attached.
+    /// </summary>
+    private void ApplyBackground()
+    {
+        if (_button == null)
+            return;
+
+        if (!string.IsNullOrEmpty(_backgroundAsset))
+        {
+            _resolvedBackgroundSprite = ResolveBackgroundTexture(_backgroundAsset);
+            _button.BackgroundSprite = _resolvedBackgroundSprite;
+            _button.BackgroundSpriteTint = _backgroundColor;
+        }
+        else
+        {
+            _resolvedBackgroundSprite = null;
+            _button.BackgroundSprite = null;
+            _button.BackgroundTint = _backgroundTint;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ButtonComponent"/> class (template-friendly).
@@ -141,10 +208,10 @@ public class ButtonComponent : EntityComponent
         _button.Scale = Scale;
         _button.Visible = Visible;
         _button.Enabled = Enabled;
-        _button.BackgroundTint = _backgroundTint;
         _button.Clicked += OnWidgetClicked;
 
         ApplyFont();
+        ApplyBackground();
 
         _canvasComponent.Canvas.AddWidget(_button);
     }

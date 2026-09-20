@@ -287,7 +287,9 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
-    /// Renders entities that don't have an associated texture.
+    /// Renders entities that don't have an associated texture. Entities are partitioned by their
+    /// effective <see cref="Effect"/> so each distinct shader gets its own SpriteBatch Begin/End; when
+    /// no entity has an effect this is a single Begin(null)/End, identical to the previous behavior.
     /// </summary>
     private static void RenderNoTextureEntities(List<Entity> noTextureEntities, SpriteBatch spriteBatch)
     {
@@ -295,16 +297,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             return;
 
         var cameraView = GetCameraViewMatrix();
-        spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
-            SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
-            null, cameraView);
-
-        foreach (var entity in noTextureEntities)
-        {
-            entity.Render(spriteBatch);
-        }
-
-        spriteBatch.End();
+        RenderEffectRuns(PartitionByEffect(noTextureEntities), spriteBatch, cameraView);
     }
 
     /// <summary>
@@ -323,17 +316,74 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         {
             foreach (var textureGroup in layer.Value)
             {
-                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
-                    SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
-                    null, cameraView);
-
-                foreach (var entity in textureGroup.Value)
-                {
-                    entity.Render(spriteBatch);
-                }
-
-                spriteBatch.End();
+                RenderEffectRuns(PartitionByEffect(textureGroup.Value), spriteBatch, cameraView);
             }
+        }
+    }
+
+    /// <summary>
+    /// Partitions a render-order-preserving list of entities into contiguous runs that share the same
+    /// effective <see cref="Effect"/>. MonoGame applies an effect at <c>SpriteBatch.Begin</c> (not per
+    /// draw), so each run must be drawn in its own Begin/End with that effect. Entities with no effect
+    /// form a null-effect run and keep the default batch — when every entity is null-effect this yields
+    /// exactly one run, i.e. a single Begin(null)/End, which is byte-for-byte the previous behavior.
+    /// </summary>
+    private static List<(Effect? Effect, string Signature, List<Entity> Entities)> PartitionByEffect(List<Entity> entities)
+    {
+        var runs = new List<(Effect?, string, List<Entity>)>();
+
+        for (int i = 0; i < entities.Count; i++)
+        {
+            // The shader lives entirely on the entity's ShaderComponent (effect + uniforms).
+            var shader = entities[i].GetComponent<Components.BuiltIn.ShaderComponent>();
+            var effect = shader?.EffectiveEffect;
+            // Same effect AND same uniform values coalesce into one run; a different signature splits it.
+            var signature = shader?.Signature ?? string.Empty;
+
+            if (runs.Count > 0 && ReferenceEquals(runs[runs.Count - 1].Item1, effect) && runs[runs.Count - 1].Item2 == signature)
+            {
+                runs[runs.Count - 1].Item3.Add(entities[i]);
+            }
+            else
+            {
+                runs.Add((effect, signature, new List<Entity> { entities[i] }));
+            }
+        }
+
+        return runs;
+    }
+
+    /// <summary>
+    /// Draws each effect run in its own SpriteBatch Begin/End, applying the run's effect (null = the
+    /// SpriteBatch default) and its shader uniforms. Entity order within and across runs is preserved.
+    /// </summary>
+    private static void RenderEffectRuns(List<(Effect? Effect, string Signature, List<Entity> Entities)> runs, SpriteBatch spriteBatch, Matrix? cameraView)
+    {
+        foreach (var run in runs)
+        {
+            if (run.Effect != null)
+            {
+                // Convention: when a per-sprite effect exposes a `Projection` matrix, keep it in sync with
+                // the current screen-space projection so shader sprites land at the correct positions. A
+                // no-op for effects without that parameter.
+                CoreEssentials.Rendering.RenderPipeline.SyncEffectProjection(run.Effect, spriteBatch.GraphicsDevice);
+
+                // Apply this run's uniforms immediately before Begin so each run (even one sharing a cached
+                // effect instance) writes its own values in sequence — the last-written-before-Begin wins.
+                var source = run.Entities[0].GetComponent<Components.BuiltIn.ShaderComponent>();
+                source?.ApplyTo(run.Effect);
+            }
+
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+                SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
+                run.Effect, cameraView);
+
+            foreach (var entity in run.Entities)
+            {
+                entity.Render(spriteBatch);
+            }
+
+            spriteBatch.End();
         }
     }
 

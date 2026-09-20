@@ -338,22 +338,42 @@ public static class SceneParser
         RejectUnknownAttributes(componentElement, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type" });
         var compDef = new Prefab.ComponentDefinition { Type = typeName };
 
-        var propsElem = componentElement.Element("Properties");
-        if (propsElem != null)
+        foreach (var child in componentElement.Elements())
         {
-            foreach (var prop in propsElem.Elements())
+            switch (child.Name.LocalName)
             {
-                ExpectElementName(prop, "Property");
-                RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { NameAttribute, ValueAttribute });
+                case "Properties":
+                    ParseComponentProperties(child, typeName, compDef);
+                    break;
+                case "EffectParameter":
+                    RejectUnknownAttributes(child, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { NameAttribute, ValueAttribute });
 
-                var name = prop.Attribute(NameAttribute)?.Value;
-                if (string.IsNullOrWhiteSpace(name))
-                    throw new FormatException($"<Property> inside <Component Type=\"{typeName}\"> is missing its required 'Name' attribute.");
-                compDef.Properties[name] = prop.Attribute(ValueAttribute)?.Value ?? string.Empty;
+                    var effectParamName = child.Attribute(NameAttribute)?.Value;
+                    if (string.IsNullOrWhiteSpace(effectParamName))
+                        throw new FormatException($"<EffectParameter> inside <Component Type=\"{typeName}\"> is missing its required 'Name' attribute.");
+                    compDef.EffectParameters[effectParamName] = child.Attribute(ValueAttribute)?.Value ?? string.Empty;
+                    break;
+                default:
+                    throw new FormatException($"Unknown element <{child.Name.LocalName}> inside <Component Type=\"{typeName}\">. Expected <Properties> or <EffectParameter>.");
             }
         }
 
         definition.DeclaredComponents.Add(compDef);
+    }
+
+    /// <summary>Parses the &lt;Properties&gt; child of a &lt;Component&gt; into its property bag.</summary>
+    private static void ParseComponentProperties(XElement propertiesElement, string typeName, Prefab.ComponentDefinition compDef)
+    {
+        foreach (var prop in propertiesElement.Elements())
+        {
+            ExpectElementName(prop, "Property");
+            RejectUnknownAttributes(prop, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { NameAttribute, ValueAttribute });
+
+            var name = prop.Attribute(NameAttribute)?.Value;
+            if (string.IsNullOrWhiteSpace(name))
+                throw new FormatException($"<Property> inside <Component Type=\"{typeName}\"> is missing its required 'Name' attribute.");
+            compDef.Properties[name] = prop.Attribute(ValueAttribute)?.Value ?? string.Empty;
+        }
     }
 
     private static void ParsePreciseOverrides(XElement element, EntityDefinition definition, XElement context)

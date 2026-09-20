@@ -4,14 +4,15 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
-using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 
 /// <summary>
-/// Component that provides sprite-based rendering for an entity.
-/// In the hybrid rendering model, this component provides an additional draw path
-/// alongside the existing Entity.Render() method.
+/// Component that provides sprite-based rendering for an entity. It owns only the *sprite* (texture,
+/// origin, tint, flip, depth); all shader state — the effect and its uniforms — lives on a companion
+/// <see cref="ShaderComponent"/>. This component guarantees that such a sibling exists: at attach it looks
+/// for one and, when missing, auto-creates a basic one (no effect = the SpriteBatch default batch). The
+/// render pipeline then resolves the shader via the entity's <see cref="ShaderComponent"/>.
 /// </summary>
 public class SpriteComponent : EntityComponent, IDrawableComponent
 {
@@ -88,17 +89,44 @@ public class SpriteComponent : EntityComponent, IDrawableComponent
     {
         base.OnAttach();
 
-        if (string.IsNullOrWhiteSpace(SpriteAsset) || Sprite != null)
-            return;
+        // Resolve the declarative sprite, unless one was already assigned in code.
+        if (!string.IsNullOrWhiteSpace(SpriteAsset) && Sprite == null)
+        {
+            try
+            {
+                Sprite = AssetManager.LoadAsset<Sprite>(SpriteAsset);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SpriteComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
+            }
+        }
 
-        try
-        {
-            Sprite = AssetManager.LoadAsset<Sprite>(SpriteAsset);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[SpriteComponent] Could not load sprite asset '{SpriteAsset}': {ex.Message}");
-        }
+        // Guarantee a companion shader. On the code path (no deferred-attach window) this creates it inline;
+        // on the prefab/scene path creation is deferred to the loader's finish pass — see EnsureShaderComponent.
+        if (Owner != null && !Owner.DeferringComponentAttach)
+            EnsureShaderComponent(Owner);
+    }
+
+    /// <summary>
+    /// Idempotently guarantees this entity has a companion <see cref="ShaderComponent"/>. If one is already
+    /// present it is returned untouched; otherwise a basic one (no effect = the SpriteBatch default batch) is
+    /// created and attached. Safe to call from both the code path and the prefab/scene finish pass — the
+    /// guard makes it a no-op when the shader already exists, so a user-declared <see cref="ShaderComponent"/>
+    /// is never duplicated.
+    /// </summary>
+    internal static ShaderComponent EnsureShaderComponent(Entity owner)
+    {
+        if (owner.TryGetComponent<ShaderComponent>(out var existing) && existing != null)
+            return existing;
+
+        Console.WriteLine($"[SpriteComponent] Entity '{owner.Id}' has a SpriteComponent but no ShaderComponent — " +
+            $"auto-created a basic one (no effect = the default batch). Declare <Component Type=\"ShaderComponent\"> " +
+            $"(in XML or code) to set an effect or uniforms.");
+
+        var created = new ShaderComponent();
+        owner.AddComponent(created);
+        return created;
     }
 
     /// <summary>
