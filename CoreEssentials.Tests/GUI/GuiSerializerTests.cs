@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using CoreEssentials.GUI;
 using CoreEssentials.GUI.Types;
 using CoreEssentials.GUI.Factory;
@@ -58,6 +59,8 @@ public class FakeButton : IButton
     public string? Text { get; set; }
     public object? Font { get; set; }
     public Color? BackgroundTint { get; set; }
+    public Texture2D? BackgroundSprite { get; set; }
+    public Color BackgroundSpriteTint { get; set; } = Color.White;
 #pragma warning disable CS0067 // The event is never used (required by IButton interface)
     public event Action<IButton>? Clicked;
 #pragma warning restore CS0067

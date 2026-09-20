@@ -1,7 +1,9 @@
 using CoreEssentials.GUI.Types;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using MyraButton = Myra.Graphics2D.UI.Button;
 using MyraLabel = Myra.Graphics2D.UI.Label;
+using MyraIBrush = Myra.Graphics2D.IBrush;
 
 namespace CoreEssentials.GUI.Engines.Myra.Widgets;
 
@@ -54,7 +56,29 @@ public class ButtonWidget : WidgetBase, IButton
         set
         {
             _backgroundTint = value;
-            ApplyBackground(value);
+            ApplyBackground();
+        }
+    }
+
+    /// <inheritdoc />
+    public Texture2D? BackgroundSprite
+    {
+        get => _backgroundSprite;
+        set
+        {
+            _backgroundSprite = value;
+            ApplyBackground();
+        }
+    }
+
+    /// <inheritdoc />
+    public Color BackgroundSpriteTint
+    {
+        get => _backgroundSpriteTint;
+        set
+        {
+            _backgroundSpriteTint = value;
+            ApplyBackground();
         }
     }
 
@@ -64,15 +88,25 @@ public class ButtonWidget : WidgetBase, IButton
     private string? _textContent;
     private object? _font;
     private Color? _backgroundTint;
+    private Texture2D? _backgroundSprite;
+    private Color _backgroundSpriteTint = Color.White;
 
     /// <summary>
-    /// Applies the background tint to all of Myra's button visual states. A null tint clears every
-    /// state brush so no opaque box is drawn (transparent by default); a non-null tint paints a
-    /// solid background of that color in each state.
+    /// Applies the background to all of Myra's button visual states. When a sprite is assigned it
+    /// wins: every state gets a textured brush (stretched to the widget) tinted by
+    /// <see cref="BackgroundSpriteTint"/>. Otherwise the behavior falls back to the solid tint — a
+    /// null tint clears every state brush so no opaque box is drawn (transparent by default); a
+    /// non-null tint paints a solid background of that color in each state.
     /// </summary>
-    private void ApplyBackground(Color? tint)
+    private void ApplyBackground()
     {
-        if (tint == null)
+        MyraIBrush? brush;
+
+        if (_backgroundSprite != null)
+        {
+            brush = new Brushes.TextureBrush(_backgroundSprite, _backgroundSpriteTint);
+        }
+        else if (_backgroundTint == null)
         {
             Button.Background = null;
             Button.OverBackground = null;
@@ -81,14 +115,16 @@ public class ButtonWidget : WidgetBase, IButton
             Button.FocusedBackground = null;
             return;
         }
+        else
+        {
+            brush = new Brushes.SolidColorBrush(_backgroundTint.Value).MyraBrush;
+        }
 
-        var brush = new Brushes.SolidColorBrush(tint.Value);
-        var myraBrush = brush.MyraBrush;
-        Button.Background = myraBrush;
-        Button.OverBackground = myraBrush;
-        Button.PressedBackground = myraBrush;
-        Button.DisabledBackground = myraBrush;
-        Button.FocusedBackground = myraBrush;
+        Button.Background = brush;
+        Button.OverBackground = brush;
+        Button.PressedBackground = brush;
+        Button.DisabledBackground = brush;
+        Button.FocusedBackground = brush;
     }
 
     /// <summary>

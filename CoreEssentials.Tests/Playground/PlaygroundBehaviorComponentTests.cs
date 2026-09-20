@@ -524,6 +524,8 @@ public class PlaygroundBehaviorComponentTests
         public string? Text { get; set; }
         public object? Font { get; set; }
         public Color? BackgroundTint { get; set; }
+        public Texture2D? BackgroundSprite { get; set; }
+        public Color BackgroundSpriteTint { get; set; } = Color.White;
         public event Action<IButton>? Clicked;
 
         public void RaiseClick() => Clicked?.Invoke(this);
