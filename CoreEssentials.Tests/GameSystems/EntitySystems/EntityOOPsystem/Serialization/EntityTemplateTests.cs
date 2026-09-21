@@ -47,6 +47,61 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
 
         [Fact]
+        public void LoadFromXml_ParsesEffectParameters_AlsideProperties()
+        {
+            // Arrange — a shader declaring both ordinary properties and data-driven uniforms.
+            string xml = @"
+                <Prefab Type=""TestEntity"">
+                    <Components>
+                        <Component Type=""ShaderComponent"">
+                            <Properties>
+                                <Property Name=""EffectAsset"" Value=""Effects/GlowRadioactive"" />
+                            </Properties>
+                            <EffectParameter Name=""GlowStrength"" Value=""1.0"" />
+                            <EffectParameter Name=""PulseSpeed"" Value=""2.5"" />
+                        </Component>
+                    </Components>
+                </Prefab>";
+
+            // Act
+            var template = EntityPrefabLoader.LoadFromXml(xml);
+
+            // Assert — properties and uniforms are collected independently (uniforms are siblings of
+            // <Properties>, not nested inside it).
+            var compDef = template.Components[0];
+            Assert.Equal("ShaderComponent", compDef.Type);
+            Assert.Equal("Effects/GlowRadioactive", compDef.Properties["EffectAsset"]);
+            Assert.Equal(2, compDef.EffectParameters.Count);
+            Assert.Equal("1.0", compDef.EffectParameters["GlowStrength"]);
+            Assert.Equal("2.5", compDef.EffectParameters["PulseSpeed"]);
+        }
+
+        [Fact]
+        public void LoadFromXml_ParsesEffectParameters_WhenNoPropertiesElement()
+        {
+            // Arrange — a shader that declares ONLY uniforms and no <Properties> element at all.
+            // Guards against an early-return on a missing <Properties> dropping the uniforms.
+            string xml = @"
+                <Prefab Type=""TestEntity"">
+                    <Components>
+                        <Component Type=""ShaderComponent"">
+                            <EffectParameter Name=""GlowStrength"" Value=""0.5"" />
+                        </Component>
+                    </Components>
+                </Prefab>";
+
+            // Act
+            var template = EntityPrefabLoader.LoadFromXml(xml);
+
+            // Assert — the component is present and its uniforms survive despite no <Properties>.
+            var compDef = template.Components[0];
+            Assert.Equal("ShaderComponent", compDef.Type);
+            Assert.Empty(compDef.Properties);
+            Assert.Single(compDef.EffectParameters);
+            Assert.Equal("0.5", compDef.EffectParameters["GlowStrength"]);
+        }
+
+        [Fact]
         public void LoadFromXml_ThrowsOnMissingType()
         {
             // Arrange
