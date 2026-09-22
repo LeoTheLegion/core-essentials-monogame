@@ -84,6 +84,8 @@ Declare a base value inside the `<Component Type="ShaderComponent">` element —
 - `Name` is required and must match a parameter on the effect; `Value` is optional (defaults to empty).
 - No type hints in XML — the value is parsed against the effect parameter's own declared shape at apply time.
 - The loader resolves the component by short name (`ShaderComponent`) exactly like any other built-in component.
+- `<EffectParameter>` elements are **siblings of `<Properties>`**, not nested inside it, and a `ShaderComponent` may declare only uniforms with no `<Properties>` element at all.
+- Data-driven base values are honored on every entry point: a **prefab template** (`<Prefab>`), an inline scene entity that references a registered prefab via `<Source>`, and a plain-class inline entity declared with `Type=` (no `<Source>`). Each of those paths carries the parsed `<EffectParameter>` values onto the component before attach — including the plain-class path, whose ad-hoc prefab must copy them across or they are silently dropped.
 
 A scene that declares only this component renders a **fixed** glow (the base value). Add a controller component to animate it (below). A sprite with **no** `ShaderComponent` at all gets an auto-created basic one (no effect) — the pipeline then logs a warning reminding you to declare one in XML.
 

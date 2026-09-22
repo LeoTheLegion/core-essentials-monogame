@@ -6,6 +6,7 @@ using Xunit;
 using CoreEssentials.Assets;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Components.BuiltIn;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using CoreEssentials.Scenes;
 using CoreEssentials.Tests.Coroutines;
@@ -312,6 +313,56 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
                 var kid = (SelfStateEntity?)entitySystem.FindById("kid");
                 Assert.NotNull(kid);
                 Assert.Equal("nested", kid.Text);
+            }
+            finally
+            {
+                helper.Cleanup();
+            }
+        }
+
+        [Fact]
+        public void DataDrivenScene_InlineType_ShaderEffectParameters_Seeded()
+        {
+            // A plain-class (<Type>) inline entity whose ShaderComponent declares ONLY <EffectParameter>
+            // (no <Properties> element). Drives the real SceneParser -> DataDrivenScene -> BuildAdHocPrefab
+            // path: before the fix, BuildAdHocPrefab copied only Properties into the ad-hoc prefab and
+            // silently dropped EffectParameters, so this uniform never reached the component.
+            var xml = @"<Scene>
+  <GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""SelfStateEntity"" Id=""glow"">
+          <Components>
+            <Component Type=""ShaderComponent"">
+              <EffectParameter Name=""GlowStrength"" Value=""1.0"" />
+            </Component>
+          </Components>
+        </EntityDefinition>
+      </Entities>
+    </System>
+  </GameSystems>
+</Scene>";
+
+            var helper = new CoroutineTestHelper();
+            try
+            {
+                AssetManager.Init(new MockContentManager());
+                var scene = new DataDrivenScene(SceneParser.Parse(xml));
+
+                // Act — drive the load to completion, exactly as the other inline-scene tests do.
+                scene.Load();
+                for (int i = 0; i < 30 && !scene.IsLoaded; i++)
+                    helper.Tick();
+
+                // Assert — the XML-declared base value reached the component on the inline path.
+                Assert.True(scene.IsLoaded);
+                var entitySystem = scene.GetGameSystem<EntitySystem>();
+                var glow = (SelfStateEntity?)entitySystem.FindById("glow");
+                Assert.NotNull(glow);
+
+                var shader = glow!.GetComponent<ShaderComponent>();
+                Assert.NotNull(shader);
+                Assert.Equal(1.0f, shader!.Get<float>("GlowStrength"));
             }
             finally
             {
