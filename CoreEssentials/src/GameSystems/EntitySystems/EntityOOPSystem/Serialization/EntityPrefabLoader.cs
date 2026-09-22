@@ -149,15 +149,27 @@ public static class EntityPrefabLoader
         };
 
         var propsElem = compElem.Element("Properties");
-        if (propsElem == null)
-            return compDef;
-
-        foreach (var propElem in propsElem.Elements("Property"))
+        if (propsElem != null)
         {
-            var name = propElem.Attribute("Name")?.Value;
-            var val = propElem.Attribute("Value")?.Value;
+            foreach (var propElem in propsElem.Elements("Property"))
+            {
+                var name = propElem.Attribute("Name")?.Value;
+                var val = propElem.Attribute("Value")?.Value;
+                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(val))
+                    compDef.Properties[name] = val;
+            }
+        }
+
+        // Shader uniforms declared as <EffectParameter Name="X" Value="Y"/> are data-driven base
+        // values consumed by ShaderComponent.InitializeFromStrings at apply time. They are siblings
+        // of <Properties> (not nested inside it), so a component may declare only these and no
+        // <Properties> element at all — both must be collected independently.
+        foreach (var effElem in compElem.Elements("EffectParameter"))
+        {
+            var name = effElem.Attribute("Name")?.Value;
+            var val = effElem.Attribute("Value")?.Value;
             if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(val))
-                compDef.Properties[name] = val;
+                compDef.EffectParameters[name] = val;
         }
 
         return compDef;

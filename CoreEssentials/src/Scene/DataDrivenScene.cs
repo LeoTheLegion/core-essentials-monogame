@@ -262,7 +262,11 @@ public class DataDrivenScene : Scene
                 .Select(c => new Prefab.ComponentDefinition
                 {
                     Type = c.Type,
-                    Properties = new Dictionary<string, string>(c.Properties)
+                    Properties = new Dictionary<string, string>(c.Properties),
+                    // Shader uniforms parsed from <EffectParameter> must travel with the ad-hoc prefab or
+                    // they are dropped before EntityPrefabLoader.Instantiate runs and never reach the
+                    // component — the same silent-ignoring failure as the prefab-template path.
+                    EffectParameters = new Dictionary<string, string>(c.EffectParameters)
                 })
                 .ToList()
         };

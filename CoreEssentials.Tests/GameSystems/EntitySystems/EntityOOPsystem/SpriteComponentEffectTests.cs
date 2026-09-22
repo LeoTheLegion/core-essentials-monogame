@@ -132,6 +132,42 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             Assert.Equal(1.0f, shaders[0].Get<float>("GlowStrength"));
         }
 
+        [Fact]
+        public void XmlOnlyShader_UniformsParsedFromEffectParameter_ReachComponent()
+        {
+            // Reproduces a data-driven (XML-only) shader: uniforms declared purely via
+            // <EffectParameter> on the ShaderComponent, with no code controller overriding them.
+            var system = new EntitySystem();
+            var prefab = EntityPrefabLoader.LoadFromXml(@"
+                <Prefab Type=""" + nameof(TestEntity) + @""">
+                    <Components>
+                        <Component Type=""SpriteComponent"">
+                            <Properties>
+                                <Property Name=""SpriteAsset"" Value=""Sprites/target_sprite.xml"" />
+                            </Properties>
+                        </Component>
+                        <Component Type=""ShaderComponent"">
+                            <Properties>
+                                <Property Name=""EffectAsset"" Value=""Effects/GlowRadioactive"" />
+                            </Properties>
+                            <EffectParameter Name=""GlowStrength"" Value=""1.0"" />
+                        </Component>
+                    </Components>
+                </Prefab>");
+
+            system.RegisterPrefab("xml_only_shader", prefab);
+
+            var entity = system.Instantiate("xml_only_shader", Vector2.Zero);
+
+            // The XML-declared base value must reach the component — before, ParseComponentDefinition
+            // never read <EffectParameter>, so this stayed at 0 (no glow).
+            var shader = entity.GetComponent<ShaderComponent>();
+            Assert.NotNull(shader);
+            Assert.Equal(1.0f, shader!.Get<float>("GlowStrength"));
+
+            system.Dispose();
+        }
+
         // ===== PartitionByEffect (batcher effect grouping key) =====
 
         [Fact]
