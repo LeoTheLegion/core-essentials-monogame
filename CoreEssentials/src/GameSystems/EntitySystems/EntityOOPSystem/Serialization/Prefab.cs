@@ -31,6 +31,13 @@ public class Prefab
     public int Sort { get; set; }
 
     /// <summary>
+    /// The z-order render layer for the entity (see Z-Order Render Layers). Entities in lower layers
+    /// render first (further back); within a layer, entities are batched by texture and sort order.
+    /// Defaults to 0, preserving the previous texture-only batching behavior.
+    /// </summary>
+    public int ZLayer { get; set; }
+
+    /// <summary>
     /// Whether entities created from this template are active by default.
     /// </summary>
     public bool Active { get; set; } = true;
@@ -75,6 +82,7 @@ public class Prefab
             Type = Type,
             Rotation = Rotation,
             Sort = Sort,
+            ZLayer = ZLayer,
             Active = Active,
             Tags = new List<string>(Tags),
             Components = Components.Select(c => new ComponentDefinition

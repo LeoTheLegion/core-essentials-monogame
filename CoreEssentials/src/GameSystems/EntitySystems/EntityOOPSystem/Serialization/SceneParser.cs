@@ -28,7 +28,7 @@ public static class SceneParser
     /// <summary>Attributes allowed directly on an &lt;EntityDefinition&gt; element.</summary>
     private static readonly HashSet<string> EntityDefinitionAttributes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Type", "Source", "Id", "Rotation", "Sort", "Active"
+        "Type", "Source", "Id", "Rotation", "Sort", "ZLayer", "Active"
     };
 
     /// <summary>The attribute name that carries a property's value in the scene format.</summary>
@@ -208,6 +208,7 @@ public static class SceneParser
             Id = element.Attribute("Id")?.Value,
             Rotation = ParseFloat(element.Attribute("Rotation")?.Value),
             Sort = ParseInt(element.Attribute("Sort")?.Value),
+            ZLayer = ParseInt(element.Attribute("ZLayer")?.Value),
             Active = ParseBool(element.Attribute("Active")?.Value)
         };
 

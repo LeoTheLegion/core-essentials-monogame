@@ -37,6 +37,28 @@ uiOverlay.ZLayer = 2;      // foreground
 
 Entities that never set a z-layer default to **layer 0**, which preserves the previous texture-only batching behavior.
 
+## Data-Driven (XML)
+
+`ZLayer` is a first-class entity-level attribute alongside `Sort`, `Rotation`, and `Active`, so it can be authored declaratively on every data path:
+
+**Prefab template** (`<Prefab>`):
+
+```xml
+<Prefab Type="HaloEntity" Sort="0" ZLayer="-1">
+    <Components>...</Components>
+</Prefab>
+```
+
+**Scene entity definition** (`<EntityDefinition>`) — both a plain-class `Type=` node and a registered-prefab `Source=` node:
+
+```xml
+<EntityDefinition Type="HaloEntity" Id="halo" ZLayer="-1" />
+```
+
+**Game state save/load** — the `ZLayer` attribute is written on save and re-applied on load, so a saved scene restores each entity's layer.
+
+When the attribute is absent, the layer defaults to **0**, matching the code default. This is what lets you express things like a glow-halo carrier that must render behind its target purely in data — no per-entity `SetZLayer` call required.
+
 ## API Reference
 
 | Member | Type | Description |

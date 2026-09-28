@@ -119,7 +119,7 @@ There are three ways to set a component's property from an entity definition, in
 
 ### 1. Flat attributes (the shorthand)
 
-Any attribute on `<EntityDefinition>` that is *not* one of the known attributes (`Type`, `Source`, `Id`, `Rotation`, `Sort`, `Active`) is treated as a **flat override** — it must resolve to exactly one writable component property with that name, or parsing fails.
+Any attribute on `<EntityDefinition>` that is *not* one of the known attributes (`Type`, `Source`, `Id`, `Rotation`, `Sort`, `ZLayer`, `Active`) is treated as a **flat override** — it must resolve to exactly one writable component property with that name, or parsing fails.
 
 ```xml
 <EntityDefinition Source="Text" Id="title">
