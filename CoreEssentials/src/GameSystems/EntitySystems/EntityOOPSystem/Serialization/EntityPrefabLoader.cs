@@ -57,6 +57,7 @@ public static class EntityPrefabLoader
             Type = root.Attribute("Type")?.Value ?? throw new FormatException("Prefab missing required 'Type' attribute."),
             Rotation = float.Parse(root.Attribute("Rotation")?.Value ?? "0", NumberStyles.Any, CultureInfo.InvariantCulture),
             Sort = int.Parse(root.Attribute("Sort")?.Value ?? "0"),
+            ZLayer = int.Parse(root.Attribute("ZLayer")?.Value ?? "0"),
             Active = bool.Parse(root.Attribute("Active")?.Value ?? "true")
         };
 
@@ -75,6 +76,7 @@ public static class EntityPrefabLoader
             Type = element.Attribute("Type")?.Value ?? throw new FormatException("Nested Prefab missing 'Type' attribute."),
             Rotation = float.Parse(element.Attribute("Rotation")?.Value ?? "0", NumberStyles.Any, CultureInfo.InvariantCulture),
             Sort = int.Parse(element.Attribute("Sort")?.Value ?? "0"),
+            ZLayer = int.Parse(element.Attribute("ZLayer")?.Value ?? "0"),
             Active = bool.Parse(element.Attribute("Active")?.Value ?? "true")
         };
 
@@ -242,6 +244,7 @@ public static class EntityPrefabLoader
         entity.Position = position;
         entity.Rotation = template.Rotation;
         entity.SetSort(template.Sort);
+        entity.SetZLayer(template.ZLayer);
         entity.SetActive(template.Active);
 
         foreach (var tag in template.Tags)

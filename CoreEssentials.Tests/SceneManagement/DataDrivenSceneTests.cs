@@ -108,6 +108,47 @@ namespace CoreEssentials.Tests.SceneManagement
             }
         }
 
+        [Fact]
+        public void DataDrivenScene_InlineType_ZLayerAttribute_AppliedToEntity()
+        {
+            // Arrange — a plain-class (<Type>) inline entity with a ZLayer attribute. Drives the real
+            // SceneParser -> DataDrivenScene -> BuildAdHocPrefab path: before the fix, ZLayer was not a
+            // known entity attribute (it fell through to flat overrides and was silently dropped) and the
+            // ad-hoc prefab had no field to carry it.
+            var xml = @"<Scene>
+  <GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""DdsEntity"" Id=""layered"" ZLayer=""3"" />
+      </Entities>
+    </System>
+  </GameSystems>
+</Scene>";
+
+            var helper = new CoroutineTestHelper();
+            try
+            {
+                AssetManager.Init(new MockContentManager());
+                var scene = new DataDrivenScene(SceneParser.Parse(xml));
+
+                // Act — drive the load coroutine to completion
+                scene.Load();
+                for (int i = 0; i < 30 && !scene.IsLoaded; i++)
+                    helper.Tick();
+
+                // Assert — the declared layer reached the instantiated entity.
+                Assert.True(scene.IsLoaded);
+                var entitySystem = scene.GetGameSystem<EntitySystem>();
+                var layered = entitySystem.FindById("layered");
+                Assert.NotNull(layered);
+                Assert.Equal(3, layered!.GetZLayer());
+            }
+            finally
+            {
+                helper.Cleanup();
+            }
+        }
+
         // ──────────────────────── T5: full transition through a data-driven loading screen ────────────────────────
 
         [Fact]

@@ -114,7 +114,7 @@ public static class EntitySerializer
 
     /// <summary>
     /// Applies entity properties from an XML element to an existing entity.
-    /// This includes position, rotation, sort order, tags, active state, and ID.
+    /// This includes position, rotation, sort order, z-layer, tags, active state, and ID.
     /// </summary>
     /// <param name="entity">The entity to configure.</param>
     /// <param name="element">The XML element containing entity properties.</param>
@@ -144,6 +144,12 @@ public static class EntitySerializer
         if (int.TryParse(element.Attribute("Sort")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int sort))
         {
             entity.SetSort(sort);
+        }
+
+        // Z-layer
+        if (int.TryParse(element.Attribute("ZLayer")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int zLayer))
+        {
+            entity.SetZLayer(zLayer);
         }
 
         // Tags
@@ -178,6 +184,7 @@ public static class EntitySerializer
                 ),
                 new XAttribute("Rotation", entity.Rotation.ToString(CultureInfo.InvariantCulture)),
                 new XAttribute("Sort", entity.GetSort()),
+                new XAttribute("ZLayer", entity.GetZLayer()),
                 new XAttribute("Active", entity.GetActive()),
                 new XElement("Tags",
                     from tag in entity.Tags

@@ -256,6 +256,7 @@ public class DataDrivenScene : Scene
             Type = def.Type!,
             Rotation = def.Rotation ?? 0f,
             Sort = def.Sort ?? 0,
+            ZLayer = def.ZLayer ?? 0,
             Active = def.Active ?? true,
             Tags = new List<string>(def.Tags),
             Components = def.DeclaredComponents
