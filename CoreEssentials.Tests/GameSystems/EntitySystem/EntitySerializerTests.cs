@@ -119,6 +119,23 @@ public class EntitySerializerTests
     }
 
     [Fact]
+    public void LoadEntity_WithZLayer_ShouldSetCorrectZLayer()
+    {
+        // Arrange
+        var system = CreateEntitySystem();
+        var xml = @"
+            <Entity ZLayer=""7"">
+                <Position X=""0"" Y=""0"" />
+            </Entity>";
+
+        // Act
+        var entity = EntitySerializer.LoadEntity<TestEntity>(xml, system);
+
+        // Assert
+        Assert.Equal(7, entity.GetZLayer());
+    }
+
+    [Fact]
     public void LoadEntity_WithTags_ShouldSetCorrectTags()
     {
         // Arrange
@@ -317,6 +334,7 @@ public class EntitySerializerTests
         original.Position = new Vector2(100f, 200f);
         original.Rotation = 2.5f;
         original.SetSort(7);
+        original.SetZLayer(3);
         original.SetTag("Enemy");
         original.SetActive(true);
 
@@ -329,6 +347,7 @@ public class EntitySerializerTests
         Assert.Equal(original.Position, loaded.Position);
         Assert.Equal(original.Rotation, loaded.Rotation);
         Assert.Equal(original.GetSort(), loaded.GetSort());
+        Assert.Equal(original.GetZLayer(), loaded.GetZLayer());
         Assert.True(loaded.HasTag("Enemy"));
     }
 

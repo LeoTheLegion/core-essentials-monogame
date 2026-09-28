@@ -81,6 +81,9 @@ public class EntityDefinition
     /// <summary>Render sort order. Null when the attribute is absent.</summary>
     public int? Sort { get; init; }
 
+    /// <summary>Z-order render layer. Null when the attribute is absent.</summary>
+    public int? ZLayer { get; init; }
+
     /// <summary>Whether the entity starts active. Null when the attribute is absent.</summary>
     public bool? Active { get; init; }
 

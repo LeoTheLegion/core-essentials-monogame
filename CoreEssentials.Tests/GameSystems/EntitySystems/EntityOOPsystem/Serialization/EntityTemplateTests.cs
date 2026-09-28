@@ -47,6 +47,32 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
 
         [Fact]
+        public void LoadFromXml_ParsesZLayer_Attribute()
+        {
+            // Arrange — ZLayer is a first-class entity-level attribute alongside Sort/Rotation/Active.
+            string xml = @"<Prefab Type=""TestEntity"" Rotation=""45"" Sort=""5"" ZLayer=""2"" Active=""true"" />";
+
+            // Act
+            var template = EntityPrefabLoader.LoadFromXml(xml);
+
+            // Assert
+            Assert.Equal(2, template.ZLayer);
+        }
+
+        [Fact]
+        public void LoadFromXml_ZLayer_DefaultsToZeroWhenAbsent()
+        {
+            // Arrange — no ZLayer attribute; the layer must default to 0 (texture-only batching behavior).
+            string xml = @"<Prefab Type=""TestEntity"" Sort=""5"" />";
+
+            // Act
+            var template = EntityPrefabLoader.LoadFromXml(xml);
+
+            // Assert
+            Assert.Equal(0, template.ZLayer);
+        }
+
+        [Fact]
         public void LoadFromXml_ParsesEffectParameters_AlsideProperties()
         {
             // Arrange — a shader declaring both ordinary properties and data-driven uniforms.
@@ -227,6 +253,27 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
             Assert.True(entity.GetActive());
             Assert.True(entity.HasTag("test"));
             Assert.True(entity.HasTag("template"));
+        }
+
+        [Fact]
+        public void Instantiate_AppliesZLayer_FromTemplate()
+        {
+            // Arrange — a template that declares a z-layer; the instantiated entity must come out in it.
+            var entitySystem = new EntitySystem();
+            var prefab = new Prefab
+            {
+                Type = "TemplateTestEntity",
+                Sort = 10,
+                ZLayer = 3
+            };
+
+            entitySystem.RegisterPrefab("ZLayerTemplate", prefab);
+
+            // Act
+            var entity = entitySystem.Instantiate("ZLayerTemplate", Vector2.Zero);
+
+            // Assert — the layer was applied alongside sort/rotation/active.
+            Assert.Equal(3, entity.GetZLayer());
         }
 
         [Fact]

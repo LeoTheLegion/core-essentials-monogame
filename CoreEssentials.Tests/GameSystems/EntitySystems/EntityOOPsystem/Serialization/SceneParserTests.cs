@@ -96,6 +96,30 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
 
         [Fact]
+        public void Parse_EntityDefinition_ZLayerAttribute_IsEntityAttribute_NotFlatOverride()
+        {
+            // Arrange — ZLayer is a known entity-level attribute (like Sort), so it must populate the
+            // definition rather than fall through to flat component overrides.
+            var xml = @"<Scene>
+  <GameSystems>
+    <System Type=""EntitySystem"">
+      <Entities>
+        <EntityDefinition Type=""ProbeEntity"" Id=""layered"" ZLayer=""5"" />
+      </Entities>
+    </System>
+  </GameSystems>
+</Scene>";
+
+            // Act
+            var scene = SceneParser.Parse(xml);
+
+            // Assert — recognized as an entity attribute and stored, not treated as a flat override.
+            var def = scene.Systems[0].Entities.Single();
+            Assert.Equal(5, def.ZLayer);
+            Assert.Empty(def.FlatOverrides);
+        }
+
+        [Fact]
         public void Parse_PartialSections_MissingOptionalParts()
         {
             // Arrange — a minimal scene: no prefabs, no entities on the second system
