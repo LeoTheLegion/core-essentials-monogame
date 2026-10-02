@@ -26,6 +26,19 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     private readonly List<Entity> _entities = new();
 
     /// <summary>
+    /// Monotonic counter used to assign each registered entity a unique, increasing sort sequence.
+    /// This provides a stable tie-breaker so entities sharing a sort value keep a deterministic order.
+    /// </summary>
+    private int _nextSortSequence;
+
+    /// <summary>
+    /// True when the entity list needs re-sorting (an entity was added or a sort value changed).
+    /// Keeps per-frame sorting to a no-op on steady-state frames: removing entities from an already-sorted
+    /// list leaves survivors still sorted, so only additions and sort-value changes set this flag.
+    /// </summary>
+    private bool _sortDirty;
+
+    /// <summary>
     /// Dictionary for O(1) tag-based entity lookups.
     /// Maps tag names to lists of entities with that tag.
     /// </summary>
@@ -107,7 +120,11 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <param name="gameTime">Provides a snapshot of timing values.</param>
     public void Update(GameTime gameTime)
     {
-        SortEntities();
+        if (_sortDirty)
+        {
+            SortEntities();
+            _sortDirty = false;
+        }
         UpdateActiveEntities(gameTime);
         UpdateLateActiveEntities(gameTime);
         UpdateSpatialGridPositions();
@@ -441,6 +458,34 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
+    /// Registers an entity with this system: sets its game-system reference, ensures it has a unique ID,
+    /// assigns a monotonic sort sequence (stable tie-breaker for entities sharing a sort value), adds it to
+    /// the managed list, and updates all lookup indexes. All entity-creation paths funnel through here so
+    /// registration behavior stays consistent.
+    /// </summary>
+    /// <param name="entity">The entity to register.</param>
+    private void RegisterEntity(Entity entity)
+    {
+        entity.SetGameSystem(this);
+        entity.EnsureId();
+        entity.SortSequence = _nextSortSequence++;
+        _entities.Add(entity);
+        _sortDirty = true;
+        UpdateTagIndexForEntity(entity, true);
+        UpdateIdIndexForEntity(entity, true);
+        UpdateSpatialGridForEntity(entity, true);
+    }
+
+    /// <summary>
+    /// Marks the entity list as needing a re-sort. Called by <see cref="Entity.SetSort"/> when a sort value
+    /// changes, so the change takes effect on the next update even if no entities were added this frame.
+    /// </summary>
+    internal void MarkSortDirty()
+    {
+        _sortDirty = true;
+    }
+
+    /// <summary>
     /// Creates and initializes a new entity of the specified type.
     /// </summary>
     /// <param name="type">The Type of entity to create.</param>
@@ -454,12 +499,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             throw new InvalidOperationException($"Failed to create entity of type {type}.");
         Entity entity = (Entity)instance;
         Console.WriteLine($"[EntitySystem]   Instantiated, setting up...");
-        entity.SetGameSystem(this);
-        entity.EnsureId();
-        _entities.Add(entity);
-        UpdateTagIndexForEntity(entity, true);
-        UpdateIdIndexForEntity(entity, true);
-        UpdateSpatialGridForEntity(entity, true);
+        RegisterEntity(entity);
         entity.OnAwake();
         NotifyAwoken(entity);
         Console.WriteLine($"[EntitySystem]   Calling OnStart for {entity.GetType().Name}...");
@@ -501,12 +541,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         if (instance == null)
             throw new InvalidOperationException($"Failed to create entity of type {type}.");
         Entity entity = (Entity)instance;
-        entity.SetGameSystem(this);
-        entity.EnsureId();
-        _entities.Add(entity);
-        UpdateTagIndexForEntity(entity, true);
-        UpdateIdIndexForEntity(entity, true);
-        UpdateSpatialGridForEntity(entity, true);
+        RegisterEntity(entity);
         entity.OnAwake();
         NotifyAwoken(entity);
         return entity;
@@ -580,12 +615,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     {
         var pool = GetOrCreatePool<T>();
         var entity = pool.Acquire(position);
-        entity.SetGameSystem(this);
-        entity.EnsureId();
-        _entities.Add(entity);
-        UpdateTagIndexForEntity(entity, true);
-        UpdateIdIndexForEntity(entity, true);
-        UpdateSpatialGridForEntity(entity, true);
+        RegisterEntity(entity);
         entity.OnAwake();
         NotifyAwoken(entity);
         entity.OnStart();
@@ -647,13 +677,19 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
     /// <summary>
     /// Sorts entities based on their sort order.
-    /// Entities with higher sort values are drawn first (further back in the scene).
+    /// Entities with higher sort values are drawn first (further back in the scene). Ties are broken by
+    /// registration order so the result is deterministic. Called from <see cref="Update"/> only when the
+    /// list is dirty; exposed internally for tests to force a sort on demand.
     /// </summary>
-    public void SortEntities()
+    internal void SortEntities()
     {
         _entities.Sort(
-            (x, y) => y.GetSort().CompareTo(x.GetSort())
-            );
+            (x, y) =>
+            {
+                int c = y.GetSort().CompareTo(x.GetSort()); // higher sort values are drawn first (further back)
+                return c != 0 ? c : x.SortSequence.CompareTo(y.SortSequence); // stable tie-break by registration order
+            }
+        );
     }
 
     /// <summary>
@@ -1396,11 +1432,8 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
         Entity entity = (Entity)instance;
 
-        entity.SetGameSystem(this);
         entity.Position = position;
-        _entities.Add(entity);
-        UpdateTagIndexForEntity(entity, true);
-        UpdateSpatialGridForEntity(entity, true);
+        RegisterEntity(entity);
         entity.OnStart();
     }
 }

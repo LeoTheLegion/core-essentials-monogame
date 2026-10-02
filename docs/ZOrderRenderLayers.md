@@ -72,7 +72,7 @@ When the attribute is absent, the layer defaults to **0**, matching the code def
 1. **Group by z-layer** — Active entities are bucketed by their `ZLayer`, in ascending order.
 2. **Within each layer, group by texture** — Entities sharing a texture in the same layer are batched together.
 3. **Render back-to-front** — Layers are drawn from lowest to highest. Each (layer, texture) group uses a single `SpriteBatch.Begin/End` pair.
-4. **Sort order** — Within a single layer and texture, entities keep their `sort` order (higher `sort` first).
+4. **Sort order** — Within a single layer and texture, entities keep their `sort` order (higher `sort` first). Entities that share the same `sort` value are drawn in a stable, deterministic registration order (see [Deterministic Order for Equal Sort Values](#deterministic-order-for-equal-sort-values)).
 
 ### Trade-offs
 
@@ -114,6 +114,35 @@ hud.ZLayer = 100; // reserve a high layer so it always renders last
 - `sort` controls the **order within a band + texture** (fine-grained).
 
 Use `ZLayer` when you need to interleave different textures in depth, and `sort` for fine ordering among entities that share a layer and texture.
+
+## Deterministic Order for Equal Sort Values
+
+Most entities are never given an explicit `sort` value, so they all default to `0`. When several such entities overlap within the same z-layer — especially **translucent** sprites (glows, halos, vignettes, particles) — their relative draw order matters, because premultiplied-alpha blending is order-dependent: drawing A-over-B vs. B-over-A produces different pixels.
+
+To keep that order stable and flicker-free, every entity receives a hidden, monotonically increasing sequence number when it is registered with the `EntitySystem`. `SortEntities()` uses it as a tie-breaker: entities with equal `sort` values are drawn in the order they were created.
+
+```csharp
+// Three halos left at the default sort value (0). They share a z-layer and overlap.
+var haloA = system.CreateEntity<Halo>();  // created first → drawn first (furthest back of the three)
+var haloB = system.CreateEntity<Halo>();  // created second
+var haloC = system.CreateEntity<Halo>();  // created last → drawn last (frontmost of the three)
+
+// Their relative order is now fixed for the lifetime of the scene, regardless of how many
+// times the per-frame sort runs or how other entities spawn and die. No shimmer.
+```
+
+Properties of this behavior:
+
+- **Stable across frames** — re-running the sort never reshuffles equal-key entities, so overlapping translucent content stops flickering.
+- **Creation-order deterministic** — the tie-break follows registration order (the hidden sequence), not a random or input-dependent arrangement.
+- **Scoped to ties only** — distinct `sort` values still fully control ordering; the sequence is consulted solely when two `sort` values are equal.
+- **Pooled entities get a fresh sequence** on each re-acquisition, so recycling never reintroduces duplicate keys.
+
+If you need a specific translucent entity in front of (or behind) its equally-sorted neighbors, give it an explicit `sort` value rather than relying on creation order:
+
+```csharp
+glow.SetSort(10); // now draws before the default-sort halos that overlap it
+```
 
 > **Note:** Z-layers are a **rendering-only** concern. They do not affect collision. Collision filtering is handled separately by the `CollisionCategory` flags (see [Collision Groups & Filtering](./CollisionGroups.md)).
 
