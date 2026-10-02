@@ -662,7 +662,10 @@ public abstract class Entity
     /// <returns>The current entity instance.</returns>
     public virtual Entity SetSort(int x)
     {
+        if (sort == x)
+            return this;
         sort = x;
+        EntitySystem?.MarkSortDirty();
         return this;
     }
 
@@ -671,6 +674,13 @@ public abstract class Entity
     /// </summary>
     /// <returns>The sort order value.</returns>
     public virtual int GetSort() { return sort; }
+
+    /// <summary>
+    /// A unique, monotonically increasing sequence assigned by the <see cref="EntitySystem"/> when this
+    /// entity is registered. Used as a stable tie-breaker so that entities sharing the same sort value keep
+    /// a deterministic order (registration order) instead of being permuted by an unstable sort.
+    /// </summary>
+    internal int SortSequence { get; set; }
 
     /// <summary>
     /// Gets or sets the z-order layer of the entity.
