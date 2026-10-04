@@ -247,6 +247,14 @@ public abstract class Scene
     }
 
     /// <summary>
+    /// Gets all registered game systems of the given type, without throwing when none are present.
+    /// </summary>
+    /// <typeparam name="T">The base type to collect.</typeparam>
+    /// <returns>An array (possibly empty) of the matching game systems.</returns>
+    public T[] GetGameSystems<T>() where T : GameSystem
+        => _gameSystems.Values.OfType<T>().ToArray();
+
+    /// <summary>
     /// Updates all game systems that implement the IUpdateGameSystem interface.
     /// </summary>
     /// <param name="gameTime">Provides a snapshot of timing values.</param>

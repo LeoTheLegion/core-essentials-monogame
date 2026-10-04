@@ -62,6 +62,7 @@ namespace YourGame
 
 - [Scene Management](./SceneManagement.md)
   - [Scene-as-Data](./SceneAsData.md)
+  - [Scene-Persistent Entities](./PersistentEntities.md)
 - [Entity System](./EntitySystem.md)
   - [Entity Tags](./EntityTags.md)
   - [Entity Query API](./EntityQueryAPI.md)
