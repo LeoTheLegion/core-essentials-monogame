@@ -15,7 +15,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   # ── Job 1: Auto-tag if version changed ──────────────────────────────────────
@@ -127,6 +126,9 @@ jobs:
   publish:
     needs: auto-tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
     - name: Checkout code
@@ -157,19 +159,6 @@ jobs:
           exit 1
         fi
 
-    - name: Check if NuGet package version already exists
-      env:
-        NUGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        VERSION="${{ needs.auto-tag.outputs.VERSION }}"
-        PACKAGE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "X-API-Key: ${NUGET_TOKEN}" \
-          "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json/CoreEssentials-MonoGame/$VERSION" 2>/dev/null || echo "000")
-        if [ "$PACKAGE_EXISTS" = "200" ]; then
-          echo "::error::NuGet package CoreEssentials-MonoGame.${VERSION} already exists. Aborting."
-          exit 1
-        fi
-
     - name: Restore dependencies
       run: dotnet restore CoreEssentials/CoreEssentials.csproj
 
@@ -179,12 +168,17 @@ jobs:
     - name: Pack
       run: dotnet pack CoreEssentials/CoreEssentials.csproj --no-build -c Release /p:Version=${{ needs.auto-tag.outputs.VERSION }}
 
-    - name: Publish to GitHub Packages
+    - name: NuGet login (OIDC)
+      uses: NuGet/login@v1
+      id: nuget_login
+      with:
+        user: LeoTheLegion
+
+    - name: Publish to NuGet.org
       run: |
         dotnet nuget push CoreEssentials/bin/Release/CoreEssentials-MonoGame.${{ needs.auto-tag.outputs.VERSION }}.nupkg \
-          --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json \
-          --api-key ${{ secrets.GITHUB_TOKEN }} \
-          --skip-duplicate
+          --source https://api.nuget.org/v3/index.json \
+          --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
