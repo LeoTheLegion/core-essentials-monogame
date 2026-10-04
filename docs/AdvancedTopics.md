@@ -157,39 +157,6 @@ public class TransitionManager
 }
 ```
 
-### Scene Persistence
-
-Keep data between scenes:
-
-```csharp
-public static class GameState
-{
-    // Data to persist between scenes
-    public static int Score { get; set; }
-    public static int HighScore { get; set; }
-    public static int Lives { get; set; }
-    public static int Level { get; set; }
-    public static Dictionary<string, object> CustomData = new Dictionary<string, object>();
-    
-    public static void Reset()
-    {
-        Score = 0;
-        Lives = 3;
-        Level = 1;
-        CustomData.Clear();
-    }
-    
-    public static void SaveHighScore()
-    {
-        if (Score > HighScore)
-        {
-            HighScore = Score;
-            // Optionally save to disk
-        }
-    }
-}
-```
-
 ## Advanced Input Handling
 
 ### Action-Based Input System

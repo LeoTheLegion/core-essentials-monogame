@@ -1,10 +1,12 @@
 using CoreEssentials.Assets;
 using CoreEssentials.Coroutines;
+using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem;
 using CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CoreEssentials.Scenes;
@@ -21,6 +23,12 @@ public class SceneManager
     /// The current active scene.
     /// </summary>
     Scene? _currentScene;
+
+    /// <summary>
+    /// Persistent entities carried across a transition: detached from the scene being left and re-adopted
+    /// into the scene being loaded, so they survive <c>LoadScene</c>. Empty outside of a transition.
+    /// </summary>
+    private readonly List<Entity> _carriedEntities = new();
     /// <summary>
     /// The next scene to be loaded.
     /// </summary>
@@ -103,7 +111,7 @@ public class SceneManager
     /// </summary>
     /// <returns>The current scene.</returns>
     public Scene? CurrentScene => _currentScene;
-    
+
     /// <summary>
     /// Gets the scene that is currently being transitioned to, or null when no transition is in progress.
     /// (Renamed from NextScene so that name could be taken by the <see cref="NextScene()"/> navigation method.)
@@ -478,11 +486,17 @@ public class SceneManager
             while (_nextScene.IsLoading)
                 yield return null;
 
+            // Carry persistent entities out of the outgoing scene before it is torn down, then re-adopt
+            // them into the freshly loaded incoming scene so they survive the transition.
+            CarryPersistentEntities(_currentScene);
+
             if (_currentScene != null)
             {
                 Console.WriteLine($"Unloading scene: {_currentScene.GetType().Name}");
                 _currentScene.Unload();
             }
+
+            AdoptCarriedEntities(_nextScene);
 
             _currentScene = _nextScene;
             _nextScene = null;
@@ -496,6 +510,9 @@ public class SceneManager
         Console.WriteLine("Starting scene transition with loading screen");
 
         // Step 2 — show the loading screen (unloading the current scene first).
+        // Carry persistent entities out before the scene is torn down so they survive the transition.
+        CarryPersistentEntities(_currentScene);
+
         if (_currentScene != null)
         {
             Console.WriteLine($"Unloading scene: {_currentScene.GetType().Name}");
@@ -525,6 +542,9 @@ public class SceneManager
         // rendering on top of the new scene (a per-scene screen is re-resolved on the next transition).
         Console.WriteLine("Unloading loading screen");
         loadingScreen.Unload();
+
+        // Re-adopt the carried persistent entities into the freshly loaded target scene.
+        AdoptCarriedEntities(_nextScene);
 
         _currentScene = _nextScene;
         _nextScene = null;
@@ -616,5 +636,58 @@ public class SceneManager
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         _currentScene?.Draw(gameTime, spriteBatch);
+    }
+
+    /// <summary>
+    /// Detaches every top-level entity tagged <c>persist</c> from the scene being left and stages it in
+    /// <see cref="_carriedEntities"/> so it can be re-adopted into the incoming scene. The entities are not
+    /// destroyed — their state (e.g. a looping audio instance, which lives in the global AudioManager) is
+    /// preserved across the transition. A persistent root's whole subtree travels with it. No-op when there is
+    /// no current scene or none of its entities carry the tag.
+    /// </summary>
+    private void CarryPersistentEntities(Scene? outgoingScene)
+    {
+        if (outgoingScene == null) return;
+
+        var systems = outgoingScene.GetGameSystems<EntitySystem>();
+        if (systems.Length == 0) return;
+
+        // Snapshot the roots first: a persistent root's subtree is carried whole, so we detach only the
+        // top-level entities that carry the tag and let their children travel with them.
+        var roots = new List<Entity>();
+        foreach (var system in systems)
+            foreach (var entity in system.GetEntities())
+                if (entity.HasTag("persist"))
+                    roots.Add(entity);
+
+        foreach (var root in roots)
+        {
+            root.GetEntitySystem()?.DetachEntity(root);
+            _carriedEntities.Add(root);
+        }
+    }
+
+    /// <summary>
+    /// Re-adopts the entities staged by <see cref="CarryPersistentEntities"/> into the incoming scene's first
+    /// entity system, clearing the staging list. Runs after the incoming scene has loaded its own systems so
+    /// the carried entities are driven from that point on. No-op when nothing is staged.
+    /// </summary>
+    private void AdoptCarriedEntities(Scene? incomingScene)
+    {
+        if (_carriedEntities.Count == 0 || incomingScene == null) return;
+
+        var systems = incomingScene.GetGameSystems<EntitySystem>();
+        if (systems.Length == 0)
+        {
+            // The incoming scene has no entity system to host the carried entities — release them.
+            foreach (var root in _carriedEntities)
+                root.Destroy();
+            _carriedEntities.Clear();
+            return;
+        }
+
+        foreach (var root in _carriedEntities)
+            systems[0].AdoptEntity(root);
+        _carriedEntities.Clear();
     }
 }
