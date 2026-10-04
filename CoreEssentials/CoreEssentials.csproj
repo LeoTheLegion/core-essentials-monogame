@@ -6,6 +6,7 @@
     <PackageId>CoreEssentials-MonoGame</PackageId>
     <Version>0.22.0</Version>
     <Authors>Michael Mena</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Company>LeoTheLegion</Company>
     <PackageDescription>A jump start for monogame dev</PackageDescription>
     <RepositoryUrl>https://github.com/LeoTheLegion/core-essentials-monogame</RepositoryUrl>
@@ -42,6 +43,7 @@
 
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <Target Name="CoreEssentials_Tests" DependsOnTargets="Build">
