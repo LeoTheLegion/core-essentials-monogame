@@ -377,6 +377,16 @@ public abstract class Entity
     }
 
     /// <summary>
+    /// Clears the parent game-system reference, making this entity inert (unmanaged by any system). Used when
+    /// carrying a persistent entity out of a scene for re-adoption elsewhere; pair with
+    /// <see cref="SetGameSystem"/>. No lifecycle hooks fire.
+    /// </summary>
+    public void ClearGameSystem()
+    {
+        EntitySystem = null;
+    }
+
+    /// <summary>
     /// Called once when the entity is added to its <see cref="EntitySystem"/>.
     /// Override this method for one-time initialization that must happen before <see cref="OnStart"/>.
     /// This method guards against double-awake — if the entity has already awoken, it returns immediately.

@@ -975,6 +975,68 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
+    /// Detaches an entity and its whole subtree from this system WITHOUT destroying them — the entities
+    /// are removed from the managed list and all lookup indexes and their game-system reference is cleared,
+    /// so they become inert. Used by the SceneManager to carry persistent entities across a scene transition;
+    /// pair with <see cref="AdoptEntity"/> on the incoming system. Unlike <see cref="RemoveEntity"/>, no
+    /// lifecycle hooks fire, so component state (e.g. a looping audio instance) is preserved.
+    /// </summary>
+    /// <param name="root">The top-level entity to detach; its descendants travel with it.</param>
+    public void DetachEntity(Entity root)
+    {
+        if (root == null)
+            return;
+
+        foreach (var entity in CollectSubtree(root))
+        {
+            UpdateTagIndexForEntity(entity, false);
+            UpdateIdIndexForEntity(entity, false);
+            UpdateSpatialGridForEntity(entity, false);
+            _entities.Remove(entity);
+            entity.ClearGameSystem();
+        }
+    }
+
+    /// <summary>
+    /// Re-registers an already-started entity and its whole subtree into this system, restoring all lookup
+    /// indexes and the game-system reference. It does NOT re-run Awake/Start — those already ran when the
+    /// entity was first created — so it is the inverse of <see cref="DetachEntity"/> for carrying persistent
+    /// entities across a scene transition.
+    /// </summary>
+    /// <param name="root">The top-level entity to adopt; its descendants travel with it.</param>
+    public void AdoptEntity(Entity root)
+    {
+        if (root == null)
+            return;
+
+        foreach (var entity in CollectSubtree(root))
+        {
+            entity.SetGameSystem(this);
+            entity.EnsureId();
+            entity.SortSequence = _nextSortSequence++;
+            _entities.Add(entity);
+            UpdateTagIndexForEntity(entity, true);
+            UpdateIdIndexForEntity(entity, true);
+            UpdateSpatialGridForEntity(entity, true);
+        }
+        _sortDirty = true;
+    }
+
+    /// <summary>Collects an entity and all of its descendants (depth-first) into a new list.</summary>
+    private static List<Entity> CollectSubtree(Entity root)
+    {
+        var result = new List<Entity>();
+        void Walk(Entity e)
+        {
+            result.Add(e);
+            foreach (var child in e.Children)
+                Walk(child);
+        }
+        Walk(root);
+        return result;
+    }
+
+    /// <summary>
     /// Removes all entities from the system.
     /// </summary>
     public void ClearEntities()
