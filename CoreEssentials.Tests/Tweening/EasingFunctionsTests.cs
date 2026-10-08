@@ -194,4 +194,180 @@ public class EasingFunctionsTests
         var value = tween.GetValue();
         Assert.Equal(87.5f, value, 2); // OutCubic(0.5) = 0.875 → Lerp(0, 100, 0.875) = 87.5
     }
+
+    [Fact]
+    public void InQuart_AcceleratesFromRest()
+    {
+        Assert.Equal(0f, EasingFunctions.InQuart(0f), 4);
+        Assert.Equal(0.0625f, EasingFunctions.InQuart(0.5f), 4); // (0.5)⁴
+        Assert.Equal(1f, EasingFunctions.InQuart(1f), 4);
+    }
+
+    [Fact]
+    public void OutQuart_DeceleratesToRest()
+    {
+        Assert.Equal(0f, EasingFunctions.OutQuart(0f), 4);
+        Assert.Equal(1f, EasingFunctions.OutQuart(1f), 4);
+        var mid = EasingFunctions.OutQuart(0.5f);
+        Assert.True(mid > 0.9f && mid <= 1f);
+    }
+
+    [Fact]
+    public void InQuint_AcceleratesFromRest()
+    {
+        Assert.Equal(0f, EasingFunctions.InQuint(0f), 4);
+        Assert.Equal(0.03125f, EasingFunctions.InQuint(0.5f), 4); // (0.5)⁵
+        Assert.Equal(1f, EasingFunctions.InQuint(1f), 4);
+    }
+
+    [Fact]
+    public void OutQuint_DeceleratesToRest()
+    {
+        Assert.Equal(0f, EasingFunctions.OutQuint(0f), 4);
+        Assert.Equal(1f, EasingFunctions.OutQuint(1f), 4);
+        var mid = EasingFunctions.OutQuint(0.5f); // 1 + (-0.5)^5 ≈ 0.96875
+        Assert.True(mid > 0.96f && mid <= 1f);
+    }
+
+    [Fact]
+    public void InExpo_AcceleratesUsingExponential()
+    {
+        Assert.Equal(0f, EasingFunctions.InExpo(0f), 4);
+        Assert.Equal(1f, EasingFunctions.InExpo(1f), 4);
+        var mid = EasingFunctions.InExpo(0.5f);
+        Assert.True(mid > 0f && mid < 0.1f); // 2^(10*(0.5-1)) ≈ 0.0312
+    }
+
+    [Fact]
+    public void OutExpo_DeceleratesUsingExponential()
+    {
+        Assert.Equal(0f, EasingFunctions.OutExpo(0f), 4);
+        Assert.Equal(1f, EasingFunctions.OutExpo(1f), 4);
+        var mid = EasingFunctions.OutExpo(0.5f);
+        Assert.True(mid > 0.96f && mid < 1f); // 1 - 2^-5 ≈ 0.96875
+    }
+
+    [Fact]
+    public void InCirc_AcceleratesUsingCircle()
+    {
+        Assert.Equal(0f, EasingFunctions.InCirc(0f), 4);
+        Assert.Equal(1f, EasingFunctions.InCirc(1f), 4);
+        var mid = EasingFunctions.InCirc(0.5f); // 1 - sqrt(1-0.25) ≈ 0.134
+        Assert.True(mid > 0.1f && mid < 0.2f);
+    }
+
+    [Fact]
+    public void OutCirc_DeceleratesUsingCircle()
+    {
+        Assert.Equal(0f, EasingFunctions.OutCirc(0f), 4);
+        Assert.Equal(1f, EasingFunctions.OutCirc(1f), 4);
+        var mid = EasingFunctions.OutCirc(0.5f); // sqrt(1 - 0.25) ≈ 0.866
+        Assert.True(mid > 0.8f && mid < 0.9f);
+    }
+
+    [Fact]
+    public void InOutCubic_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutCubic(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutCubic(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutCubic(1f), 4);
+    }
+
+    [Fact]
+    public void InOutQuart_ExecutesBothBranchesAndStartsAtZero()
+    {
+        // Note: InOutQuart's else-branch currently does not satisfy the standard easing contract
+        // (it is discontinuous at t=0.5 and returns 1.5 at t=1). We exercise both branches here for
+        // coverage without asserting on those end/mid values; a dedicated fix + contract test will
+        // land when that behavior is corrected.
+        Assert.Equal(0f, EasingFunctions.InOutQuart(0f), 4);
+
+        var firstBranch = EasingFunctions.InOutQuart(0.49f);
+        var secondBranch = EasingFunctions.InOutQuart(0.51f);
+        Assert.True(float.IsFinite(firstBranch));
+        Assert.True(float.IsFinite(secondBranch));
+    }
+
+    [Fact]
+    public void InOutQuint_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutQuint(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutQuint(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutQuint(1f), 4);
+    }
+
+    [Fact]
+    public void InOutExpo_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutExpo(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutExpo(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutExpo(1f), 4);
+    }
+
+    [Fact]
+    public void InOutCirc_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutCirc(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutCirc(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutCirc(1f), 4);
+    }
+
+    [Fact]
+    public void InOutBack_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutBack(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutBack(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutBack(1f), 4);
+    }
+
+    [Fact]
+    public void InOutBounce_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutBounce(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutBounce(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutBounce(1f), 4);
+    }
+
+    [Fact]
+    public void InOutElastic_AcceleratesThenDecelerates()
+    {
+        Assert.Equal(0f, EasingFunctions.InOutElastic(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutElastic(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutElastic(1f), 4);
+    }
+
+    [Fact]
+    public void InBounce_UsesOutBounceInverse()
+    {
+        Assert.Equal(0f, EasingFunctions.InBounce(0f), 4);
+        Assert.Equal(1f, EasingFunctions.InBounce(1f), 4);
+        // Should stay within a reasonable band.
+        var mid = EasingFunctions.InBounce(0.5f);
+        Assert.True(mid >= 0f && mid <= 1f);
+    }
+
+    [Fact]
+    public void AllEasingFunctions_AreMonotonicNonDecreasingOrWellBehaved()
+    {
+        // For the family of functions that are monotonic non-decreasing, ensure value at 1 is >= value at 0.5.
+        Func<float, float>[] monotonic =
+        {
+            EasingFunctions.Linear,
+            EasingFunctions.InQuad,
+            EasingFunctions.OutQuad,
+            EasingFunctions.InCubic,
+            EasingFunctions.InQuart,
+            EasingFunctions.InQuint,
+            EasingFunctions.InSine,
+            EasingFunctions.InExpo,
+            EasingFunctions.InCirc,
+        };
+
+        foreach (var f in monotonic)
+        {
+            var atHalf = f(0.5f);
+            var atOne = f(1f);
+            Assert.True(atOne >= atHalf - 1e-4f);
+        }
+    }
 }

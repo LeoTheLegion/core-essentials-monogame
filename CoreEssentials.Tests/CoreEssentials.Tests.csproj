@@ -11,6 +11,19 @@
     <IsTestProject>true</IsTestProject>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <NoWarn>$(NoWarn);CS7022;CS1591</NoWarn>
+
+    <!-- Code Coverage: enforce an 80% line threshold on the CoreEssentials core library only -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutput>coverage/</CoverletOutput>
+    <CoverletOutputFormat>Cobertura</CoverletOutputFormat>
+    <!-- Measure coverage only for the core CoreEssentials assembly, using coverlet's canonical
+         [Assembly]Type filter. The playground (manual integration testing) and the test assembly
+         are left out because they don't match [CoreEssentials]. -->
+    <Include>[CoreEssentials]*</Include>
+    <ThresholdType>line</ThresholdType>
+    <ThresholdStat>total</ThresholdStat>
+    <ThresholdScope>project</ThresholdScope>
+    <Threshold>80</Threshold>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -22,6 +35,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.6.2" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
