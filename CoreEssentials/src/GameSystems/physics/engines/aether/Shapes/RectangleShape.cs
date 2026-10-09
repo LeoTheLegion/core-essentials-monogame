@@ -45,10 +45,8 @@ public class RectangleShape : PolygonShape
 
     #region IShape Overrides
 
-    /// <summary>
-    /// Gets the center of mass in local space (always origin for centered rectangles).
-    /// </summary>
-    public override Vector2 Center => Vector2.Zero;
+    // NOTE: Center intentionally inherits PolygonShape.Center (=> GetTransformedCenter()) so that a
+    // translated/rotated rectangle reports its true center rather than always the origin.
 
     /// <summary>
     /// Gets the bounding radius (distance from center to corner).
@@ -67,19 +65,12 @@ public class RectangleShape : PolygonShape
     {
         if (base.IsDisposed) return false;
 
-        // Inverse-transform to undo offset/rotation, then AABB check on unrotated rectangle.
+        // Undo the accumulated offset/rotation so we're back in the rectangle's unrotated local
+        // space, where it is axis-aligned with half-extents _halfSize centered on the origin.
         var localPoint = ApplyInverseTransform(point);
 
-        // For rotated rectangles, AABB bounds expand — use the rotated bounding box.
-        float absCos = Math.Abs((float)Math.Cos(_localRotation));
-        float absSin = Math.Abs((float)Math.Sin(_localRotation));
-
-        // Transformed half extents after rotation
-        float extX = _halfSize.X * absCos + _halfSize.Y * absSin;
-        float extY = _halfSize.X * absSin + _halfSize.Y * absCos;
-
-        return Math.Abs(localPoint.X - _localOffset.X) <= extX &&
-               Math.Abs(localPoint.Y - _localOffset.Y) <= extY;
+        return Math.Abs(localPoint.X) <= _halfSize.X &&
+               Math.Abs(localPoint.Y) <= _halfSize.Y;
     }
 
     #endregion

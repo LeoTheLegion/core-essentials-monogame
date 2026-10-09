@@ -53,6 +53,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem.Seriali
         }
 
         [Theory]
+        [InlineData("<Scene><GameSystems><System /></GameSystems></Scene>")]                              // missing Type (must be FormatException, not NRE)
         [InlineData("<Scene><GameSystems><System Type=\"\" /></GameSystems></Scene>")]                    // empty Type
         [InlineData("<Scene><GameSystems><System Type=\"EntitySystem\" Config=\"\" /></GameSystems></Scene>")] // empty Config
         public void Parse_SystemAttributeErrors_Throw(string xml)

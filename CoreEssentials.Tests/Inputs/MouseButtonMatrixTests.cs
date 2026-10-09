@@ -86,6 +86,25 @@ namespace CoreEssentials.Tests.Inputs
             Assert.False(_mouse.IsButtonReleasedOnce(target));
         }
 
+        [Theory]
+        [InlineData(MouseButton.Left)]
+        [InlineData(MouseButton.Right)]
+        [InlineData(MouseButton.Middle)]
+        [InlineData(MouseButton.XButton1)]
+        [InlineData(MouseButton.XButton2)]
+        public void IsButtonDown_TrueOnlyForTheHeldButton_EveryButtonIsIndependent(MouseButton held)
+        {
+            _provider.SetSimulatedState(StateFor(held));
+            _mouse.Update(_gameTime);
+
+            foreach (var probe in Enum.GetValues<MouseButton>())
+            {
+                var expected = probe == held;
+                Assert.True(_mouse.IsButtonDown(probe) == expected,
+                    $"IsButtonDown({probe}) should be {expected} while holding {held}.");
+            }
+        }
+
         private static MouseState StateFor(MouseButton button) => button switch
         {
             MouseButton.Left => MockMouseStateProvider.CreateState(leftButton: true),

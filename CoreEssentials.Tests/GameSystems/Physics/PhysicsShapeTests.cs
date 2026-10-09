@@ -180,19 +180,39 @@ public class PhysicsShapeTests
     }
 
     [Fact]
-    public void Rectangle_Translate_AccumulatesWithoutThrowing()
+    public void Rectangle_PointContains_RespectsTranslationOffset()
     {
-        // Note: RectangleShape.PointContains currently applies _localOffset twice (once in
-        // ApplyInverseTransform and again in the AABB check), and Center is always origin, so we
-        // exercise Translate here for coverage without asserting on shifted containment. A dedicated
-        // fix + geometry test will land when that offset handling is corrected.
-        var shape = new RectangleShape(4f, 2f);
-        shape.Translate(new Vector2(10f, 0f));
-        shape.Translate(new Vector2(-3f, 2f));
-        shape.Rotate(0.5f);
+        var shape = new RectangleShape(4f, 2f); // half-extents (2,1) centered at origin
+        shape.Translate(new Vector2(10f, 0f));   // move so it's centered on (10, 0)
 
-        // The untransformed origin is still within the half-extent box in local space terms.
-        Assert.True(float.IsFinite(shape.Radius));
+        Assert.True(shape.PointContains(new Vector2(10f, 0f)));            // center still inside
+        Assert.True(shape.PointContains(new Vector2(11.99f, 0f)));         // just within x half-extent
+        Assert.False(shape.PointContains(new Vector2(12.01f, 0f)));        // just beyond x half-extent
+        Assert.False(shape.PointContains(Vector2.Zero));                   // old origin no longer inside
+    }
+
+    [Fact]
+    public void Rectangle_PointContains_RespectsRotation()
+    {
+        var shape = new RectangleShape(4f, 2f); // half-extents (2,1), centered at origin
+        shape.Rotate((float)Math.PI / 4f);      // 45 deg: local-space test must still hold
+
+        Assert.True(shape.PointContains(new Vector2(0f, 0f)));             // center always inside
+        Assert.True(shape.PointContains(new Vector2(1.4f, 1.4f)));         // maps to local (~1.98,0): within x-half 2
+        Assert.False(shape.PointContains(new Vector2(2.6f, 2.6f)));        // maps to local (~3.68,0): beyond x-half 2
+        Assert.True(shape.PointContains(new Vector2(0f, 0.5f)));           // maps to local (~0.35,-0.35): inside
+        Assert.False(shape.PointContains(new Vector2(0f, 1.9f)));          // maps to local (~1.34,-1.34): beyond y-half 1
+    }
+
+    [Fact]
+    public void Rectangle_Center_ReflectsTranslationOffset()
+    {
+        var shape = new RectangleShape(4f, 2f);
+        Assert.InRange(shape.Center.X, -0.001f, 0.001f); // untransformed center is the origin
+
+        shape.Translate(new Vector2(5f, -3f));
+        Assert.InRange(shape.Center.X, 4.99f, 5.01f);
+        Assert.InRange(shape.Center.Y, -3.01f, -2.99f);
     }
 
     [Fact]

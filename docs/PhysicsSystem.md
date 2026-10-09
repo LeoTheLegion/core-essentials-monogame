@@ -239,6 +239,11 @@ physics.PositionIterations  = 3;
 IReadOnlyList<IPhysicsBody> bodies = physics.GetBodies();
 ICollider? hitCollider = physics.TestPoint(worldSpacePoint);
 
+// PointContains honors each shape's local offset and rotation. For a circle/rectangle collider
+// created with a non-zero `offset`, the containment query is evaluated about that offset (and, for
+// rotated bodies, in the body's unrotated local frame), so offset colliders hit-test where they are
+// actually placed — not at the body origin.
+
 // Clear all bodies (recycles into pool)
 physics.ClearAllBodies();
 

@@ -39,11 +39,15 @@ namespace CoreEssentials.Tests.Inputs
             bool leftButton = false, bool rightButton = false, bool middleButton = false,
             int scrollWheelValue = 0, bool xButton1 = false, bool xButton2 = false)
         {
+            // NOTE: MonoGame/XNA's MouseState constructor orders the button slots as
+            // (left, MIDDLE, right) — NOT (left, right, middle). Pass them in ctor order or the
+            // middle/right state silently swap. This is why per-button isolation only ever broke
+            // for Middle/Right.
             return new MouseState(
                 x, y, scrollWheelValue,
                 leftButton ? ButtonState.Pressed : ButtonState.Released,
-                rightButton ? ButtonState.Pressed : ButtonState.Released,
                 middleButton ? ButtonState.Pressed : ButtonState.Released,
+                rightButton ? ButtonState.Pressed : ButtonState.Released,
                 xButton1 ? ButtonState.Pressed : ButtonState.Released,
                 xButton2 ? ButtonState.Pressed : ButtonState.Released);
         }

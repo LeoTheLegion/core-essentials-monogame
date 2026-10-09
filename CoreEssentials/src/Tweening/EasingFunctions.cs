@@ -114,7 +114,10 @@ public static class EasingFunctions
     {
         if (t < 0.5f)
             return 8f * t * t * t * t;
-        return -1f / 2f * ((t = t * 2f - 3f) * t * t * t - 2f);
+
+        // Mirror the in-branch about t=1 so it is continuous at t=0.5 and lands exactly on 1.
+        var remaining = 1f - t;
+        return 1f - 8f * remaining * remaining * remaining * remaining;
     };
 
     /// <summary>Accelerates then decelerates (t⁵).</summary>

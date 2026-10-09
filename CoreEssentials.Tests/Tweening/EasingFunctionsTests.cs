@@ -274,18 +274,17 @@ public class EasingFunctionsTests
     }
 
     [Fact]
-    public void InOutQuart_ExecutesBothBranchesAndStartsAtZero()
+    public void InOutQuart_AcceleratesThenDecelerates()
     {
-        // Note: InOutQuart's else-branch currently does not satisfy the standard easing contract
-        // (it is discontinuous at t=0.5 and returns 1.5 at t=1). We exercise both branches here for
-        // coverage without asserting on those end/mid values; a dedicated fix + contract test will
-        // land when that behavior is corrected.
+        // Standard quartic in-out contract: anchored at the ends and midpoint.
         Assert.Equal(0f, EasingFunctions.InOutQuart(0f), 4);
+        Assert.Equal(0.5f, EasingFunctions.InOutQuart(0.5f), 4);
+        Assert.Equal(1f, EasingFunctions.InOutQuart(1f), 4);
 
-        var firstBranch = EasingFunctions.InOutQuart(0.49f);
-        var secondBranch = EasingFunctions.InOutQuart(0.51f);
-        Assert.True(float.IsFinite(firstBranch));
-        Assert.True(float.IsFinite(secondBranch));
+        // No discontinuity at the branch boundary: sampling close to 0.5 from either side stays
+        // within a small band around 0.5 (a broken else-branch would jump by >> this margin).
+        Assert.InRange(EasingFunctions.InOutQuart(0.499f), 0.49f, 0.51f);
+        Assert.InRange(EasingFunctions.InOutQuart(0.501f), 0.49f, 0.51f);
     }
 
     [Fact]
