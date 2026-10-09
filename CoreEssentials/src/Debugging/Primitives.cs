@@ -5,28 +5,47 @@ using System;
 namespace CoreEssentials.Debugging
 {
     /// <summary>
-    /// Provides functionality for drawing simple geometric shapes and debug visualizations.
-    /// Useful for rendering collision bounds, pathfinding information, and other debug elements.
+    /// Minimal draw boundary for <see cref="Primitives"/>: issues a single textured sprite draw with the
+    /// given transform. Production wraps a real <see cref="SpriteBatch"/> (owning the shared 1x1 white
+    /// pixel); tests inject a recording fake so the geometry each primitive expands into can be asserted
+    /// without a graphics device.
     /// </summary>
-    public class Primitives
+    internal interface IPrimitiveDrawer
+    {
+        void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, Vector2 origin, Vector2 scale);
+    }
+
+    /// <summary>Default <see cref="IPrimitiveDrawer"/> that draws through a real <see cref="SpriteBatch"/>.</summary>
+    internal sealed class SpriteBatchPrimitiveDrawer : IPrimitiveDrawer
     {
         private Texture2D? _texture;
 
-        /// <summary>
-        /// Gets the texture used for drawing primitives.
-        /// </summary>
-        /// <param name="spriteBatch">The SpriteBatch used for drawing.</param>
-        /// <returns>The texture used for drawing primitives.</returns>
-        private Texture2D GetTexture(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, Vector2 origin, Vector2 scale)
         {
             if (_texture == null)
             {
                 _texture = new Texture2D(spriteBatch.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
                 _texture.SetData(new[] { Color.White });
             }
-
-            return _texture;
+            spriteBatch.Draw(_texture, position, null, color, rotation, origin, scale, SpriteEffects.None, 0f);
         }
+    }
+
+    /// <summary>
+    /// Provides functionality for drawing simple geometric shapes and debug visualizations.
+    /// Useful for rendering collision bounds, pathfinding information, and other debug elements.
+    /// </summary>
+    public class Primitives
+    {
+        private readonly IPrimitiveDrawer _drawer = new SpriteBatchPrimitiveDrawer();
+
+        /// <summary>Creates a primitive drawer backed by a real <see cref="SpriteBatch"/>.</summary>
+        public Primitives()
+        {
+        }
+
+        /// <summary>Test seam: supplies the draw boundary so geometry can be asserted device-free.</summary>
+        internal Primitives(IPrimitiveDrawer drawer) => _drawer = drawer;
 
         /// <summary>
         /// Draws a rectangle.
@@ -76,7 +95,7 @@ namespace CoreEssentials.Debugging
         {
             var origin = new Vector2(0f, 0.5f);
             var scale = new Vector2(length, thickness);
-            spriteBatch.Draw(GetTexture(spriteBatch), point, null, color, angle, origin, scale, SpriteEffects.None, 0);
+            _drawer.Draw(spriteBatch, point, color, angle, origin, scale);
         }
 
         /// <summary>

@@ -168,6 +168,52 @@ uncovered block is the inner `if (effect != null)` sync/apply — a thin GPU hop
 
 See `CoreEssentials.Tests/GameSystems/EntitySystems/EntityOOPsystem/EntitySystemRenderPipelineTests.cs`.
 
+### A single draw hop (`IPrimitiveDrawer`)
+
+The same boundary can be as small as one `SpriteBatch.Draw` call. `Primitives` (lines, rectangles, circles)
+computed its geometry correctly but ended each method in a raw textured `Draw`, with a lazily-created 1×1
+white pixel cached on the instance. Both of those device concerns moved behind one interface, so every
+primitive's *math* (line distance/angle, rectangle corners, circle segment count) is now assertable:
+
+```csharp
+// In Primitives.cs (production) — the seam plus its default adapter.
+internal interface IPrimitiveDrawer
+{
+    void Draw(SpriteBatch spriteBatch, Vector2 position, Color color, float rotation, Vector2 origin, Vector2 scale);
+}
+
+internal sealed class SpriteBatchPrimitiveDrawer : IPrimitiveDrawer
+{
+    private Texture2D? _texture; // the 1×1 white pixel, cached as before
+    public void Draw(SpriteBatch sb, Vector2 position, Color color, float rotation, Vector2 origin, Vector2 scale)
+    {
+        if (_texture == null) { /* create + SetData once */ }
+        sb.Draw(_texture, position, null, color, rotation, origin, scale, SpriteEffects.None, 0f);
+    }
+}
+
+// The public methods are unchanged; they just route their final draw through the injected drawer.
+public Primitives() { }                                   // production default
+internal Primitives(IPrimitiveDrawer drawer) => _drawer = drawer; // test seam
+```
+
+A recording fake captures each draw, so a test asserts the geometry without a device:
+
+```csharp
+var prim = new Primitives(new RecordingDrawer());   // internal seam ctor
+prim.DrawRectangle(null!, new Rectangle(0, 0, 10, 20), Color.Red);
+
+// exactly four segments; two of length 10 (horizontal) and two of length 20 (vertical);
+// every segment starts on one of the rectangle's corners.
+```
+
+This is the constructor-injection flavour of interface injection — useful when a type has no separate
+`Draw(...)` wrapper to add, only an inline device call at the end of each method. It leaves `Debug.Primitives`
+(the static shared instance) and every public signature untouched. The thin GPU hop inside
+`SpriteBatchPrimitiveDrawer.Draw` is the only uncovered part.
+
+See `CoreEssentials.Tests/Debugging/PrimitivesLogicTests.cs`.
+
 ## Choosing between the two
 
 | Situation | Technique |
