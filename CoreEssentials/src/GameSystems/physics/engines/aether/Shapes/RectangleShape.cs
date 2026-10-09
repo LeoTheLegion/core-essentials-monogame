@@ -45,33 +45,15 @@ public class RectangleShape : PolygonShape
 
     #region IShape Overrides
 
-    // NOTE: Center intentionally inherits PolygonShape.Center (=> GetTransformedCenter()) so that a
-    // translated/rotated rectangle reports its true center rather than always the origin.
+    // NOTE: Center inherits PolygonShape.Center (the baked Aether centroid), so a translated/rotated
+    // rectangle reports its true center — the same geometry the underlying fixture simulates with.
+    // PointContains likewise inherits the base baked-geometry half-space test, which is correct for
+    // both translated and rotated rectangles now that Translate/Rotate bake into the Aether shape.
 
     /// <summary>
     /// Gets the bounding radius (distance from center to corner).
     /// </summary>
     public override float Radius => _halfSize.Length();
-
-    #endregion
-
-    #region Query Methods Overrides
-
-    /// <summary>
-    /// Tests whether a point is contained within this rectangle in local space using AABB check.
-    /// Faster than the generic polygon TestPoint for rectangles.
-    /// </summary>
-    public override bool PointContains(Vector2 point)
-    {
-        if (base.IsDisposed) return false;
-
-        // Undo the accumulated offset/rotation so we're back in the rectangle's unrotated local
-        // space, where it is axis-aligned with half-extents _halfSize centered on the origin.
-        var localPoint = ApplyInverseTransform(point);
-
-        return Math.Abs(localPoint.X) <= _halfSize.X &&
-               Math.Abs(localPoint.Y) <= _halfSize.Y;
-    }
 
     #endregion
 

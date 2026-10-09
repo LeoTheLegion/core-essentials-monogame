@@ -239,10 +239,10 @@ physics.PositionIterations  = 3;
 IReadOnlyList<IPhysicsBody> bodies = physics.GetBodies();
 ICollider? hitCollider = physics.TestPoint(worldSpacePoint);
 
-// PointContains honors each shape's local offset and rotation. For a circle/rectangle collider
-// created with a non-zero `offset`, the containment query is evaluated about that offset (and, for
-// rotated bodies, in the body's unrotated local frame), so offset colliders hit-test where they are
-// actually placed — not at the body origin.
+// A collider created with a non-zero `offset` (or that has been Translated/Rotated) bakes that
+// transform straight into its underlying physics shape. The SAME geometry drives both the simulation
+// and point queries, so an offset collider collides AND hit-tests where it is actually placed — not
+// at the body origin. Circle, rectangle, and polygon colliders all behave this way.
 
 // Clear all bodies (recycles into pool)
 physics.ClearAllBodies();
