@@ -896,11 +896,10 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
 
         if (SpatialPartitioningEnabled && _spatialGrid != null)
         {
-            var entities = _spatialGrid.Query(bounds);
-            foreach (var entity in entities)
+            // Query(bounds) already guarantees containment in the bounds.
+            foreach (var entity in _spatialGrid.Query(bounds))
             {
-                var pos = entity.Position;
-                if (entity.GetActive() && bounds.Contains((int)pos.X, (int)pos.Y))
+                if (entity.GetActive())
                     results.Add(entity);
             }
         }

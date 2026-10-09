@@ -75,13 +75,20 @@ var nearby = entitySystem.FindNearby(player.Position, 100f);
 
 ### FindInBounds(Rectangle bounds)
 
-Finds entities within rectangle using spatial partitioning.
+Finds active entities whose position falls inside the rectangle, using spatial partitioning.
 
 ```csharp
 public List<Entity> FindInBounds(Rectangle bounds)
 ```
 
 **Performance:** O(k) where k is entities in relevant cells
+
+**Containment guarantee:** The underlying grid query returns only entities actually *inside* the
+bounds (a closed-rectangle test — an entity sitting exactly on the edge is included), not merely
+entities sharing a cell with the bounds. So `FindInBounds` matches the linear-search fallback
+exactly, regardless of cell size. The circular `Query(center, radius)` overload depends on this: it
+generates candidates from a bounding box and then applies the authoritative `distance <= radius`
+test, so an entity exactly at the radius survives to that check.
 
 **Example:**
 ```csharp

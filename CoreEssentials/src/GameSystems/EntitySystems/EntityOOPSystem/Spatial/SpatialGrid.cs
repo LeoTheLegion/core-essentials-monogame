@@ -110,6 +110,12 @@ public class SpatialGrid
     /// <summary>
     /// Queries for all entities within a rectangular region.
     /// </summary>
+    /// <remarks>
+    /// Entities are placed in cells based on their position, so the relevant cells form an
+    /// over-approximation of the query rectangle. Candidates are therefore filtered by actual
+    /// containment before being returned, matching the contract ("within the specified bounds")
+    /// and the behavior of the circular overload.
+    /// </remarks>
     /// <param name="bounds">The rectangle to query.</param>
     /// <returns>A collection of entities within the specified bounds.</returns>
     public HashSet<Entity> Query(Rectangle bounds)
@@ -127,7 +133,15 @@ public class SpatialGrid
                 if (_grid.TryGetValue(cell, out var entities))
                 {
                     foreach (var entity in entities)
-                        results.Add(entity);
+                    {
+                        // Closed-rectangle containment (edges inclusive) so the circular overload can
+                        // rely on this as a candidate generator: an entity exactly at the radius sits
+                        // on the bounding-box edge and must survive to the distance check.
+                        var pos = entity.Position;
+                        if (pos.X >= bounds.Left && pos.X <= bounds.Right &&
+                            pos.Y >= bounds.Top && pos.Y <= bounds.Bottom)
+                            results.Add(entity);
+                    }
                 }
             }
         }
