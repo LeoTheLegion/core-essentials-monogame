@@ -182,9 +182,24 @@ public class ShaderComponent : EntityComponent
     {
         if (effect == null || _values.Count == 0) return;
 
+        // Route the real MonoGame effect through the uniform seam so the exact same apply/coerce logic is
+        // exercised in tests with a recording fake instead of a compiled effect.
+        Apply(new EffectUniformTarget(effect));
+    }
+
+    /// <summary>
+    /// Writes every stored uniform onto the matching parameter of the supplied target. This is the
+    /// device-free seam: production forwards to a real <see cref="Effect"/> via
+    /// <see cref="EffectUniformTarget"/>, tests supply a recording fake. See the class remarks for how each
+    /// value is resolved against its declared parameter type.
+    /// </summary>
+    internal void Apply(IShaderEffect effect)
+    {
+        if (effect == null || _values.Count == 0) return;
+
         foreach (var (name, stored) in _values)
         {
-            var parameter = effect.Parameters[name];
+            var parameter = effect.GetParameter(name);
             if (parameter == null)
             {
                 WarnOnce(name, () => $"Effect has no parameter '{name}' — skipped. " +
@@ -262,7 +277,7 @@ public class ShaderComponent : EntityComponent
     /// declared shape. Numeric scalars are coerced; a <see cref="Color"/> is applied to a 4-component
     /// vector. Returns false when the stored CLR type is incompatible with the parameter's shape.
     /// </summary>
-    private static bool SetTypedParameter(EffectParameter parameter, object value)
+    private static bool SetTypedParameter(IShaderParameter parameter, object value)
     {
         try
         {
@@ -291,7 +306,9 @@ public class ShaderComponent : EntityComponent
                             return true;
                         default:
                             if (value is Color color)
-                                parameter.SetValue(new Vector4(color.R, color.G, color.B, color.A));
+                                // Normalize to 0-1 floats: HLSL pixel shaders treat color uniforms as 0-1,
+                                // so Color.Coral writes ~float4(1, 0.5, 0.31, 1) rather than raw bytes.
+                                parameter.SetValue(new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
                             else
                                 parameter.SetValue((Vector4)value);
                             return true;
@@ -316,7 +333,7 @@ public class ShaderComponent : EntityComponent
     /// accepts either an explicit "x,y,z,w" or an "R,G,B"/"R,G,B,A" color (glow tints are commonly
     /// authored as colors but live in a <c>float4</c>). Returns false for shapes with no string form.
     /// </summary>
-    private static bool SetParsedParameter(EffectParameter parameter, string raw)
+    private static bool SetParsedParameter(IShaderParameter parameter, string raw)
     {
         switch (parameter.ParameterClass)
         {
@@ -364,10 +381,74 @@ public class ShaderComponent : EntityComponent
             if (r is >= 0 and <= 255 && g is >= 0 and <= 255 && b is >= 0 and <= 255 && a is >= 0 and <= 255)
             {
                 var c = new Color(r, g, b, a);
-                return new Vector4(c.R, c.G, c.B, c.A);
+                // Normalize to 0-1 floats to match the typed SetColor path (HLSL expects color uniforms in 0-1).
+                return new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f);
             }
         }
 
         return SerializationUtils.ParseVector4FromString(raw);
     }
+}
+
+/// <summary>
+/// The subset of a MonoGame <see cref="Effect"/> surface <see cref="ShaderComponent"/> needs in order to push its
+/// uniforms: look up a named parameter. Production forwards to a real effect via
+/// <see cref="EffectUniformTarget"/>; tests supply a recording fake so the apply/coerce logic can be asserted
+/// without a compiled effect or graphics device.
+/// </summary>
+internal interface IShaderEffect
+{
+    /// <summary>Returns the named parameter, or null when the effect declares no such parameter.</summary>
+    IShaderParameter? GetParameter(string name);
+}
+
+/// <summary>
+/// The subset of a MonoGame <see cref="EffectParameter"/> surface <see cref="ShaderComponent"/> reads and writes.
+/// Strongly-typed <c>SetValue</c> overloads mirror the ones the component's dispatch chooses from, so tests can
+/// assert exactly which overload (and value) the production logic selected.
+/// </summary>
+internal interface IShaderParameter
+{
+    EffectParameterClass ParameterClass { get; }
+    EffectParameterType ParameterType { get; }
+    int ColumnCount { get; }
+
+    void SetValue(bool value);
+    void SetValue(int value);
+    void SetValue(float value);
+    void SetValue(Vector2 value);
+    void SetValue(Vector3 value);
+    void SetValue(Vector4 value);
+    void SetValue(Matrix value);
+}
+
+/// <summary>Production <see cref="IShaderEffect"/>: forwards parameter lookups to a real MonoGame <see cref="Effect"/>.</summary>
+internal sealed class EffectUniformTarget : IShaderEffect
+{
+    private readonly Effect _effect;
+
+    public EffectUniformTarget(Effect effect) => _effect = effect;
+
+    public IShaderParameter? GetParameter(string name)
+        => _effect.Parameters[name] is { } parameter ? new EffectParameterAdapter(parameter) : null;
+}
+
+/// <summary>Production <see cref="IShaderParameter"/>: forwards to a real MonoGame <see cref="EffectParameter"/>.</summary>
+internal sealed class EffectParameterAdapter : IShaderParameter
+{
+    private readonly EffectParameter _parameter;
+
+    public EffectParameterAdapter(EffectParameter parameter) => _parameter = parameter;
+
+    public EffectParameterClass ParameterClass => _parameter.ParameterClass;
+    public EffectParameterType ParameterType => _parameter.ParameterType;
+    public int ColumnCount => _parameter.ColumnCount;
+
+    public void SetValue(bool value) => _parameter.SetValue(value);
+    public void SetValue(int value) => _parameter.SetValue(value);
+    public void SetValue(float value) => _parameter.SetValue(value);
+    public void SetValue(Vector2 value) => _parameter.SetValue(value);
+    public void SetValue(Vector3 value) => _parameter.SetValue(value);
+    public void SetValue(Vector4 value) => _parameter.SetValue(value);
+    public void SetValue(Matrix value) => _parameter.SetValue(value);
 }
