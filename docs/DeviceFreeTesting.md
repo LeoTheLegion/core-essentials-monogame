@@ -107,6 +107,67 @@ Assert.Equal(new Rectangle(80, 40, 40, 20), Assert.Single(target.Rectangles).Bou
 
 See `CoreEssentials.Tests/Debugging/EntityDebugDrawLogicTests.cs`.
 
+### The render pipeline (`IEntityDrawTarget`)
+
+The same idea scales up to a whole rendering pass. `EntitySystem.Draw` used to own both the *grouping
+logic* (which entities share a texture, which z-layer order, which contiguous runs share an effect) and the
+actual `SpriteBatch.Begin/End` + `effect.SetMatrix` calls. That made the batch-structure logic untestable
+without a device. The seam pulls only the GPU hop behind an interface; everything that *decides* the order
+and grouping stays in the system and becomes reachable:
+
+```csharp
+// In EntitySystem.cs (production) — the seam plus its default adapter.
+internal interface IEntityDrawTarget
+{
+    void Begin(Effect? effect, Matrix? viewMatrix);
+    void End();
+    void SyncProjection(Effect? effect);   // sets the projection matrix on a live Effect
+    void DrawEntity(Entity entity);
+}
+
+internal sealed class SpriteBatchDrawTarget : IEntityDrawTarget
+{
+    private readonly SpriteBatch _spriteBatch;
+    public SpriteBatchDrawTarget(SpriteBatch spriteBatch) => _spriteBatch = spriteBatch;
+    public void Begin(Effect? effect, Matrix? viewMatrix)
+        => _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp,
+             DepthStencilState.None, RasterizerState.CullNone, effect, viewMatrix);
+    public void End() => _spriteBatch.End();
+    public void SyncProjection(Effect? effect)
+        => RenderPipeline.SyncEffectProjection(effect, _spriteBatch.GraphicsDevice);
+    public void DrawEntity(Entity entity) => entity.Render(_spriteBatch);
+}
+
+// Public entry point is unchanged; it just wraps the batch in the adapter.
+public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+{
+    RenderEntities(new SpriteBatchDrawTarget(spriteBatch));
+    ResetTextureDirtyFlags();
+    if (DebugMode) DrawDebugOverlays(spriteBatch);
+}
+
+internal void RenderEntities(IEntityDrawTarget target) { /* group → partition → Begin/Draw/End per run */ }
+```
+
+A test records the op sequence and asserts on *structure* — how many batches were opened, whether they
+balance, which entities fell into each run — with no `SpriteBatch` or `Effect`:
+
+```csharp
+var target = new RecordingTarget(); // implements IEntityDrawTarget, appends to a List<string>
+system.RenderEntities(target);
+
+Assert.Equal(1, target.BeginCount);   // one texture group → one null-effect run
+Assert.Equal(target.BeginCount, target.EndCount); // balanced
+Assert.True(target.LastOpIsEnd());    // the batch was closed after its entities drew
+```
+
+`GroupEntitiesByZLayer`, `PartitionByEffect`, and the individual render methods were promoted to
+`internal` (and `static` where they are pure) so tests can assert on their grouping directly. The one
+uncovered block is the inner `if (effect != null)` sync/apply — a thin GPU hop that needs a real compiled
+`Effect`.
+
+See `CoreEssentials.Tests/GameSystems/EntitySystems/EntityOOPsystem/EntitySystemRenderPipelineTests.cs`.
+
 ## Choosing between the two
 
 | Situation | Technique |
