@@ -6,6 +6,23 @@
 
 $ErrorActionPreference = 'Stop'
 
+# Compress a set of line numbers into Jest-style ranges, e.g. 38,39,40,55 -> "38-40, 55".
+function ConvertTo-LineRanges($nums) {
+    if (-not $nums) { return '' }
+    $sorted = @($nums | Sort-Object -Unique)
+    if ($sorted.Count -eq 0) { return '' }
+    $parts = [System.Collections.Generic.List[string]]::new()
+    for ($i = 0; $i -lt $sorted.Count;) {
+        $start = $sorted[$i]
+        $end   = $start
+        $j     = $i + 1
+        while ($j -lt $sorted.Count -and $sorted[$j] -eq $end + 1) { $end = $sorted[$j]; $j++ }
+        if ($end -gt $start) { $parts.Add("$start-$end") } else { $parts.Add("$start") }
+        $i = $j
+    }
+    return ($parts -join ', ')
+}
+
 $repoRoot  = Split-Path -Parent $PSScriptRoot
 $cobertura = Join-Path $repoRoot (Join-Path 'CoreEssentials.Tests' (Join-Path 'coverage' 'coverage.cobertura.xml'))
 
@@ -53,33 +70,37 @@ foreach ($cls in @($xml.SelectNodes('//class'))) {
 $rows = foreach ($fname in $byFile.Keys) {
     $lines   = $byFile[$fname]
     $total   = $lines.Count
-    $covered = @($lines.Values | Where-Object { $_ }).Count
-# Short leaf name keeps the numeric columns visible; full path is retained in `Path`.
-        [PSCustomObject]@{
-            Name      = (Split-Path -Leaf $fname)
-            Path      = ($fname -replace '^/','')
+    # Split line numbers into covered vs. uncovered so we can print Jest-style ranges.
+    $coveredNums   = @($lines.Keys | Where-Object { $lines[$_] })
+    $uncoveredNums = @($lines.Keys | Where-Object { -not $lines[$_] })
+    $covered       = $coveredNums.Count
+    [PSCustomObject]@{
+        # Short leaf name keeps the numeric columns visible; full path is retained in `Path`.
+        Name      = (Split-Path -Leaf $fname)
+        Path      = ($fname -replace '^/','')
         Covered   = $covered
         Total     = $total
         Uncovered = $total - $covered
         Pct       = if ($total) { [math]::Round(100.0 * $covered / $total, 1) } else { 0.0 }
+        'Uncovered Line #s' = (ConvertTo-LineRanges $uncoveredNums)
     }
 }
 
 $gaps = @($rows | Where-Object { $_.Uncovered -gt 0 } | Sort-Object Uncovered -Descending)
 
 Write-Host ''
-Write-Host 'Top files by uncovered lines (most impactful to test first):' -ForegroundColor Cyan
+Write-Host ('Files with uncovered lines: {0} (most impactful to test first)' -f $gaps.Count) -ForegroundColor Cyan
 if ($gaps.Count -eq 0) {
     Write-Host 'No uncovered lines.' -ForegroundColor Green
 }
 else {
-    $gaps | Select-Object -First 25 Name, Covered, Total, Uncovered, Pct, Path | Format-Table -AutoSize -Wrap
+    $gaps | Select-Object Name, Covered, Total, Uncovered, Pct, 'Uncovered Line #s', Path | Format-Table -AutoSize -Wrap
 }
 
 $below = @($rows | Where-Object { $_.Pct -lt $threshold })
 Write-Host ('Files below {0}% line coverage: {1}' -f $threshold, $below.Count) -ForegroundColor Yellow
 if ($below.Count -gt 0) {
-    $below | Sort-Object Pct | Select-Object Name, Covered, Total, Uncovered, Pct, Path | Format-Table -AutoSize -Wrap
+    $below | Sort-Object Pct | Select-Object Name, Covered, Total, Uncovered, Pct, 'Uncovered Line #s', Path | Format-Table -AutoSize -Wrap
 }
 
 $deltaNeeded = [math]::Ceiling($linesValid * ($threshold / 100)) - $linesHit
