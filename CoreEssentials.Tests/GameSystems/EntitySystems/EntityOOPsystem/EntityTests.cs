@@ -9,6 +9,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     public class EntityTests
     {
+        // The coroutine system is a shared static singleton. Clear any coroutines and pending yields
+        // left behind by other test classes so each test drives the clock from a known-clean state —
+        // otherwise DestroyAfter timing becomes order-dependent (see NestedCoroutineTests).
+        public EntityTests() => CoroutineManager.StopAllCoroutines();
+
         [Fact]
         public void Entity_SetsActiveToFalse()
         {
