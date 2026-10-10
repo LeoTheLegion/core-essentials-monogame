@@ -214,6 +214,43 @@ This is the constructor-injection flavour of interface injection — useful when
 
 See `CoreEssentials.Tests/Debugging/PrimitivesLogicTests.cs`.
 
+### A whole device-reach cluster (`IPhysicsDebugRenderTarget`)
+
+Some methods have *no* pure logic to expose — they are themselves the device hop (loading a font into a
+live `GraphicsDevice`, reading the current `Viewport`, dispatching a render). For those, the seam is the
+whole boundary: pull every device-touching statement behind one interface whose production adapter forwards
+1:1, and the class itself becomes free of any device dereference. `PhysicsDebugRenderer` had exactly this in
+two places — `LoadContent` (font load) and `Draw` (viewport read + `RenderDebugData`) — so both moved behind a
+single seam, leaving its public Aether surface (`DebugView`, `Flags`) untouched:
+
+```csharp
+// In PhysicsDebugRenderer.cs (production) — the seam plus its default adapter.
+internal interface IPhysicsDebugRenderTarget
+{
+    void LoadFont(DebugView view);  // guarded by a "scene not yet attached" throw
+    void Render(DebugView view);    // viewport → ortho projection → RenderDebugData
+}
+
+internal sealed class AetherPhysicsDebugRenderTarget : IPhysicsDebugRenderTarget
+{
+    private readonly PhysicsDebugRenderer _owner; // reads _owner.Game for device + content
+    public void LoadFont(DebugView view) { var game = _owner.Game ?? throw ...; view.LoadContent(game.Graphics.GraphicsDevice, game.Content); }
+    public void Render(DebugView view)   { var vp = _owner.Game!.Graphics.GraphicsDevice.Viewport; /* build projection */ view.RenderDebugData(...); }
+}
+
+// The public ctors/API are unchanged; the internal ctor adds the seam.
+public PhysicsDebugRenderer(PhysicsEngine engine) : this(engine, null) { }
+internal PhysicsDebugRenderer(PhysicsEngine engine, IPhysicsDebugRenderTarget? target) { ... _target = target; }
+private IPhysicsDebugRenderTarget Target => _target ??= new AetherPhysicsDebugRenderTarget(this); // lazily once
+```
+
+Because the "no game → throw" guard now lives *inside* the production adapter (not in the class), the existing
+guard tests keep passing without a device, while a recording fake drives the success paths — lazy sibling-engine
+resolution, one-shot font-load dispatch, and the cold-vs-warm draw path. The only uncovered lines are the two
+1:1-forwarding statements inside `AetherPhysicsDebugRenderTarget`'s bodies (the thin GPU hops).
+
+See `CoreEssentials.Tests/GameSystems/Physics/PhysicsDebugRendererTests.cs`.
+
 ## Choosing between the two
 
 | Situation | Technique |
