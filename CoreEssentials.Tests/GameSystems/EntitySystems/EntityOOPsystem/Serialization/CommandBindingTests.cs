@@ -22,6 +22,7 @@ public class CommandBindingTests : IDisposable
 {
     private readonly EntitySystem _system = new();
     private readonly Game _mockGame;
+    private bool _disposed;
 
     public CommandBindingTests()
     {
@@ -41,19 +42,19 @@ public class CommandBindingTests : IDisposable
             @"<Bind Event=""Signaled"" Command=""OnClicked"" />");
 
         // Attach a component that has the event, then apply the binds.
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         CommandBindings.ApplyBindings(entity, def);
 
         signal.RaiseSignal();
 
-        Assert.Equal(1, ((ClickableEntity)entity).ClickCount);
+        Assert.Equal(1, entity.ClickCount);
     }
 
     [Fact]
     public void Bind_CommandForm_ResolvesHandlerOnComponent()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"<Bind Event=""Signaled"" Command=""OnSignaled"" />");
 
         CommandBindings.ApplyBindings(entity, def);
@@ -70,14 +71,14 @@ public class CommandBindingTests : IDisposable
         var child = new PlainEntity();
         parent.AddChild(child);
 
-        var signal = (SignalComponent)child.AddComponent(new SignalComponent());
+        var signal = child.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"<Bind Event=""Signaled"" Command=""OnClicked"" />");
 
         CommandBindings.ApplyBindings(child, def);
 
         signal.RaiseSignal();
 
-        Assert.Equal(1, ((ClickableEntity)parent).ClickCount);
+        Assert.Equal(1, parent.ClickCount);
     }
 
     // ──────────────────────────── Target+Member form (PersistentCall style) ────────────────────────────
@@ -86,7 +87,7 @@ public class CommandBindingTests : IDisposable
     public void Bind_TargetMemberForm_ResolvesNamedComponent()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"<Bind Event=""Signaled"" Target=""SignalComponent"" Member=""OnSignaled"" />");
 
         CommandBindings.ApplyBindings(entity, def);
@@ -100,26 +101,26 @@ public class CommandBindingTests : IDisposable
     public void Bind_TargetMemberForm_ResolvesEntityItself()
     {
         var entity = _system.CreateEntity<ClickableEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"<Bind Event=""Signaled"" Target=""ClickableEntity"" Member=""OnClicked"" />");
 
         CommandBindings.ApplyBindings(entity, def);
 
         signal.RaiseSignal();
 
-        Assert.Equal(1, ((ClickableEntity)entity).ClickCount);
+        Assert.Equal(1, entity.ClickCount);
     }
 
     [Fact]
     public void Bind_TargetMemberForm_RequiresBothAttributes()
     {
         var entity = _system.CreateEntity<ClickableEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
 
         // Member without Target must not bind.
         CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Signaled"" Member=""OnClicked"" />"));
         signal.RaiseSignal();
-        Assert.Equal(0, ((ClickableEntity)entity).ClickCount);
+        Assert.Equal(0, entity.ClickCount);
     }
 
     // ──────────────────────────── Payload delivery ────────────────────────────
@@ -128,7 +129,7 @@ public class CommandBindingTests : IDisposable
     public void Bind_EventHandlerEvent_DeliversPayloadToHandler()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var payload = (PayloadComponent)entity.AddComponent(new PayloadComponent());
+        var payload = entity.AddComponent(new PayloadComponent());
         var def = BuildDefinition(@"<Bind Event=""Ponged"" Command=""OnPonged"" />");
 
         CommandBindings.ApplyBindings(entity, def);
@@ -142,7 +143,7 @@ public class CommandBindingTests : IDisposable
     public void Bind_ZeroParamHandler_OnPayloadEvent_StillFires()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"<Bind Event=""Pinged"" Command=""OnSignaled"" />");
 
         CommandBindings.ApplyBindings(entity, def);
@@ -158,7 +159,7 @@ public class CommandBindingTests : IDisposable
     public void Bind_MultipleBinds_AllFire()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"
             <Bind Event=""Signaled"" Command=""OnSignaled"" />
             <Bind Event=""Pinged"" Command=""OnPinged"" />");
@@ -175,8 +176,8 @@ public class CommandBindingTests : IDisposable
     public void Bind_SourceAttribute_RestrictsEventLookup()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
-        var payload = (PayloadComponent)entity.AddComponent(new PayloadComponent());
+        entity.AddComponent(new SignalComponent());
+        var payload = entity.AddComponent(new PayloadComponent());
         // Both components expose different events; Source pins the lookup to one.
         var def = BuildDefinition(@"<Bind Event=""Ponged"" Source=""PayloadComponent"" Command=""OnPonged"" />");
 
@@ -193,7 +194,7 @@ public class CommandBindingTests : IDisposable
     public void Bind_UnknownCommand_DoesNotThrow_AndDoesNotBind()
     {
         var entity = _system.CreateEntity<PlainEntity>();
-        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var signal = entity.AddComponent(new SignalComponent());
         var def = BuildDefinition(@"<Bind Event=""Signaled"" Command=""NoSuchCommand"" />");
 
         var ex = Record.Exception(() => CommandBindings.ApplyBindings(entity, def));
@@ -230,13 +231,149 @@ public class CommandBindingTests : IDisposable
     {
         var entity = _system.CreateEntity<PlainEntity>();
         entity.AddComponent(new SignalComponent());
-        var exploding = (ExplodingComponent)entity.AddComponent(new ExplodingComponent());
+        var exploding = entity.AddComponent(new ExplodingComponent());
         // Command form: OnBoom is found on the ExplodingComponent.
         var def = BuildDefinition(@"<Bind Event=""Signaled"" Target=""ExplodingComponent"" Member=""OnBoom"" />");
 
         CommandBindings.ApplyBindings(entity, def);
 
         var ex = Record.Exception(() => exploding.RaiseBoom());
+
+        Assert.Null(ex);
+    }
+
+    // ──────────────────────────── Components / discovery branches ────────────────────────────
+
+    [Fact]
+    public void Bind_UnderComponentsElement_IsDiscoveredAndFires()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = entity.AddComponent(new SignalComponent());
+        var def = BuildDefinition(
+            @"<Components><Bind Event=""Signaled"" Command=""OnSignaled"" /></Components>");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        signal.RaiseSignal();
+
+        Assert.Equal(1, signal.SignalCount);
+    }
+
+    [Fact]
+    public void Bind_NestedUnderComponentElement_IsDiscoveredAndFires()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = entity.AddComponent(new SignalComponent());
+        var def = BuildDefinition(
+            @"<Components><Component Name=""signal""><Bind Event=""Signaled"" Command=""OnSignaled"" /></Component></Components>");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        signal.RaiseSignal();
+
+        Assert.Equal(1, signal.SignalCount);
+    }
+
+    [Fact]
+    public void Bind_SourceNamedEntity_OnlyConsidersEntityAndMatchedComponent()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = entity.AddComponent(new SignalComponent());
+        // Source matches the component by simple name; event is resolved on it.
+        var def = BuildDefinition(
+            @"<Bind Event=""Signaled"" Source=""SignalComponent"" Command=""OnSignaled"" />");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        signal.RaiseSignal();
+
+        Assert.Equal(1, signal.SignalCount);
+    }
+
+    // ──────────────────────────── Handler resolution guards ────────────────────────────
+
+    [Fact]
+    public void Bind_MissingCommandAndMember_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = entity.AddComponent(new SignalComponent());
+
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Signaled"" />")));
+
+        Assert.Null(ex);
+        signal.RaiseSignal(); // nothing subscribed
+        Assert.Equal(0, signal.SignalCount);
+    }
+
+    [Fact]
+    public void Bind_CommandNotOnAnyAncestor_DoesNotThrow_AndDoesNotBind()
+    {
+        var parent = _system.CreateEntity<PlainEntity>();
+        var child = new PlainEntity();
+        parent.AddChild(child);
+        var signal = child.AddComponent(new SignalComponent());
+
+        // Command form, but no ancestor defines the handler — must walk up and give up.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(child, BuildDefinition(@"<Bind Event=""Signaled"" Target=""NoSuchTarget"" Member=""OnGone"" />")));
+
+        Assert.Null(ex);
+        signal.RaiseSignal();
+        Assert.Equal(0, signal.SignalCount);
+    }
+
+    // ──────────────────────────── CreateBridge compatibility matrix ────────────────────────────
+
+    [Fact]
+    public void Bind_ActionOfTEvent_DeliversPayload()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var comp = entity.AddComponent(new ActionIntComponent());
+        var def = BuildDefinition(@"<Bind Event=""IntSignaled"" Command=""OnGot"" />");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        comp.Raise();
+
+        Assert.Equal(42, comp.LastValue);
+    }
+
+    [Fact]
+    public void Bind_UnsupportedDelegateEvent_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        entity.AddComponent(new FuncComponent());
+
+        // Func<int,bool> is not an Action/Action<T>/EventHandler, so the bridge can't be built.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Predicate"" Command=""OnX"" />")));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void Bind_NoPayloadEventWithSingleParamHandler_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        entity.AddComponent(new DeliverMismatchComponent());
+
+        // Event is a bare Action (no payload) but the handler demands one — nothing to deliver.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Go"" Command=""NeedsArg"" />")));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void Bind_HandlerParamNotAssignableFromPayload_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        entity.AddComponent(new MismatchParamComponent());
+
+        // EventHandler carries EventArgs, but the handler wants a string — not assignable.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Fired"" Command=""OnStr"" />")));
 
         Assert.Null(ex);
     }
@@ -294,9 +431,20 @@ public class CommandBindingTests : IDisposable
 
     public void Dispose()
     {
-        _system.Dispose();
-        EngineResolver.GetEngine().Shutdown();
-        _mockGame.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            _system.Dispose();
+            EngineResolver.GetEngine().Shutdown();
+            _mockGame.Dispose();
+        }
+        _disposed = true;
     }
 }
 
@@ -364,4 +512,54 @@ public class DiscoveryFixtureComponent : EntityComponent
 /// <summary>Returned by an explicit registration that shadows a same-named discoverable type.</summary>
 public class DiscoveryShadowWinner : EntityComponent
 {
+}
+
+/// <summary>Exposes an Action&lt;T&gt; event to exercise the generic-payload bridge path.</summary>
+public class ActionIntComponent : EntityComponent
+{
+    public event Action<int>? IntSignaled;
+    public int LastValue;
+
+    public void OnGot(int value) => LastValue = value;
+
+    /// <summary>Raises <see cref="IntSignaled"/> with a fixed payload.</summary>
+    public void Raise() => IntSignaled?.Invoke(42);
+}
+
+/// <summary>Exposes an unsupported (Func) event — the bridge cannot adapt its signature.</summary>
+public class FuncComponent : EntityComponent
+{
+    // Looked up by name from XML and inspected (never invoked) to prove the binder rejects
+    // non-Action/EventHandler signatures; kept as a reflection fixture.
+    public event Func<int, bool>? Predicate; // NOSONAR
+
+    public void OnX()
+    {
+        // Intentionally empty: an unreachable handler stub for the negative "unsupported delegate"
+        // test — the bridge never binds to it, so there is no body to complete.
+    }
+}
+
+/// <summary>Action event paired with a single-parameter handler — nothing to deliver.</summary>
+public class DeliverMismatchComponent : EntityComponent
+{
+    // Looked up by name from XML to prove a payload-less Action can't satisfy a parameterized handler.
+    public event Action? Go; // NOSONAR
+
+    public void NeedsArg(int ignored)
+    {
+        // Intentionally empty: unreachable stub for the negative "no payload to deliver" test.
+    }
+}
+
+/// <summary>EventHandler event (payload EventArgs) paired with an incompatible string param.</summary>
+public class MismatchParamComponent : EntityComponent
+{
+    // Looked up by name from XML to prove an EventArgs payload can't feed a string parameter.
+    public event EventHandler? Fired; // NOSONAR
+
+    public void OnStr(string s)
+    {
+        // Intentionally empty: unreachable stub for the negative "parameter not assignable" test.
+    }
 }

@@ -9,13 +9,10 @@ namespace CoreEssentials.GameSystems.Physics.Engines.Aether.Shapes;
 /// </summary>
 public class PolygonShape : IShape
 {
-    internal readonly AEPolygon _aetherShape;
+    internal AEPolygon _aetherShape;
 
-    /// <summary>The local space offset applied to this shape's position.</summary>
-    protected Vector2 _localOffset = Vector2.Zero;
-
-    /// <summary>The local space rotation (in radians) applied to this shape.</summary>
-    protected float _localRotation = 0f;
+    /// <summary>Density captured at construction so a rebuilt (transformed) polygon preserves its mass properties.</summary>
+    private readonly float _density;
     private bool _disposed;
 
     /// <summary>
@@ -39,22 +36,25 @@ public class PolygonShape : IShape
 
         var aetherVertices = new nkast.Aether.Physics2D.Common.Vertices(vertexList);
         _aetherShape = new AEPolygon(aetherVertices, density);
+        _density = density;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PolygonShape"/> class from an existing Aether shape.
     /// </summary>
-    internal PolygonShape(AEPolygon aetherShape)
+    internal PolygonShape(AEPolygon aetherShape, float density = 1f)
     {
         _aetherShape = aetherShape ?? throw new ArgumentNullException(nameof(aetherShape));
+        _density = density;
     }
 
     #region IShape Properties
 
     /// <summary>
-    /// Gets the center of mass in local space, adjusted for any transform offsets.
+    /// Gets the center of mass in local space. Because Translate/Rotate bake directly into the
+    /// geometry, this is the true baked centroid (the same value Aether uses for collision).
     /// </summary>
-    public virtual Vector2 Center => GetTransformedCenter();
+    public virtual Vector2 Center => _aetherShape.MassData.Centroid;
 
     /// <summary>
     /// Gets the bounding radius (small fixed value from Aether for polygon collision optimization).
@@ -62,10 +62,10 @@ public class PolygonShape : IShape
     public virtual float Radius => _aetherShape.Radius;
 
     /// <summary>
-    /// Returns the vertices of this polygon in local space, adjusted for any transform offsets.
-    /// These may be re-ordered by Aether's convex hull computation.
+    /// Returns the vertices of this polygon in local space. Transforms are baked into these, so they
+    /// match what the underlying Aether fixture simulates with.
     /// </summary>
-    public IReadOnlyList<Vector2> Vertices => GetTransformedVertices();
+    public IReadOnlyList<Vector2> Vertices => _aetherShape.Vertices;
 
     #endregion
 
@@ -100,7 +100,14 @@ public class PolygonShape : IShape
     public void Translate(Vector2 offset)
     {
         if (_disposed) return;
-        _localOffset += offset;
+
+        // Bake the translation into the geometry so the underlying Aether fixture (and therefore the
+        // simulation) matches what PointContains/Center report — not just a wrapper-side offset.
+        var current = _aetherShape.Vertices;
+        var updated = new Vector2[current.Count];
+        for (int i = 0; i < current.Count; i++)
+            updated[i] = current[i] + offset;
+        Rebuild(updated);
     }
 
     /// <summary>
@@ -109,7 +116,27 @@ public class PolygonShape : IShape
     public void Rotate(float angleRadians)
     {
         if (_disposed) return;
-        _localRotation += angleRadians;
+
+        // Bake the rotation about the current centroid into the geometry (same rationale as Translate).
+        var center = _aetherShape.MassData.Centroid;
+        var current = _aetherShape.Vertices;
+        var cos = (float)Math.Cos(angleRadians);
+        var sin = (float)Math.Sin(angleRadians);
+        var updated = new Vector2[current.Count];
+        for (int i = 0; i < current.Count; i++)
+        {
+            var d = current[i] - center;
+            updated[i] = center + new Vector2(d.X * cos - d.Y * sin, d.X * sin + d.Y * cos);
+        }
+        Rebuild(updated);
+    }
+
+    /// <summary>
+    /// Rebuilds the underlying Aether polygon from the supplied (already-baked) vertices, preserving density.
+    /// </summary>
+    private void Rebuild(IReadOnlyList<Vector2> vertices)
+    {
+        _aetherShape = new AEPolygon(new nkast.Aether.Physics2D.Common.Vertices(new List<Vector2>(vertices)), _density);
     }
 
     #endregion
@@ -123,9 +150,8 @@ public class PolygonShape : IShape
     {
         if (_disposed) return false;
 
-        // Transform the point into the shape's untransformed local space, then use Aether's TestPoint.
-        var transformedPoint = ApplyInverseTransform(point);
-        return IsPointInAetherShape(transformedPoint);
+        // Geometry is baked in body-local space, so an incoming local point can be tested directly.
+        return IsPointInAetherShape(point);
     }
 
     #endregion
@@ -163,79 +189,13 @@ public class PolygonShape : IShape
 
     #endregion
 
-    #region Transform Helpers (internal for Rectangle override)
+    #region Geometry Query
+
+    // Translate/Rotate bake transforms directly into _aetherShape (see above), so the Aether geometry
+    // is authoritative. No separate transform state is kept, and PointContains reads straight off it.
 
     /// <summary>
-    /// Applies the accumulated local offset and rotation to a point.
-    /// </summary>
-    protected Vector2 ApplyTransform(Vector2 point)
-    {
-        if (_localRotation == 0f && _localOffset == Vector2.Zero)
-            return point;
-
-        // Rotate around origin, then translate
-        var rotated = new Vector2(
-            point.X * (float)Math.Cos(_localRotation) - point.Y * (float)Math.Sin(_localRotation),
-            point.X * (float)Math.Sin(_localRotation) + point.Y * (float)Math.Cos(_localRotation));
-        return rotated + _localOffset;
-    }
-
-    /// <summary>
-    /// Applies the inverse of the accumulated local offset and rotation to a point.
-    /// </summary>
-    protected Vector2 ApplyInverseTransform(Vector2 point)
-    {
-        if (_localRotation == 0f && _localOffset == Vector2.Zero)
-            return point;
-
-        // Inverse: translate back, then rotate backwards
-        var translated = point - _localOffset;
-        var rotated = new Vector2(
-            translated.X * (float)Math.Cos(-_localRotation) - translated.Y * (float)Math.Sin(-_localRotation),
-            translated.X * (float)Math.Sin(-_localRotation) + translated.Y * (float)Math.Cos(-_localRotation));
-        return rotated;
-    }
-
-    /// <summary>
-    /// Gets the center adjusted for local transform offsets.
-    /// </summary>
-    protected Vector2 GetTransformedCenter()
-    {
-        var baseCenter = _aetherShape.MassData.Centroid;
-        if (_localRotation == 0f && _localOffset == Vector2.Zero)
-            return baseCenter;
-
-        // Rotate around origin, then translate
-        var rotated = new Vector2(
-            baseCenter.X * (float)Math.Cos(_localRotation) - baseCenter.Y * (float)Math.Sin(_localRotation),
-            baseCenter.X * (float)Math.Sin(_localRotation) + baseCenter.Y * (float)Math.Cos(_localRotation));
-        return rotated + _localOffset;
-    }
-
-    /// <summary>
-    /// Gets the vertices adjusted for local transform offsets.
-    /// </summary>
-    protected IReadOnlyList<Vector2> GetTransformedVertices()
-    {
-        if (_localRotation == 0f && _localOffset == Vector2.Zero)
-            return _aetherShape.Vertices;
-
-        var transformed = new Vector2[_aetherShape.Vertices.Count];
-        for (int i = 0; i < _aetherShape.Vertices.Count; i++)
-        {
-            var v = _aetherShape.Vertices[i];
-            // Rotate around origin, then translate
-            var cos = (float)Math.Cos(_localRotation);
-            var sin = (float)Math.Sin(_localRotation);
-            transformed[i] = new Vector2(
-                v.X * cos - v.Y * sin + _localOffset.X,
-                v.X * sin + v.Y * cos + _localOffset.Y);
-        }
-        return transformed;
-    }
-
-    /// <summary>
-    /// Tests whether a point (in the shape's untransformed local space) is contained within this polygon.
+    /// Tests whether a point (in body-local space) is contained within this polygon's baked geometry.
     /// </summary>
     protected bool IsPointInAetherShape(Vector2 point)
     {

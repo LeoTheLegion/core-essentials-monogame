@@ -33,7 +33,7 @@ public static class EasingFunctions
     public static Func<float, float> InSine => t => (float)(1.0 - Math.Cos((t * Math.PI) / 2.0));
 
     /// <summary>Accelerates using exponential curve.</summary>
-    public static Func<float, float> InExpo => t => t == 0 ? 0 : (float)Math.Pow(2.0, 10.0 * (t - 1.0));
+    public static Func<float, float> InExpo => t => t <= 0f ? 0f : (float)Math.Pow(2.0, 10.0 * (t - 1.0));
 
     /// <summary>Accelerates using circular arc.</summary>
     public static Func<float, float> InCirc => t => (float)(1.0 - Math.Sqrt(1.0 - t * t));
@@ -59,19 +59,31 @@ public static class EasingFunctions
     public static Func<float, float> OutQuad => t => (float)(t * (2.0 - t));
 
     /// <summary>Decelerates to rest (t³).</summary>
-    public static Func<float, float> OutCubic => t => (float)((--t) * t * t + 1.0);
+    public static Func<float, float> OutCubic => t =>
+    {
+        t -= 1f;
+        return t * t * t + 1.0f;
+    };
 
     /// <summary>Decelerates to rest (t⁴).</summary>
-    public static Func<float, float> OutQuart => t => (float)(1.0 - (--t) * t * t * t);
+    public static Func<float, float> OutQuart => t =>
+    {
+        t -= 1f;
+        return 1.0f - t * t * t * t;
+    };
 
     /// <summary>Decelerates to rest (t⁵).</summary>
-    public static Func<float, float> OutQuint => t => (float)(1.0 + (--t) * t * t * t * t);
+    public static Func<float, float> OutQuint => t =>
+    {
+        t -= 1f;
+        return 1.0f + t * t * t * t * t;
+    };
 
     /// <summary>Decelerates using sine wave.</summary>
     public static Func<float, float> OutSine => t => (float)Math.Sin((t * Math.PI) / 2.0);
 
     /// <summary>Decelerates using exponential curve.</summary>
-    public static Func<float, float> OutExpo => t => t == 1 ? 1 : (float)(1.0 - Math.Pow(2.0, -10.0 * t));
+    public static Func<float, float> OutExpo => t => t >= 1f ? 1f : (float)(1.0 - Math.Pow(2.0, -10.0 * t));
 
     /// <summary>Decelerates using circular arc.</summary>
     public static Func<float, float> OutCirc => t => (float)Math.Sqrt(1.0 - (t - 1.0) * (t - 1.0));
@@ -83,7 +95,8 @@ public static class EasingFunctions
     public static Func<float, float> OutBack => t =>
     {
         const float s = 1.70158f;
-        return (--t) * t * ((s + 1.0f) * t + s) + 1.0f;
+        t -= 1f;
+        return t * t * ((s + 1.0f) * t + s) + 1.0f;
     };
 
     /// <summary>Decelerates with bounce effect.</summary>
@@ -114,7 +127,10 @@ public static class EasingFunctions
     {
         if (t < 0.5f)
             return 8f * t * t * t * t;
-        return -1f / 2f * ((t = t * 2f - 3f) * t * t * t - 2f);
+
+        // Mirror the in-branch about t=1 so it is continuous at t=0.5 and lands exactly on 1.
+        var remaining = 1f - t;
+        return 1f - 8f * remaining * remaining * remaining * remaining;
     };
 
     /// <summary>Accelerates then decelerates (t⁵).</summary>
@@ -122,20 +138,42 @@ public static class EasingFunctions
     {
         if (t < 0.5f)
             return 16f * t * t * t * t * t;
-        return 1f / 2f * ((t = t * 2f - 2f) * t * t * t * t + 2f);
+        var h = t * 2f - 2f;
+        return 1f / 2f * (h * h * h * h * h + 2f);
     };
 
     /// <summary>Accelerates then decelerates using sine wave.</summary>
     public static Func<float, float> InOutSine => t => (float)(-0.5f * (Math.Cos(Math.PI * t) - 1.0));
 
     /// <summary>Accelerates then decelerates using exponential curve.</summary>
-    public static Func<float, float> InOutExpo => t => { if (t == 0) return 0; if (t == 1) return 1; float h = t * 2.0f; return h < 1.0f ? 0.5f * (float)Math.Pow(2.0, 10.0 * (h - 1.0)) : 0.5f * (float)(-Math.Pow(2.0, -10.0 * (h - 1.0)) + 2.0); };
+    public static Func<float, float> InOutExpo => t =>
+    {
+        if (t <= 0f) return 0f;
+        if (t >= 1f) return 1f;
+        float h = t * 2.0f;
+        return h < 1.0f ? 0.5f * (float)Math.Pow(2.0, 10.0 * (h - 1.0)) : 0.5f * (float)(-Math.Pow(2.0, -10.0 * (h - 1.0)) + 2.0);
+    };
 
     /// <summary>Accelerates then decelerates using circular arc.</summary>
-    public static Func<float, float> InOutCirc => t => { float h = t * 2.0f; return h <= 1.0f ? -0.5f * (float)(Math.Sqrt(1.0 - h * h) - 1.0) : 0.5f * (float)(Math.Sqrt(1.0 - (h -= 2.0f) * h) + 1.0); };
+    public static Func<float, float> InOutCirc => t =>
+    {
+        var h = t * 2.0f;
+        if (h <= 1.0f)
+            return -0.5f * (float)(Math.Sqrt(1.0 - h * h) - 1.0);
+        h -= 2.0f;
+        return 0.5f * (float)(Math.Sqrt(1.0 - h * h) + 1.0);
+    };
 
     /// <summary>Accelerates then decelerates with elastic overshoot.</summary>
-    public static Func<float, float> InOutElastic => t => { if (t == 0) return 0; if (t == 1) return 1; float h = t * 2.0f; if (h < 1.0f) return 0.5f * ElasticIn(h); return 0.5f * ElasticOut(h - 1.0f) + 0.5f; };
+    public static Func<float, float> InOutElastic => t =>
+    {
+        if (t <= 0f) return 0f;
+        if (t >= 1f) return 1f;
+        var h = t * 2.0f;
+        if (h < 1.0f)
+            return 0.5f * ElasticIn(h);
+        return 0.5f * ElasticOut(h - 1.0f) + 0.5f;
+    };
 
     /// <summary>Accelerates then decelerates with back overshoot.</summary>
     public static Func<float, float> InOutBack => t =>
@@ -149,7 +187,11 @@ public static class EasingFunctions
     };
 
     /// <summary>Accelerates then decelerates with bounce effect.</summary>
-    public static Func<float, float> InOutBounce => t => { float h = t * 2.0f; return h <= 1.0f ? 0.5f * (1.0f - BounceOut(1.0f - h)) : 0.5f * BounceOut(h - 1.0f) + 0.5f; };
+    public static Func<float, float> InOutBounce => t =>
+    {
+        var h = t * 2.0f;
+        return h <= 1.0f ? 0.5f * (1.0f - BounceOut(1.0f - h)) : 0.5f * BounceOut(h - 1.0f) + 0.5f;
+    };
 
     #endregion
 
@@ -157,13 +199,13 @@ public static class EasingFunctions
 
     private static float ElasticIn(float t)
     {
-        if (t == 0 || t == 1) return t;
+        if (t <= 0f || t >= 1f) return t;
         return (float)(-Math.Pow(2.0, 10.0 * (t - 1.0)) * Math.Sin((t - 1.1) * 5.0 * Math.PI));
     }
 
     private static float ElasticOut(float t)
     {
-        if (t == 0 || t == 1) return t;
+        if (t <= 0f || t >= 1f) return t;
         return (float)(Math.Pow(2.0, -10.0 * t) * Math.Sin((t - 0.1) * 5.0 * Math.PI) + 1.0f);
     }
 
@@ -175,11 +217,20 @@ public static class EasingFunctions
         if (t < 1.0f / d1)
             return n1 * t * t;
         else if (t < 2.0f / d1)
-            return n1 * (t -= 1.5f / d1) * t + 0.75f;
+        {
+            t -= 1.5f / d1;
+            return n1 * t * t + 0.75f;
+        }
         else if (t < 2.5f / d1)
-            return n1 * (t -= 2.25f / d1) * t + 0.9375f;
+        {
+            t -= 2.25f / d1;
+            return n1 * t * t + 0.9375f;
+        }
         else
-            return n1 * (t -= 2.625f / d1) * t + 0.984375f;
+        {
+            t -= 2.625f / d1;
+            return n1 * t * t + 0.984375f;
+        }
     }
 
     #endregion

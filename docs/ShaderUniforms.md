@@ -44,6 +44,8 @@ The component owns two things: the **effect** (see [Render Pipeline](RenderPipel
 
 A 4-component vector also accepts an `R,G,B` (or `R,G,B,A`) **color** in 0–255, since glow tints are commonly authored as colors but live in a `float4`.
 
+**Color → float4 uses normalized 0–1 values.** Both `SetColor(name, Color)` and an XML `"R,G,B[,A]"` on a `float4` parameter write the color as `float4(R/255, G/255, B/255, A/255)`, matching what HLSL pixel shaders expect for color uniforms (e.g. `output.rgb * Tint`). So `Color.Coral` arrives in-shader as roughly `(1.0, 0.498, 0.314, 1.0)` — not raw bytes.
+
 ### API
 
 | Member | Description |

@@ -118,7 +118,9 @@ public static class SceneParser
         ExpectElementName(element, "System");
         RejectUnknownAttributes(element, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Type", "Config" });
 
-        var typeName = element.Attribute("Type")!.Value;
+        // A missing (null) attribute must surface as the same FormatException as an empty one —
+        // reading .Value on a null attribute would throw NullReferenceException instead.
+        var typeName = element.Attribute("Type")?.Value;
         if (string.IsNullOrWhiteSpace(typeName))
             throw new FormatException("<System> is missing its required 'Type' attribute.");
 

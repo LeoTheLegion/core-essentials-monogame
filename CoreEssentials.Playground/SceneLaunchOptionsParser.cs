@@ -27,7 +27,7 @@ public sealed class SceneLaunchOptions
     /// </summary>
     public bool NoFocusPause { get; }
 
-    internal SceneLaunchOptions(string scene, double? runForSeconds, bool noFocusPause)
+    internal SceneLaunchOptions(string? scene, double? runForSeconds, bool noFocusPause)
     {
         Scene = scene;
         RunForSeconds = runForSeconds;

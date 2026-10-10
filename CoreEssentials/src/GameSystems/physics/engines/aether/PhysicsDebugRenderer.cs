@@ -25,6 +25,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     private DebugView? _debugView;
     private bool _contentLoaded;
     private bool _disposed;
+    private IPhysicsDebugRenderTarget? _target;
 
     /// <summary>
     /// Initializes a new instance of the PhysicsDebugRenderer class without an explicit engine.
@@ -41,12 +42,25 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
     /// </summary>
     /// <param name="engine">The Aether-backed physics engine whose world will be visualized.</param>
     public PhysicsDebugRenderer(PhysicsEngine engine)
+        : this(engine, null)
+    {
+    }
+
+    /// <summary>
+    /// Test seam: accepts an injected implementation of the device-reach boundary (font load, viewport
+    /// read, and render dispatch). Production always passes <see langword="null"/>, which defers to the
+    /// real <see cref="AetherPhysicsDebugRenderTarget"/>; tests pass a recording fake so the enable +
+    /// content-load dispatch can be asserted without a graphics device (same seam pattern as
+    /// <c>IEntityDrawTarget</c> and <c>IPrimitiveDrawer</c>).
+    /// </summary>
+    internal PhysicsDebugRenderer(PhysicsEngine engine, IPhysicsDebugRenderTarget? target)
     {
         if (engine == null)
             throw new ArgumentNullException(nameof(engine));
         _debugView = new DebugView(engine.AetherWorld);
         // Sensible defaults: show shapes, joints, and contact points.
         _debugView.AppendFlags(DebugViewFlags.ContactPoints);
+        _target = target;
     }
 
     /// <summary>
@@ -126,11 +140,7 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
 
         EnsureDebugView();
 
-        var game = Game;
-        if (game == null)
-            throw new InvalidOperationException("Cannot load debug renderer content before the scene is attached.");
-
-        _debugView!.LoadContent(game.Graphics.GraphicsDevice, game.Content);
+        Target.LoadFont(_debugView!);
         _contentLoaded = true;
     }
 
@@ -147,12 +157,61 @@ public class PhysicsDebugRenderer : GameSystem, IPhysicsDebugRenderer
         if (!_contentLoaded)
             LoadContent();
 
+        Target.Render(_debugView!);
+    }
+
+    /// <summary>
+    /// The device-reach boundary for this renderer: loads Aether's diagnostics font, reads the current
+    /// viewport, and dispatches the render. Production resolves the real adapter (reading from the
+    /// attached game); tests inject a recording fake via the internal constructor. Resolved lazily once.
+    /// </summary>
+    private IPhysicsDebugRenderTarget Target => _target ??= new AetherPhysicsDebugRenderTarget(this);
+}
+
+/// <summary>
+/// Device-reach boundary for <see cref="PhysicsDebugRenderer"/>: everything that touches a live graphics
+/// device (loading Aether's diagnostics font, reading the current viewport, dispatching the render) is
+/// funneled through this seam. Production wraps the real device via <see cref="AetherPhysicsDebugRenderTarget"/>;
+/// tests inject a recording fake so the enable + content-load dispatch can be asserted without a graphics
+/// device (same seam pattern as <c>IEntityDrawTarget</c> and <c>IPrimitiveDrawer</c>). Keeping this at the
+/// edge means <see cref="PhysicsDebugRenderer"/> itself stays free of any device dereference.
+/// </summary>
+internal interface IPhysicsDebugRenderTarget
+{
+    /// <summary>Loads Aether's diagnostics font into <paramref name="view"/>, guarded by a "scene not yet attached" throw.</summary>
+    void LoadFont(DebugView view);
+
+    /// <summary>Reads the current viewport, builds the screen-pixel orthographic projection, and dispatches the render for <paramref name="view"/>.</summary>
+    void Render(DebugView view);
+}
+
+/// <summary>
+/// Production <see cref="IPhysicsDebugRenderTarget"/>: forwards each call to the attached
+/// <see cref="GameSystem.Game"/>'s graphics device and content manager, 1:1 with the inline logic it replaced.
+/// </summary>
+internal sealed class AetherPhysicsDebugRenderTarget : IPhysicsDebugRenderTarget
+{
+    private readonly PhysicsDebugRenderer _owner;
+
+    internal AetherPhysicsDebugRenderTarget(PhysicsDebugRenderer owner) => _owner = owner;
+
+    public void LoadFont(DebugView view)
+    {
+        var game = _owner.Game
+            ?? throw new InvalidOperationException("Cannot load debug renderer content before the scene is attached.");
+
+        view.LoadContent(game.Graphics.GraphicsDevice, game.Content);
+    }
+
+    public void Render(DebugView view)
+    {
+        var viewport = _owner.Game!.Graphics.GraphicsDevice.Viewport;
+
         // The physics world uses screen-pixel coordinates, so map world (x, y)
         // straight onto the viewport with an identity view/world matrix.
-        var viewport = Game!.Graphics.GraphicsDevice.Viewport;
         var projection = Matrix.CreateOrthographicOffCenter(
             0f, viewport.Width, viewport.Height, 0f, 0f, 1f);
 
-        _debugView!.RenderDebugData(projection, Matrix.Identity, Matrix.Identity);
+        view.RenderDebugData(projection, Matrix.Identity, Matrix.Identity);
     }
 }

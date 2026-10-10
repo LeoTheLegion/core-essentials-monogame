@@ -35,7 +35,7 @@ public class CameraComponentTests : IDisposable
     private class TestEntity : Entity
     {
         public override void Update(GameTime gameTime) { }
-        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch) { }
+        public override void Render(Microsoft.Xna.Framework.Graphics.SpriteBatch _spriteBatch) { }
     }
 
     // ===== Attach / detach lifecycle =====
@@ -53,7 +53,7 @@ public class CameraComponentTests : IDisposable
     public void OnDetach_ClearsMainCamera()
     {
         var entity = new TestEntity();
-        var component = entity.AddComponent(new CameraComponent());
+        entity.AddComponent(new CameraComponent());
         Assert.NotNull(Cam.MainCamera);
 
         entity.RemoveComponent<CameraComponent>();

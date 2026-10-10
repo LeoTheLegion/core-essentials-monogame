@@ -239,6 +239,11 @@ physics.PositionIterations  = 3;
 IReadOnlyList<IPhysicsBody> bodies = physics.GetBodies();
 ICollider? hitCollider = physics.TestPoint(worldSpacePoint);
 
+// A collider created with a non-zero `offset` (or that has been Translated/Rotated) bakes that
+// transform straight into its underlying physics shape. The SAME geometry drives both the simulation
+// and point queries, so an offset collider collides AND hit-tests where it is actually placed — not
+// at the body origin. Circle, rectangle, and polygon colliders all behave this way.
+
 // Clear all bodies (recycles into pool)
 physics.ClearAllBodies();
 

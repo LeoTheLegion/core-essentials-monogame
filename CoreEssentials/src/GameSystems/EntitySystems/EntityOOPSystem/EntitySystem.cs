@@ -249,9 +249,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <param name="spriteBatch">The SpriteBatch used for drawing entities.</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        var (zLayers, noTextureEntities) = GroupEntitiesByZLayer();
-        RenderNoTextureEntities(noTextureEntities, spriteBatch);
-        RenderZLayers(zLayers, spriteBatch);
+        RenderEntities(new SpriteBatchDrawTarget(spriteBatch));
         ResetTextureDirtyFlags();
 
         // Render debug overlays on top of everything
@@ -262,11 +260,25 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     }
 
     /// <summary>
+    /// Groups, partitions, and renders every active entity through <paramref name="target"/>. This is the
+    /// device-free seam: production passes a <see cref="SpriteBatchDrawTarget"/> wrapping the real
+    /// SpriteBatch; tests pass a recording fake so the grouping / effect-partition / Begin-End logic can be
+    /// asserted without a graphics device. Debug overlays are intentionally NOT part of this method — they
+    /// remain device-bound and opt-in via <see cref="DebugMode"/> (see <see cref="Draw(GameTime, SpriteBatch)"/>).
+    /// </summary>
+    internal void RenderEntities(IEntityDrawTarget target)
+    {
+        var (zLayers, noTextureEntities) = GroupEntitiesByZLayer();
+        RenderNoTextureEntities(noTextureEntities, target);
+        RenderZLayers(zLayers, target);
+    }
+
+    /// <summary>
     /// Groups active entities by z-layer and, within each layer, by texture asset
     /// for efficient batched rendering. Layers are returned in ascending order
     /// (back-to-front) so they can be rendered in the correct sequence.
     /// </summary>
-    private (List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>> zLayers, List<Entity> noTextureEntities) GroupEntitiesByZLayer()
+    internal (List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>> zLayers, List<Entity> noTextureEntities) GroupEntitiesByZLayer()
     {
         var layerMap = new SortedDictionary<int, Dictionary<Texture2DAsset, List<Entity>>>();
         var noTextureEntities = new List<Entity>();
@@ -308,13 +320,13 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// effective <see cref="Effect"/> so each distinct shader gets its own SpriteBatch Begin/End; when
     /// no entity has an effect this is a single Begin(null)/End, identical to the previous behavior.
     /// </summary>
-    private static void RenderNoTextureEntities(List<Entity> noTextureEntities, SpriteBatch spriteBatch)
+    private static void RenderNoTextureEntities(List<Entity> noTextureEntities, IEntityDrawTarget target)
     {
         if (noTextureEntities.Count == 0)
             return;
 
         var cameraView = GetCameraViewMatrix();
-        RenderEffectRuns(PartitionByEffect(noTextureEntities), spriteBatch, cameraView);
+        RenderEffectRuns(PartitionByEffect(noTextureEntities), target, cameraView);
     }
 
     /// <summary>
@@ -322,7 +334,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// group is rendered with a single SpriteBatch begin/end pair, preserving batching
     /// while maintaining correct interleaving of textures across z-layers.
     /// </summary>
-    private static void RenderZLayers(List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>> zLayers, SpriteBatch spriteBatch)
+    private static void RenderZLayers(List<KeyValuePair<int, Dictionary<Texture2DAsset, List<Entity>>>> zLayers, IEntityDrawTarget target)
     {
         if (zLayers.Count == 0)
             return;
@@ -333,7 +345,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         {
             foreach (var textureGroup in layer.Value)
             {
-                RenderEffectRuns(PartitionByEffect(textureGroup.Value), spriteBatch, cameraView);
+                RenderEffectRuns(PartitionByEffect(textureGroup.Value), target, cameraView);
             }
         }
     }
@@ -345,7 +357,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// form a null-effect run and keep the default batch — when every entity is null-effect this yields
     /// exactly one run, i.e. a single Begin(null)/End, which is byte-for-byte the previous behavior.
     /// </summary>
-    private static List<(Effect? Effect, string Signature, List<Entity> Entities)> PartitionByEffect(List<Entity> entities)
+    internal static List<(Effect? Effect, string Signature, List<Entity> Entities)> PartitionByEffect(List<Entity> entities)
     {
         var runs = new List<(Effect?, string, List<Entity>)>();
 
@@ -374,7 +386,7 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// Draws each effect run in its own SpriteBatch Begin/End, applying the run's effect (null = the
     /// SpriteBatch default) and its shader uniforms. Entity order within and across runs is preserved.
     /// </summary>
-    private static void RenderEffectRuns(List<(Effect? Effect, string Signature, List<Entity> Entities)> runs, SpriteBatch spriteBatch, Matrix? cameraView)
+    private static void RenderEffectRuns(List<(Effect? Effect, string Signature, List<Entity> Entities)> runs, IEntityDrawTarget target, Matrix? cameraView)
     {
         foreach (var run in runs)
         {
@@ -382,8 +394,9 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
             {
                 // Convention: when a per-sprite effect exposes a `Projection` matrix, keep it in sync with
                 // the current screen-space projection so shader sprites land at the correct positions. A
-                // no-op for effects without that parameter.
-                CoreEssentials.Rendering.RenderPipeline.SyncEffectProjection(run.Effect, spriteBatch.GraphicsDevice);
+                // no-op for effects without that parameter. Routed through the target so the device hop is
+                // replaceable in tests.
+                target.SyncProjection(run.Effect);
 
                 // Apply this run's uniforms immediately before Begin so each run (even one sharing a cached
                 // effect instance) writes its own values in sequence — the last-written-before-Begin wins.
@@ -391,16 +404,14 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
                 source?.ApplyTo(run.Effect);
             }
 
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
-                SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
-                run.Effect, cameraView);
+            target.Begin(run.Effect, cameraView);
 
             foreach (var entity in run.Entities)
             {
-                entity.Render(spriteBatch);
+                target.DrawEntity(entity);
             }
 
-            spriteBatch.End();
+            target.End();
         }
     }
 
@@ -892,30 +903,16 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <returns>A list of all active entities within the bounds.</returns>
     public List<Entity> FindInBounds(Rectangle bounds)
     {
-        var results = new List<Entity>();
-
         if (SpatialPartitioningEnabled && _spatialGrid != null)
         {
-            var entities = _spatialGrid.Query(bounds);
-            foreach (var entity in entities)
-            {
-                var pos = entity.Position;
-                if (entity.GetActive() && bounds.Contains((int)pos.X, (int)pos.Y))
-                    results.Add(entity);
-            }
-        }
-        else
-        {
-            // Fallback to linear search when spatial partitioning is disabled
-            foreach (var entity in _entities)
-            {
-                var pos = entity.Position;
-                if (entity.GetActive() && bounds.Contains((int)pos.X, (int)pos.Y))
-                    results.Add(entity);
-            }
+            // Query(bounds) already guarantees containment in the bounds.
+            return _spatialGrid.Query(bounds).Where(entity => entity.GetActive()).ToList();
         }
 
-        return results;
+        // Fallback to linear search when spatial partitioning is disabled
+        return _entities
+            .Where(entity => entity.GetActive() && bounds.Contains((int)entity.Position.X, (int)entity.Position.Y))
+            .ToList();
     }
 
     /// <summary>
@@ -1498,4 +1495,51 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
         RegisterEntity(entity);
         entity.OnStart();
     }
+}
+
+/// <summary>
+/// The subset of the SpriteBatch draw surface <see cref="EntitySystem"/>'s render pipeline needs to emit its
+/// batches: open/close a batch with an optional per-run effect and view matrix, keep a shader's projection
+/// in sync, and draw one entity. Production forwards each call to a real SpriteBatch via
+/// <see cref="SpriteBatchDrawTarget"/>; tests supply a recording fake so the grouping / effect-partition /
+/// Begin-End logic can be asserted without a graphics device (same seam pattern as <c>IEntityDebugTarget</c>).
+/// The fixed render states (deferred sort, alpha blend, point clamp, no cull) are an implementation detail of
+/// the adapter and intentionally not part of this contract.
+/// </summary>
+internal interface IEntityDrawTarget
+{
+    /// <summary>Opens a batch bound to <paramref name="effect"/> (null = the SpriteBatch default) under the given view matrix.</summary>
+    void Begin(Effect? effect, Matrix? viewMatrix);
+
+    /// <summary>Closes the most recently opened batch.</summary>
+    void End();
+
+    /// <summary>Keeps <paramref name="effect"/>'s Projection uniform in sync with the current projection; a no-op when it exposes none.</summary>
+    void SyncProjection(Effect? effect);
+
+    /// <summary>Draws a single entity into the currently open batch.</summary>
+    void DrawEntity(Entity entity);
+}
+
+/// <summary>Production <see cref="IEntityDrawTarget"/>: forwards each call to a real MonoGame <see cref="SpriteBatch"/>.</summary>
+internal sealed class SpriteBatchDrawTarget : IEntityDrawTarget
+{
+    private readonly SpriteBatch _spriteBatch;
+
+    public SpriteBatchDrawTarget(SpriteBatch spriteBatch) => _spriteBatch = spriteBatch;
+
+    public void Begin(Effect? effect, Matrix? viewMatrix)
+        => _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend,
+            SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone,
+            effect, viewMatrix);
+
+    public void End() => _spriteBatch.End();
+
+    public void SyncProjection(Effect? effect)
+    {
+        if (effect != null)
+            CoreEssentials.Rendering.RenderPipeline.SyncEffectProjection(effect, _spriteBatch.GraphicsDevice);
+    }
+
+    public void DrawEntity(Entity entity) => entity.Render(_spriteBatch);
 }

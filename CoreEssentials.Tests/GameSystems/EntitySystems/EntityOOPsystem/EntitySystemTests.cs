@@ -9,6 +9,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 {
     public class EntitySystemTests
     {
+        // The coroutine system is a shared static singleton. Clear any coroutines and the accumulated
+        // clock left behind by other test classes so each test drives it from a known-clean state —
+        // otherwise SpawnAfter timing (driven through CoroutineManager.Update) becomes order-dependent.
+        public EntitySystemTests() => CoroutineManager.StopAllCoroutines();
+
         [Fact]
         public void SpawnAfter_SchedulesEntityCreation()
         {
@@ -73,7 +78,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         private class TestEntity : Entity
         {
             public override void Update(GameTime gameTime) { }
-            public override void Render(SpriteBatch spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
     }
 }

@@ -45,42 +45,15 @@ public class RectangleShape : PolygonShape
 
     #region IShape Overrides
 
-    /// <summary>
-    /// Gets the center of mass in local space (always origin for centered rectangles).
-    /// </summary>
-    public override Vector2 Center => Vector2.Zero;
+    // NOTE: Center inherits PolygonShape.Center (the baked Aether centroid), so a translated/rotated
+    // rectangle reports its true center — the same geometry the underlying fixture simulates with.
+    // PointContains likewise inherits the base baked-geometry half-space test, which is correct for
+    // both translated and rotated rectangles now that Translate/Rotate bake into the Aether shape.
 
     /// <summary>
     /// Gets the bounding radius (distance from center to corner).
     /// </summary>
     public override float Radius => _halfSize.Length();
-
-    #endregion
-
-    #region Query Methods Overrides
-
-    /// <summary>
-    /// Tests whether a point is contained within this rectangle in local space using AABB check.
-    /// Faster than the generic polygon TestPoint for rectangles.
-    /// </summary>
-    public override bool PointContains(Vector2 point)
-    {
-        if (base.IsDisposed) return false;
-
-        // Inverse-transform to undo offset/rotation, then AABB check on unrotated rectangle.
-        var localPoint = ApplyInverseTransform(point);
-
-        // For rotated rectangles, AABB bounds expand — use the rotated bounding box.
-        float absCos = Math.Abs((float)Math.Cos(_localRotation));
-        float absSin = Math.Abs((float)Math.Sin(_localRotation));
-
-        // Transformed half extents after rotation
-        float extX = _halfSize.X * absCos + _halfSize.Y * absSin;
-        float extY = _halfSize.X * absSin + _halfSize.Y * absCos;
-
-        return Math.Abs(localPoint.X - _localOffset.X) <= extX &&
-               Math.Abs(localPoint.Y - _localOffset.Y) <= extY;
-    }
 
     #endregion
 
