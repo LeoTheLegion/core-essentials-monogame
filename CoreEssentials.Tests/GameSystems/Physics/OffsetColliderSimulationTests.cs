@@ -15,10 +15,25 @@ namespace CoreEssentials.Tests.GameSystems.Physics;
 public class OffsetColliderSimulationTests : IDisposable
 {
     private readonly PhysicsEngine _engine;
+    private bool _disposed;
 
     public OffsetColliderSimulationTests() => _engine = new PhysicsEngine(Vector2.Zero);
 
-    public void Dispose() => _engine.Dispose();
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            _engine.Dispose();
+        }
+        _disposed = true;
+    }
 
     [Fact]
     public void OffsetRectangle_SimulatesAtOffset_NotOrigin()
@@ -31,7 +46,7 @@ public class OffsetColliderSimulationTests : IDisposable
         // the one we created — TestPoint returns a fresh wrapper, so compare the Aether fixture).
         var hitOffset = _engine.TestPoint(new Vector2(10f, 0f)) as CoreEssentials.GameSystems.Physics.Engines.Aether.Collider;
         Assert.NotNull(hitOffset);
-        Assert.Same(((CoreEssentials.GameSystems.Physics.Engines.Aether.Collider)collider)._aetherFixture, hitOffset!._aetherFixture);
+        Assert.Same(((CoreEssentials.GameSystems.Physics.Engines.Aether.Collider)collider)._aetherFixture, hitOffset._aetherFixture);
 
         // ...and the body ORIGIN must no longer be covered by it (pre-fix: the fixture sat here).
         Assert.Null(_engine.TestPoint(Vector2.Zero));
@@ -45,7 +60,7 @@ public class OffsetColliderSimulationTests : IDisposable
 
         // Query side (wrapper IShape) and simulation side (Aether fixture via TestPoint) must agree.
         Assert.NotNull(collider.Shape);
-        var shape = collider.Shape!;
+        var shape = collider.Shape;
         Assert.True(shape.PointContains(new Vector2(10f, 0f)));   // local offset center: inside
         Assert.False(shape.PointContains(Vector2.Zero));          // origin: outside
 
@@ -63,7 +78,7 @@ public class OffsetColliderSimulationTests : IDisposable
 
         var hitOffset = _engine.TestPoint(new Vector2(0f, 5f)) as CoreEssentials.GameSystems.Physics.Engines.Aether.Collider;
         Assert.NotNull(hitOffset);                                       // offset center covered
-        Assert.Same(((CoreEssentials.GameSystems.Physics.Engines.Aether.Collider)collider)._aetherFixture, hitOffset!._aetherFixture);
+        Assert.Same(((CoreEssentials.GameSystems.Physics.Engines.Aether.Collider)collider)._aetherFixture, hitOffset._aetherFixture);
         Assert.Null(_engine.TestPoint(Vector2.Zero));                    // origin no longer covered
     }
 
@@ -73,7 +88,7 @@ public class OffsetColliderSimulationTests : IDisposable
         var body = _engine.CreateDynamic(Vector2.Zero);
         var collider = body.CreateRectangleCollider(new Vector2(4f, 2f), offset: Vector2.Zero);
         Assert.NotNull(collider.Shape);
-        var shape = collider.Shape!;
+        var shape = collider.Shape;
 
         // Rotating bakes into the geometry, so Center and containment reflect the new orientation.
         shape.Rotate((float)Math.PI / 2f); // swap effective half-extents (x:1, y:2)

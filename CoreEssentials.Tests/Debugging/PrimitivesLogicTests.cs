@@ -75,10 +75,10 @@ namespace CoreEssentials.Tests.Debugging
             foreach (var c in drawer.Calls)
                 Assert.Contains(c.Position, positions);
 
-            // Two horizontal segments of length 10 and two vertical of length 20.
-            var lengths = drawer.Calls.Select(c => (float)Math.Round(c.Scale.X, 3)).ToList();
-            Assert.Equal(2, lengths.Count(l => l == 10f));
-            Assert.Equal(2, lengths.Count(l => l == 20f));
+            // Two horizontal segments of length ~10 and two vertical of length ~20.
+            var lengths = drawer.Calls.Select(c => c.Scale.X).ToList();
+            Assert.Equal(2, lengths.Count(l => Math.Abs(l - 10f) < 0.001f));
+            Assert.Equal(2, lengths.Count(l => Math.Abs(l - 20f) < 0.001f));
         }
 
         [Fact]

@@ -358,12 +358,12 @@ public class ShaderComponentApplyTests
         public string? LastOverload { get; private set; }
         public object? LastValue { get; private set; }
 
-        public void SetValue(bool v) { LastOverload = "bool"; LastValue = v; }
-        public void SetValue(int v) { LastOverload = "int"; LastValue = v; }
-        public void SetValue(float v) { LastOverload = "float"; LastValue = v; }
-        public void SetValue(Vector2 v) { LastOverload = "Vector2"; LastValue = v; }
-        public void SetValue(Vector3 v) { LastOverload = "Vector3"; LastValue = v; }
-        public void SetValue(Vector4 v) { LastOverload = "Vector4"; LastValue = v; }
-        public void SetValue(Matrix v) { LastOverload = "Matrix"; LastValue = v; }
+        public void SetValue(bool value) { LastOverload = "bool"; LastValue = value; }
+        public void SetValue(int value) { LastOverload = "int"; LastValue = value; }
+        public void SetValue(float value) { LastOverload = "float"; LastValue = value; }
+        public void SetValue(Vector2 value) { LastOverload = "Vector2"; LastValue = value; }
+        public void SetValue(Vector3 value) { LastOverload = "Vector3"; LastValue = value; }
+        public void SetValue(Vector4 value) { LastOverload = "Vector4"; LastValue = value; }
+        public void SetValue(Matrix value) { LastOverload = "Matrix"; LastValue = value; }
     }
 }

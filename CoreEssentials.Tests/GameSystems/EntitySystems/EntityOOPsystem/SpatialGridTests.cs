@@ -15,9 +15,18 @@ public class SpatialGridTests : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
+        Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            // The per-test EntitySystem instances are transient and hold no OS resources to release.
+        }
+        _disposed = true;
     }
 
     // ===== T1: SpatialGrid Insert/Remove Tests =====
@@ -46,8 +55,6 @@ public class SpatialGridTests : IDisposable
     public void Insert_NullEntity_ThrowsArgumentNullException()
     {
         var grid = new SpatialGrid(100f);
-        var system = new EntitySystem();
-        var entity = system.CreateEntity<TestEntity>();
 
         Assert.Throws<ArgumentNullException>(() => grid.Insert(null!));
     }
@@ -82,7 +89,9 @@ public class SpatialGridTests : IDisposable
     {
         var grid = new SpatialGrid(100f);
 
+        Assert.Equal(0, grid.Count);
         grid.Remove(new TestEntity());
+        Assert.Equal(0, grid.Count);
     }
 
     [Fact]
@@ -422,5 +431,5 @@ public class SpatialGridTests : IDisposable
 public class TestEntity : Entity
 {
     public override void Update(GameTime gameTime) { }
-    public override void Render(SpriteBatch spriteBatch) { }
+    public override void Render(SpriteBatch _spriteBatch) { }
 }

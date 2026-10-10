@@ -47,9 +47,9 @@ public static class GameRandom
     public static bool NextBool(float probability) => NextFloat() < probability;
 
     /// <summary>
-    /// Selects a random element from an array.
+    /// Selects a random element from an array. A null or empty array returns the default value.
     /// </summary>
-    public static T? Pick<T>(T[] items)
+    public static T? Pick<T>(T[]? items)
     {
         if (items == null || items.Length == 0) return default;
         return items[Next(items.Length)];

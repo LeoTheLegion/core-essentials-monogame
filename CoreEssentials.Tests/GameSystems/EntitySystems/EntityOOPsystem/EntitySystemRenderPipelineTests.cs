@@ -54,7 +54,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
                 e.SetZLayer(5);
             }
 
-            var (zLayers, noTexture) = system.GroupEntitiesByZLayer();
+            var (zLayers, _) = system.GroupEntitiesByZLayer();
 
             var layer = zLayers.Single(l => l.Key == 5);
             var group = layer.Value[shared];
@@ -70,7 +70,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var e1 = system.CreateEntity<TestEntity>(); e1.RegisterForInstancedRendering(texA); e1.SetZLayer(0);
             var e2 = system.CreateEntity<TestEntity>(); e2.RegisterForInstancedRendering(texA); e2.SetZLayer(0); e2.SetActive(false);
 
-            var (zLayers, noTexture) = system.GroupEntitiesByZLayer();
+            var (zLayers, _) = system.GroupEntitiesByZLayer();
 
             Assert.Single(zLayers.Single(l => l.Key == 0).Value[texA]); // only the active one
         }
@@ -84,7 +84,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
             var withTex = system.CreateEntity<TestEntity>(); withTex.RegisterForInstancedRendering(texA);
             var noTex = system.CreateEntity<TestEntity>(); // BatchTexture stays null
 
-            var (zLayers, noTexture) = system.GroupEntitiesByZLayer();
+            var (_, noTexture) = system.GroupEntitiesByZLayer();
 
             Assert.Same(noTex, Assert.Single(noTexture));
         }
@@ -254,8 +254,8 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         public void ClearEntities_RemovesAllAndCallsOnDestroy()
         {
             var system = CreateSystem();
-            var e1 = (RecordingEntity)system.CreateEntity<RecordingEntity>();
-            var e2 = (RecordingEntity)system.CreateEntity<RecordingEntity>();
+            var e1 = system.CreateEntity<RecordingEntity>();
+            var e2 = system.CreateEntity<RecordingEntity>();
 
             system.ClearEntities();
 
@@ -267,11 +267,11 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
 
         // ────────────────────────── helpers & fixtures ──────────────────────────
 
-        private static ShaderComponent AddShader(Entity e, string? name, float value)
+        private static void AddShader(Entity e, string? name, float value)
         {
             var s = new ShaderComponent();
             if (name != null) s.SetFloat(name, value);
-            return e.AddComponent(s);
+            e.AddComponent(s);
         }
 
         private static int EntityCount(EntitySystem system)
@@ -325,7 +325,9 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         {
             public int Required { get; }
             public float Optional { get; }
-            public OptionalArgEntity(int required, float optional = 2.5f)
+            // Invoked via reflection by CreateEntity(typeof(OptionalArgEntity), 42); the analyzer
+            // cannot see that call path.
+            public OptionalArgEntity(int required, float optional = 2.5f) // NOSONAR
             {
                 Required = required;
                 Optional = optional;

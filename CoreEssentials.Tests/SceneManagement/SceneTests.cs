@@ -60,10 +60,26 @@ namespace CoreEssentials.Tests.GameSystems.SceneManagement
 
         public class DisposableUpdateSystem : GameSystem, IUpdateGameSystem, IDisposable
         {
+            private bool _disposed;
+
             public int UpdateCalls;
-            public bool Disposed;
+            public bool Disposed => _disposed;
             public void Update(GameTime gameTime) => UpdateCalls++;
-            public void Dispose() => Disposed = true;
+            public void Dispose()
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (_disposed) return;
+                if (disposing)
+                {
+                    // Record disposal for the scene-unload assertion.
+                }
+                _disposed = true;
+            }
         }
 
         private static GameTime Time => new(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));

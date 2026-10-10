@@ -78,7 +78,7 @@ namespace CoreEssentials.Tests.GameSystems.EntitySystems.EntityOOPsystem
         private class TestEntity : Entity
         {
             public override void Update(GameTime gameTime) { }
-            public override void Render(SpriteBatch spriteBatch) { }
+            public override void Render(SpriteBatch _spriteBatch) { }
         }
     }
 }

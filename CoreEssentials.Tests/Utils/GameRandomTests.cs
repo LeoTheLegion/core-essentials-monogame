@@ -99,7 +99,8 @@ public class GameRandomTests
     [Fact]
     public void Pick_NullArray_ReturnsDefault()
     {
-        Assert.Null(GameRandom.Pick((string[]?)null));
+        // Explicit type argument: T cannot be inferred from a null literal alone.
+        Assert.Null(GameRandom.Pick<string>(null));
     }
 
     [Fact]

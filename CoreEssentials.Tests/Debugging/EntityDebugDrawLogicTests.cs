@@ -38,7 +38,7 @@ public class EntityDebugDrawLogicTests
             => Texts.Add((font, text, position, color));
     }
 
-    private Entity MakeEntity(Vector2 position, Vector2 size, Vector2 origin = default, bool active = true)
+    private static Entity MakeEntity(Vector2 position, Vector2 size, Vector2 origin = default, bool active = true)
     {
         var e = new FixedSizeOriginEntity(size, origin);
         e.Position = position;

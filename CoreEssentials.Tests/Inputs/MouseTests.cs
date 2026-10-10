@@ -32,9 +32,11 @@ namespace CoreEssentials.Tests.Inputs
         /// Creates a simulated mouse state with the given position and button states.
         /// MonoGame's MouseState only exposes a parameterless and an 8-argument constructor
         /// (x, y, scrollWheelValue, then ButtonState per button), so this helper keeps test
-        /// call sites terse.
+        /// call sites terse. The parameter count mirrors that fixed constructor — one slot per
+        /// button — and every slot is exercised by the mouse test suites; reducing it would drop
+        /// coverage of a MonoGame button.
         /// </summary>
-        public static MouseState CreateState(
+        public static MouseState CreateState( // NOSONAR
             int x = 0, int y = 0,
             bool leftButton = false, bool rightButton = false, bool middleButton = false,
             int scrollWheelValue = 0, bool xButton1 = false, bool xButton2 = false)
@@ -63,9 +65,9 @@ namespace CoreEssentials.Tests.Inputs
     /// </summary>
     public class MouseTests
     {
-        private CoreEssentials.Inputs.Mouse _mouseWrapper;
-        private MockMouseStateProvider _mockProvider;
-        private GameTime _gameTime;
+        private readonly CoreEssentials.Inputs.Mouse _mouseWrapper;
+        private readonly MockMouseStateProvider _mockProvider;
+        private readonly GameTime _gameTime;
 
         public MouseTests()
         {
