@@ -903,29 +903,16 @@ public class EntitySystem : GameSystem, IUpdateGameSystem, IDrawGameSystem, IFix
     /// <returns>A list of all active entities within the bounds.</returns>
     public List<Entity> FindInBounds(Rectangle bounds)
     {
-        var results = new List<Entity>();
-
         if (SpatialPartitioningEnabled && _spatialGrid != null)
         {
             // Query(bounds) already guarantees containment in the bounds.
-            foreach (var entity in _spatialGrid.Query(bounds))
-            {
-                if (entity.GetActive())
-                    results.Add(entity);
-            }
-        }
-        else
-        {
-            // Fallback to linear search when spatial partitioning is disabled
-            foreach (var entity in _entities)
-            {
-                var pos = entity.Position;
-                if (entity.GetActive() && bounds.Contains((int)pos.X, (int)pos.Y))
-                    results.Add(entity);
-            }
+            return _spatialGrid.Query(bounds).Where(entity => entity.GetActive()).ToList();
         }
 
-        return results;
+        // Fallback to linear search when spatial partitioning is disabled
+        return _entities
+            .Where(entity => entity.GetActive() && bounds.Contains((int)entity.Position.X, (int)entity.Position.Y))
+            .ToList();
     }
 
     /// <summary>

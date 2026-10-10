@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace CoreEssentials.GameSystems.EntitySystems.EntityOOPSystem.Spatial;
@@ -128,22 +129,7 @@ public class SpatialGrid
         for (var x = minCell.X; x <= maxCell.X; x++)
         {
             for (var y = minCell.Y; y <= maxCell.Y; y++)
-            {
-                var cell = new Vector2(x, y);
-                if (_grid.TryGetValue(cell, out var entities))
-                {
-                    foreach (var entity in entities)
-                    {
-                        // Closed-rectangle containment (edges inclusive) so the circular overload can
-                        // rely on this as a candidate generator: an entity exactly at the radius sits
-                        // on the bounding-box edge and must survive to the distance check.
-                        var pos = entity.Position;
-                        if (pos.X >= bounds.Left && pos.X <= bounds.Right &&
-                            pos.Y >= bounds.Top && pos.Y <= bounds.Bottom)
-                            results.Add(entity);
-                    }
-                }
-            }
+                AddEntitiesInCell(new Vector2(x, y), bounds, results);
         }
 
         return results;
@@ -179,6 +165,26 @@ public class SpatialGrid
 
         return results;
     }
+
+    /// <summary>
+    /// Adds every entity occupying a single grid cell that lies inside the query bounds. The containment
+    /// check is closed on all edges (inclusive) so the circular overload can rely on this as a candidate
+    /// generator: an entity exactly at the radius sits on the bounding-box edge and must survive to the
+    /// distance check. Extracted from <see cref="Query(Rectangle)"/> to keep that method's cognitive
+    /// complexity low.
+    /// </summary>
+    private void AddEntitiesInCell(Vector2 cell, Rectangle bounds, HashSet<Entity> results)
+    {
+        if (!_grid.TryGetValue(cell, out var entities))
+            return;
+
+        results.UnionWith(entities.Where(entity => IsInsideBounds(entity.Position, bounds)));
+    }
+
+    /// <summary>Closed-rectangle containment test (edges inclusive).</summary>
+    private static bool IsInsideBounds(Vector2 position, Rectangle bounds) =>
+        position.X >= bounds.Left && position.X <= bounds.Right &&
+        position.Y >= bounds.Top && position.Y <= bounds.Bottom;
 
     /// <summary>
     /// Clears all entities from the grid.

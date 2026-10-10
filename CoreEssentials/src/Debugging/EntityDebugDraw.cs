@@ -146,7 +146,7 @@ public class EntityDebugDraw
 
         var pos = entity.Position;
         var textPos = new Vector2(pos.X, pos.Y - 16f);
-        target.DrawText(fontAsset.Font!, entity.Id, textPos, _config.IdColor);
+        target.DrawText(fontAsset.Font, entity.Id, textPos, _config.IdColor);
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public class EntityDebugDraw
         var pos = entity.Position;
         var textPos = new Vector2(pos.X, pos.Y + 16f);
         var tagText = string.Join(", ", entity.Tags);
-        target.DrawText(fontAsset.Font!, tagText, textPos, _config.TagColor);
+        target.DrawText(fontAsset.Font, tagText, textPos, _config.TagColor);
     }
 
     /// <summary>
