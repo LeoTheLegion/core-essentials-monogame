@@ -241,6 +241,142 @@ public class CommandBindingTests : IDisposable
         Assert.Null(ex);
     }
 
+    // ──────────────────────────── Components / discovery branches ────────────────────────────
+
+    [Fact]
+    public void Bind_UnderComponentsElement_IsDiscoveredAndFires()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var def = BuildDefinition(
+            @"<Components><Bind Event=""Signaled"" Command=""OnSignaled"" /></Components>");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        signal.RaiseSignal();
+
+        Assert.Equal(1, signal.SignalCount);
+    }
+
+    [Fact]
+    public void Bind_NestedUnderComponentElement_IsDiscoveredAndFires()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        var def = BuildDefinition(
+            @"<Components><Component Name=""signal""><Bind Event=""Signaled"" Command=""OnSignaled"" /></Component></Components>");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        signal.RaiseSignal();
+
+        Assert.Equal(1, signal.SignalCount);
+    }
+
+    [Fact]
+    public void Bind_SourceNamedEntity_OnlyConsidersEntityAndMatchedComponent()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+        // Source matches the component by simple name; event is resolved on it.
+        var def = BuildDefinition(
+            @"<Bind Event=""Signaled"" Source=""SignalComponent"" Command=""OnSignaled"" />");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        signal.RaiseSignal();
+
+        Assert.Equal(1, signal.SignalCount);
+    }
+
+    // ──────────────────────────── Handler resolution guards ────────────────────────────
+
+    [Fact]
+    public void Bind_MissingCommandAndMember_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var signal = (SignalComponent)entity.AddComponent(new SignalComponent());
+
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Signaled"" />")));
+
+        Assert.Null(ex);
+        signal.RaiseSignal(); // nothing subscribed
+        Assert.Equal(0, signal.SignalCount);
+    }
+
+    [Fact]
+    public void Bind_CommandNotOnAnyAncestor_DoesNotThrow_AndDoesNotBind()
+    {
+        var parent = _system.CreateEntity<PlainEntity>();
+        var child = new PlainEntity();
+        parent.AddChild(child);
+        var signal = (SignalComponent)child.AddComponent(new SignalComponent());
+
+        // Command form, but no ancestor defines the handler — must walk up and give up.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(child, BuildDefinition(@"<Bind Event=""Signaled"" Target=""NoSuchTarget"" Member=""OnGone"" />")));
+
+        Assert.Null(ex);
+        signal.RaiseSignal();
+        Assert.Equal(0, signal.SignalCount);
+    }
+
+    // ──────────────────────────── CreateBridge compatibility matrix ────────────────────────────
+
+    [Fact]
+    public void Bind_ActionOfTEvent_DeliversPayload()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var comp = (ActionIntComponent)entity.AddComponent(new ActionIntComponent());
+        var def = BuildDefinition(@"<Bind Event=""IntSignaled"" Command=""OnGot"" />");
+
+        CommandBindings.ApplyBindings(entity, def);
+
+        comp.Raise();
+
+        Assert.Equal(42, comp.LastValue);
+    }
+
+    [Fact]
+    public void Bind_UnsupportedDelegateEvent_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var comp = (FuncComponent)entity.AddComponent(new FuncComponent());
+
+        // Func<int,bool> is not an Action/Action<T>/EventHandler, so the bridge can't be built.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Predicate"" Command=""OnX"" />")));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void Bind_NoPayloadEventWithSingleParamHandler_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var comp = (DeliverMismatchComponent)entity.AddComponent(new DeliverMismatchComponent());
+
+        // Event is a bare Action (no payload) but the handler demands one — nothing to deliver.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Go"" Command=""NeedsArg"" />")));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void Bind_HandlerParamNotAssignableFromPayload_DoesNotThrow_AndDoesNotBind()
+    {
+        var entity = _system.CreateEntity<PlainEntity>();
+        var comp = (MismatchParamComponent)entity.AddComponent(new MismatchParamComponent());
+
+        // EventHandler carries EventArgs, but the handler wants a string — not assignable.
+        var ex = Record.Exception(
+            () => CommandBindings.ApplyBindings(entity, BuildDefinition(@"<Bind Event=""Fired"" Command=""OnStr"" />")));
+
+        Assert.Null(ex);
+    }
+
     // ──────────────────────────── Component factory regression ────────────────────────────
 
     [Fact]
@@ -364,4 +500,40 @@ public class DiscoveryFixtureComponent : EntityComponent
 /// <summary>Returned by an explicit registration that shadows a same-named discoverable type.</summary>
 public class DiscoveryShadowWinner : EntityComponent
 {
+}
+
+/// <summary>Exposes an Action&lt;T&gt; event to exercise the generic-payload bridge path.</summary>
+public class ActionIntComponent : EntityComponent
+{
+    public event Action<int>? IntSignaled;
+    public int LastValue;
+
+    public void OnGot(int value) => LastValue = value;
+
+    /// <summary>Raises <see cref="IntSignaled"/> with a fixed payload.</summary>
+    public void Raise() => IntSignaled?.Invoke(42);
+}
+
+/// <summary>Exposes an unsupported (Func) event — the bridge cannot adapt its signature.</summary>
+public class FuncComponent : EntityComponent
+{
+    public event Func<int, bool>? Predicate;
+
+    public void OnX() { }
+}
+
+/// <summary>Action event paired with a single-parameter handler — nothing to deliver.</summary>
+public class DeliverMismatchComponent : EntityComponent
+{
+    public event Action? Go;
+
+    public void NeedsArg(int ignored) { }
+}
+
+/// <summary>EventHandler event (payload EventArgs) paired with an incompatible string param.</summary>
+public class MismatchParamComponent : EntityComponent
+{
+    public event EventHandler? Fired;
+
+    public void OnStr(string s) { }
 }
